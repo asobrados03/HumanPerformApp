@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.RoundedCornerShape
-//noinspection UsingMaterialAndMaterial3Libraries
-import androidx.compose.material.Card
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -20,9 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -69,6 +66,8 @@ fun DashboardScreen(navController: NavHostController, transactionViewModel: Tran
 
             TotalBalanceCard(balance)
 
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Sección Gasto Total e Ingreso Total
             Column(
                 modifier = Modifier
@@ -80,14 +79,14 @@ fun DashboardScreen(navController: NavHostController, transactionViewModel: Tran
                 DashboardCard(
                     title = "GASTO TOTAL",
                     value = expenses,
-                    cardColor = colorResource(id = R.color.red_transaction)
+                    cardColor = MaterialTheme.colorScheme.secondary
                 )
 
                 // Tarjeta Ingreso Total
                 DashboardCard(
                     title = "INGRESO TOTAL",
                     value = income,
-                    cardColor = colorResource(id = R.color.green_transaction)
+                    cardColor = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -99,26 +98,28 @@ fun TotalBalanceCard(balance: Double) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        elevation = 4.dp,
-        shape = RoundedCornerShape(8.dp),
-        backgroundColor = colorResource(R.color.blue_ultra_light)
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(20.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "Saldo Total",
                 style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "%.2f€".format(Locale.getDefault(), balance),
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -126,32 +127,32 @@ fun TotalBalanceCard(balance: Double) {
 
 
 @Composable
-fun DashboardCard(title: String, value: Double, cardColor: Color) {
+fun DashboardCard(title: String, value: Double, cardColor: androidx.compose.ui.graphics.Color) {
     Card(
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth(), // Asegura que ocupe todo el espacio asignado
-        elevation = 4.dp,
-        shape = RoundedCornerShape(8.dp),
-        backgroundColor = colorResource(R.color.blue_white)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = title,
                 color = cardColor,
-                fontWeight = FontWeight.Bold,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                 fontSize = 16.sp
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "%.2f€".format(Locale.getDefault(), value),
                 style = MaterialTheme.typography.bodyLarge,
-                color = colorResource(R.color.bold_from_palette)
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }

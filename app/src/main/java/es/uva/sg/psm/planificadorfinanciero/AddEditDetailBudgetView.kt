@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.systemBars
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.DropdownMenuItem
 //noinspection UsingMaterialAndMaterial3Libraries
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -158,7 +159,8 @@ fun AddEditDetailBudgetView(
                 Spacer(modifier = Modifier.height(26.dp))
 
                 //Categoria asociada al presupuesto
-                Row( modifier = Modifier.fillMaxWidth(),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -177,7 +179,18 @@ fun AddEditDetailBudgetView(
                 var date by remember { mutableStateOf("") }
 
                 // Mostrar un botón para activar el MonthPicker (esto es solo un ejemplo)
-                FilledTonalButton(onClick = { isPickerVisible = true }) {
+                FilledTonalButton(
+                    onClick = { isPickerVisible = true },
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .padding(horizontal = 16.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
                     Text("Seleccionar Mes y Año")
                 }
 
@@ -261,19 +274,16 @@ fun AddEditDetailBudgetView(
                                     snackbarHostState.showSnackbar("Por favor, selecciona una categoría para continuar.")
                                 }
                             }
-
                             id == 0L && date.isBlank() -> {
                                 scope.launch {
                                     snackbarHostState.showSnackbar("Por favor, selecciona un mes y año para continuar.")
                                 }
                             }
-
                             budgetViewModel.budgetMonthlyLimitState == 0.0 -> {
                                 scope.launch {
                                     snackbarHostState.showSnackbar("El campo de límite mensual no puede estar vacío.")
                                 }
                             }
-
                             id == 0L -> {
                                 // Validar si ya existe un presupuesto con la misma categoría, mes y año
                                 isLoading = true
@@ -292,7 +302,6 @@ fun AddEditDetailBudgetView(
                                     }
                                 }
                             }
-
                             else -> {
                                 // Lógica para actualizar un presupuesto existente
                                 isLoading = true
@@ -300,7 +309,16 @@ fun AddEditDetailBudgetView(
                             }
                         }
                     },
-                    enabled = !isLoading
+                    enabled = !isLoading,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .padding(horizontal = 16.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
@@ -331,16 +349,24 @@ fun BudgetCategoryDropdown(
     val selectedCategoryName = categories.find { it.id == selectedCategory }?.name ?: "Seleccionalo aquí"
 
     Card {
-        OutlinedButton(onClick = { expanded.value = !expanded.value }) {
-            Text(text = selectedCategoryName) // Muestra el nombre de la categoría seleccionada
+        OutlinedButton(
+            onClick = { expanded.value = !expanded.value },
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = selectedCategoryName)
         }
-        DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
+        DropdownMenu(
+            expanded = expanded.value,
+            onDismissRequest = { expanded.value = false },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             categories.forEach { category ->
                 DropdownMenuItem(onClick = {
-                    onCategoryChanged(category.id) // Cambia el ID de la categoría
+                    onCategoryChanged(category.id)
                     expanded.value = false
                 }) {
-                    Text(text = category.name) // Muestra el nombre de cada categoría en el menú
+                    Text(text = category.name)
                 }
             }
         }

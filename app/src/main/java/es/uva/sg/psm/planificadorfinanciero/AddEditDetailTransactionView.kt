@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.shape.RoundedCornerShape
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material3.Button
@@ -181,7 +182,15 @@ fun AddEditDetailTransactionView(
 
                 ElevatedButton(
                     onClick = { showDatePicker = true },
-                    modifier = Modifier.padding(12.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .padding(horizontal = 16.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.elevatedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
                     Text(
                         text = "Abrir Selector de Fecha",
@@ -242,7 +251,16 @@ fun AddEditDetailTransactionView(
                             }
                         }
                     },
-                    enabled = !isLoading
+                    enabled = !isLoading,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .padding(horizontal = 16.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
@@ -277,10 +295,21 @@ fun TransactionTypeDropdown(
     val types = TransactionType.entries.toTypedArray()
 
     Card {
-        OutlinedButton(onClick = { expanded.value = !expanded.value }) {
+        OutlinedButton(
+            onClick = { expanded.value = !expanded.value },
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth(),
+            colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
             Text(text = selectedType.name)
         }
-        DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
+        DropdownMenu(
+            expanded = expanded.value,
+            onDismissRequest = { expanded.value = false },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             types.forEach { type ->
                 DropdownMenuItem(onClick = {
                     onTypeChanged(type)

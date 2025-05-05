@@ -1,5 +1,7 @@
 package es.uva.sg.psm.planificadorfinanciero
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,12 +15,14 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentHeight
-//noinspection UsingMaterialAndMaterial3Libraries
-import androidx.compose.material.Card
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -30,12 +34,12 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.navigation.NavController
 import es.uva.sg.psm.planificadorfinanciero.data.TransactionType
 import es.uva.sg.psm.planificadorfinanciero.viewModels.TransactionViewModel
@@ -74,10 +78,14 @@ fun StaticsScreen(navController: NavController, transactionViewModel: Transactio
 
         if(transactions.isNotEmpty()){
             // Gráfico ingresos y gastos
-            Card(modifier = Modifier
-                .fillMaxWidth()
-                .height(500.dp)
-                .padding(paddingValues)) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(500.dp)
+                    .padding(paddingValues),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(16.dp)
+            ) {
                 BarChart(
                     income = totalAmountIncome,
                     expenses = totalAmountExpenses,
@@ -91,7 +99,8 @@ fun StaticsScreen(navController: NavController, transactionViewModel: Transactio
                     .fillMaxSize()
                     .wrapContentHeight(Alignment.CenterVertically),
                 textAlign = TextAlign.Center,
-                fontSize = 20.sp
+                fontSize = 20.sp,
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
     }
@@ -104,14 +113,33 @@ fun BarChart(
     expenses: Double,
     modifier: Modifier = Modifier
 ) {
+    val isDarkTheme = isSystemInDarkTheme()
+    val colorScheme = MaterialTheme.colorScheme
     val max = maxOf(income, expenses).toFloat()
     val steps = 5
     val paint = remember {
         Paint().asFrameworkPaint().apply {
             isAntiAlias = true
             textSize = 35f
-            color = android.graphics.Color.BLACK
+            color = if (!isDarkTheme) android.graphics.Color.BLACK else android.graphics.Color.WHITE
         }
+    }
+
+    // Animatables y animaciones FUERA de Canvas
+    val animatedIncomeHeight = remember { Animatable(0f) }
+    val animatedExpensesHeight = remember { Animatable(0f) }
+
+    // Calcula alturas de barras usando un valor estándar (1f) antes de Canvas, luego se ajustarán en Canvas
+    val incomeHeight = if (income > 0 && max > 0) (income.toFloat() / max) * 1f else 0.04f
+    val expensesHeight = if (expenses > 0 && max > 0) (expenses.toFloat() / max) * 1f else 0.04f
+
+    // Animar cuando cambian income o expenses
+    LaunchedEffect(income) {
+        // Se animará a la altura relativa (1f = altura total del gráfico)
+        animatedIncomeHeight.animateTo(incomeHeight, animationSpec = tween(durationMillis = 1000))
+    }
+    LaunchedEffect(expenses) {
+        animatedExpensesHeight.animateTo(expensesHeight, animationSpec = tween(durationMillis = 1000))
     }
 
     Column(
@@ -123,13 +151,13 @@ fun BarChart(
             text = "Comparación de Ingresos y Gastos",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(16.dp),
-            color = colorResource(R.color.bold_from_palette),
+            color = colorScheme.primary,
             fontSize = 20.sp,
             fontWeight = FontWeight.SemiBold
         )
         // Los colores de las barras
-        val colorGreen = colorResource(R.color.green_transaction)
-        val colorRed = colorResource(R.color.red_transaction)
+        val colorGreen = colorScheme.secondary
+        val colorRed = colorScheme.error
 
         Canvas(
             modifier = Modifier
@@ -150,7 +178,7 @@ fun BarChart(
 
                 // Líneas de cuadrícula
                 drawLine(
-                    color = Color.LightGray,
+                    color = colorScheme.onSurface.copy(alpha = 0.1f),
                     start = Offset(leftPadding, y),
                     end = Offset(size.width, y),
                     strokeWidth = 1f,
@@ -168,18 +196,18 @@ fun BarChart(
                 }
             }
 
-            // Dibuja las barras
-            val incomeHeight = if (income > 0) (income.toFloat() / max) * chartHeight else 10f
-            val expensesHeight = if (expenses > 0) (expenses.toFloat() / max) * chartHeight else 10f
+            // Alturas animadas escaladas al tamaño real del gráfico
+            val scaledIncomeHeight = animatedIncomeHeight.value * chartHeight
+            val scaledExpensesHeight = animatedExpensesHeight.value * chartHeight
 
             // Barra de ingresos
             drawRect(
                 color = colorGreen,
                 topLeft = Offset(
                     x = leftPadding + chartWidth / 4 - barWidth / 2,
-                    y = chartHeight - incomeHeight
+                    y = chartHeight - scaledIncomeHeight
                 ),
-                size = Size(width = barWidth, height = incomeHeight),
+                size = Size(width = barWidth, height = scaledIncomeHeight),
                 alpha = 0.8f
             )
 
@@ -188,21 +216,21 @@ fun BarChart(
                 color = colorRed,
                 topLeft = Offset(
                     x = leftPadding + 3 * chartWidth / 4 - barWidth / 2,
-                    y = chartHeight - expensesHeight
+                    y = chartHeight - scaledExpensesHeight
                 ),
-                size = Size(width = barWidth, height = expensesHeight),
+                size = Size(width = barWidth, height = scaledExpensesHeight),
                 alpha = 0.8f
             )
 
             // Pinta los ejes
             drawLine(
-                color = Color.Black,
+                color = colorScheme.onSurface,
                 start = Offset(leftPadding, 0f),
                 end = Offset(leftPadding, chartHeight),
                 strokeWidth = 2f
             )
             drawLine(
-                color = Color.Black,
+                color = colorScheme.onSurface,
                 start = Offset(leftPadding, chartHeight),
                 end = Offset(size.width, chartHeight),
                 strokeWidth = 2f
@@ -218,13 +246,13 @@ fun BarChart(
             Text(
                 text = "Ingresos",
                 style = MaterialTheme.typography.bodyMedium,
-                color = colorResource(R.color.bold_from_palette),
+                color = colorScheme.primary,
                 textAlign = TextAlign.Center
             )
             Text(
                 text = "Gastos",
                 style = MaterialTheme.typography.bodyMedium,
-                color = colorResource(R.color.bold_from_palette),
+                color = colorScheme.primary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.offset(x = 20.dp)
             )
