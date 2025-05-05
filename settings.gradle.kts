@@ -19,6 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Planificador Financiero"
+rootProject.name = "HumanPerformApp"
 include(":app")
- 
