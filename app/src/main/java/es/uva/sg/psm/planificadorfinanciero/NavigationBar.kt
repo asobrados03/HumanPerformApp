@@ -19,15 +19,15 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 @Composable
 fun NavigationBar(navController: NavController) {
     val items = listOf(
-        NavItem(Screen.DashboardScreen.route, "Inicio", R.drawable.home),
-        NavItem(Screen.HistoryScreen.route, "Historial", R.drawable.transaccion),
-        NavItem(Screen.StaticsScreen.route, "Estadísticas", R.drawable.grafica),
-        NavItem(Screen.BudgetScreen.route, "Presupuestos", R.drawable.budget)
+        NavItem(Screen.DashboardScreen.route, "Producto", R.drawable.exercise),
+        NavItem(Screen.HistoryScreen.route, "Calendario", R.drawable.calendar),
+        NavItem(Screen.StaticsScreen.route, "Blog", R.drawable.stories),
+        NavItem(Screen.BudgetScreen.route, "Usuario", R.drawable.person)
     )
 
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface
+        contentColor = MaterialTheme.colorScheme.primary
     ) {
         val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
         items.forEach { item ->
@@ -43,7 +43,7 @@ fun NavigationBar(navController: NavController) {
                 label = {
                     Text(
                         text = item.title,
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 4.dp)
                     )
@@ -57,7 +57,10 @@ fun NavigationBar(navController: NavController) {
                             restoreState = true
                         }
                     }
-                }
+                },
+                // No override de color aquí para que el color global se aplique
+                alwaysShowLabel = true,
+                enabled = true
             )
         }
     }

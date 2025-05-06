@@ -26,12 +26,31 @@ import androidx.navigation.NavHostController
 import es.uva.sg.psm.planificadorfinanciero.data.TransactionType
 import es.uva.sg.psm.planificadorfinanciero.viewModels.TransactionViewModel
 import java.util.Locale
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.ExperimentalMaterial3Api
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(navController: NavHostController, transactionViewModel: TransactionViewModel) {
     Scaffold(
         topBar = {
-            AppBarView(title = "Planificador Financiero", showBackArrow = false)
+            TopAppBar(
+                title = {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "Logo",
+                        modifier = Modifier
+                            .height(36.dp)
+                            .padding(top = 4.dp)
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            )
         },
         modifier = Modifier
             .fillMaxSize()

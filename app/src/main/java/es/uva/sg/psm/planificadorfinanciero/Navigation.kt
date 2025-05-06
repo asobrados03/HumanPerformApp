@@ -11,12 +11,14 @@ import androidx.navigation.navArgument
 import es.uva.sg.psm.planificadorfinanciero.viewModels.BudgetViewModel
 import es.uva.sg.psm.planificadorfinanciero.viewModels.CategoryViewModel
 import es.uva.sg.psm.planificadorfinanciero.viewModels.TransactionViewModel
+import es.uva.sg.psm.planificadorfinanciero.viewModels.SessionViewModel
 
 @Composable
 fun Navigation(
     transactionViewModel: TransactionViewModel = viewModel(),
     categoryViewModel: CategoryViewModel = viewModel(),
     budgetViewModel: BudgetViewModel = viewModel(),
+    sessionViewModel: SessionViewModel,
     navController: NavHostController,
     onPlaySound: (Int) -> Unit
 ) {
@@ -72,7 +74,7 @@ fun Navigation(
         composable(route = Screen.HistoryScreen.route){
             HistoryScreen(
                 navController = navController,
-                transactionViewModel = transactionViewModel,
+                sessionViewModel = sessionViewModel,
                 categoryViewModel = categoryViewModel,
                 budgetViewModel = budgetViewModel,
                 onPlaySound = onPlaySound

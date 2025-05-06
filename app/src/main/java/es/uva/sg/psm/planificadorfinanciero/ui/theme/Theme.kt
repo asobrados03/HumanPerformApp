@@ -12,7 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 
-private val DarkColorScheme = darkColorScheme(
+private val DarkColors = darkColorScheme(
     primary = Color(0xFFDC3545),
     secondary = Color(0xFFADB5BD),
     tertiary = Color(0xFFE36262),
@@ -23,6 +23,17 @@ private val DarkColorScheme = darkColorScheme(
     onTertiary = Color.Black,
     onBackground = Color.White,
     onSurface = Color.White,
+)
+
+private val HumanColorScheme = darkColorScheme(
+    primary = Color(0xFFDC3545), // rojo
+    secondary = Color(0xFFDC3545),
+    background = Color(0xFFF8F9FA),
+    surface = Color.White,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onBackground = Color.Black,
+    onSurface = Color.Black,
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -51,7 +62,7 @@ fun PlanificadorFinancieroTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColorScheme
+        darkTheme -> DarkColors
         else -> LightColorScheme
     }
 
