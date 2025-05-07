@@ -3,6 +3,7 @@ package es.uva.sg.psm.humanperformcenter
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -28,8 +29,8 @@ fun Navigation(
 ) {
     // Configuración del color de la barra de estado
     SetStatusBarColor(
-        statusBarColor = colorResource(R.color.app_bar_color),
-        navigationBarColor = colorResource(R.color.bold_from_palette)
+        statusBarColor = Color(0xFFB71C1C),
+        navigationBarColor = Color(0xFFB71C1C)
     )
 
     NavHost(
