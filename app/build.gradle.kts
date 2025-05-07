@@ -74,6 +74,7 @@ dependencies {
         exclude(group = "com.intellij", module = "annotations")
     }
     implementation(libs.kotlinx.datetime)
+    implementation(libs.coil.compose)
     implementation(libs.core.ktx)
     testImplementation(libs.junit.jupiter)
     ksp(libs.androidx.room.compiler)
