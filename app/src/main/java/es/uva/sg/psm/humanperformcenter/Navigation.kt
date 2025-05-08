@@ -4,18 +4,17 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import es.uva.sg.psm.humanperformcenter.data.User
 import es.uva.sg.psm.humanperformcenter.viewModels.BudgetViewModel
 import es.uva.sg.psm.humanperformcenter.viewModels.CategoryViewModel
 import es.uva.sg.psm.humanperformcenter.viewModels.TransactionViewModel
 import es.uva.sg.psm.humanperformcenter.viewModels.SessionViewModel
-import es.uva.sg.psm.planificadorfinanciero.R
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -40,7 +39,7 @@ fun Navigation(
         composable(route = Screen.DashboardScreen.route) {
             DashboardScreen(navController, transactionViewModel)
         }
-        composable(route = Screen.BudgetScreen.route) {
+        composable(route = Screen.UserScreen.route) {
             UserScreen(
                 navController   = navController,
                 userName        = "Usuario de Prueba",            // cadena vacía
@@ -48,8 +47,33 @@ fun Navigation(
                 userPhone       = "+34 616 171 171",            // cadena vacía
                 userPhotoUrl    = null,          // URL nula
                 balance         = 0.0,           // saldo a cero
-                onEditProfile   = { /* nada */}, // lambda vacía
-                onMenuClick     = { /* nada */}  // lambda vacía
+                onEditProfile   = { navController.navigate(Screen.EditProfileScreen.route) },
+                onMenuClick = { option ->
+                    when (option) {
+                        MenuOption.FAVORITOS -> navController.navigate(Screen.FavoritesScreen.route)
+                        MenuOption.CHAT      -> navController.navigate(Screen.ChatScreen.route)
+                        MenuOption.DOCUMENTO -> navController.navigate(Screen.DocumentScreen.route)
+                        MenuOption.PAGO      -> navController.navigate(Screen.PaymentScreen.route)
+                        MenuOption.VER_PAGO  -> navController.navigate(Screen.ViewPaymentScreen.route)
+                    }
+                }
+            )
+        }
+        composable(route = Screen.EditProfileScreen.route) {
+            EditProfileScreen(
+                user = User("", "", "", "", "", "", "", "", 0.0),
+                onSave = { updatedUser ->
+                    // Aquí puedes actualizar el ViewModel, hacer llamada a API, etc.
+                    navController.popBackStack() // Vuelve a la pantalla anterior
+                }
+            )
+        }
+        composable(Screen.FavoritesScreen.route) {
+            FavoritesScreen(
+                onSelect = { prof ->
+                    // Aquí podrías navegar a "detalle de profe" u otra acción
+                },
+                navController   = navController
             )
         }
         composable(route = Screen.AddEditBudgetScreen.route + "/{id}",

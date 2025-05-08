@@ -5,6 +5,12 @@ sealed class Screen(val route: String) {
     data object HistoryScreen: Screen("history")
     data object AddEditTransactionScreen: Screen("add")
     data object StaticsScreen: Screen("statics")
-    data object BudgetScreen: Screen("budget")
+    data object UserScreen: Screen("user")
     data object AddEditBudgetScreen: Screen("addBudget")
+    data object EditProfileScreen: Screen("edit_profile")
+    data object FavoritesScreen: Screen("favorites")
+    data object ChatScreen: Screen("chat")
+    data object DocumentScreen: Screen("document")
+    data object PaymentScreen: Screen("payment")
+    data object ViewPaymentScreen: Screen("view_payment")
 }

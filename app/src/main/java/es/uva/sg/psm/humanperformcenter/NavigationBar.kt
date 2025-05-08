@@ -23,7 +23,7 @@ fun NavigationBar(navController: NavController) {
         NavItem(Screen.DashboardScreen.route, "Producto", R.drawable.exercise),
         NavItem(Screen.HistoryScreen.route, "Calendario", R.drawable.calendar),
         NavItem(Screen.StaticsScreen.route, "Blog", R.drawable.stories),
-        NavItem(Screen.BudgetScreen.route, "Usuario", R.drawable.person)
+        NavItem(Screen.UserScreen.route, "Usuario", R.drawable.person)
     )
 
     NavigationBar(

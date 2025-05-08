@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults.cardColors
@@ -113,7 +114,7 @@ fun UserScreen(
                     } else {
                         // recurso local
                         Image(
-                            painter = painterResource(R.drawable.ic_default_avatar),
+                            painter = painterResource(R.drawable.avatar_default),
                             contentDescription = "Avatar por defecto",
                             modifier = Modifier
                                 .size(80.dp)
@@ -156,7 +157,9 @@ fun UserScreen(
 
                     Spacer(Modifier.height(12.dp))
 
-                    FilledTonalButton(onClick = onEditProfile) {
+                    FilledTonalButton(onClick = {
+                        navController.navigate(Screen.EditProfileScreen.route)
+                    }) {
                         Text("Editar perfil")
                     }
                 }
@@ -192,7 +195,7 @@ fun UserScreen(
                         ) {
                             Text(text = title, fontSize = 16.sp)
                             Icon(
-                                imageVector = Icons.Default.KeyboardArrowRight,
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription = null
                             )
                         }
