@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "HumanPerformApp"
 include(":app")
+include(":shared")

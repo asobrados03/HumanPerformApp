@@ -75,6 +75,7 @@ dependencies {
     }
     implementation(libs.kotlinx.datetime)
     implementation(libs.coil.compose)
+    implementation(project(":shared"))
     implementation(libs.core.ktx)
     testImplementation(libs.junit.jupiter)
     ksp(libs.androidx.room.compiler)
