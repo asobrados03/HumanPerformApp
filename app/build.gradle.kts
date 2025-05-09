@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "es.uva.sg.psm.planificadorfinanciero"
+    namespace = "com.humanperformcenter"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "es.uva.sg.psm.planificadorfinanciero"
+        applicationId = "com.humanperformcenter"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
