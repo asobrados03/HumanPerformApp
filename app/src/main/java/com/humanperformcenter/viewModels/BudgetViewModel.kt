@@ -8,8 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.humanperformcenter.Graph
-import com.humanperformcenter.data.Budget
+import com.humaneperformcenter.shared.data.model.Budget
 import com.humanperformcenter.data.BudgetRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

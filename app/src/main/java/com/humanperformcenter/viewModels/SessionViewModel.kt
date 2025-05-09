@@ -2,7 +2,7 @@ package com.humanperformcenter.viewModels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.humanperformcenter.data.Session
+import com.humaneperformcenter.shared.data.model.Session
 import com.humanperformcenter.data.SessionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch

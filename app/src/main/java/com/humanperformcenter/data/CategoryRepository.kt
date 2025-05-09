@@ -1,9 +1,11 @@
 package com.humanperformcenter.data
 
+import com.humaneperformcenter.shared.data.model.Category
+import com.humaneperformcenter.shared.data.model.TransactionType
 import kotlinx.coroutines.flow.Flow
 
-class CategoryRepository(private val categoryDao: CategoryDao) {
-
+class CategoryRepository(/*private val categoryDao: CategoryDao*/) {
+/*
     suspend fun addCategory(category: Category): Long{
         return categoryDao.addCategory(category)
     }
@@ -22,5 +24,5 @@ class CategoryRepository(private val categoryDao: CategoryDao) {
         return categoryDao.getCategoryByName(name)
     }
 
-    fun getCategoriesByType(type: TransactionType): Flow<List<Category>> = categoryDao.getCategoriesByType(type)
+    fun getCategoriesByType(type: TransactionType): Flow<List<Category>> = categoryDao.getCategoriesByType(type)*/
 }

@@ -1,9 +1,10 @@
 package com.humanperformcenter.data
 
+import com.humaneperformcenter.shared.data.model.Budget
 import kotlinx.coroutines.flow.Flow
 
-class BudgetRepository(private val budgetDao: BudgetDao) {
-
+class BudgetRepository(/*private val budgetDao: BudgetDao*/) {
+/*
     suspend fun addBudget(budget: Budget) {
         budgetDao.addBudget(budget)
     }
@@ -24,5 +25,5 @@ class BudgetRepository(private val budgetDao: BudgetDao) {
 
     fun getBudgetForCategoryMonthAndYear(categoryId: Long, month: String, year: Int): Flow<Budget?> {
         return budgetDao.getBudgetForCategoryMonthAndYear(categoryId, month, year)
-    }
+    }*/
 }

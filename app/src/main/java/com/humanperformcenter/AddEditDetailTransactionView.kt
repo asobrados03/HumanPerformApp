@@ -42,8 +42,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.humanperformcenter.data.Transaction
-import com.humanperformcenter.data.TransactionType
+import com.humaneperformcenter.shared.data.model.Transaction
+import com.humaneperformcenter.shared.data.model.TransactionType
 import com.humanperformcenter.viewModels.CategoryViewModel
 import com.humanperformcenter.viewModels.TransactionViewModel
 import kotlinx.coroutines.launch

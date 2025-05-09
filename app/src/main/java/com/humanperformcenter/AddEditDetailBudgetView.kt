@@ -43,8 +43,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.humanperformcenter.data.Budget
-import com.humanperformcenter.data.TransactionType
+import com.humaneperformcenter.shared.data.model.Budget
+import com.humaneperformcenter.shared.data.model.TransactionType
 import com.humanperformcenter.viewModels.BudgetViewModel
 import com.humanperformcenter.viewModels.CategoryViewModel
 import com.humanperformcenter.viewModels.TransactionViewModel

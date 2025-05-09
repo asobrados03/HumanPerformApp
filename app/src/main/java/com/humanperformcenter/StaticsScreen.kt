@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.navigation.NavController
-import com.humanperformcenter.data.TransactionType
+import com.humaneperformcenter.shared.data.model.TransactionType
 import com.humanperformcenter.viewModels.TransactionViewModel
 import kotlin.math.roundToInt
 

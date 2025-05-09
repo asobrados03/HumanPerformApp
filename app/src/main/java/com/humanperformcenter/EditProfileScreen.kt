@@ -15,7 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.humanperformcenter.data.User
+import com.humaneperformcenter.shared.data.model.User
 
 @Composable
 fun EditProfileScreen(

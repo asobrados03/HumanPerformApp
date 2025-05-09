@@ -63,8 +63,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.humanperformcenter.data.Budget
-import com.humanperformcenter.data.Session
+import com.humaneperformcenter.shared.data.model.Budget
+import com.humaneperformcenter.shared.data.model.Session
 import com.humanperformcenter.viewModels.BudgetViewModel
 import com.humanperformcenter.viewModels.CategoryViewModel
 import com.humanperformcenter.viewModels.SessionViewModel

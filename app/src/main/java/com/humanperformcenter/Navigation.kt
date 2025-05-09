@@ -10,7 +10,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.humanperformcenter.data.User
+import com.humaneperformcenter.shared.data.model.User
 import com.humanperformcenter.viewModels.BudgetViewModel
 import com.humanperformcenter.viewModels.CategoryViewModel
 import com.humanperformcenter.viewModels.TransactionViewModel
