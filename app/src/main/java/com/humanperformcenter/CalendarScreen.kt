@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
@@ -87,6 +88,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
+import com.humanperformcenter.ui.components.AppCard
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -138,7 +141,7 @@ fun CalendarScreen(
         containerColor = MaterialTheme.colorScheme.background,
         modifier = Modifier
             .fillMaxSize()
-            .padding(WindowInsets.systemBars.asPaddingValues()),
+            .padding(bottom = 0.dp),
         content = { paddingValues ->
             val sessionList = sessionViewModel.getAllSessions
                 .collectAsState(initial = emptyList())
@@ -526,111 +529,122 @@ fun CalendarScreen(
                         else -> emptyList()
                     }
 
-                    centro1MorningHours.forEach { hora ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(hora)
-                            TextButton(
-                                onClick = {
-                                    val session = Session(
-                                        service = tipoSesion,
-                                        product = "Centro 1",
-                                        date = selectedDate!!.atTime(
-                                            hora.substringBefore(":").toInt(),
-                                            hora.substringAfter(":").toInt()
-                                        ).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
-                                        hour = hora,
-                                        professional = "Asignado por el sistema"
-                                    )
-                                    scope.launch {
-                                        sessionViewModel.insertSession(session)
-                                    }
-                                    showReservaDialog = false
-                                },
-                                modifier = Modifier
-                                    .border(
-                                        width = 1.dp,
-                                        color = when (tipoSesion) {
-                                            "Entrenamiento" -> Color(0xFF388E3C)
-                                            "Fisioterapia" -> Color(0xFF1976D2)
-                                            "Nutrición" -> Color(0xFFC62828)
-                                            else -> Color.Gray
-                                        },
-                                        shape = RoundedCornerShape(16.dp)
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    "Reservar",
-                                    color = when (tipoSesion) {
-                                        "Entrenamiento" -> Color(0xFF388E3C)
-                                        "Fisioterapia" -> Color(0xFF1976D2)
-                                        "Nutrición" -> Color(0xFFC62828)
-                                        else -> Color.Gray
-                                    },
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                    // Modificador común para los botones de hora
+                    val buttonModifier = Modifier
+                        .size(width = 96.dp, height = 48.dp)
+                        .padding(vertical = 4.dp)
+
+                    if (centro1MorningHours.isEmpty()) {
+                        Text("No hay horas disponibles.", modifier = Modifier.padding(vertical = 8.dp))
+                    } else {
+                        centro1MorningHours.chunked(3).forEach { rowHoras ->
+                            val rowWidth = when (rowHoras.size) {
+                                1 -> Arrangement.Start
+                                2 -> Arrangement.SpaceBetween
+                                else -> Arrangement.SpaceEvenly
                             }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp),
+                                horizontalArrangement = rowWidth,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                rowHoras.forEach { hora ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(width = 92.dp, height = 48.dp)
+                                            .border(
+                                                width = 1.dp,
+                                                color = when (tipoSesion) {
+                                                    "Entrenamiento" -> Color(0xFF388E3C)
+                                                    "Fisioterapia" -> Color(0xFF1976D2)
+                                                    "Nutrición" -> Color(0xFFC62828)
+                                                    else -> Color.Gray
+                                                },
+                                                shape = RoundedCornerShape(16.dp)
+                                            )
+                                            .clickable {
+                                                val session = Session(
+                                                    service = tipoSesion,
+                                                    product = "Centro 1",
+                                                    date = selectedDate!!.atTime(
+                                                        hora.substringBefore(":").toInt(),
+                                                        hora.substringAfter(":").toInt()
+                                                    ).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
+                                                    hour = hora,
+                                                    professional = "Asignado por el sistema"
+                                                )
+                                                scope.launch {
+                                                    sessionViewModel.insertSession(session)
+                                                }
+                                                showReservaDialog = false
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(text = hora)
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
                         }
                     }
 
                     Divider(modifier = Modifier.padding(vertical = 4.dp))
 
-                    centro1EveningHours.forEach { hora ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(hora)
-                            TextButton(
-                                onClick = {
-                                    val session = Session(
-                                        service = tipoSesion,
-                                        product = "Centro 1",
-                                        date = selectedDate!!.atTime(
-                                            hora.substringBefore(":").toInt(),
-                                            hora.substringAfter(":").toInt()
-                                        ).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
-                                        hour = hora,
-                                        professional = "Asignado por el sistema"
-                                    )
-                                    scope.launch {
-                                        sessionViewModel.insertSession(session)
-                                    }
-                                    showReservaDialog = false
-                                },
-                                modifier = Modifier
-                                    .border(
-                                        width = 1.dp,
-                                        color = when (tipoSesion) {
-                                            "Entrenamiento" -> Color(0xFF388E3C)
-                                            "Fisioterapia" -> Color(0xFF1976D2)
-                                            "Nutrición" -> Color(0xFFC62828)
-                                            else -> Color.Gray
-                                        },
-                                        shape = RoundedCornerShape(16.dp)
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    "Reservar",
-                                    color = when (tipoSesion) {
-                                        "Entrenamiento" -> Color(0xFF388E3C)
-                                        "Fisioterapia" -> Color(0xFF1976D2)
-                                        "Nutrición" -> Color(0xFFC62828)
-                                        else -> Color.Gray
-                                    },
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                    if (centro1EveningHours.isEmpty()) {
+                        Text("No hay horas disponibles.", modifier = Modifier.padding(vertical = 8.dp))
+                    } else {
+                        centro1EveningHours.chunked(3).forEach { rowHoras ->
+                            val rowWidth = when (rowHoras.size) {
+                                1 -> Arrangement.Start
+                                2 -> Arrangement.SpaceBetween
+                                else -> Arrangement.SpaceEvenly
                             }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp),
+                                horizontalArrangement = rowWidth,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                rowHoras.forEach { hora ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(width = 92.dp, height = 48.dp)
+                                            .border(
+                                                width = 1.dp,
+                                                color = when (tipoSesion) {
+                                                    "Entrenamiento" -> Color(0xFF388E3C)
+                                                    "Fisioterapia" -> Color(0xFF1976D2)
+                                                    "Nutrición" -> Color(0xFFC62828)
+                                                    else -> Color.Gray
+                                                },
+                                                shape = RoundedCornerShape(16.dp)
+                                            )
+                                            .clickable {
+                                                val session = Session(
+                                                    service = tipoSesion,
+                                                    product = "Centro 1",
+                                                    date = selectedDate!!.atTime(
+                                                        hora.substringBefore(":").toInt(),
+                                                        hora.substringAfter(":").toInt()
+                                                    ).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
+                                                    hour = hora,
+                                                    professional = "Asignado por el sistema"
+                                                )
+                                                scope.launch {
+                                                    sessionViewModel.insertSession(session)
+                                                }
+                                                showReservaDialog = false
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(text = hora)
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
                         }
                     }
 
@@ -649,56 +663,59 @@ fun CalendarScreen(
                     if (tipoSesion == "Nutrición") {
                         Text("No disponible para nutrición", color = Color.Gray)
                     } else {
-                        centro2Hours.forEach { hora ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(hora)
-                                TextButton(
-                                    onClick = {
-                                        val session = Session(
-                                            service = tipoSesion,
-                                            product = "Centro 2",
-                                            date = selectedDate!!.atTime(
-                                                hora.substringBefore(":").toInt(),
-                                                hora.substringAfter(":").toInt()
-                                            ).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
-                                            hour = hora,
-                                            professional = "Asignado por el sistema"
-                                        )
-                                        scope.launch {
-                                            sessionViewModel.insertSession(session)
-                                        }
-                                        showReservaDialog = false
-                                    },
-                                    modifier = Modifier
-                                        .border(
-                                            width = 1.dp,
-                                            color = when (tipoSesion) {
-                                                "Entrenamiento" -> Color(0xFF388E3C)
-                                                "Fisioterapia" -> Color(0xFF1976D2)
-                                                "Nutrición" -> Color(0xFFC62828)
-                                                else -> Color.Gray
-                                            },
-                                            shape = RoundedCornerShape(16.dp)
-                                        )
-                                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        "Reservar",
-                                        color = when (tipoSesion) {
-                                            "Entrenamiento" -> Color(0xFF388E3C)
-                                            "Fisioterapia" -> Color(0xFF1976D2)
-                                            "Nutrición" -> Color(0xFFC62828)
-                                            else -> Color.Gray
-                                        },
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
+                        if (centro2Hours.isEmpty()) {
+                            Text("No hay horas disponibles.", modifier = Modifier.padding(vertical = 8.dp))
+                        } else {
+                            centro2Hours.chunked(3).forEach { rowHoras ->
+                                val rowWidth = when (rowHoras.size) {
+                                    1 -> Arrangement.Start
+                                    2 -> Arrangement.SpaceBetween
+                                    else -> Arrangement.SpaceEvenly
                                 }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp),
+                                    horizontalArrangement = rowWidth,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    rowHoras.forEach { hora ->
+                                        Box(
+                                            modifier = Modifier
+                                                .size(width = 92.dp, height = 48.dp)
+                                                .border(
+                                                    width = 1.dp,
+                                                    color = when (tipoSesion) {
+                                                        "Entrenamiento" -> Color(0xFF388E3C)
+                                                        "Fisioterapia" -> Color(0xFF1976D2)
+                                                        "Nutrición" -> Color(0xFFC62828)
+                                                        else -> Color.Gray
+                                                    },
+                                                    shape = RoundedCornerShape(16.dp)
+                                                )
+                                                .clickable {
+                                                    val session = Session(
+                                                        service = tipoSesion,
+                                                        product = "Centro 2",
+                                                        date = selectedDate!!.atTime(
+                                                            hora.substringBefore(":").toInt(),
+                                                            hora.substringAfter(":").toInt()
+                                                        ).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
+                                                        hour = hora,
+                                                        professional = "Asignado por el sistema"
+                                                    )
+                                                    scope.launch {
+                                                        sessionViewModel.insertSession(session)
+                                                    }
+                                                    showReservaDialog = false
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(text = hora)
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
                             }
                         }
                     }
@@ -790,7 +807,7 @@ fun SessionItem(
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp)
             .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        border = BorderStroke(1.dp, Color(0xFFBDBDBD)),
         shape = RoundedCornerShape(16.dp)
     ) {
         // --- BEGIN NEW LAYOUT ---

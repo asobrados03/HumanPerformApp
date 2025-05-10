@@ -10,7 +10,9 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.humaneperformcenter.shared.data.model.User
+import com.humanperformcenter.NewProductScreen
+import com.humanperformcenter.NewBlogScreen
+import com.humanperformcenter.data.User
 import com.humanperformcenter.viewModels.BudgetViewModel
 import com.humanperformcenter.viewModels.CategoryViewModel
 import com.humanperformcenter.viewModels.TransactionViewModel
@@ -37,7 +39,12 @@ fun Navigation(
         startDestination = Screen.DashboardScreen.route
     ) {
         composable(route = Screen.DashboardScreen.route) {
-            DashboardScreen(navController, transactionViewModel)
+            NewProductScreen(
+                navController = navController,
+                sessionViewModel = sessionViewModel,
+                categoryViewModel = categoryViewModel,
+                onPlaySound = onPlaySound
+            )
         }
         composable(route = Screen.UserScreen.route) {
             UserScreen(
@@ -118,10 +125,7 @@ fun Navigation(
             )
         }
         composable(route = Screen.StaticsScreen.route) {
-            StaticsScreen(
-                navController = navController,
-                transactionViewModel = transactionViewModel
-            )
+            NewBlogScreen(navController = navController)
         }
     }
 }

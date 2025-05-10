@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.humanperformcenter.ui.components.AppCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -175,13 +176,9 @@ fun UserScreen(
 
             Column {
                 items.forEach { (option, title) ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                            .clickable { onMenuClick(option) },
-                        shape = RoundedCornerShape(8.dp),
-                        elevation = cardElevation(defaultElevation = 2.dp)
+                    AppCard(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        onClick = { onMenuClick(option) }
                     ) {
                         Row(
                             modifier = Modifier
