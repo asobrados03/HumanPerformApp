@@ -12,18 +12,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.humanperformcenter.NewProductScreen
 import com.humanperformcenter.NewBlogScreen
-import com.humanperformcenter.data.User
-import com.humanperformcenter.viewModels.BudgetViewModel
-import com.humanperformcenter.viewModels.CategoryViewModel
-import com.humanperformcenter.viewModels.TransactionViewModel
+import com.humaneperformcenter.shared.data.model.User
 import com.humanperformcenter.viewModels.SessionViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Navigation(
-    transactionViewModel: TransactionViewModel = viewModel(),
-    categoryViewModel: CategoryViewModel = viewModel(),
-    budgetViewModel: BudgetViewModel = viewModel(),
     sessionViewModel: SessionViewModel,
     navController: NavHostController,
     onPlaySound: (Int) -> Unit
@@ -42,19 +36,24 @@ fun Navigation(
             NewProductScreen(
                 navController = navController,
                 sessionViewModel = sessionViewModel,
-                categoryViewModel = categoryViewModel,
                 onPlaySound = onPlaySound
             )
         }
         composable(route = Screen.UserScreen.route) {
             UserScreen(
-                navController   = navController,
-                userName        = "Usuario de Prueba",            // cadena vacía
-                userEmail       = "prueba@ejemplo.com",            // cadena vacía
-                userPhone       = "+34 616 171 171",            // cadena vacía
-                userPhotoUrl    = null,          // URL nula
-                balance         = 0.0,           // saldo a cero
-                onEditProfile   = { navController.navigate(Screen.EditProfileScreen.route) },
+                navController = navController,
+                user = User(
+                    id = "",
+                    name = "Usuario de Prueba",
+                    lastName = "",
+                    email = "prueba@ejemplo.com",
+                    phone = "+34 616 171 171",
+                    dateOfBirth = "",
+                    gender = "",
+                    profilePictureUrl = "",
+                    balance = 0.0
+                ),
+                onEditProfile = { navController.navigate(Screen.EditProfileScreen.route) },
                 onMenuClick = { option ->
                     when (option) {
                         MenuOption.FAVORITOS -> navController.navigate(Screen.FavoritesScreen.route)
@@ -68,7 +67,17 @@ fun Navigation(
         }
         composable(route = Screen.EditProfileScreen.route) {
             EditProfileScreen(
-                user = User("", "", "", "", "", "", "", "", 0.0),
+                user = User(
+                    id = "",
+                    name = "",
+                    lastName = "",
+                    email = "",
+                    phone = "",
+                    dateOfBirth = "",
+                    gender = "",
+                    profilePictureUrl = "",
+                    balance = 0.0
+                ),
                 onSave = { updatedUser ->
                     // Aquí puedes actualizar el ViewModel, hacer llamada a API, etc.
                     navController.popBackStack() // Vuelve a la pantalla anterior
@@ -83,44 +92,10 @@ fun Navigation(
                 navController   = navController
             )
         }
-        composable(route = Screen.AddEditBudgetScreen.route + "/{id}",
-            arguments = listOf(
-                navArgument("id") {
-                    type = NavType.LongType
-                    defaultValue = 0L
-                    nullable = false
-                }
-            )) { entry ->
-            val id = if (entry.arguments != null) entry.arguments!!.getLong("id") else 0L
-            AddEditDetailBudgetView(
-                id = id,
-                budgetViewModel = budgetViewModel,
-                categoryViewModel = categoryViewModel,
-                transactionViewModel = transactionViewModel,
-                navController = navController
-            )
-        }
-        composable(route = Screen.AddEditTransactionScreen.route + "/{id}",
-            arguments = listOf(
-                navArgument("id") {
-                    type = NavType.LongType
-                    defaultValue = 0L
-                    nullable = false
-                }
-            )) { entry ->
-            val id = if (entry.arguments != null) entry.arguments!!.getLong("id") else 0L
-            AddEditDetailTransactionView(
-                id = id,
-                transactionViewModel = transactionViewModel,
-                categoryViewModel = categoryViewModel,
-                navController = navController
-            )
-        }
         composable(route = Screen.HistoryScreen.route){
             CalendarScreen(
                 navController = navController,
                 sessionViewModel = sessionViewModel,
-                categoryViewModel = categoryViewModel,
                 onPlaySound = onPlaySound
             )
         }

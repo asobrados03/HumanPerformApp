@@ -32,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.humanperformcenter.viewModels.CategoryViewModel
 import com.humanperformcenter.viewModels.SessionViewModel
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.foundation.lazy.items
@@ -46,7 +45,6 @@ import com.humanperformcenter.ui.components.AppCard
 fun NewProductScreen(
     navController: NavHostController,
     sessionViewModel: SessionViewModel,
-    categoryViewModel: CategoryViewModel,
     onPlaySound: (Int) -> Unit
 ) {
     val services = listOf(

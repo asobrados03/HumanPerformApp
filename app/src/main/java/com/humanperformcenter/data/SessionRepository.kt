@@ -1,12 +1,10 @@
 package com.humanperformcenter.data
 
-import com.humaneperformcenter.shared.data.model.Session
+import com.humanperformcenter.data.Session
 import kotlinx.coroutines.flow.Flow
 
-class SessionRepository(/*private val dao: SessionDao*/) {
-    /*fun getAllSessions(): Flow<List<Session>> = dao.getAllSessions()
-
-    suspend fun insert(session: Session) = dao.insert(session)
-
-    suspend fun delete(session: Session) = dao.delete(session)*/
+class SessionRepository(private val sessionDao: SessionDao) {
+    suspend fun insert(session: Session) = sessionDao.insert(session)
+    suspend fun delete(session: Session) = sessionDao.delete(session)
+    fun getAllSessions() = sessionDao.getAllSessions()
 }

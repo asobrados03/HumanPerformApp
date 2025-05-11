@@ -65,9 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.humaneperformcenter.shared.data.model.Budget
-import com.humaneperformcenter.shared.data.model.Session
-import com.humanperformcenter.viewModels.BudgetViewModel
-import com.humanperformcenter.viewModels.CategoryViewModel
+import com.humanperformcenter.data.Session
 import com.humanperformcenter.viewModels.SessionViewModel
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -96,12 +94,11 @@ import com.humanperformcenter.ui.components.AppCard
 fun CalendarScreen(
     navController: NavHostController,
     sessionViewModel: SessionViewModel,
-    categoryViewModel: CategoryViewModel,
     onPlaySound: (Int) -> Unit
 ) {
     // Estado para el diálogo de eliminación
     var showDialog by remember { mutableStateOf(false) }
-    var sessionToDelete by remember { mutableStateOf<Session?>(null) }
+    var sessionToDelete by remember { mutableStateOf<com.humanperformcenter.data.Session?>(null) }
 
     // Estado para el diálogo de reserva y tipo de sesión
     var showReservaDialog by remember { mutableStateOf(false) }
@@ -444,7 +441,6 @@ fun CalendarScreen(
                             content = {
                                 SessionItem(
                                     session = session,
-                                    categoryViewModel = categoryViewModel,
                                     onClick = {}, // Added missing parameter
                                     showDialog = showDialog,
                                     setShowDialog = { showDialog = it },
@@ -758,43 +754,16 @@ fun CalendarScreen(
 
 
 
-// Updated: Transaction? -> Session?
-suspend fun checkIfExistBudgetAssociatedWithTransaction(
-    budgetViewModel: BudgetViewModel,
-    transactionToDelete: Session?
-): Budget? {
-    // Convertir el timestamp (la fecha de la transacción) a un objeto Instant
-    val instant = transactionToDelete?.date?.let {
-        Instant.fromEpochMilliseconds(it)
-    }
-
-    // Convertir Instant a LocalDateTime usando una zona horaria
-    val localDateTime =
-        instant?.toLocalDateTime(TimeZone.currentSystemDefault())
-
-    // Extraer el mes y el año
-    val month: Int = localDateTime?.monthNumber ?: 0
-    val monthFormatted = month.toString()
-        .padStart(2, '0')
-
-    val year: Int = localDateTime?.year ?: 0
-
-    // No category in Session, so we cannot get a budget for a category
-    val posibleBudget = null
-
-    return posibleBudget
-}
 
 @Composable
 fun SessionItem(
-    session: Session,
-    categoryViewModel: CategoryViewModel,
+    session: com.humanperformcenter.data.Session,
     onClick: () -> Unit,
     // The following are needed for delete dialog logic:
     showDialog: Boolean = false,
     setShowDialog: ((Boolean) -> Unit)? = null,
-    sessionToDelete: Session? = null,
-    setSessionToDelete: ((Session?) -> Unit)? = null
+    sessionToDelete: com.humanperformcenter.data.Session? = null,
+    setSessionToDelete: ((com.humanperformcenter.data.Session?) -> Unit)? = null
 ) {
     // Color según el tipo de sesión
     val colorTipo = when (session.service?.lowercase()) {

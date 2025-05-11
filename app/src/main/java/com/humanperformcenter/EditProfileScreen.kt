@@ -22,11 +22,15 @@ fun EditProfileScreen(
     user: User,
     onSave: (User) -> Unit
 ) {
-    var name by remember { mutableStateOf(user.name) }
-    var lastName by remember { mutableStateOf(user.lastName) }
-    var dob by remember { mutableStateOf(user.dateOfBirth) }
-    var gender by remember { mutableStateOf(user.gender) }
-    var password by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf<String>(user.name) }
+    var lastName by remember { mutableStateOf<String>(user.lastName) }
+    var dob by remember { mutableStateOf<String>(user.dateOfBirth) }
+    var gender by remember { mutableStateOf<String>(user.gender) }
+    var password by remember { mutableStateOf<String>("") }
+    var profilePictureUrl by remember { mutableStateOf(user.profilePictureUrl ?: "") }
+    var address by remember { mutableStateOf("") }
+    var role by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
 
     Spacer(Modifier.width(20.dp))
 
@@ -42,8 +46,20 @@ fun EditProfileScreen(
             label = { Text("Nueva contraseña") },
             visualTransformation = PasswordVisualTransformation()
         )
+        OutlinedTextField(value = profilePictureUrl, onValueChange = { profilePictureUrl = it }, label = { Text("URL de foto de perfil") })
+        OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Dirección") })
+        OutlinedTextField(value = role, onValueChange = { role = it }, label = { Text("Rol") })
+        OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descripción") })
         Button(onClick = {
-            onSave(user.copy(name = name, lastName = lastName, dateOfBirth = dob, gender = gender))
+            onSave(
+                user.copy(
+                    name = name,
+                    lastName = lastName,
+                    dateOfBirth = dob,
+                    gender = gender,
+                    profilePictureUrl = profilePictureUrl
+                )
+            )
         }) {
             Text("Guardar")
         }

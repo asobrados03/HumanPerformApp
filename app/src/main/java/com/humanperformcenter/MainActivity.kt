@@ -10,6 +10,7 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.humanperformcenter.data.SessionRepository
+import com.humanperformcenter.data.SessionDatabase
 import com.humanperformcenter.ui.theme.HumanPerformAppTheme
 import com.humanperformcenter.viewModels.SessionViewModel
 import com.humanperformcenter.viewModels.SessionViewModelFactory
@@ -22,6 +23,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val context = this
+            val sessionDao = SessionDatabase.getDatabase(context).sessionDao()
+            val sessionRepository = SessionRepository(sessionDao)
             val sessionViewModel: SessionViewModel = viewModel(factory = SessionViewModelFactory(sessionRepository))
             HumanPerformAppTheme {
                 Navigation(

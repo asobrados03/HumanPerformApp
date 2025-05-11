@@ -47,11 +47,7 @@ import com.humanperformcenter.ui.components.AppCard
 @Composable
 fun UserScreen(
     navController: NavHostController,
-    userName: String,
-    userEmail: String,
-    userPhone: String,
-    userPhotoUrl: String?,       // si la foto viene de la red, o null para recurso local
-    balance: Double,
+    user: com.humaneperformcenter.shared.data.model.User,
     onEditProfile: () -> Unit,
     onMenuClick: (MenuOption) -> Unit
 ) {
@@ -99,42 +95,22 @@ fun UserScreen(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     // foto de perfil
-                    if (userPhotoUrl != null) {
-                        // Carga remota con Coil
-                        AsyncImage(
-                            model = userPhotoUrl,
-                            contentDescription = "Foto de usuario",
-                            modifier = Modifier
-                                .size(80.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, Color.White, CircleShape)
-                        )
-                    } else {
-                        // recurso local
-                        Image(
-                            painter = painterResource(R.drawable.avatar_default),
-                            contentDescription = "Avatar por defecto",
-                            modifier = Modifier
-                                .size(80.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, Color.White, CircleShape)
-                        )
-                    }
+                    UserProfileImage(user.profilePictureUrl)
 
                     Spacer(Modifier.height(12.dp))
 
                     Text(
-                        text = userName,
+                        text = user.name,
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = userEmail,
+                        text = user.email,
                         color = Color.White.copy(alpha = 0.8f)
                     )
                     Text(
-                        text = userPhone,
+                        text = user.phone,
                         color = Color.White.copy(alpha = 0.8f)
                     )
 
@@ -147,7 +123,7 @@ fun UserScreen(
                         elevation = cardElevation(defaultElevation = 4.dp)
                     ) {
                         Text(
-                            text = "Saldo: € ${"%.2f".format(balance)}",
+                            text = "Saldo: € ${"%.2f".format(user.balance)}",
                             Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             fontWeight = FontWeight.SemiBold
                         )
@@ -202,4 +178,27 @@ fun UserScreen(
 
 enum class MenuOption {
     FAVORITOS, CHAT, DOCUMENTO, PAGO, VER_PAGO
+}
+// Función reutilizable para mostrar la imagen de perfil del usuario
+@Composable
+fun UserProfileImage(photoUrl: String?) {
+    if (!photoUrl.isNullOrBlank()) {
+        AsyncImage(
+            model = photoUrl,
+            contentDescription = "Foto de usuario",
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .border(2.dp, Color.White, CircleShape)
+        )
+    } else {
+        Image(
+            painter = painterResource(R.drawable.avatar_default),
+            contentDescription = "Avatar por defecto",
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .border(2.dp, Color.White, CircleShape)
+        )
+    }
 }
