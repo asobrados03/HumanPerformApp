@@ -4,14 +4,9 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import com.humanperformcenter.NewProductScreen
-import com.humanperformcenter.NewBlogScreen
 import com.humaneperformcenter.shared.data.model.User
 import com.humanperformcenter.viewModels.SessionViewModel
 
@@ -30,8 +25,30 @@ fun Navigation(
 
     NavHost(
         navController = navController,
-        startDestination = Screen.DashboardScreen.route
+        startDestination = if (sessionViewModel.isLoggedIn()) Screen.DashboardScreen else Screen.LoginScreen
     ) {
+        composable(route = Screen.RegisterScreen.route) {
+            RegisterScreen(
+                navController = navController,
+                onRegistroExitoso = {
+                    navController.navigate(Screen.LoginScreen) {
+                        popUpTo(Screen.RegisterScreen) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = { /* TODO */ }
+            )
+        }
+        composable(route = Screen.LoginScreen.route) {
+            LoginScreen(
+                navController = navController,
+                onLoginSuccess = {
+                    navController.navigate(Screen.DashboardScreen) {
+                        popUpTo(Screen.LoginScreen) { inclusive = true }
+                    }
+                },
+                onNavigateToRegister = { /* TODO */ }
+            )
+        }
         composable(route = Screen.DashboardScreen.route) {
             NewProductScreen(
                 navController = navController,

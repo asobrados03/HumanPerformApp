@@ -1,6 +1,4 @@
-package com.humaneperformcenter.shared.domain
-
-import com.humaneperformcenter.shared.data.model.Transaction
+package com.humaneperformcenter.shared.data.repository
 
 class TransactionRepository(/*private val transactionDao: TransactionDao*/) {
 /*

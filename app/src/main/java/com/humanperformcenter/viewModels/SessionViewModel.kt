@@ -22,4 +22,9 @@ class SessionViewModel(private val repository: SessionRepository) : ViewModel() 
             repository.delete(session)
         }
     }
+
+    fun isLoggedIn(): Boolean {
+        // Revisa si hay sesión iniciada (ej. token en base de datos, preferencia guardada, etc.)
+        return false
+    }
 }
