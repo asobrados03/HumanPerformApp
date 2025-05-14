@@ -19,9 +19,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 @Composable
 fun NavigationBar(navController: NavController) {
     val items = listOf(
-        NavItem(Screen.DashboardScreen.route, "Producto", R.drawable.exercise),
-        NavItem(Screen.HistoryScreen.route, "Calendario", R.drawable.calendar),
-        NavItem(Screen.StaticsScreen.route, "Blog", R.drawable.stories),
+        NavItem(Screen.NewProductScreen.route, "Producto", R.drawable.exercise),
+        NavItem(Screen.CalendarScreen.route, "Calendario", R.drawable.calendar),
+        NavItem(Screen.NewBlogScreen.route, "Blog", R.drawable.stories),
         NavItem(Screen.UserScreen.route, "Usuario", R.drawable.person)
     )
 

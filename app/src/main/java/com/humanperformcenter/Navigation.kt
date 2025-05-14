@@ -25,7 +25,8 @@ fun Navigation(
 
     NavHost(
         navController = navController,
-        startDestination = if (sessionViewModel.isLoggedIn()) Screen.DashboardScreen else Screen.LoginScreen
+        startDestination = if (sessionViewModel.isLoggedIn()) Screen.NewProductScreen.route
+        else Screen.LoginScreen.route
     ) {
         composable(route = Screen.RegisterScreen.route) {
             RegisterScreen(
@@ -42,14 +43,14 @@ fun Navigation(
             LoginScreen(
                 navController = navController,
                 onLoginSuccess = {
-                    navController.navigate(Screen.DashboardScreen) {
-                        popUpTo(Screen.LoginScreen) { inclusive = true }
+                    navController.navigate(Screen.NewProductScreen.route) {
+                        popUpTo(Screen.LoginScreen.route) { inclusive = true }
                     }
                 },
                 onNavigateToRegister = { /* TODO */ }
             )
         }
-        composable(route = Screen.DashboardScreen.route) {
+        composable(route = Screen.NewProductScreen.route) {
             NewProductScreen(
                 navController = navController,
                 sessionViewModel = sessionViewModel,
@@ -109,14 +110,14 @@ fun Navigation(
                 navController   = navController
             )
         }
-        composable(route = Screen.HistoryScreen.route){
+        composable(route = Screen.CalendarScreen.route){
             CalendarScreen(
                 navController = navController,
                 sessionViewModel = sessionViewModel,
                 onPlaySound = onPlaySound
             )
         }
-        composable(route = Screen.StaticsScreen.route) {
+        composable(route = Screen.NewBlogScreen.route) {
             NewBlogScreen(navController = navController)
         }
     }

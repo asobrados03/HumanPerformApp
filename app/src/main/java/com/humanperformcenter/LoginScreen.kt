@@ -1,18 +1,21 @@
 package com.humanperformcenter
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +54,7 @@ fun LoginScreen(navController: NavHostController,
     var remember by rememberSaveable { mutableStateOf(false) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()  // scope para lanzar corrutinas
+    var isLoading by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -78,10 +82,13 @@ fun LoginScreen(navController: NavHostController,
                 actions = {}
             )
         },
-        bottomBar = { NavigationBar(navController = navController) },
         modifier = Modifier.fillMaxSize()
-    ) { paddingValues ->
-        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+    ) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(paddingValues = padding),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text(text = "Acceso", style = MaterialTheme.typography.headlineMedium)
 
             OutlinedTextField(
@@ -109,19 +116,27 @@ fun LoginScreen(navController: NavHostController,
 
             errorMessage?.let { Text(text = it!!, color = MaterialTheme.colorScheme.error) }
 
-            Button(onClick = {
-                scope.launch {
-                    // Llamar a la función de login del repositorio KMM
-                    val resultado = AuthRepository.login(email, password)
-                    if (resultado.isSuccess) {
-                        // Guardar algo si "recordar" (ej. guardar token) - omitido por simplicidad
-                        onLoginSuccess()  // navegar a pantalla principal de la app
-                    } else {
-                        errorMessage = resultado.exceptionOrNull()?.message ?: "Error desconocido"
+            Button(
+                onClick = {
+                    scope.launch {
+                        isLoading = true
+                        val resultado = AuthRepository.login(email, password)
+                        isLoading = false
+                        if (resultado.isSuccess) {
+                            onLoginSuccess() //error aquí
+                        } else {
+                            errorMessage = resultado.exceptionOrNull()?.message ?: "Error desconocido"
+                        }
                     }
+                },
+                enabled = !isLoading,
+                modifier = Modifier.padding(12.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                } else {
+                    Text("Acceso")
                 }
-            }, modifier = Modifier.fillMaxWidth()) {
-                Text("Acceso")
             }
 
             TextButton(onClick = { /* TODO: recuperar contraseña */ }) {

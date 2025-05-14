@@ -1,7 +1,7 @@
 package com.humaneperformcenter.shared.data.repository
 
 import com.humaneperformcenter.shared.data.model.ErrorResponse
-import com.humaneperformcenter.shared.data.model.LoginRequest
+import com.humaneperformcenter.shared.data.model.LoginResponse
 import com.humaneperformcenter.shared.data.model.RegisterRequest
 import com.humaneperformcenter.shared.data.model.UserResponse
 import com.humaneperformcenter.shared.data.network.ApiClient
@@ -13,23 +13,22 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 
 object AuthRepository {
-    suspend fun login(email: String, password: String): Result<UserResponse> {
+    suspend fun login(email: String, password: String): Result<LoginResponse> {
         return try {
-            val respuesta: UserResponse = ApiClient.httpClient.post("${ApiClient.baseUrl}/login") {
+            val response: LoginResponse = ApiClient.httpClient.post("${ApiClient.baseUrl}/login") {
                 contentType(ContentType.Application.Json)
-                setBody(LoginRequest(email, password))
-            }.body()  // deserializa directamente a UserResponse
-            Result.success(respuesta)
-        } catch (e: ClientRequestException) {
-            // Error 4XX del servidor (ej: credenciales incorrectas, datos inválidos)
-            // Podemos obtener el cuerpo de error si lo proporciona:
-            val errorMessage = try { e.response.body<ErrorResponse>().message } catch (_: Exception) { e.message }
-            Result.failure(Exception("Error de cliente: $errorMessage"))
+                setBody(mapOf("email" to email, "pass" to password))
+            }.body()
+            if (response.status == "success") {
+                Result.success(response)
+            } else {
+                Result.failure(Exception("Credenciales incorrectas"))
+            }
         } catch (e: Exception) {
-            // Otras excepciones (no hay conexión, servidor caído, etc.)
             Result.failure(e)
         }
     }
+
 
     suspend fun registrar(datos: RegisterRequest): Result<UserResponse> {
         return try {

@@ -17,5 +17,5 @@ object ApiClient {
         }
         expectSuccess = true  // lanza excepciones en respuestas no 2XX:contentReference[oaicite:11]{index=11}:contentReference[oaicite:12]{index=12}
     }
-    val baseUrl = "https://tu-servidor.api"  // URL base de la API
+    val baseUrl = "http://163.172.67.59:5001"  // URL base de la API
 }

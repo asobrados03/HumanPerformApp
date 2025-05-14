@@ -100,7 +100,6 @@ fun RegisterScreen(
                 actions = {}
             )
         },
-        bottomBar = { NavigationBar(navController = navController) },
         modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
 

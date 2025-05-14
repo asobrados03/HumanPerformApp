@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.8.22"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
 }
 
 kotlin {
