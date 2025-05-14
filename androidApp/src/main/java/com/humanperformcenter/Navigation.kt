@@ -32,8 +32,8 @@ fun Navigation(
             RegisterScreen(
                 navController = navController,
                 onRegistroExitoso = {
-                    navController.navigate(Screen.LoginScreen) {
-                        popUpTo(Screen.RegisterScreen) { inclusive = true }
+                    navController.navigate(Screen.LoginScreen.route) {
+                        popUpTo(Screen.RegisterScreen.route) { inclusive = true }
                     }
                 },
                 onNavigateToLogin = { /* TODO */ }

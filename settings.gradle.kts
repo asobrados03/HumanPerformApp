@@ -20,5 +20,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "HumanPerformApp"
-include(":app")
+include(":androidApp")
 include(":shared")
+include(":iosApp")
