@@ -26,11 +26,20 @@ fun Navigation(
     NavHost(
         navController = navController,
         startDestination = if (sessionViewModel.isLoggedIn()) Screen.NewProductScreen.route
-        else Screen.LoginScreen.route
+        else Screen.WelcomeScreen.route
     ) {
+        composable(Screen.WelcomeScreen.route) {
+            WelcomeScreen(
+                onNavigateToRegister = {
+                    navController.navigate(Screen.RegisterScreen.route)
+                },
+                onNavigateToLogin = {
+                    navController.navigate(Screen.LoginScreen.route)
+                }
+            )
+        }
         composable(route = Screen.RegisterScreen.route) {
             RegisterScreen(
-                navController = navController,
                 onRegistroExitoso = {
                     navController.navigate(Screen.LoginScreen.route) {
                         popUpTo(Screen.RegisterScreen.route) { inclusive = true }
@@ -41,7 +50,6 @@ fun Navigation(
         }
         composable(route = Screen.LoginScreen.route) {
             LoginScreen(
-                navController = navController,
                 onLoginSuccess = {
                     navController.navigate(Screen.NewProductScreen.route) {
                         popUpTo(Screen.LoginScreen.route) { inclusive = true }

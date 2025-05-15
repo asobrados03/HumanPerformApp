@@ -1,6 +1,7 @@
 package com.humanperformcenter
 
 sealed class Screen(val route: String) {
+    data object WelcomeScreen: Screen("welcome")
     data object RegisterScreen: Screen("register")
     data object LoginScreen: Screen("login")
     data object NewProductScreen: Screen("new_product")

@@ -1,51 +1,20 @@
 package com.humanperformcenter
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import com.humaneperformcenter.shared.data.model.RegisterRequest
 import com.humaneperformcenter.shared.data.repository.AuthRepository
 import kotlinx.coroutines.launch
@@ -54,193 +23,210 @@ import kotlinx.coroutines.launch
 @Composable
 fun RegisterScreen(
     onRegistroExitoso: () -> Unit,
-    onNavigateToLogin: () -> Unit,
-    navController: NavHostController
+    onNavigateToLogin: () -> Unit
 ) {
-    // Estados para cada campo del formulario:
+    // — estados base —
     var nombre by rememberSaveable { mutableStateOf("") }
     var apellidos by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var telefono by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var sexo by rememberSaveable { mutableStateOf("Selecciona sexo") }
-    var fechaNacimiento by rememberSaveable { mutableStateOf("") }
+    var fechaNacimientoText by rememberSaveable { mutableStateOf("") }
     var codigoPostal by rememberSaveable { mutableStateOf("") }
     var dni by rememberSaveable { mutableStateOf("") }
     var aceptoTerminos by rememberSaveable { mutableStateOf(false) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
 
-    // Lista de opciones de sexo, podría ser ["Masculino","Femenino","Otro"] etc.
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
+
+    // — sexo desplegable —
     val sexOptions = listOf("Masculino", "Femenino", "Otro")
+    var sexo by rememberSaveable { mutableStateOf(sexOptions[0]) }
+    var expandedSexo by rememberSaveable { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.logo),
-                            contentDescription = "Logo",
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .padding(start = 8.dp)
+    val scope = rememberCoroutineScope()
+    val scroll = rememberScrollState()
+
+    Scaffold { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(scroll)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Registro", style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.height(16.dp))
+
+            // Nombre / Apellidos / Email / Teléfono / Contraseña
+            OutlinedTextField(
+                value = nombre, onValueChange = { nombre = it },
+                label = { Text("Nombre") },
+                leadingIcon = { Icon(Icons.Default.Person, null) },
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = apellidos, onValueChange = { apellidos = it },
+                label = { Text("Apellidos") },
+                leadingIcon = { Icon(Icons.Default.Person, null) },
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = email, onValueChange = { email = it },
+                label = { Text("E-mail") },
+                leadingIcon = { Icon(Icons.Default.Email, null) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = telefono, onValueChange = { telefono = it },
+                label = { Text("Teléfono") },
+                leadingIcon = { Icon(Icons.Default.Phone, null) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Contraseña") },
+                leadingIcon = {
+                    Icon(Icons.Default.Lock, contentDescription = "Icono de contraseña")
+                },
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        val icon = if (passwordVisible) {
+                            Icons.Default.Visibility
+                        } else {
+                            Icons.Default.VisibilityOff
+                        }
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
                         )
                     }
                 },
-                colors = topAppBarColors(
-                    containerColor = Color(0xFFB71C1C), // Rojo fuerte, ajustable
-                    titleContentColor = Color.White
-                ),
-                navigationIcon = {},
-                actions = {}
+                visualTransformation = if (passwordVisible) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                modifier = Modifier.fillMaxWidth()
             )
-        },
-        modifier = Modifier.fillMaxSize()
-    ) { paddingValues ->
 
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            item { Text(text = "Registro", style = MaterialTheme.typography.headlineMedium) }
-            item {
+            Spacer(Modifier.height(8.dp))
+
+            // SEXO desplegable usando Material3 ExposedDropdownMenuBox
+            ExposedDropdownMenuBox(
+                expanded = expandedSexo,
+                onExpandedChange = { expandedSexo = it },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 OutlinedTextField(
-                    value = nombre,
-                    onValueChange = { nombre = it },
-                    label = { Text("Nombre") },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = apellidos,
-                    onValueChange = { apellidos = it },
-                    label = { Text("Apellidos") },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("E-mail") },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = telefono,
-                    onValueChange = { telefono = it },
-                    label = { Text("Teléfono") },
-                    leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Contraseña") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                    trailingIcon = { /* icono ojo toggling visualTransformation */ },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-                )
-            }
-            item {
-                // Campo Sexo como un menú desplegable (dropdown menu)
-                var expanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-                    OutlinedTextField(
-                        value = sexo,
-                        onValueChange = {},
-                        label = { Text("Sexo") },
-                        readOnly = true,
-                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        sexOptions.forEach { option ->
-                            DropdownMenuItem(text = { Text(option) }, onClick = {
-                                sexo = option
-                                expanded = false
-                            })
-                        }
-                    }
-                }
-            }
-            item {
-                // Fecha de nacimiento - se podría usar un DatePicker dialog
-                OutlinedTextField(
-                    value = fechaNacimiento,
-                    onValueChange = { fechaNacimiento = it },
-                    label = { Text("Fecha de Nacimiento (YYYY-MM-DD)") },
-                    leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
-                    // En una implementación real, al hacer click podríamos abrir un DatePicker dialog
+                    value = sexo,
+                    onValueChange = {},
+                    leadingIcon = { Icon(Icons.Default.Cloud, null) },
+                    label = { Text("Sexo") },
                     readOnly = true,
-                    modifier = Modifier.clickable {
-                        // TODO: mostrar DatePicker dialog y actualizar fechaNacimiento
-                    }
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = codigoPostal,
-                    onValueChange = { codigoPostal = it },
-                    label = { Text("Código Postal") },
-                    leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = dni,
-                    onValueChange = { dni = it },
-                    label = { Text("DNI") },
-                    leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null) }
-                )
-            }
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = aceptoTerminos, onCheckedChange = { aceptoTerminos = it })
-                    Text("Acepto los términos y política de privacidad")
-                }
-            }
-            item {
-                if (errorMessage != null) {
-                    Text(text = errorMessage!!, color = MaterialTheme.colorScheme.error)
-                }
-            }
-            item {
-                Button(
-                    onClick = {
-                        // Validar campos antes de enviar
-                        if (!aceptoTerminos) {
-                            errorMessage = "Debes aceptar los términos para registrarte"
-                            return@Button
-                        }
-                        scope.launch {
-                            val request = RegisterRequest(nombre, apellidos, email, telefono, password, sexo, fechaNacimiento, codigoPostal, dni)
-                            val resultado = AuthRepository.registrar(request)
-                            if (resultado.isSuccess) {
-                                onRegistroExitoso()
-                            } else {
-                                errorMessage = resultado.exceptionOrNull()?.message ?: "Error en registro"
-                            }
-                        }
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSexo)
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedSexo,
+                    onDismissRequest = { expandedSexo = false }
                 ) {
-                    Text("Registro")
+                    sexOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option) },
+                            onClick = {
+                                sexo = option
+                                expandedSexo = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
                 }
             }
-            item {
-                TextButton(onClick = { onNavigateToLogin() }) {
-                    Text("¿Ya tienes una cuenta? Acceso")
-                }
+
+            Spacer(Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = fechaNacimientoText,
+                onValueChange = { new ->
+                    // sólo dígitos, máximo 8 (ddMMyyyy)
+                    val digits = new.filter { it.isDigit() }.take(8)
+                    fechaNacimientoText = digits
+                },
+                label = { Text("Fecha (dd/MM/yyyy)") },
+                leadingIcon = { Icon(Icons.Default.CalendarToday, null) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                visualTransformation = DateVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+
+            Spacer(Modifier.height(8.dp))
+
+            // Código postal / DNI
+            OutlinedTextField(
+                value = codigoPostal, onValueChange = { codigoPostal = it },
+                label = { Text("Código Postal") },
+                leadingIcon = { Icon(Icons.Default.LocationOn, null) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = dni, onValueChange = { dni = it },
+                label = { Text("DNI") },
+                leadingIcon = { Icon(Icons.Default.Badge, null) },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = aceptoTerminos, onCheckedChange = { aceptoTerminos = it })
+                Text("Acepto términos y política de privacidad")
+            }
+
+            errorMessage?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    if (!aceptoTerminos) {
+                        errorMessage = "Debes aceptar los términos"
+                        return@Button
+                    }
+                    scope.launch {
+                        val req = RegisterRequest(
+                            nombre, apellidos, email, telefono,
+                            password, sexo,
+                            fechaNacimientoText,
+                            codigoPostal, dni
+                        )
+                        val res = AuthRepository.registrar(req)
+                        if (res.isSuccess) onRegistroExitoso()
+                        else errorMessage = res.exceptionOrNull()?.message
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Registro")
+            }
+
+            TextButton(onClick = onNavigateToLogin) {
+                Text("¿Ya tienes una cuenta? Acceso")
             }
         }
     }
