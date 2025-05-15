@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.humanperformcenter.R
 
 @Composable
 fun WelcomeScreen(

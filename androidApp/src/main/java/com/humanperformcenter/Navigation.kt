@@ -8,9 +8,18 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.humaneperformcenter.shared.data.model.User
+import com.humanperformcenter.ui.screens.CalendarScreen
+import com.humanperformcenter.ui.screens.EditProfileScreen
+import com.humanperformcenter.ui.screens.FavoritesScreen
+import com.humanperformcenter.ui.screens.LoginScreen
+import com.humanperformcenter.ui.screens.MenuOption
+import com.humanperformcenter.ui.screens.NewBlogScreen
+import com.humanperformcenter.ui.screens.NewProductScreen
+import com.humanperformcenter.ui.screens.RegisterScreen
+import com.humanperformcenter.ui.screens.UserScreen
+import com.humanperformcenter.ui.screens.WelcomeScreen
 import com.humanperformcenter.viewModels.SessionViewModel
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Navigation(
     sessionViewModel: SessionViewModel,
@@ -83,10 +92,10 @@ fun Navigation(
                 onMenuClick = { option ->
                     when (option) {
                         MenuOption.FAVORITOS -> navController.navigate(Screen.FavoritesScreen.route)
-                        MenuOption.CHAT      -> navController.navigate(Screen.ChatScreen.route)
+                        MenuOption.CHAT -> navController.navigate(Screen.ChatScreen.route)
                         MenuOption.DOCUMENTO -> navController.navigate(Screen.DocumentScreen.route)
-                        MenuOption.PAGO      -> navController.navigate(Screen.PaymentScreen.route)
-                        MenuOption.VER_PAGO  -> navController.navigate(Screen.ViewPaymentScreen.route)
+                        MenuOption.PAGO -> navController.navigate(Screen.PaymentScreen.route)
+                        MenuOption.VER_PAGO -> navController.navigate(Screen.ViewPaymentScreen.route)
                     }
                 }
             )
@@ -115,7 +124,7 @@ fun Navigation(
                 onSelect = { prof ->
                     // Aquí podrías navegar a "detalle de profe" u otra acción
                 },
-                navController   = navController
+                navController = navController
             )
         }
         composable(route = Screen.CalendarScreen.route){

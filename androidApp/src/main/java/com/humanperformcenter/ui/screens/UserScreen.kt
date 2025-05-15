@@ -1,9 +1,8 @@
-package com.humanperformcenter
+package com.humanperformcenter.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,13 +40,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.humaneperformcenter.shared.data.model.User
+import com.humanperformcenter.NavigationBar
+import com.humanperformcenter.R
+import com.humanperformcenter.Screen
 import com.humanperformcenter.ui.components.AppCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserScreen(
     navController: NavHostController,
-    user: com.humaneperformcenter.shared.data.model.User,
+    user: User,
     onEditProfile: () -> Unit,
     onMenuClick: (MenuOption) -> Unit
 ) {

@@ -12,7 +12,7 @@ kotlin {
     androidLibrary {
         namespace = "com.humaneperformcenter.shared"
         compileSdk = 35
-        minSdk = 24
+        minSdk = 26
 
         withHostTestBuilder {
         }

@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.ui.screens
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

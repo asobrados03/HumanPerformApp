@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,6 +17,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.humaneperformcenter.shared.data.model.RegisterRequest
 import com.humaneperformcenter.shared.data.repository.AuthRepository
+import com.humanperformcenter.DateVisualTransformation
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

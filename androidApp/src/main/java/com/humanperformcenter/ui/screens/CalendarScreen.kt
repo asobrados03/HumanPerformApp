@@ -1,57 +1,61 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
-package com.humanperformcenter
 
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.platform.LocalContext
-import android.os.Build
-import androidx.annotation.RequiresApi
+package com.humanperformcenter.ui.screens
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowLeft
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowRight
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.border
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,12 +63,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.humaneperformcenter.shared.data.model.Budget
+import com.humanperformcenter.NavigationBar
+import com.humanperformcenter.R
 import com.humanperformcenter.data.Session
 import com.humanperformcenter.viewModels.SessionViewModel
 import kotlinx.coroutines.launch
@@ -74,22 +81,10 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
-import com.humanperformcenter.ui.components.AppCard
+import kotlinx.datetime.toLocalDateTime
 
-
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarScreen(
     navController: NavHostController,
@@ -98,7 +93,7 @@ fun CalendarScreen(
 ) {
     // Estado para el diálogo de eliminación
     var showDialog by remember { mutableStateOf(false) }
-    var sessionToDelete by remember { mutableStateOf<com.humanperformcenter.data.Session?>(null) }
+    var sessionToDelete by remember { mutableStateOf<Session?>(null) }
 
     // Estado para el diálogo de reserva y tipo de sesión
     var showReservaDialog by remember { mutableStateOf(false) }
@@ -162,7 +157,7 @@ fun CalendarScreen(
 
             // Estados para mes y año mostrados (navegación)
             var displayedMonth by remember { mutableStateOf(currentMonth) }
-            var displayedYear by remember { mutableStateOf(currentYear) }
+            var displayedYear by remember { mutableIntStateOf(currentYear) }
 
             // Nombres de los meses en español
             val monthNames = mapOf(
@@ -211,7 +206,7 @@ fun CalendarScreen(
                 ) {
                     // Botón mes anterior
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.Default.KeyboardDoubleArrowLeft,
                         contentDescription = "Mes anterior",
                         tint = Color.Gray,
                         modifier = Modifier
@@ -223,7 +218,7 @@ fun CalendarScreen(
                                     displayedMonth = Month.DECEMBER
                                     displayedYear -= 1
                                 } else {
-                                    displayedMonth = Month.values()[prevMonthNumber - 1]
+                                    displayedMonth = Month.entries[prevMonthNumber - 1]
                                 }
                             }
                             .padding(end = 8.dp)
@@ -239,7 +234,7 @@ fun CalendarScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     // Botón mes siguiente
                     Icon(
-                        imageVector = Icons.Default.ArrowForward,
+                        imageVector = Icons.Default.KeyboardDoubleArrowRight,
                         contentDescription = "Mes siguiente",
                         tint = Color.Gray,
                         modifier = Modifier
@@ -251,7 +246,7 @@ fun CalendarScreen(
                                     displayedMonth = Month.JANUARY
                                     displayedYear += 1
                                 } else {
-                                    displayedMonth = Month.values()[nextMonthNumber - 1]
+                                    displayedMonth = Month.entries[nextMonthNumber - 1]
                                 }
                             }
                             .padding(start = 8.dp)
@@ -302,7 +297,7 @@ fun CalendarScreen(
                             val dayNumber = cellIndex - offset + 1
                             if (cellIndex < offset || dayNumber > daysInMonth) {
                                 val dayText = if (cellIndex < offset) {
-                                    val prevMonth = if (displayedMonth.ordinal == 0) Month.DECEMBER else Month.values()[displayedMonth.ordinal - 1]
+                                    val prevMonth = if (displayedMonth.ordinal == 0) Month.DECEMBER else Month.entries[displayedMonth.ordinal - 1]
                                     val prevYear = if (displayedMonth.ordinal == 0) displayedYear - 1 else displayedYear
                                     val daysInPrevMonth = prevMonth.length((prevYear % 4 == 0) && (prevYear % 100 != 0 || prevYear % 400 == 0))
                                     (daysInPrevMonth - (offset - cellIndex) + 1).toString()
@@ -470,9 +465,9 @@ fun CalendarScreen(
                         Column {
                             listOf("Entrenamiento", "Fisioterapia", "Nutrición").forEach { tipo ->
                                 val selected = tipoSesion == tipo
-                                androidx.compose.material3.Button(
+                                Button(
                                     onClick = { tipoSesion = tipo },
-                                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                    colors = ButtonDefaults.buttonColors(
                                         containerColor = when {
                                             selected && tipo == "Entrenamiento" -> Color(0xFF4CAF50)
                                             selected && tipo == "Fisioterapia" -> Color(0xFF2196F3)
@@ -588,7 +583,7 @@ fun CalendarScreen(
                         }
                     }
 
-                    Divider(modifier = Modifier.padding(vertical = 4.dp))
+                    Spacer(modifier = Modifier.padding(vertical = 4.dp))
 
                     if (centro1EveningHours.isEmpty()) {
                         Text("No hay horas disponibles.", modifier = Modifier.padding(vertical = 8.dp))
@@ -648,7 +643,7 @@ fun CalendarScreen(
                         }
                     }
 
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    Spacer(modifier = Modifier.padding(vertical = 8.dp))
 
                     // Centro 2: El sotillo
                     Text("Centro 2: El sotillo", fontWeight = FontWeight.Bold)
@@ -763,16 +758,16 @@ fun CalendarScreen(
 
 @Composable
 fun SessionItem(
-    session: com.humanperformcenter.data.Session,
+    session: Session,
     onClick: () -> Unit,
     // The following are needed for delete dialog logic:
     showDialog: Boolean = false,
     setShowDialog: ((Boolean) -> Unit)? = null,
-    sessionToDelete: com.humanperformcenter.data.Session? = null,
-    setSessionToDelete: ((com.humanperformcenter.data.Session?) -> Unit)? = null
+    sessionToDelete: Session? = null,
+    setSessionToDelete: ((Session?) -> Unit)? = null
 ) {
     // Color según el tipo de sesión
-    val colorTipo = when (session.service?.lowercase()) {
+    val colorTipo = when (session.service.lowercase()) {
         "entrenamiento" -> Color(0xFF4CAF50) // Verde
         "fisioterapia" -> Color(0xFF2196F3)  // Azul
         else -> MaterialTheme.colorScheme.primary
@@ -816,11 +811,11 @@ fun SessionItem(
                     .weight(0.6f)
             ) {
                 Text(
-                    text = (session.service?.uppercase() ?: "SERVICIO DESCONOCIDO"),
+                    text = session.service.uppercase(),
                     color = colorTipo,
                     style = MaterialTheme.typography.bodyMedium
                 )
-                if (!session.product.isNullOrBlank()) {
+                if (session.product.isNotBlank()) {
                     Text(
                         text = if (session.product == "Centro 1") "Centro 1: El cerro" else "Centro 2: El sotillo",
                         style = MaterialTheme.typography.bodyMedium,

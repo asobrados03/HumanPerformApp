@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +39,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.humaneperformcenter.shared.data.repository.AuthRepository
+import com.humanperformcenter.R
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -114,7 +115,7 @@ fun LoginScreen(
                 Text("Recordar contraseña")
             }
 
-            errorMessage?.let { Text(text = it!!, color = MaterialTheme.colorScheme.error) }
+            errorMessage?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
 
             Button(
                 onClick = {

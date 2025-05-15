@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -33,6 +33,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.humaneperformcenter.shared.data.model.Professional
 import com.humaneperformcenter.shared.data.model.ProfessionalType
+import com.humanperformcenter.NavigationBar
+import com.humanperformcenter.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
