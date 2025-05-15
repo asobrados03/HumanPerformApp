@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.humanperformcenter.ui.screens
 
 import androidx.compose.foundation.Image
@@ -37,6 +35,7 @@ import com.humanperformcenter.ui.components.AppCard
 
 data class BlogEntry(val title: String, val date: String?)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewBlogScreen(navController: NavHostController) {
     val blogEntries = listOf(

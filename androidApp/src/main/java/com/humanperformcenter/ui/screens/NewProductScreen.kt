@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.humanperformcenter.ui.screens
 
 import androidx.compose.foundation.Image
@@ -36,6 +34,7 @@ import com.humanperformcenter.R
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.viewModels.SessionViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewProductScreen(
     navController: NavHostController,
