@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.humanperformcenter.LogoAppBar
 import com.humanperformcenter.NavigationBar
 import com.humanperformcenter.R
 import com.humanperformcenter.SessionItem
@@ -99,28 +100,9 @@ fun CalendarScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.logo),
-                            contentDescription = "Logo",
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .padding(start = 8.dp)
-                        )
-                    }
-                },
-                colors = topAppBarColors(
-                    containerColor = Color(0xFFB71C1C), // Rojo fuerte, ajustable
-                    titleContentColor = Color.White
-                ),
-                navigationIcon = {},
-                actions = {}
+            LogoAppBar(
+                showBackArrow = false,
+                onBackNavClicked = { navController.popBackStack() }
             )
         },
         bottomBar = { NavigationBar(navController = navController) },

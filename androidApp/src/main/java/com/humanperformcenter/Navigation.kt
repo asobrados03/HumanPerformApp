@@ -38,10 +38,14 @@ fun Navigation(
         composable(Screen.WelcomeScreen.route) {
             WelcomeScreen(
                 onNavigateToRegister = {
-                    navController.navigate(Screen.RegisterScreen.route)
+                    navController.navigate(Screen.RegisterScreen.route) {
+                        popUpTo(Screen.WelcomeScreen.route) { inclusive = true }
+                    }
                 },
                 onNavigateToLogin = {
-                    navController.navigate(Screen.LoginScreen.route)
+                    navController.navigate(Screen.LoginScreen.route) {
+                        popUpTo(Screen.WelcomeScreen.route) { inclusive = true }
+                    }
                 }
             )
         }
@@ -52,7 +56,12 @@ fun Navigation(
                         popUpTo(Screen.RegisterScreen.route) { inclusive = true }
                     }
                 },
-                onNavigateToLogin = { /* TODO */ }
+                onNavigateToLogin = {
+                    navController.navigate(Screen.LoginScreen.route){
+                        popUpTo(Screen.RegisterScreen.route) { inclusive = true }
+                    }
+                },
+                navController = navController
             )
         }
         composable(route = Screen.LoginScreen.route) {
@@ -62,7 +71,12 @@ fun Navigation(
                         popUpTo(Screen.LoginScreen.route) { inclusive = true }
                     }
                 },
-                onNavigateToRegister = { /* TODO */ }
+                onNavigateToRegister = {
+                    navController.navigate(Screen.RegisterScreen.route){
+                        popUpTo(Screen.LoginScreen.route) { inclusive = true }
+                    }
+                },
+                navController = navController
             )
         }
         composable(route = Screen.NewProductScreen.route) {
@@ -114,7 +128,8 @@ fun Navigation(
                 onSave = { updatedUser ->
                     // Aquí puedes actualizar el ViewModel, hacer llamada a API, etc.
                     navController.popBackStack() // Vuelve a la pantalla anterior
-                }
+                },
+                navController = navController
             )
         }
         composable(Screen.FavoritesScreen.route) {

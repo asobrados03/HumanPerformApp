@@ -15,16 +15,19 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.humaneperformcenter.shared.data.model.RegisterRequest
 import com.humaneperformcenter.shared.data.repository.AuthRepository
 import com.humanperformcenter.DateVisualTransformation
+import com.humanperformcenter.LogoAppBar
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     onRegistroExitoso: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    navController: NavHostController
 ) {
     // — estados base —
     var nombre by rememberSaveable { mutableStateOf("") }
@@ -48,7 +51,15 @@ fun RegisterScreen(
     val scope = rememberCoroutineScope()
     val scroll = rememberScrollState()
 
-    Scaffold { padding ->
+    Scaffold(
+        topBar = {
+            LogoAppBar(
+                showBackArrow = false,
+                onBackNavClicked = { navController.popBackStack() }
+            )
+        },
+        modifier = Modifier.fillMaxSize()
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
