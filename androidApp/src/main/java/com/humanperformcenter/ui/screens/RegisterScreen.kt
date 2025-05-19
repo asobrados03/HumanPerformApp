@@ -147,7 +147,6 @@ fun RegisterScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor()
                 )
                 ExposedDropdownMenu(
                     expanded = expandedSexo,

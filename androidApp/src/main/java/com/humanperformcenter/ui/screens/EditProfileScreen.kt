@@ -1,6 +1,5 @@
 package com.humanperformcenter.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.humaneperformcenter.shared.data.model.User
 import com.humanperformcenter.LogoAppBar
-import com.humanperformcenter.NavigationBar
 
 @Composable
 fun EditProfileScreen(
