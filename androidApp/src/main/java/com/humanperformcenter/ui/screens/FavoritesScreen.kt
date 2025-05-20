@@ -33,10 +33,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.humaneperformcenter.shared.data.model.Professional
-import com.humaneperformcenter.shared.data.model.ProfessionalType
 import com.humanperformcenter.LogoAppBar
-import com.humanperformcenter.NavigationBar
+import com.humanperformcenter.shared.data.model.Professional
+import com.humanperformcenter.shared.data.model.ProfessionalType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

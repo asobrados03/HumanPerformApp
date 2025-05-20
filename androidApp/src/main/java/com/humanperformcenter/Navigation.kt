@@ -5,15 +5,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.humaneperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.ui.screens.AlterGScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
 import com.humanperformcenter.ui.screens.EditProfileScreen
+import com.humanperformcenter.ui.screens.EntrenamientoScreen
 import com.humanperformcenter.ui.screens.FavoritesScreen
+import com.humanperformcenter.ui.screens.FisioterapiaScreen
 import com.humanperformcenter.ui.screens.LoginScreen
 import com.humanperformcenter.ui.screens.MenuOption
 import com.humanperformcenter.ui.screens.NewBlogScreen
 import com.humanperformcenter.ui.screens.NewProductScreen
+import com.humanperformcenter.ui.screens.NutricionScreen
+import com.humanperformcenter.ui.screens.OpositoresScreen
+import com.humanperformcenter.ui.screens.PilatesScreen
+import com.humanperformcenter.ui.screens.PresoterapiaScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
+import com.humanperformcenter.ui.screens.TaquillaScreen
 import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
 import com.humanperformcenter.viewModels.SessionViewModel
@@ -85,6 +93,30 @@ fun Navigation(
                 sessionViewModel = sessionViewModel,
                 onPlaySound = onPlaySound
             )
+        }
+        composable(Screen.EntrenamientoScreen.route) {
+            EntrenamientoScreen(navController, sessionViewModel)
+        }
+        composable(Screen.NutricionScreen.route) {
+            NutricionScreen(navController, sessionViewModel)
+        }
+        composable(Screen.FisioterapiaScreen.route) {
+            FisioterapiaScreen(navController, sessionViewModel)
+        }
+        composable(Screen.PilatesScreen.route) {
+            PilatesScreen(navController, sessionViewModel)
+        }
+        composable(Screen.PresoterapiaScreen.route) {
+            PresoterapiaScreen(navController, sessionViewModel)
+        }
+        composable(Screen.OpositoresScreen.route) {
+            OpositoresScreen(navController, sessionViewModel)
+        }
+        composable(Screen.TaquillaScreen.route) {
+            TaquillaScreen(navController, sessionViewModel)
+        }
+        composable(Screen.AlterGScreen.route) {
+            AlterGScreen(navController, sessionViewModel)
         }
         composable(route = Screen.UserScreen.route) {
             UserScreen(

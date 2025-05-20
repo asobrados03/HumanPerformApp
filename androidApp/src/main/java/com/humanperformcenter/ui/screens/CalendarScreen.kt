@@ -252,7 +252,6 @@ fun CalendarScreen(
             val firstDayOfMonth = LocalDate(displayedYear, displayedMonth, 1)
             val isLeapYear = (displayedYear % 4 == 0) && (displayedYear % 100 != 0 || displayedYear % 400 == 0)
             val daysInMonth = displayedMonth.length(isLeapYear)
-            val firstDayOfWeek = firstDayOfMonth.dayOfWeek
             // Offset para que la semana empiece en lunes
             val offset = firstDayOfMonth.dayOfWeek.ordinal
 
@@ -534,11 +533,6 @@ fun CalendarScreen(
                         )
                         else -> emptyList()
                     }
-
-                    // Modificador común para los botones de hora
-                    val buttonModifier = Modifier
-                        .width(80.dp)
-                        .height(40.dp)
 
                     if (centro1MorningHours.isEmpty()) {
                         Text("No hay horas disponibles.", modifier = Modifier.padding(vertical = 8.dp))

@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.humaneperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.LogoAppBar
 
 @Composable

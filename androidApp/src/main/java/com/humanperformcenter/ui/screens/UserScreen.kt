@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.humaneperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.LogoAppBar
 import com.humanperformcenter.NavigationBar
 import com.humanperformcenter.R

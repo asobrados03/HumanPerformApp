@@ -36,7 +36,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.humaneperformcenter.shared.data.repository.AuthRepository
+import com.humanperformcenter.shared.data.repository.AuthRepository
 import com.humanperformcenter.LogoAppBar
 import kotlinx.coroutines.launch
 
