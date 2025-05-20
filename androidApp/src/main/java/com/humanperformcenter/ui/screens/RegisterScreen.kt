@@ -19,7 +19,7 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.RegisterRequest
 import com.humanperformcenter.shared.data.repository.AuthRepository
 import com.humanperformcenter.DateVisualTransformation
-import com.humanperformcenter.LogoAppBar
+import com.humanperformcenter.ui.components.LogoAppBar
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.height
@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.humanperformcenter.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.humanperformcenter.LogoAppBar
+import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.shared.data.model.PackEntrenamiento
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.viewModels.SessionViewModel

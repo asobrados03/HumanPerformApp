@@ -37,7 +37,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.repository.AuthRepository
-import com.humanperformcenter.LogoAppBar
+import com.humanperformcenter.ui.components.LogoAppBar
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

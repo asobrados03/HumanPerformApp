@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.humanperformcenter.LogoAppBar
+import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ProfessionalType
 

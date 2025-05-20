@@ -22,7 +22,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.User
-import com.humanperformcenter.LogoAppBar
+import com.humanperformcenter.ui.components.LogoAppBar
 
 @Composable
 fun EditProfileScreen(

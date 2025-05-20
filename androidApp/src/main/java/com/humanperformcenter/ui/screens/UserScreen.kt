@@ -38,8 +38,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.model.User
-import com.humanperformcenter.LogoAppBar
-import com.humanperformcenter.NavigationBar
+import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.R
 import com.humanperformcenter.Screen
 import com.humanperformcenter.ui.components.AppCard

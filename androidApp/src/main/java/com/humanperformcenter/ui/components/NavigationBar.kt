@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.ui.components
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,6 +15,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.humanperformcenter.NavItem
+import com.humanperformcenter.R
+import com.humanperformcenter.Screen
 
 @Composable
 fun NavigationBar(navController: NavController) {
