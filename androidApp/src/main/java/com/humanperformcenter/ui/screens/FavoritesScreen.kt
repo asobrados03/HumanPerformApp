@@ -52,7 +52,6 @@ fun FavoritesScreen(
                 onBackNavClicked = { navController.popBackStack() }
             )
         },
-        bottomBar = { NavigationBar(navController) },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         val grouped = favorites.groupBy { it.type }
