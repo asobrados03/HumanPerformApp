@@ -136,7 +136,7 @@ fun SessionItem(
                 modifier = Modifier.weight(0.1f),
                 contentAlignment = Alignment.TopEnd
             ) {
-                IconButton(onClick = { expanded = true }) {
+                /*IconButton(onClick = { expanded = true }) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "Más opciones"
@@ -160,7 +160,7 @@ fun SessionItem(
                             setShowDialog?.invoke(true)
                         }
                     )
-                }
+                }*/
             }
         }
         // --- END NEW LAYOUT ---

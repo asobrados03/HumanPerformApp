@@ -2,7 +2,6 @@ package com.humanperformcenter.ui.screens
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +21,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import com.humanperformcenter.util.createICSFile
+import com.humanperformcenter.util.shareICS
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -52,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -73,6 +77,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import androidx.compose.foundation.background
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -405,14 +410,54 @@ fun CalendarScreen(
                         enableDismissFromEndToStart = true,
                         enableDismissFromStartToEnd = true,
                         content = {
-                            SessionItem(
-                                session = session,
-                                onClick = {}, // Added missing parameter
-                                showDialog = showDialog,
-                                setShowDialog = { showDialog = it },
-                                sessionToDelete = sessionToDelete,
-                                setSessionToDelete = { sessionToDelete = it }
-                            )
+                            // Context menu state for each SessionItem
+                            var expanded by remember { mutableStateOf(false) }
+                            val context = LocalContext.current
+                            Box {
+                                SessionItem(
+                                    session = session,
+                                    onClick = { expanded = true },
+                                    showDialog = showDialog,
+                                    setShowDialog = { showDialog = it },
+                                    sessionToDelete = sessionToDelete,
+                                    setSessionToDelete = { sessionToDelete = it }
+                                )
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false },
+                                    modifier = Modifier.background(
+                                        color = MaterialTheme.colorScheme.surface,
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Eliminar cita") },
+                                        onClick = {
+                                            sessionToDelete = session
+                                            showDialog = true
+                                            expanded = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Cambiar cita") },
+                                        onClick = {
+                                            // Lógica para cambiar cita
+                                            expanded = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Descargar evento") },
+                                        onClick = {
+                                            val icsContent = createICSFile(
+                                                eventTitle = session.service,
+                                                startDateTime = Instant.fromEpochMilliseconds(session.date)
+                                            )
+                                            shareICS(context, icsContent)
+                                            expanded = false
+                                        }
+                                    )
+                                }
+                            }
                         }
                     )
                 }
