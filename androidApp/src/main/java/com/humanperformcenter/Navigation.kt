@@ -8,6 +8,8 @@ import androidx.navigation.compose.composable
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.ui.screens.AlterGScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
+import com.humanperformcenter.ui.screens.ChatScreen
+import com.humanperformcenter.ui.screens.DocumentScreen
 import com.humanperformcenter.ui.screens.EditProfileScreen
 import com.humanperformcenter.ui.screens.EntrenamientoScreen
 import com.humanperformcenter.ui.screens.FavoritesScreen
@@ -18,11 +20,13 @@ import com.humanperformcenter.ui.screens.NewBlogScreen
 import com.humanperformcenter.ui.screens.NewProductScreen
 import com.humanperformcenter.ui.screens.NutricionScreen
 import com.humanperformcenter.ui.screens.OpositoresScreen
+import com.humanperformcenter.ui.screens.PaymentScreen
 import com.humanperformcenter.ui.screens.PilatesScreen
 import com.humanperformcenter.ui.screens.PresoterapiaScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
 import com.humanperformcenter.ui.screens.TaquillaScreen
 import com.humanperformcenter.ui.screens.UserScreen
+import com.humanperformcenter.ui.screens.ViewPaymentScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
 import com.humanperformcenter.viewModels.SessionViewModel
 
@@ -143,6 +147,18 @@ fun Navigation(
                     }
                 }
             )
+        }
+        composable(Screen.ChatScreen.route) {
+            ChatScreen(navController = navController)
+        }
+        composable(Screen.DocumentScreen.route) {
+            DocumentScreen(navController = navController)
+        }
+        composable(Screen.PaymentScreen.route) {
+            PaymentScreen(navController = navController)
+        }
+        composable(Screen.ViewPaymentScreen.route) {
+            ViewPaymentScreen(navController = navController)
         }
         composable(route = Screen.EditProfileScreen.route) {
             EditProfileScreen(
