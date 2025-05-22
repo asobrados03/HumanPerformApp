@@ -120,7 +120,8 @@ fun LoginScreen(
                         if (resultado.isSuccess) {
                             onLoginSuccess() //error aquí
                         } else {
-                            errorMessage = resultado.exceptionOrNull()?.message ?: "Error desconocido"
+                            //errorMessage = resultado.exceptionOrNull()?.message ?: "Error desconocido"
+                            errorMessage = "Credenciales incorrectas"
                         }
                     }
                 },
