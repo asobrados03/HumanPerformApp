@@ -10,7 +10,6 @@ import androidx.core.content.FileProvider
 import java.io.File
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.plus
-import kotlinx.datetime.DateTimePeriod
 
 fun createICSFile(eventTitle: String, startDateTime: Instant, durationMinutes: Int = 60): String {
     val start = startDateTime.toLocalDateTime(TimeZone.currentSystemDefault())
@@ -52,9 +51,9 @@ fun shareICS(context: Context, fileContent: String, fileName: String = "evento.i
     )
 
     val intent = Intent(Intent.ACTION_SEND).apply {
-        Intent.setType = "text/calendar"
+        type = "text/calendar"
         putExtra(Intent.EXTRA_STREAM, uri)
-        Intent.setFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
     }
 
     context.startActivity(Intent.createChooser(intent, "Añadir al calendario"))
