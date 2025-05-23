@@ -1,19 +1,11 @@
 package com.humanperformcenter.viewModels
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.humanperformcenter.shared.data.model.LoginResponse
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import kotlinx.coroutines.launch
-
-sealed class LoginState {
-    object Idle    : LoginState()
-    object Loading : LoginState()
-    data class Success(val user: LoginResponse) : LoginState()
-    data class Error  (val message: String)     : LoginState()
-}
 
 class AuthViewModel(
     private val authUseCase: AuthUseCase
