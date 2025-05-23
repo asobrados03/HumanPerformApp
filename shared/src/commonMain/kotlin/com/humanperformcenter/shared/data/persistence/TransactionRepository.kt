@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.repository
+package com.humanperformcenter.shared.data.persistence
 
 class TransactionRepository(/*private val transactionDao: TransactionDao*/) {
 /*

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
@@ -24,7 +23,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -35,10 +36,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.humanperformcenter.shared.data.repository.AuthRepository
+import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.ui.components.LogoAppBar
-import kotlinx.coroutines.launch
+import com.humanperformcenter.viewModels.AuthViewModel
+import com.humanperformcenter.viewModels.AuthViewModelFactory
+import com.humanperformcenter.viewModels.LoginState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +51,13 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     navController: NavHostController
 ) {
+    // 1. Obtener el ViewModel
+    val viewModel: AuthViewModel = viewModel(
+        factory = AuthViewModelFactory(AppModule.authUseCase)
+    )
+
+    // 2. Suscribirnos al estado de login
+    val loginState by viewModel.loginState.observeAsState(LoginState.Idle)
 
     // Estados locales para campos de texto y checkbox
     var email by rememberSaveable { mutableStateOf("") }
@@ -54,8 +65,6 @@ fun LoginScreen(
     var remember by rememberSaveable { mutableStateOf(false) }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()  // scope para lanzar corrutinas
-    var isLoading by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -111,28 +120,34 @@ fun LoginScreen(
 
             errorMessage?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
 
+            when (loginState) {
+                is LoginState.Loading -> {
+                    CircularProgressIndicator()
+                }
+                is LoginState.Error -> {
+                    Text(
+                        text = (loginState as LoginState.Error).message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                is LoginState.Success -> {
+                    // una vez llega el Success, reseteamos y navegamos
+                    LaunchedEffect(Unit) {
+                        viewModel.reset()
+                        onLoginSuccess()
+                    }
+                }
+                else -> { /* Idle: no hacer nada */ }
+            }
+
             Button(
                 onClick = {
-                    scope.launch {
-                        isLoading = true
-                        val resultado = AuthRepository.login(email, password)
-                        isLoading = false
-                        if (resultado.isSuccess) {
-                            onLoginSuccess() //error aquí
-                        } else {
-                            //errorMessage = resultado.exceptionOrNull()?.message ?: "Error desconocido"
-                            errorMessage = "Credenciales incorrectas"
-                        }
-                    }
+                    viewModel.login(email, password)
                 },
-                enabled = !isLoading,
+                enabled = loginState != LoginState.Loading,
                 modifier = Modifier.padding(12.dp)
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                } else {
-                    Text("Acceso")
-                }
+                Text("Acceso")
             }
 
             TextButton(onClick = { /* TODO: recuperar contraseña */ }) {

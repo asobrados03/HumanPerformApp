@@ -1,10 +1,11 @@
-package com.humanperformcenter.shared.data.repository
+package com.humanperformcenter.shared.data.persistence
 
 import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.shared.data.model.RegisterRequest
 import com.humanperformcenter.shared.data.model.UserResponse
 import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.domain.repository.AuthRepository
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.post
@@ -12,8 +13,8 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 
-object AuthRepository {
-    suspend fun login(email: String, password: String): Result<LoginResponse> {
+object AuthRepositoryImpl : AuthRepository {
+    override suspend fun login(email: String, password: String): Result<LoginResponse> {
         return try {
             val response: LoginResponse = ApiClient.httpClient.post("${ApiClient.baseUrl}/login") {
                 contentType(ContentType.Application.Json)
@@ -29,8 +30,7 @@ object AuthRepository {
         }
     }
 
-
-    suspend fun registrar(datos: RegisterRequest): Result<UserResponse> {
+    override suspend fun registrar(datos: RegisterRequest): Result<UserResponse> {
         return try {
             val nuevoUsuario: UserResponse = ApiClient.httpClient.post("${ApiClient.baseUrl}/register") {
                 contentType(ContentType.Application.Json)

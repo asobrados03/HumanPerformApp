@@ -17,7 +17,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.RegisterRequest
-import com.humanperformcenter.shared.data.repository.AuthRepository
+import com.humanperformcenter.shared.data.persistence.AuthRepositoryImpl
 import com.humanperformcenter.DateVisualTransformation
 import com.humanperformcenter.ui.components.LogoAppBar
 import kotlinx.coroutines.launch
@@ -226,7 +226,7 @@ fun RegisterScreen(
                             fechaNacimientoText,
                             codigoPostal, dni
                         )
-                        val res = AuthRepository.registrar(req)
+                        val res = AuthRepositoryImpl.registrar(req)
                         if (res.isSuccess) onRegistroExitoso()
                         else errorMessage = res.exceptionOrNull()?.message
                     }
