@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.app.navigation
 
 sealed class Screen(val route: String) {
     data object WelcomeScreen : Screen("welcome")

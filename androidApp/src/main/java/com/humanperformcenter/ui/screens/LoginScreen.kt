@@ -27,7 +27,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,9 +39,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.viewModels.AuthViewModel
-import com.humanperformcenter.viewModels.AuthViewModelFactory
-import com.humanperformcenter.viewModels.LoginState
+import com.humanperformcenter.ui.viewmodel.AuthViewModel
+import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
+import com.humanperformcenter.ui.viewmodel.state.LoginState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

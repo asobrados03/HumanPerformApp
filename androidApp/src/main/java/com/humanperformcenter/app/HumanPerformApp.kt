@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.app
 
 import android.app.Application
 

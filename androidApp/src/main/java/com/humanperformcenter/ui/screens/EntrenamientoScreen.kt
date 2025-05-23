@@ -14,7 +14,7 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.shared.data.model.PackEntrenamiento
 import com.humanperformcenter.ui.components.AppCard
-import com.humanperformcenter.viewModels.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.SessionViewModel
 
 @Composable
 fun EntrenamientoScreen(

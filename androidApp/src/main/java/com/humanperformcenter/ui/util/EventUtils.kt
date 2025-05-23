@@ -1,4 +1,4 @@
-package com.humanperformcenter.util
+package com.humanperformcenter.ui.util
 
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -52,9 +52,9 @@ fun shareICS(context: Context, fileContent: String, fileName: String = "evento.i
     )
 
     val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/calendar"
+        Intent.setType = "text/calendar"
         putExtra(Intent.EXTRA_STREAM, uri)
-        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        Intent.setFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION
     }
 
     context.startActivity(Intent.createChooser(intent, "Añadir al calendario"))

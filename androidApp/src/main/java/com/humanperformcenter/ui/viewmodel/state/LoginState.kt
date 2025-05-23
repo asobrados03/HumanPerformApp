@@ -1,4 +1,4 @@
-package com.humanperformcenter.viewModels
+package com.humanperformcenter.ui.viewmodel.state
 
 import com.humanperformcenter.shared.data.model.LoginResponse
 

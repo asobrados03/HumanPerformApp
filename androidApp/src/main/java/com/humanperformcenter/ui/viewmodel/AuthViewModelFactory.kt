@@ -1,4 +1,4 @@
-package com.humanperformcenter.viewModels
+package com.humanperformcenter.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

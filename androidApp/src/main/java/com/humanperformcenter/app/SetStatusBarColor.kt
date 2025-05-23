@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.app
 
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle

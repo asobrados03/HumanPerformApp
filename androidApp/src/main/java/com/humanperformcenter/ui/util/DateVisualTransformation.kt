@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.ui.util
 
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping

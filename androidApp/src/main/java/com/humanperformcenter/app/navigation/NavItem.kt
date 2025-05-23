@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.app.navigation
 
 data class NavItem(
     val route: String,

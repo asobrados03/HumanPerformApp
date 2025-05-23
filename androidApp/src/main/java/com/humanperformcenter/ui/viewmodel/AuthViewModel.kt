@@ -1,10 +1,11 @@
-package com.humanperformcenter.viewModels
+package com.humanperformcenter.ui.viewmodel
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
+import com.humanperformcenter.ui.viewmodel.state.LoginState
 import kotlinx.coroutines.launch
 
 class AuthViewModel(

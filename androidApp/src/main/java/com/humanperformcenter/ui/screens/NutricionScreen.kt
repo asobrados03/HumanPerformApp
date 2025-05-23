@@ -3,7 +3,7 @@ package com.humanperformcenter.ui.screens
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.ServicioItem
-import com.humanperformcenter.viewModels.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.SessionViewModel
 
 @Composable
 fun NutricionScreen(

@@ -15,9 +15,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.humanperformcenter.NavItem
+import com.humanperformcenter.app.navigation.NavItem
 import com.humanperformcenter.R
-import com.humanperformcenter.Screen
+import com.humanperformcenter.app.navigation.Screen
 
 @Composable
 fun NavigationBar(navController: NavController) {

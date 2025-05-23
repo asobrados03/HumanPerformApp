@@ -1,4 +1,4 @@
-package com.humanperformcenter
+package com.humanperformcenter.app
 
 import android.media.MediaPlayer
 import android.os.Bundle
@@ -7,11 +7,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.humanperformcenter.app.navigation.Navigation
 import com.humanperformcenter.data.SessionDatabase
 import com.humanperformcenter.data.SessionRepository
 import com.humanperformcenter.ui.theme.HumanPerformAppTheme
-import com.humanperformcenter.viewModels.SessionViewModel
-import com.humanperformcenter.viewModels.SessionViewModelFactory
+import com.humanperformcenter.ui.viewmodel.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.SessionViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

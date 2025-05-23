@@ -41,7 +41,7 @@ import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.R
-import com.humanperformcenter.Screen
+import com.humanperformcenter.app.navigation.Screen
 import com.humanperformcenter.ui.components.AppCard
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -1,10 +1,11 @@
-package com.humanperformcenter
+package com.humanperformcenter.app.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.humanperformcenter.app.SetStatusBarColor
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.ui.screens.AlterGScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
@@ -28,7 +29,7 @@ import com.humanperformcenter.ui.screens.TaquillaScreen
 import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.ViewPaymentScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
-import com.humanperformcenter.viewModels.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.SessionViewModel
 
 @Composable
 fun Navigation(

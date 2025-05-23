@@ -29,7 +29,7 @@ import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.R
 import com.humanperformcenter.ui.components.AppCard
-import com.humanperformcenter.viewModels.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.SessionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -23,8 +23,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import com.humanperformcenter.util.createICSFile
-import com.humanperformcenter.util.shareICS
+import com.humanperformcenter.ui.util.createICSFile
+import com.humanperformcenter.ui.util.shareICS
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -66,7 +66,7 @@ import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.R
 import com.humanperformcenter.ui.components.SessionItem
 import com.humanperformcenter.data.Session
-import com.humanperformcenter.viewModels.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DayOfWeek
