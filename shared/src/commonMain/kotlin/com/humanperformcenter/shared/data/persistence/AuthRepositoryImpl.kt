@@ -18,9 +18,9 @@ object AuthRepositoryImpl : AuthRepository {
         return try {
             val response: LoginResponse = ApiClient.httpClient.post("${ApiClient.baseUrl}/login") {
                 contentType(ContentType.Application.Json)
-                setBody(mapOf("email" to email, "pass" to password))
+                setBody(mapOf("email" to email, "password" to password))
             }.body()
-            if (response.status == "success") {
+            if (response.message == "Login exitoso") {
                 Result.success(response)
             } else {
                 Result.failure(Exception("Credenciales incorrectas"))
