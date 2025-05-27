@@ -30,7 +30,7 @@ object AuthRepositoryImpl : AuthRepository {
         }
     }
 
-    override suspend fun registrar(datos: RegisterRequest): Result<UserResponse> {
+    override suspend fun register(datos: RegisterRequest): Result<UserResponse> {
         return try {
             val nuevoUsuario: UserResponse = ApiClient.httpClient.post("${ApiClient.baseUrl}/register") {
                 contentType(ContentType.Application.Json)

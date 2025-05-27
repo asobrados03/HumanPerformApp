@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.data.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -8,6 +9,11 @@ data class UserResponse(
     val nombre: String,
     val apellidos: String,
     val email: String,
-    // otros campos que devuelva el servidor al registrar, por ejemplo token JWT:
+    val telefono: String? = null,
+    val sexo: String? = null,
+    val fechaNacimiento: String? = null,
+    val codigoPostal: String? = null,
+    val dni: String? = null,
+    // El token JWT o UUID que devuelva la API
     val token: String? = null
 )

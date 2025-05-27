@@ -132,7 +132,7 @@ fun LoginScreen(
                 is LoginState.Success -> {
                     // una vez llega el Success, reseteamos y navegamos
                     LaunchedEffect(Unit) {
-                        viewModel.reset()
+                        viewModel.resetStates()
                         onLoginSuccess()
                     }
                 }

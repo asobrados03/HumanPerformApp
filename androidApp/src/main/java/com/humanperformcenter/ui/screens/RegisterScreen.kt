@@ -1,26 +1,67 @@
 package com.humanperformcenter.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.model.RegisterRequest
-import com.humanperformcenter.shared.data.persistence.AuthRepositoryImpl
-import com.humanperformcenter.ui.util.DateVisualTransformation
 import com.humanperformcenter.ui.components.LogoAppBar
-import kotlinx.coroutines.launch
+import com.humanperformcenter.ui.util.DateVisualTransformation
+import com.humanperformcenter.ui.viewmodel.AuthViewModel
+import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
+import com.humanperformcenter.ui.viewmodel.state.RegisterState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +70,14 @@ fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     navController: NavHostController
 ) {
+    // 1. Obtener el ViewModel
+    val viewModel: AuthViewModel = viewModel(
+        factory = AuthViewModelFactory(AppModule.authUseCase)
+    )
+
+    // 2. Suscribirnos al estado de login
+    val registerState by viewModel.registerState.observeAsState(RegisterState.Idle)
+
     // — estados base —
     var nombre by rememberSaveable { mutableStateOf("") }
     var apellidos by rememberSaveable { mutableStateOf("") }
@@ -39,17 +88,19 @@ fun RegisterScreen(
     var codigoPostal by rememberSaveable { mutableStateOf("") }
     var dni by rememberSaveable { mutableStateOf("") }
     var aceptoTerminos by rememberSaveable { mutableStateOf(false) }
+    var aceptoPolitica by rememberSaveable { mutableStateOf(false) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     // — sexo desplegable —
-    val sexOptions = listOf("Masculino", "Femenino", "Otro")
+    val sexOptions = listOf("Masculino", "Femenino")
     var sexo by rememberSaveable { mutableStateOf(sexOptions[0]) }
     var expandedSexo by rememberSaveable { mutableStateOf(false) }
 
-    val scope = rememberCoroutineScope()
     val scroll = rememberScrollState()
+
+    val uriHandler = LocalUriHandler.current
 
     Scaffold(
         topBar = {
@@ -130,23 +181,23 @@ fun RegisterScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            // SEXO desplegable usando Material3 ExposedDropdownMenuBox
             ExposedDropdownMenuBox(
                 expanded = expandedSexo,
-                onExpandedChange = { expandedSexo = it },
+                onExpandedChange = { expandedSexo = !expandedSexo }, // toggle
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
                     value = sexo,
-                    onValueChange = {},
-                    leadingIcon = { Icon(Icons.Default.Cloud, null) },
+                    onValueChange = {}, // no editable
+                    readOnly = true, // previene teclado
                     label = { Text("Sexo") },
-                    readOnly = true,
+                    leadingIcon = { Icon(Icons.Default.Cloud, contentDescription = null) },
                     trailingIcon = {
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSexo)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clickable { expandedSexo = true } // muy importante para abrir menú
                 )
                 ExposedDropdownMenu(
                     expanded = expandedSexo,
@@ -174,7 +225,7 @@ fun RegisterScreen(
                     val digits = new.filter { it.isDigit() }.take(8)
                     fechaNacimientoText = digits
                 },
-                label = { Text("Fecha (dd/MM/yyyy)") },
+                label = { Text("Fecha (dd/mm/yyyy)") },
                 leadingIcon = { Icon(Icons.Default.CalendarToday, null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = DateVisualTransformation(),
@@ -202,13 +253,63 @@ fun RegisterScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = aceptoTerminos, onCheckedChange = { aceptoTerminos = it })
-                Text("Acepto términos y política de privacidad")
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = aceptoTerminos,
+                        onCheckedChange = { aceptoTerminos = it }
+                    )
+                    Text(text = "Acepto ")
+                    Text(
+                        text = "términos y condiciones",
+                        modifier = Modifier
+                            .clickable {
+                                uriHandler.openUri("https://www.humanperformcenter.com/cliente/condiciones")
+                            },
+                        color = Color.Blue,
+                        textDecoration = TextDecoration.Underline
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = aceptoPolitica,
+                        onCheckedChange = { aceptoPolitica = it }
+                    )
+                    Text(text = "Acepto ")
+                    Text(
+                        text = "política de privacidad",
+                        modifier = Modifier
+                            .clickable {
+                                uriHandler.openUri("https://www.humanperformcenter.com/cliente/politica-privacidad")
+                            },
+                        color = Color.Blue,
+                        textDecoration = TextDecoration.Underline
+                    )
+                }
             }
 
             errorMessage?.let {
                 Text(it, color = MaterialTheme.colorScheme.error)
+            }
+
+            when (registerState) {
+                is RegisterState.Loading -> {
+                    CircularProgressIndicator()
+                }
+                is RegisterState.Success -> {
+                    // Registro exitoso → navegar y limpiar estado
+                    LaunchedEffect(Unit) {
+                        viewModel.resetStates()
+                        onRegistroExitoso()
+                    }
+                }
+                is RegisterState.Error -> {
+                    errorMessage = (registerState as RegisterState.Error).message
+                }
+                RegisterState.Idle -> {
+                    // No hacer nada
+                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -216,20 +317,27 @@ fun RegisterScreen(
             Button(
                 onClick = {
                     if (!aceptoTerminos) {
-                        errorMessage = "Debes aceptar los términos"
+                        errorMessage = "Debes aceptar los términos y condiciones"
+                        return@Button
+                    } else if (!aceptoPolitica) {
+                        errorMessage = "Debes aceptar la política de privacidad"
                         return@Button
                     }
-                    scope.launch {
-                        val req = RegisterRequest(
-                            nombre, apellidos, email, telefono,
-                            password, sexo,
-                            fechaNacimientoText,
-                            codigoPostal, dni
-                        )
-                        val res = AuthRepositoryImpl.registrar(req)
-                        if (res.isSuccess) onRegistroExitoso()
-                        else errorMessage = res.exceptionOrNull()?.message
+
+                    val sexoMapped = when (sexo) {
+                        "Masculino" -> "Male"
+                        "Femenino" -> "Female"
+                        else -> "Other" // o cualquier valor válido que permitas
                     }
+
+
+                    val req = RegisterRequest(
+                        nombre, apellidos, email, telefono,
+                        password, sexoMapped,
+                        fechaNacimientoText,
+                        codigoPostal, dni
+                    )
+                    viewModel.register(req)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
