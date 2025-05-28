@@ -9,25 +9,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Man
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Woman
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -42,12 +45,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -55,6 +61,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.humanperformcenter.R
 import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.model.RegisterRequest
 import com.humanperformcenter.ui.components.LogoAppBar
@@ -94,9 +101,26 @@ fun RegisterScreen(
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     // — sexo desplegable —
-    val sexOptions = listOf("Masculino", "Femenino")
-    var sexo by rememberSaveable { mutableStateOf(sexOptions[0]) }
-    var expandedSexo by rememberSaveable { mutableStateOf(false) }
+    data class GenderOption(val label: String, val backendValue: String, val icon: ImageVector)
+
+    val genderOptions = listOf(
+        GenderOption("Masculino", "Male", Icons.Default.Man),
+        GenderOption("Femenino", "Female", Icons.Default.Woman)
+    )
+
+    // 1. Define el Saver que convierte tu objeto en String y viceversa
+    val genderOptionSaver = Saver<GenderOption, String>(
+        save = { it.backendValue },                  // lo que guardamos
+        restore = { value ->                         // cómo lo recuperamos
+            genderOptions.first { it.backendValue == value }
+        }
+    )
+
+    // 2. Usa rememberSaveable pasándole ese Saver
+    var selectedGender by rememberSaveable(stateSaver = genderOptionSaver) {
+        mutableStateOf(genderOptions[0])
+    }
+    var expandedGender by rememberSaveable { mutableStateOf(false) }
 
     val scroll = rememberScrollState()
 
@@ -182,35 +206,41 @@ fun RegisterScreen(
             Spacer(Modifier.height(8.dp))
 
             ExposedDropdownMenuBox(
-                expanded = expandedSexo,
-                onExpandedChange = { expandedSexo = !expandedSexo }, // toggle
+                expanded = expandedGender,
+                onExpandedChange = { expandedGender = !expandedGender },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
-                    value = sexo,
-                    onValueChange = {}, // no editable
-                    readOnly = true, // previene teclado
+                    value = selectedGender.label,
+                    onValueChange = {},
+                    readOnly = true,
                     label = { Text("Sexo") },
-                    leadingIcon = { Icon(Icons.Default.Cloud, contentDescription = null) },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSexo)
+                    leadingIcon = {
+                        selectedGender?.let { Icon(it.icon, contentDescription = null) }
+                            ?: Icon(
+                                painterResource(id = R.drawable.generos),
+                                contentDescription = "Sexo",
+                                modifier = Modifier.size(24.dp)
+                                )
                     },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGender) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { expandedSexo = true } // muy importante para abrir menú
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 )
+
                 ExposedDropdownMenu(
-                    expanded = expandedSexo,
-                    onDismissRequest = { expandedSexo = false }
+                    expanded = expandedGender,
+                    onDismissRequest = { expandedGender = false }
                 ) {
-                    sexOptions.forEach { option ->
+                    genderOptions.forEach { option ->
                         DropdownMenuItem(
-                            text = { Text(option) },
+                            text = { Text(option.label) },
+                            leadingIcon = { Icon(option.icon, contentDescription = null) },
                             onClick = {
-                                sexo = option
-                                expandedSexo = false
-                            },
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                                selectedGender = option
+                                expandedGender = false
+                            }
                         )
                     }
                 }
@@ -324,16 +354,11 @@ fun RegisterScreen(
                         return@Button
                     }
 
-                    val sexoMapped = when (sexo) {
-                        "Masculino" -> "Male"
-                        "Femenino" -> "Female"
-                        else -> "Other" // o cualquier valor válido que permitas
-                    }
-
+                    val genderValue = selectedGender.backendValue
 
                     val req = RegisterRequest(
                         nombre, apellidos, email, telefono,
-                        password, sexoMapped,
+                        password, genderValue,
                         fechaNacimientoText,
                         codigoPostal, dni
                     )
