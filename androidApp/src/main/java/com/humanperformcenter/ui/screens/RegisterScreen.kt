@@ -44,8 +44,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -108,19 +108,12 @@ fun RegisterScreen(
         GenderOption("Femenino", "Female", Icons.Default.Woman)
     )
 
-    // 1. Define el Saver que convierte tu objeto en String y viceversa
-    val genderOptionSaver = Saver<GenderOption, String>(
-        save = { it.backendValue },                  // lo que guardamos
-        restore = { value ->                         // cómo lo recuperamos
-            genderOptions.first { it.backendValue == value }
-        }
-    )
-
-    // 2. Usa rememberSaveable pasándole ese Saver
-    var selectedGender by rememberSaveable(stateSaver = genderOptionSaver) {
-        mutableStateOf(genderOptions[0])
-    }
+    // 1) Sólo guardamos un Int. -1 = nada seleccionado
+    var selectedIndex by rememberSaveable { mutableIntStateOf(-1) }
     var expandedGender by rememberSaveable { mutableStateOf(false) }
+
+    // 2) Derivamos la opción seleccionada (o null)
+    val selectedGender = selectedIndex.takeIf { it >= 0 }?.let { genderOptions[it] }
 
     val scroll = rememberScrollState()
 
@@ -211,17 +204,20 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
-                    value = selectedGender.label,
+                    value = selectedGender?.label ?: "",
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Sexo") },
                     leadingIcon = {
-                        selectedGender?.let { Icon(it.icon, contentDescription = null) }
-                            ?: Icon(
+                        if (selectedGender != null) {
+                            Icon(selectedGender.icon, contentDescription = null)
+                        } else {
+                            Icon(
                                 painterResource(id = R.drawable.generos),
                                 contentDescription = "Sexo",
                                 modifier = Modifier.size(24.dp)
-                                )
+                            )
+                        }
                     },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGender) },
                     modifier = Modifier
@@ -233,12 +229,12 @@ fun RegisterScreen(
                     expanded = expandedGender,
                     onDismissRequest = { expandedGender = false }
                 ) {
-                    genderOptions.forEach { option ->
+                    genderOptions.forEachIndexed { index, option ->
                         DropdownMenuItem(
                             text = { Text(option.label) },
                             leadingIcon = { Icon(option.icon, contentDescription = null) },
                             onClick = {
-                                selectedGender = option
+                                selectedIndex = index
                                 expandedGender = false
                             }
                         )
@@ -354,7 +350,7 @@ fun RegisterScreen(
                         return@Button
                     }
 
-                    val genderValue = selectedGender.backendValue
+                    val genderValue = selectedGender!!.backendValue
 
                     val req = RegisterRequest(
                         nombre, apellidos, email, telefono,
