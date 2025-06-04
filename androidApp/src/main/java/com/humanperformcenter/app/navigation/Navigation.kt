@@ -1,17 +1,19 @@
 package com.humanperformcenter.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.humanperformcenter.app.SetStatusBarColor
-import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.ui.screens.AlterGScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
 import com.humanperformcenter.ui.screens.ChatScreen
 import com.humanperformcenter.ui.screens.DocumentScreen
-import com.humanperformcenter.ui.screens.EditProfileScreen
 import com.humanperformcenter.ui.screens.EntrenamientoScreen
 import com.humanperformcenter.ui.screens.FavoritesScreen
 import com.humanperformcenter.ui.screens.FisioterapiaScreen
@@ -30,6 +32,8 @@ import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.ViewPaymentScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
 
 @Composable
 fun Navigation(
@@ -124,30 +128,41 @@ fun Navigation(
             AlterGScreen(navController, sessionViewModel)
         }
         composable(route = Screen.UserScreen.route) {
-            UserScreen(
-                navController = navController,
-                user = User(
-                    id = "",
-                    name = "Usuario de Prueba",
-                    lastName = "",
-                    email = "prueba@ejemplo.com",
-                    phone = "+34 616 171 171",
-                    dateOfBirth = "",
-                    gender = "",
-                    profilePictureUrl = "",
-                    balance = 0.0
-                ),
-                onEditProfile = { navController.navigate(Screen.EditProfileScreen.route) },
-                onMenuClick = { option ->
-                    when (option) {
-                        MenuOption.FAVORITOS -> navController.navigate(Screen.FavoritesScreen.route)
-                        MenuOption.CHAT -> navController.navigate(Screen.ChatScreen.route)
-                        MenuOption.DOCUMENTO -> navController.navigate(Screen.DocumentScreen.route)
-                        MenuOption.PAGO -> navController.navigate(Screen.PaymentScreen.route)
-                        MenuOption.VER_PAGO -> navController.navigate(Screen.ViewPaymentScreen.route)
+            // Instanciamos el ViewModel usando el Factory:
+            val userViewModel: UserViewModel = viewModel(
+                factory = UserViewModelFactory(AppModule.userUseCase)
+            )
+
+            // Ahora, userViewModel.userData es un StateFlow<LoginResponse?>;
+            // Use collectAsState para convertirlo en State<LoginResponse?> en Compose:
+            val userState = userViewModel.userData.collectAsState()
+
+            if (userState.value == null) {
+                LaunchedEffect(Unit) {
+                    navController.navigate("login_screen") {
+                        popUpTo(Screen.UserScreen) { inclusive = true }
                     }
                 }
-            )
+            } else {
+                // -----------------------------------------------------------------
+                // Hay un LoginResponse en memoria: pasémoslo a UserScreen:
+                UserScreen(
+                    navController = navController,
+                    user = userState.value!!, // nunca será null aquí
+                    onEditProfile = {
+                        navController.navigate(Screen.EditProfileScreen.route)
+                    },
+                    onMenuClick = { option ->
+                        when (option) {
+                            MenuOption.FAVORITOS -> navController.navigate(Screen.FavoritesScreen)
+                            MenuOption.CHAT -> navController.navigate(Screen.ChatScreen)
+                            MenuOption.DOCUMENTO -> navController.navigate(Screen.DocumentScreen)
+                            MenuOption.PAGO -> navController.navigate(Screen.PaymentScreen)
+                            MenuOption.VER_PAGO -> navController.navigate(Screen.ViewPaymentScreen)
+                        }
+                    }
+                )
+            }
         }
         composable(Screen.ChatScreen.route) {
             ChatScreen(navController = navController)
@@ -161,25 +176,8 @@ fun Navigation(
         composable(Screen.ViewPaymentScreen.route) {
             ViewPaymentScreen(navController = navController)
         }
-        composable(route = Screen.EditProfileScreen.route) {
-            EditProfileScreen(
-                user = User(
-                    id = "",
-                    name = "",
-                    lastName = "",
-                    email = "",
-                    phone = "",
-                    dateOfBirth = "",
-                    gender = "",
-                    profilePictureUrl = "",
-                    balance = 0.0
-                ),
-                onSave = { updatedUser ->
-                    // Aquí puedes actualizar el ViewModel, hacer llamada a API, etc.
-                    navController.popBackStack() // Vuelve a la pantalla anterior
-                },
-                navController = navController
-            )
+        composable(Screen.EditProfileScreen.route) {
+            EditProfileRoute(navController = navController)
         }
         composable(Screen.FavoritesScreen.route) {
             FavoritesScreen(

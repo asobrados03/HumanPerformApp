@@ -4,11 +4,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.shared.data.model.RegisterRequest
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
+import com.humanperformcenter.shared.session.SessionManager
 import com.humanperformcenter.ui.viewmodel.state.LoginState
 import com.humanperformcenter.ui.viewmodel.state.RegisterState
 import kotlinx.coroutines.launch
+import kotlin.onSuccess
 
 class AuthViewModel(
     private val authUseCase: AuthUseCase
@@ -22,11 +25,21 @@ class AuthViewModel(
 
     fun login(email: String, password: String) {
         _loginState.value = LoginState.Loading
+
         viewModelScope.launch {
-            val result = authUseCase.login(email, password)
-            _loginState.value = result
-                .map { LoginState.Success(it) }
-                .getOrElse { LoginState.Error(it.message ?: "Error desconocido") }
+            val result: Result<LoginResponse> = authUseCase.login(email, password)
+
+            // Si es éxito: guardar en SessionManager y emitir Success
+            result.onSuccess { loginResponse ->
+                // 1) Guardamos el LoginResponse en memoria
+                SessionManager.storeUser(loginResponse)
+                // 2) Emitimos el estado de éxito, con todo el objeto
+                _loginState.value = LoginState.Success(loginResponse)
+            }.onFailure { throwable ->
+                // Emitir el estado de error con el mensaje
+                val errorMsg = throwable.message ?: "Error desconocido"
+                _loginState.value = LoginState.Error(errorMsg)
+            }
         }
     }
 

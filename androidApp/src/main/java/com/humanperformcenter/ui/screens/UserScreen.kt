@@ -37,18 +37,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.R
-import com.humanperformcenter.app.navigation.Screen
+import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.ui.components.AppCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserScreen(
     navController: NavHostController,
-    user: User,
+    user: LoginResponse,
     onEditProfile: () -> Unit,
     onMenuClick: (MenuOption) -> Unit
 ) {
@@ -82,7 +81,7 @@ fun UserScreen(
                     Spacer(Modifier.height(12.dp))
 
                     Text(
-                        text = user.name,
+                        text = user.fullName,
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
@@ -105,7 +104,7 @@ fun UserScreen(
                         elevation = cardElevation(defaultElevation = 4.dp)
                     ) {
                         Text(
-                            text = "Saldo: € ${"%.2f".format(user.balance)}",
+                            text = "Saldo: € ${"%.2f".format(0.0)}",
                             Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             fontWeight = FontWeight.SemiBold
                         )
@@ -114,7 +113,7 @@ fun UserScreen(
                     Spacer(Modifier.height(12.dp))
 
                     FilledTonalButton(onClick = {
-                        navController.navigate(Screen.EditProfileScreen.route)
+                        onEditProfile()
                     }) {
                         Text("Editar perfil")
                     }
@@ -175,7 +174,7 @@ fun UserProfileImage(photoUrl: String?) {
         )
     } else {
         Image(
-            painter = painterResource(R.drawable.avatar_default),
+            painter = painterResource(R.drawable.ic_default_avatar_2),
             contentDescription = "Avatar por defecto",
             modifier = Modifier
                 .size(80.dp)

@@ -251,7 +251,7 @@ fun RegisterScreen(
                     val digits = new.filter { it.isDigit() }.take(8)
                     fechaNacimientoText = digits
                 },
-                label = { Text("Fecha (dd/mm/yyyy)") },
+                label = { Text("Fecha de nacimiento (dd/mm/yyyy)") },
                 leadingIcon = { Icon(Icons.Default.CalendarToday, null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = DateVisualTransformation(),

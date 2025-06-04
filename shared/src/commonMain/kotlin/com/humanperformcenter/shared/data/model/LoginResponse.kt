@@ -1,11 +1,18 @@
 package com.humanperformcenter.shared.data.model
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class LoginResponse(
-    @SerialName("message") val message: String,
-    @SerialName("token")   val token: String,
-    @SerialName("user_id") val userId: Int
+    val id: Int,
+    val fullName: String,
+    val email: String,
+    val phone: String,
+    val sex: String,
+    val dateOfBirth: String,
+    val postcode: Int? = null,
+    val dni: String? = null,
+    val profilePictureUrl: String?,
+    // El token JWT o UUID que devuelva la API
+    val token: String? = null
 )
