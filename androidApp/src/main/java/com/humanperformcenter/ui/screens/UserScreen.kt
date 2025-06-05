@@ -1,8 +1,6 @@
 package com.humanperformcenter.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,8 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -29,19 +25,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
-import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.ui.components.NavigationBar
-import com.humanperformcenter.R
+import com.humanperformcenter.app.navigation.MenuOption
 import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.ui.components.AppCard
+import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.components.NavigationBar
+import com.humanperformcenter.ui.components.UserProfileImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -154,32 +148,5 @@ fun UserScreen(
                 }
             }
         }
-    }
-}
-
-enum class MenuOption {
-    FAVORITOS, CHAT, DOCUMENTO, PAGO, VER_PAGO
-}
-// Función reutilizable para mostrar la imagen de perfil del usuario
-@Composable
-fun UserProfileImage(photoUrl: String?) {
-    if (!photoUrl.isNullOrBlank()) {
-        AsyncImage(
-            model = photoUrl,
-            contentDescription = "Foto de usuario",
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .border(2.dp, Color.White, CircleShape)
-        )
-    } else {
-        Image(
-            painter = painterResource(R.drawable.ic_default_avatar_2),
-            contentDescription = "Avatar por defecto",
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .border(2.dp, Color.White, CircleShape)
-        )
     }
 }

@@ -18,7 +18,6 @@ import com.humanperformcenter.ui.screens.EntrenamientoScreen
 import com.humanperformcenter.ui.screens.FavoritesScreen
 import com.humanperformcenter.ui.screens.FisioterapiaScreen
 import com.humanperformcenter.ui.screens.LoginScreen
-import com.humanperformcenter.ui.screens.MenuOption
 import com.humanperformcenter.ui.screens.NewBlogScreen
 import com.humanperformcenter.ui.screens.NewProductScreen
 import com.humanperformcenter.ui.screens.NutricionScreen
@@ -154,11 +153,11 @@ fun Navigation(
                     },
                     onMenuClick = { option ->
                         when (option) {
-                            MenuOption.FAVORITOS -> navController.navigate(Screen.FavoritesScreen)
-                            MenuOption.CHAT -> navController.navigate(Screen.ChatScreen)
-                            MenuOption.DOCUMENTO -> navController.navigate(Screen.DocumentScreen)
-                            MenuOption.PAGO -> navController.navigate(Screen.PaymentScreen)
-                            MenuOption.VER_PAGO -> navController.navigate(Screen.ViewPaymentScreen)
+                            MenuOption.FAVORITOS -> navController.navigate(Screen.FavoritesScreen.route)
+                            MenuOption.CHAT -> navController.navigate(Screen.ChatScreen.route)
+                            MenuOption.DOCUMENTO -> navController.navigate(Screen.DocumentScreen.route)
+                            MenuOption.PAGO -> navController.navigate(Screen.PaymentScreen.route)
+                            MenuOption.VER_PAGO -> navController.navigate(Screen.ViewPaymentScreen.route)
                         }
                     }
                 )

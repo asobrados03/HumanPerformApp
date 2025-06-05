@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
@@ -51,7 +52,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.humanperformcenter.R
+import com.humanperformcenter.data.SexOption
 import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.model.RegisterRequest
 import com.humanperformcenter.ui.components.LogoAppBar
@@ -101,19 +102,17 @@ fun RegisterScreen(
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     // — sexo desplegable —
-    data class GenderOption(val label: String, val backendValue: String, val icon: ImageVector)
-
-    val genderOptions = listOf(
-        GenderOption("Masculino", "Male", Icons.Default.Man),
-        GenderOption("Femenino", "Female", Icons.Default.Woman)
+    val sexOptions = listOf(
+        SexOption("Masculino", "Male", Icons.Default.Man),
+        SexOption("Femenino", "Female", Icons.Default.Woman)
     )
 
     // 1) Sólo guardamos un Int. -1 = nada seleccionado
     var selectedIndex by rememberSaveable { mutableIntStateOf(-1) }
-    var expandedGender by rememberSaveable { mutableStateOf(false) }
+    var expandedSex by rememberSaveable { mutableStateOf(false) }
 
     // 2) Derivamos la opción seleccionada (o null)
-    val selectedGender = selectedIndex.takeIf { it >= 0 }?.let { genderOptions[it] }
+    val selectedSex = selectedIndex.takeIf { it >= 0 }?.let { sexOptions[it] }
 
     val scroll = rememberScrollState()
 
@@ -199,18 +198,18 @@ fun RegisterScreen(
             Spacer(Modifier.height(8.dp))
 
             ExposedDropdownMenuBox(
-                expanded = expandedGender,
-                onExpandedChange = { expandedGender = !expandedGender },
+                expanded = expandedSex,
+                onExpandedChange = { expandedSex = !expandedSex },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
-                    value = selectedGender?.label ?: "",
+                    value = selectedSex?.label ?: "",
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Sexo") },
                     leadingIcon = {
-                        if (selectedGender != null) {
-                            Icon(selectedGender.icon, contentDescription = null)
+                        if (selectedSex != null) {
+                            Icon(selectedSex.icon, contentDescription = null)
                         } else {
                             Icon(
                                 painterResource(id = R.drawable.generos),
@@ -219,23 +218,23 @@ fun RegisterScreen(
                             )
                         }
                     },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGender) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSex) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 )
 
                 ExposedDropdownMenu(
-                    expanded = expandedGender,
-                    onDismissRequest = { expandedGender = false }
+                    expanded = expandedSex,
+                    onDismissRequest = { expandedSex = false }
                 ) {
-                    genderOptions.forEachIndexed { index, option ->
+                    sexOptions.forEachIndexed { index, option ->
                         DropdownMenuItem(
                             text = { Text(option.label) },
                             leadingIcon = { Icon(option.icon, contentDescription = null) },
                             onClick = {
                                 selectedIndex = index
-                                expandedGender = false
+                                expandedSex = false
                             }
                         )
                     }
@@ -252,7 +251,7 @@ fun RegisterScreen(
                     fechaNacimientoText = digits
                 },
                 label = { Text("Fecha de nacimiento (dd/mm/yyyy)") },
-                leadingIcon = { Icon(Icons.Default.CalendarToday, null) },
+                leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = DateVisualTransformation(),
                 singleLine = true,
@@ -350,7 +349,7 @@ fun RegisterScreen(
                         return@Button
                     }
 
-                    val genderValue = selectedGender!!.backendValue
+                    val genderValue = selectedSex!!.backendValue
 
                     val req = RegisterRequest(
                         nombre, apellidos, email, telefono,
