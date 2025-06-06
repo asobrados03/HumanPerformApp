@@ -127,7 +127,6 @@ fun LoginScreen(
                     localErrorMessage = null
                 },
                 label = { Text("Contraseña") },
-                placeholder = { Text("••••••••••") },
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
