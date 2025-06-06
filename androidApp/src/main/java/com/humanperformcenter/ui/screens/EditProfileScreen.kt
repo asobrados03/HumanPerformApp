@@ -2,8 +2,10 @@ package com.humanperformcenter.ui.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -12,7 +14,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Man
@@ -44,6 +45,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -53,6 +55,7 @@ import com.humanperformcenter.data.SexOption
 import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
+import com.humanperformcenter.ui.viewmodel.state.UpdateState.Field
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,11 +66,10 @@ fun EditProfileScreen(
     onSave: (LoginResponse) -> Unit,
     navController: NavHostController
 ) {
-    // 1) SnackbarHostState para mostrar errores
+    // 1) Snackbar para errores genéricos de red/servidor
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    // 2) ÚNICO Scaffold para esta pantalla, con TopAppBar y SnackbarHost
     Scaffold(
         topBar = {
             LogoAppBar(
@@ -82,12 +84,12 @@ fun EditProfileScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // 3) Spinner si estamos en Loading
+            // 2) Spinner si estamos en Loading
             if (updateState is UpdateState.Loading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
 
-            // 4) Efecto secundario: Success o Error
+            // 3) Efecto para Success (cerrar pantalla) o Error genérico (snackbar)
             LaunchedEffect(updateState) {
                 when (val state = updateState) {
                     is UpdateState.Success -> {
@@ -104,10 +106,26 @@ fun EditProfileScreen(
                     else -> Unit
                 }
             }
-            
+
+            // 4) Estados locales de UI para retener el texto y los mensajes de error por campo
             var fullName by rememberSaveable { mutableStateOf(user.fullName) }
-            var dateOfBirth by rememberSaveable { mutableStateOf(user.dateOfBirth) }
+            var fullNameError by remember { mutableStateOf("") }
+
+            // Convertir "yyyy-MM-dd" ⇒ "dd/MM/yyyy" para mostrar
+            val initialDateText: String = user.dateOfBirth.takeIf { it.isNotBlank() }?.let { db ->
+                val p = db.split("-")
+                if (p.size == 3) {
+                    val y = p[0].padStart(4, '0')
+                    val m = p[1].padStart(2, '0')
+                    val d = p[2].padStart(2, '0')
+                    "$d/$m/$y"
+                } else ""
+            } ?: ""
+            var dateOfBirthText by rememberSaveable { mutableStateOf(initialDateText) }
+            var dateOfBirthError by remember { mutableStateOf("") }
+
             var phone by rememberSaveable { mutableStateOf(user.phone) }
+            var phoneError by remember { mutableStateOf("") }
 
             var postcodeText by rememberSaveable { mutableStateOf(user.postcode?.toString() ?: "") }
             val postcodeInt: Int? = postcodeText.toIntOrNull()
@@ -116,24 +134,33 @@ fun EditProfileScreen(
 
             val scrollState = rememberScrollState()
 
+            // Opciones de sexo
             val sexOptions = listOf(
                 SexOption("Masculino", "Male", Icons.Default.Man),
                 SexOption("Femenino",  "Female", Icons.Default.Woman)
             )
-
-            // — 2) Calcular índice inicial según el valor que trae user.sex —
-            //     Si user.sex coincide con alguna backendValue (“Male” o “Female”), usamos ese índice.
-            //     Si user.sex no coincide con ninguna opción, selectedIndex queda en -1.
-            val initialIndex = sexOptions.indexOfFirst { it.backendValue.equals(user.sex, ignoreCase = true) }
+            val initialIndex = sexOptions
+                .indexOfFirst { it.backendValue.equals(user.sex, ignoreCase = true) }
                 .takeIf { it >= 0 } ?: -1
 
             var selectedIndex by rememberSaveable { mutableIntStateOf(initialIndex) }
             var expandedSex by remember { mutableStateOf(false) }
-
-            // 3) Derivar la opción (puede ser null si selectedIndex == -1):
+            var sexError by remember { mutableStateOf("") }
             val selectedSex: SexOption? =
                 selectedIndex.takeIf { it >= 0 }?.let { sexOptions[it] }
 
+            // 5) Cuando updateState cambie a ValidationErrors, volcamos los mensajes a los estados locales
+            LaunchedEffect(updateState) {
+                if (updateState is UpdateState.ValidationErrors) {
+                    val fieldErrors = updateState.fieldErrors
+                    fullNameError = fieldErrors[Field.FULL_NAME] ?: ""
+                    dateOfBirthError = fieldErrors[Field.DATE_OF_BIRTH] ?: ""
+                    sexError = fieldErrors[Field.SEX] ?: ""
+                    phoneError = fieldErrors[Field.PHONE] ?: ""
+                }
+            }
+
+            // 6) Contenido del formulario
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -141,6 +168,7 @@ fun EditProfileScreen(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // --- Correo (no editable) ---
                 OutlinedTextField(
                     value = user.email,
                     onValueChange = { /* no editable */ },
@@ -152,9 +180,14 @@ fun EditProfileScreen(
                         .padding(vertical = 4.dp)
                         .widthIn(max = 600.dp)
                 )
+
+                // --- Nombre completo ---
                 OutlinedTextField(
                     value = fullName,
-                    onValueChange = { fullName = it },
+                    onValueChange = {
+                        fullName = it
+                        if (fullNameError.isNotEmpty()) fullNameError = ""
+                    },
                     label = { Text("Nombre y Apellidos") },
                     leadingIcon = { Icon(Icons.Default.Person, null) },
                     modifier = Modifier
@@ -162,17 +195,44 @@ fun EditProfileScreen(
                         .padding(vertical = 4.dp)
                         .widthIn(max = 600.dp)
                 )
+                if (fullNameError.isNotEmpty()) {
+                    Text(
+                        text = fullNameError,
+                        color = Color.Red,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp)
+                    )
+                }
+
+                // --- Fecha de nacimiento ---
                 OutlinedTextField(
-                    value = dateOfBirth,
-                    onValueChange = { dateOfBirth = it },
+                    value = dateOfBirthText,
+                    onValueChange = { new ->
+                        val filtered = new.filter { it.isDigit() || it == '/' }.take(10)
+                        dateOfBirthText = filtered
+                        if (dateOfBirthError.isNotEmpty()) dateOfBirthError = ""
+                    },
                     label = { Text("Fecha de nacimiento") },
-                    leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
+                    placeholder = { Text("dd/MM/yyyy") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                         .widthIn(max = 600.dp)
                 )
-                // — 4) Bloque “Sexo” con ExposedDropdownMenuBox —
+                if (dateOfBirthError.isNotEmpty()) {
+                    Text(
+                        text = dateOfBirthError,
+                        color = Color.Red,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp)
+                    )
+                }
+
+                // --- Sexo desplegable ---
                 ExposedDropdownMenuBox(
                     expanded = expandedSex,
                     onExpandedChange = { expandedSex = !expandedSex },
@@ -181,19 +241,15 @@ fun EditProfileScreen(
                         .padding(vertical = 4.dp)
                 ) {
                     OutlinedTextField(
-                        // Si selectedGender != null, mostramos su etiqueta (“Masculino”/“Femenino”);
-                        // si es null, mostramos text raw = user.sex (al cargar) o cadena vacía.
-                        // Esto hace que, al inicio, si user.sex = "Male", muestre "Masculino".
-                        value = selectedSex?.label ?: user.sex.takeIf { it.isNotBlank() } ?: "",
-                        onValueChange = { /* no se puede editar a mano */ },
+                        value = selectedSex?.label
+                            ?: user.sex.takeIf { it.isNotBlank() } ?: "",
+                        onValueChange = { /* readOnly */ },
                         readOnly = true,
                         label = { Text("Sexo") },
                         leadingIcon = {
                             if (selectedSex != null) {
                                 Icon(selectedSex.icon, contentDescription = null)
                             } else {
-                                // Si user.sex traía un valor que no coincide con "Male"/"Female",
-                                // mostramos un icono genérico (por ejemplo R.drawable.generos).
                                 Icon(
                                     painter = painterResource(id = R.drawable.generos),
                                     contentDescription = "Sexo",
@@ -206,7 +262,6 @@ fun EditProfileScreen(
                             .fillMaxWidth()
                             .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                     )
-
                     ExposedDropdownMenu(
                         expanded = expandedSex,
                         onDismissRequest = { expandedSex = false }
@@ -218,14 +273,29 @@ fun EditProfileScreen(
                                 onClick = {
                                     selectedIndex = index
                                     expandedSex = false
+                                    if (sexError.isNotEmpty()) sexError = ""
                                 }
                             )
                         }
                     }
                 }
+                if (sexError.isNotEmpty()) {
+                    Text(
+                        text = sexError,
+                        color = Color.Red,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp)
+                    )
+                }
+
+                // --- Teléfono ---
                 OutlinedTextField(
                     value = phone,
-                    onValueChange = { phone = it },
+                    onValueChange = {
+                        phone = it
+                        if (phoneError.isNotEmpty()) phoneError = ""
+                    },
                     label = { Text("Teléfono") },
                     leadingIcon = { Icon(Icons.Default.Phone, null) },
                     modifier = Modifier
@@ -234,6 +304,17 @@ fun EditProfileScreen(
                         .widthIn(max = 600.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                 )
+                if (phoneError.isNotEmpty()) {
+                    Text(
+                        text = phoneError,
+                        color = Color.Red,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp)
+                    )
+                }
+
+                // --- Código Postal (opcional) ---
                 OutlinedTextField(
                     value = postcodeText,
                     onValueChange = { newText ->
@@ -249,6 +330,8 @@ fun EditProfileScreen(
                         .widthIn(max = 600.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+
+                // --- DNI (opcional) ---
                 OutlinedTextField(
                     value = dni,
                     onValueChange = { dni = it },
@@ -259,25 +342,35 @@ fun EditProfileScreen(
                         .padding(vertical = 4.dp)
                         .widthIn(max = 600.dp)
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // --- Botón Guardar: delega validación en el ViewModel + caso de uso ---
                 Button(
                     onClick = {
-                        // Si escogió un índice válido, cogemos el backendValue (“Male”/“Female”).
-                        // Si no, mantenemos el valor que ya existía en user.sex.
-                        val nuevoSexo = selectedSex?.backendValue ?: user.sex
+                        // Convertir "dd/MM/yyyy" ⇒ "yyyy-MM-dd"
+                        val partes = dateOfBirthText.split("/")
+                        val d = partes.getOrNull(0)?.padStart(2, '0') ?: ""
+                        val m = partes.getOrNull(1)?.padStart(2, '0') ?: ""
+                        val y = partes.getOrNull(2)?.padStart(4, '0') ?: ""
+                        val dateOfBirthBackend =
+                            if (partes.size == 3) "$y-$m-$d" else ""
 
-                        onSave(
-                            user.copy(
-                                fullName = fullName,
-                                dateOfBirth = dateOfBirth,
-                                sex = nuevoSexo,
-                                phone = phone,
-                                postcode = postcodeInt,
-                                dni = if (dni.isBlank()) null else dni
-                            )
+                        // Construir el candidato final
+                        val nuevoSexo = selectedSex?.backendValue ?: user.sex
+                        val updated = user.copy(
+                            fullName = fullName.trim(),
+                            dateOfBirth = dateOfBirthBackend,
+                            sex = nuevoSexo,
+                            phone = phone.trim(),
+                            postcode = postcodeInt,
+                            dni = dni.ifBlank { null }
                         )
+
+                        // Limpiar errores previos y delegar en el ViewModel
+                        onSave(updated)
                     },
                     modifier = Modifier
-                        .padding(top = 16.dp)
                         .align(Alignment.CenterHorizontally)
                 ) {
                     Text("Guardar")

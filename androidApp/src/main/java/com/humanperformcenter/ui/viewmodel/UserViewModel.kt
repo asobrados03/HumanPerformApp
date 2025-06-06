@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
+import com.humanperformcenter.shared.domain.usecase.ValidationResult
 import com.humanperformcenter.shared.session.SessionManager
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,22 +31,62 @@ class UserViewModel(
     val updateState: LiveData<UpdateState> = _updateState
 
     /**
-     * Llamar para actualizar el usuario en el backend.
-     * Recibe un LoginResponse con los campos modificados (incluyendo id y token).
-     * Actualiza SessionManager con el nuevo objeto si tiene éxito.
+     * Recibe un LoginResponse “candidato” (con campos fullName, dateOfBirth = "yyyy-MM-dd",
+     * sex, phone, postcode, dni, etc.). Primero lo valida mediante el caso de uso; si hay
+     * errores, emite ValidationErrors con el mapa. Si no, emite Loading y llama a updateUser()
+     * del caso de uso.
      */
-    fun updateUser(updatedUser: LoginResponse) {
+    fun updateUser(candidate: LoginResponse) {
+        // 1) Convertir dateOfBirth de "yyyy-MM-dd" (que la UI ya le pasó) a formato dd/MM/yyyy
+        //    para validar en el caso de uso. Podemos invertir la cadena:
+        val dobParts = candidate.dateOfBirth.split("-")
+        val dateOfBirthText = if (dobParts.size == 3) {
+            val y = dobParts[0].padStart(4, '0')
+            val m = dobParts[1].padStart(2, '0')
+            val d = dobParts[2].padStart(2, '0')
+            "$d/$m/$y"
+        } else {
+            ""
+        }
+
+        // 2) Invocar al caso de uso para validar
+        val validation = userUseCase.validateProfile(
+            fullName = candidate.fullName,
+            dateOfBirthText = dateOfBirthText,
+            selectedSexBackend = candidate.sex,
+            phone = candidate.phone,
+            dni = candidate.dni.toString()
+        )
+
+        if (validation is ValidationResult.Error) {
+            // 2.1) Si hay errores, los voltamos a UpdateState.ValidationErrors
+            val fieldErrors = validation.fieldErrors.mapKeys { (campo, _) ->
+                // Mapear ValidationResult.Field → UpdateState.Field
+                when (campo) {
+                    ValidationResult.Field.FULL_NAME -> UpdateState.Field.FULL_NAME
+                    ValidationResult.Field.DATE_OF_BIRTH -> UpdateState.Field.DATE_OF_BIRTH
+                    ValidationResult.Field.SEX -> UpdateState.Field.SEX
+                    ValidationResult.Field.PHONE -> UpdateState.Field.PHONE
+                    ValidationResult.Field.DNI -> UpdateState.Field.DNI
+                }
+            }
+            _updateState.value = UpdateState.ValidationErrors(fieldErrors)
+            return
+        }
+
+        // 3) Si pasó validación, invocamos updateUser() en Loading
         _updateState.value = UpdateState.Loading
 
         viewModelScope.launch {
-            val result = userUseCase.updateUser(updatedUser)
+            val result = userUseCase.updateUser(candidate)
 
             result.onSuccess { newUser ->
-                // 3) Almacenamos el usuario actualizado en memoria
+                // Guardar en sesión y emitir Success
                 SessionManager.storeUser(newUser)
                 _updateState.value = UpdateState.Success(newUser)
             }.onFailure { throwable ->
-                _updateState.value = UpdateState.Error(throwable.message ?: "Error desconocido")
+                _updateState.value =
+                    UpdateState.Error(throwable.message ?: "Error desconocido")
             }
         }
     }

@@ -27,6 +27,10 @@ fun EditProfileRoute(navController: NavHostController) {
     val updateState: UpdateState by userViewModel.updateState
         .observeAsState(initial = UpdateState.Idle)
 
+    LaunchedEffect(Unit) {
+        userViewModel.clearUpdateState()
+    }
+
     // Si no hay usuario en memoria, redirigimos a Login
     LaunchedEffect(userState) {
         if (userState == null) {
@@ -42,6 +46,7 @@ fun EditProfileRoute(navController: NavHostController) {
         user = userState!!,
         updateState = updateState,
         onSave = { updatedUser ->
+            userViewModel.clearUpdateState()
             userViewModel.updateUser(updatedUser)
         },
         navController = navController
