@@ -8,6 +8,7 @@ import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.AuthRepository
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -18,40 +19,65 @@ import io.ktor.http.contentType
 object AuthRepositoryImpl : AuthRepository {
     override suspend fun login(email: String, password: String): Result<LoginResponse> {
         return try {
-            // 1) Ejecutamos la petición y obtenemos el HttpResponse
-            val httpResponse: HttpResponse = ApiClient.httpClient.post("${ApiClient.baseUrl}/login") {
+            // Evitamos que Ktor lance excepción automática en 4xx/5xx
+            val response: HttpResponse = ApiClient.httpClient.post("${ApiClient.baseUrl}/login") {
                 contentType(ContentType.Application.Json)
                 setBody(mapOf("email" to email, "password" to password))
+                // Deshabilita el “throwOnError” automático
+                expectSuccess = false
             }
 
-            // 2) Si es 200 OK, deserializamos el body a LoginResponse
-            return if (httpResponse.status == HttpStatusCode.OK) {
-                // body<LoginResponse>() lee el JSON y crea el objeto
-                val loginResponse: LoginResponse = httpResponse.body()
-                Result.success(loginResponse)
-            } else {
-                // Cualquier otro status (400, 401, 500, etc.) lo consideramos fallo
-                Result.failure(Exception("Error al autenticar: código HTTP ${httpResponse.status.value}"))
+            return when (response.status) {
+                HttpStatusCode.OK -> {
+                    val loginResponse: LoginResponse = response.body()
+                    Result.success(loginResponse)
+                }
+                HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized -> {
+                    // Leer el JSON de error que envía el backend
+                    val errorBody: ErrorResponse = try {
+                        response.body()
+                    } catch (_: Exception) {
+                        ErrorResponse("Credenciales inválidas")
+                    }
+                    Result.failure(Exception(errorBody.message))
+                }
+                else -> {
+                    Result.failure(Exception("Hubo un problema al iniciar sesión. Por favor, inténtalo más tarde."))
+                }
             }
-
-        } catch (e: Exception) {
-            // Si la llamada lanza excepción (timeout, JSON malformado, 401 sin body válido, etc.)
-            Result.failure(e)
+        } catch (_: Exception) {
+            // Timeout, sin red, JSON mal formado, etc.
+            Result.failure(Exception("Error de conexión. Revisa tu conexión a internet e inténtalo de nuevo."))
         }
     }
 
     override suspend fun register(datos: RegisterRequest): Result<RegisterResponse> {
         return try {
-            val successMessage: RegisterResponse = ApiClient.httpClient.post("${ApiClient.baseUrl}/register") {
+            // 1) Hacemos la petición y, si es 201, body() se deserializa a RegisterResponse
+            val httpResponse: HttpResponse = ApiClient.httpClient.post("${ApiClient.baseUrl}/register") {
                 contentType(ContentType.Application.Json)
                 setBody(datos)
-            }.body()
-            Result.success(successMessage)
+            }
+
+            return if (httpResponse.status == HttpStatusCode.Created) {
+                val registerResponse: RegisterResponse = httpResponse.body()
+                Result.success(registerResponse)
+            } else {
+                // 2) Si no es 201, intentamos extraer el JSON {"error": "..."}
+                val errorBody: ErrorResponse = httpResponse.body()
+                Result.failure(Exception(errorBody.message))
+            }
         } catch (e: ClientRequestException) {
-            val errorMessage = try { e.response.body<ErrorResponse>().message } catch (_: Exception) { e.message }
-            Result.failure(Exception("Registro fallido: $errorMessage"))
-        } catch (e: Exception) {
-            Result.failure(e)
+            // En caso de 400, 409 u otro cliente, extraemos el JSON de error
+            val errorMessage = try {
+                e.response.body<ErrorResponse>().message
+            } catch (_: Exception) {
+                e.message
+            }
+            Result.failure(Exception(errorMessage))
+        } catch (_: Exception) {
+            // Timeout, sin red, JSON mal formado, etc.
+            Result.failure(Exception("Error de conexión. Revisa tu conexión a internet e inténtalo de nuevo."))
         }
     }
 }

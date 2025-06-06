@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.shared.data.model.RegisterRequest
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
+import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult
+import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
 import com.humanperformcenter.shared.session.SessionManager
 import com.humanperformcenter.ui.viewmodel.state.LoginState
 import com.humanperformcenter.ui.viewmodel.state.RegisterState
@@ -44,6 +46,26 @@ class AuthViewModel(
     }
 
     fun register(data: RegisterRequest) {
+        // 1) Ejecutar validación local antes de llamar al caso de uso
+        val validation = UserValidator.validateRegister(
+            firstName = data.nombre,
+            lastName = data.apellidos,
+            email = data.email,
+            phone = data.telefono,
+            password = data.password,
+            dateOfBirthText = data.fechaNacimiento,
+            selectedSexBackend = data.sexo,
+            postcode = data.codigoPostal,
+            dni = data.dni
+        )
+
+        if (validation is RegisterValidationResult.Error) {
+            // 2) Si hay errores, emitimos ValidationErrors en lugar de Loading
+            _registerState.value = RegisterState.ValidationErrors(validation.fieldErrors)
+            return
+        }
+
+        // 3) Si validación OK, llamamos al caso de uso para hacer la petición
         _registerState.value = RegisterState.Loading
         viewModelScope.launch {
             val result = authUseCase.register(data)

@@ -46,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -64,6 +65,7 @@ import com.humanperformcenter.R
 import com.humanperformcenter.data.SexOption
 import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.model.RegisterRequest
+import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult.RegisterField
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.util.DateVisualTransformation
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
@@ -82,40 +84,66 @@ fun RegisterScreen(
         factory = AuthViewModelFactory(AppModule.authUseCase)
     )
 
-    // 2. Suscribirnos al estado de login
+    // 2. Suscribirnos al estado de registro
     val registerState by viewModel.registerState.observeAsState(RegisterState.Idle)
 
     // — estados base —
     var nombre by rememberSaveable { mutableStateOf("") }
+    var nombreError by remember { mutableStateOf("") }
+
     var apellidos by rememberSaveable { mutableStateOf("") }
+    var apellidosError by remember { mutableStateOf("") }
+
     var email by rememberSaveable { mutableStateOf("") }
+    var emailError by remember { mutableStateOf("") }
+
     var telefono by rememberSaveable { mutableStateOf("") }
+    var telefonoError by remember { mutableStateOf("") }
+
     var password by rememberSaveable { mutableStateOf("") }
+    var passwordError by remember { mutableStateOf("") }
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
+
     var fechaNacimientoText by rememberSaveable { mutableStateOf("") }
+    var fechaNacimientoError by remember { mutableStateOf("") }
+
     var codigoPostal by rememberSaveable { mutableStateOf("") }
+    var codigoPostalError by remember { mutableStateOf("") }
+
     var dni by rememberSaveable { mutableStateOf("") }
+    var dniError by remember { mutableStateOf("") }
+
     var aceptoTerminos by rememberSaveable { mutableStateOf(false) }
     var aceptoPolitica by rememberSaveable { mutableStateOf(false) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
-    var passwordVisible by rememberSaveable { mutableStateOf(false) }
-
-    // — sexo desplegable —
+    // Sexo desplegable
     val sexOptions = listOf(
         SexOption("Masculino", "Male", Icons.Default.Man),
         SexOption("Femenino", "Female", Icons.Default.Woman)
     )
-
-    // 1) Sólo guardamos un Int. -1 = nada seleccionado
     var selectedIndex by rememberSaveable { mutableIntStateOf(-1) }
     var expandedSex by rememberSaveable { mutableStateOf(false) }
-
-    // 2) Derivamos la opción seleccionada (o null)
+    var sexError by remember { mutableStateOf("") }
     val selectedSex = selectedIndex.takeIf { it >= 0 }?.let { sexOptions[it] }
 
     val scroll = rememberScrollState()
-
     val uriHandler = LocalUriHandler.current
+
+    LaunchedEffect(registerState) {
+        if (registerState is RegisterState.ValidationErrors) {
+            val fe = (registerState as RegisterState.ValidationErrors).fieldErrors
+            nombreError = fe[RegisterField.FIRST_NAME] ?: ""
+            apellidosError = fe[RegisterField.LAST_NAME] ?: ""
+            emailError = fe[RegisterField.EMAIL] ?: ""
+            telefonoError = fe[RegisterField.PHONE] ?: ""
+            passwordError = fe[RegisterField.PASSWORD] ?: ""
+            fechaNacimientoError = fe[RegisterField.DATE_OF_BIRTH] ?: ""
+            sexError = fe[RegisterField.SEX] ?: ""
+            codigoPostalError = fe[RegisterField.POSTCODE] ?: ""
+            dniError = fe[RegisterField.DNI] ?: ""
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -140,62 +168,134 @@ fun RegisterScreen(
 
             // Nombre / Apellidos / Email / Teléfono / Contraseña
             OutlinedTextField(
-                value = nombre, onValueChange = { nombre = it },
+                value = nombre,
+                onValueChange = {
+                    nombre = it
+                    if (nombreError.isNotEmpty()) nombreError = ""
+                },
                 label = { Text("Nombre") },
-                leadingIcon = { Icon(Icons.Default.Person, null) },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth()
             )
+
+            if (nombreError.isNotEmpty()) {
+                Text(
+                    text = nombreError,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
             OutlinedTextField(
-                value = apellidos, onValueChange = { apellidos = it },
+                value = apellidos,
+                onValueChange = {
+                    apellidos = it
+                    if (apellidosError.isNotEmpty()) apellidosError = ""
+                },
                 label = { Text("Apellidos") },
-                leadingIcon = { Icon(Icons.Default.Person, null) },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth()
             )
+
+            if (apellidosError.isNotEmpty()) {
+                Text(
+                    text = apellidosError,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
             OutlinedTextField(
-                value = email, onValueChange = { email = it },
-                label = { Text("E-mail") },
-                leadingIcon = { Icon(Icons.Default.Email, null) },
+                value = email,
+                onValueChange = {
+                    email = it
+                    if (emailError.isNotEmpty()) emailError = ""
+                },
+                label = { Text("Correo electrónico") },
+                placeholder = { Text("usuario@ejemplo.com") },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth()
             )
+
+            if (emailError.isNotEmpty()) {
+                Text(
+                    text = emailError,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
             OutlinedTextField(
-                value = telefono, onValueChange = { telefono = it },
+                value = telefono,
+                onValueChange = {
+                    telefono = it
+                    if (telefonoError.isNotEmpty()) telefonoError = ""
+                },
                 label = { Text("Teléfono") },
-                leadingIcon = { Icon(Icons.Default.Phone, null) },
+                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth()
             )
+
+            if (telefonoError.isNotEmpty()) {
+                Text(
+                    text = telefonoError,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
-                label = { Text("Contraseña") },
-                leadingIcon = {
-                    Icon(Icons.Default.Lock, contentDescription = "Icono de contraseña")
+                onValueChange = {
+                    password = it
+                    if (passwordError.isNotEmpty()) passwordError = ""
                 },
+                label = { Text("Contraseña") },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        val icon = if (passwordVisible) {
-                            Icons.Default.Visibility
-                        } else {
-                            Icons.Default.VisibilityOff
-                        }
+                        val icon = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
                         Icon(
                             imageVector = icon,
                             contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
                         )
                     }
                 },
-                visualTransformation = if (passwordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
+            if (passwordError.isNotEmpty()) {
+                Text(
+                    text = passwordError,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
+                )
+            }
+
             Spacer(Modifier.height(8.dp))
 
+            // Sexo desplegable
             ExposedDropdownMenuBox(
                 expanded = expandedSex,
                 onExpandedChange = { expandedSex = !expandedSex },
@@ -211,7 +311,7 @@ fun RegisterScreen(
                             Icon(selectedSex.icon, contentDescription = null)
                         } else {
                             Icon(
-                                painterResource(id = R.drawable.generos),
+                                painter = painterResource(id = R.drawable.generos),
                                 contentDescription = "Sexo",
                                 modifier = Modifier.size(24.dp)
                             )
@@ -222,7 +322,6 @@ fun RegisterScreen(
                         .fillMaxWidth()
                         .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 )
-
                 ExposedDropdownMenu(
                     expanded = expandedSex,
                     onDismissRequest = { expandedSex = false }
@@ -234,54 +333,109 @@ fun RegisterScreen(
                             onClick = {
                                 selectedIndex = index
                                 expandedSex = false
+                                if (sexError.isNotEmpty()) sexError = ""
                             }
                         )
                     }
                 }
             }
+            if (sexError.isNotEmpty()) {
+                Text(
+                    text = sexError,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
+                )
+            }
 
             Spacer(Modifier.height(8.dp))
 
+            // Fecha de nacimiento
             OutlinedTextField(
                 value = fechaNacimientoText,
                 onValueChange = { new ->
-                    // sólo dígitos, máximo 8 (ddMMyyyy)
-                    val digits = new.filter { it.isDigit() }.take(8)
-                    fechaNacimientoText = digits
+                    val filtered = new.filter { it.isDigit() || it == '/' }.take(10)
+                    fechaNacimientoText = filtered
+                    if (fechaNacimientoError.isNotEmpty()) fechaNacimientoError = ""
                 },
-                label = { Text("Fecha de nacimiento (dd/mm/yyyy)") },
-                leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
+                label = { Text("Fecha de nacimiento") },
+                placeholder = { Text("dd/mm/yyyy") },
+                leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = DateVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
+            if (fechaNacimientoError.isNotEmpty()) {
+                Text(
+                    text = fechaNacimientoError,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
+                )
+            }
 
             Spacer(Modifier.height(8.dp))
 
             // Código postal / DNI
             OutlinedTextField(
-                value = codigoPostal, onValueChange = { codigoPostal = it },
+                value = codigoPostal,
+                onValueChange = {
+                    codigoPostal = it
+                    if (codigoPostalError.isNotEmpty()) codigoPostalError = ""
+                },
                 label = { Text("Código Postal") },
-                leadingIcon = { Icon(Icons.Default.LocationOn, null) },
+                leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
+
+            if (codigoPostalError.isNotEmpty()) {
+                Text(
+                    text = codigoPostalError,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
             OutlinedTextField(
-                value = dni, onValueChange = { dni = it },
+                value = dni,
+                onValueChange = {
+                    dni = it
+                    if (dniError.isNotEmpty()) dniError = ""
+                },
                 label = { Text("DNI") },
-                leadingIcon = { Icon(Icons.Default.Badge, null) },
+                leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth()
             )
 
+            if (dniError.isNotEmpty()) {
+                Text(
+                    text = dniError,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp)
+                )
+            }
+
             Spacer(Modifier.height(8.dp))
 
+            // Términos y condiciones / Política de privacidad
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = aceptoTerminos,
-                        onCheckedChange = { aceptoTerminos = it }
+                        onCheckedChange = {
+                            aceptoTerminos = it
+                            errorMessage = null
+                        }
                     )
                     Text(text = "Acepto ")
                     Text(
@@ -295,10 +449,15 @@ fun RegisterScreen(
                     )
                 }
 
+                Spacer(Modifier.height(4.dp))
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = aceptoPolitica,
-                        onCheckedChange = { aceptoPolitica = it }
+                        onCheckedChange = {
+                            aceptoPolitica = it
+                            errorMessage = null
+                        }
                     )
                     Text(text = "Acepto ")
                     Text(
@@ -313,58 +472,75 @@ fun RegisterScreen(
                 }
             }
 
+            Spacer(Modifier.height(8.dp))
+
+            // Mensaje de error (local o proveniente del servidor)
             errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
             }
 
+            // Estado de registro: Loading, Error o Success
             when (registerState) {
                 is RegisterState.Loading -> {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(modifier = Modifier.padding(16.dp))
                 }
                 is RegisterState.Success -> {
-                    // Registro exitoso → navegar y limpiar estado
                     LaunchedEffect(Unit) {
                         viewModel.resetStates()
                         onRegistroExitoso()
                     }
                 }
                 is RegisterState.Error -> {
+                    // Mostrar el mensaje de error recibido desde el repositorio (JSON)
                     errorMessage = (registerState as RegisterState.Error).message
                 }
-                RegisterState.Idle -> {
-                    // No hacer nada
-                }
+                else -> { /* Idle: nada que hacer */ }
             }
 
             Spacer(Modifier.height(16.dp))
 
+            // Botón de Registro
             Button(
                 onClick = {
-                    if (!aceptoTerminos) {
-                        errorMessage = "Debes aceptar los términos y condiciones"
-                        return@Button
-                    } else if (!aceptoPolitica) {
-                        errorMessage = "Debes aceptar la política de privacidad"
-                        return@Button
+                    // Validaciones locales antes de enviar
+                    when {
+                        !aceptoTerminos ->
+                            errorMessage = "Debes aceptar los términos y condiciones"
+                        !aceptoPolitica ->
+                            errorMessage = "Debes aceptar la política de privacidad"
+                        else -> {
+                            // Si pasa las validaciones, se envía la petición
+                            errorMessage = null
+                            val sexValue = selectedSex?.backendValue ?: ""
+                            val req = RegisterRequest(
+                                nombre,
+                                apellidos,
+                                email,
+                                telefono,
+                                password,
+                                sexValue,
+                                fechaNacimientoText,
+                                codigoPostal,
+                                dni
+                            )
+                            viewModel.register(req)
+                        }
                     }
-
-                    val genderValue = selectedSex!!.backendValue
-
-                    val req = RegisterRequest(
-                        nombre, apellidos, email, telefono,
-                        password, genderValue,
-                        fechaNacimientoText,
-                        codigoPostal, dni
-                    )
-                    viewModel.register(req)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Registro")
+                Text("Registrarse")
             }
 
+            Spacer(Modifier.height(8.dp))
+
+            // Enlace a pantalla de login
             TextButton(onClick = onNavigateToLogin) {
-                Text("¿Ya tienes una cuenta? Acceso")
+                Text("¿Ya tienes una cuenta? Inicia sesión")
             }
         }
     }

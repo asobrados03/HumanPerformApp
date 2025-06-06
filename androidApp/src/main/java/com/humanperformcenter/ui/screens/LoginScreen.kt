@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
@@ -59,16 +61,14 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     navController: NavHostController
 ) {
-    // 1) Obtenemos el contexto y las SharedPreferences
     val context = LocalContext.current
     val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    // 2) Estados locales para el email, contraseña, checkbox y visibilidad de contraseña
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var remember by rememberSaveable { mutableStateOf(false) }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
-    var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var localErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
     // 3) ViewModel de autenticación
     val viewModel: AuthViewModel = viewModel(
@@ -76,11 +76,10 @@ fun LoginScreen(
     )
     val loginState by viewModel.loginState.observeAsState(LoginState.Idle)
 
-    // 4) Al cargar la pantalla por primera vez, leemos lo que hubiera guardado en SharedPreferences
+    // 4) Al iniciar la pantalla, cargamos datos guardados (si “Recordar” estaba activo)
     LaunchedEffect(Unit) {
         val savedRemember = prefs.getBoolean(KEY_REMEMBER, false)
         if (savedRemember) {
-            // Si estaba marcado "Recordar", leemos email y password guardados
             email = prefs.getString(KEY_EMAIL, "") ?: ""
             password = prefs.getString(KEY_PASSWORD, "") ?: ""
             remember = true
@@ -101,21 +100,34 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "Acceso", style = MaterialTheme.typography.headlineMedium)
+            Text(text = "Accede a tu cuenta", style = MaterialTheme.typography.headlineMedium)
 
-            // Campo de email
+            Spacer(modifier = Modifier.padding(8.dp))
+
+            // Campo de correo electrónico
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
-                label = { Text("E-mail") },
+                onValueChange = {
+                    email = it
+                    localErrorMessage = null
+                },
+                label = { Text("Correo electrónico") },
+                placeholder = { Text("usuario@ejemplo.com") },
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
 
+            Spacer(modifier = Modifier.padding(4.dp))
+
+            // Campo de contraseña
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    localErrorMessage = null
+                },
                 label = { Text("Contraseña") },
+                placeholder = { Text("••••••••••") },
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -134,19 +146,19 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
-            // Checkbox “Recordar contraseña”
+            Spacer(modifier = Modifier.padding(8.dp))
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = remember,
                     onCheckedChange = { checked ->
                         remember = checked
-
                         if (!checked) {
-                            // Si desmarcamos, borramos lo guardado en prefs
+                            // Si se desmarca, borramos datos guardados
                             prefs.edit {
                                 remove(KEY_EMAIL)
-                                    .remove(KEY_PASSWORD)
-                                    .putBoolean(KEY_REMEMBER, false)
+                                remove(KEY_PASSWORD)
+                                putBoolean(KEY_REMEMBER, false)
                             }
                         }
                     }
@@ -154,12 +166,16 @@ fun LoginScreen(
                 Text(text = "Recordar contraseña")
             }
 
-            // Mensaje de error (antes de enviar)
-            errorMessage?.let {
-                Text(text = it, color = MaterialTheme.colorScheme.error)
+            // Mensaje de error local (antes de la llamada al servidor)
+            localErrorMessage?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
             }
 
-            // Animar el estado de login
+            // Estado de login: Loading, Error o Success
             when (loginState) {
                 is LoginState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.padding(16.dp))
@@ -168,7 +184,7 @@ fun LoginScreen(
                     Text(
                         text = (loginState as LoginState.Error).message,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(8.dp)
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
                 is LoginState.Success -> {
@@ -177,50 +193,60 @@ fun LoginScreen(
                         onLoginSuccess()
                     }
                 }
-                else -> { /* Idle: no hacemos nada */ }
+                else -> { /* Idle: nada que mostrar */ }
             }
 
-            // Botón de “Acceso”
+            Spacer(modifier = Modifier.padding(4.dp))
+
+            // Botón “Iniciar sesión”
             Button(
                 onClick = {
-                    // 1) Antes de llamar a viewModel.login, si “remember” está activo,
-                    //    guardamos en SharedPreferences email y password. Si no, borramos.
+                    // Validación local antes de invocar al ViewModel
+                    if (email.isBlank() || password.isBlank()) {
+                        localErrorMessage = "Por favor, ingresa ambos campos para continuar."
+                        return@Button
+                    }
+
+                    // Guardar o borrar credenciales según “Recuérdame”
                     if (remember) {
                         prefs.edit {
                             putString(KEY_EMAIL, email)
-                                .putString(KEY_PASSWORD, password)
-                                .putBoolean(KEY_REMEMBER, true)
+                            putString(KEY_PASSWORD, password)
+                            putBoolean(KEY_REMEMBER, true)
                         }
                     } else {
                         prefs.edit {
                             remove(KEY_EMAIL)
-                                .remove(KEY_PASSWORD)
-                                .putBoolean(KEY_REMEMBER, false)
+                            remove(KEY_PASSWORD)
+                            putBoolean(KEY_REMEMBER, false)
                         }
                     }
 
-                    // 2) Llamamos al ViewModel para iniciar login
                     viewModel.login(email.trim(), password)
                 },
                 enabled = loginState != LoginState.Loading,
-                modifier = Modifier.padding(12.dp)
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .fillMaxWidth(0.6f)
             ) {
-                Text("Acceso")
+                Text("Iniciar sesión")
             }
 
+            Spacer(modifier = Modifier.padding(4.dp))
+
+            // Enlace “¿Olvidaste tu contraseña?”
             TextButton(
-                onClick = { /* TODO: recuperar contraseña */ },
+                onClick = { /* TODO: implementar recuperación de contraseña */ },
                 modifier = Modifier.padding(8.dp)
             ) {
                 Text("¿Olvidaste tu contraseña?")
             }
 
-            // Botón “Regístrate ya”
             TextButton(
                 onClick = { onNavigateToRegister() },
                 modifier = Modifier.padding(8.dp)
             ) {
-                Text("Regístrate ya")
+                Text("¿No tienes cuenta? Regístrate ya")
             }
         }
     }

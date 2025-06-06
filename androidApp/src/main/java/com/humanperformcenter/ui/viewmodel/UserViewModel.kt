@@ -6,7 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
-import com.humanperformcenter.shared.domain.usecase.ValidationResult
+import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
+import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
 import com.humanperformcenter.shared.session.SessionManager
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import kotlinx.coroutines.flow.SharingStarted
@@ -50,7 +51,7 @@ class UserViewModel(
         }
 
         // 2) Invocar al caso de uso para validar
-        val validation = userUseCase.validateProfile(
+        val validation = UserValidator.validateProfile(
             fullName = candidate.fullName,
             dateOfBirthText = dateOfBirthText,
             selectedSexBackend = candidate.sex,
@@ -58,16 +59,16 @@ class UserViewModel(
             dni = candidate.dni.toString()
         )
 
-        if (validation is ValidationResult.Error) {
+        if (validation is EditValidationResult.Error) {
             // 2.1) Si hay errores, los voltamos a UpdateState.ValidationErrors
             val fieldErrors = validation.fieldErrors.mapKeys { (campo, _) ->
                 // Mapear ValidationResult.Field → UpdateState.Field
                 when (campo) {
-                    ValidationResult.Field.FULL_NAME -> UpdateState.Field.FULL_NAME
-                    ValidationResult.Field.DATE_OF_BIRTH -> UpdateState.Field.DATE_OF_BIRTH
-                    ValidationResult.Field.SEX -> UpdateState.Field.SEX
-                    ValidationResult.Field.PHONE -> UpdateState.Field.PHONE
-                    ValidationResult.Field.DNI -> UpdateState.Field.DNI
+                    EditValidationResult.Field.FULL_NAME -> UpdateState.Field.FULL_NAME
+                    EditValidationResult.Field.DATE_OF_BIRTH -> UpdateState.Field.DATE_OF_BIRTH
+                    EditValidationResult.Field.SEX -> UpdateState.Field.SEX
+                    EditValidationResult.Field.PHONE -> UpdateState.Field.PHONE
+                    EditValidationResult.Field.DNI -> UpdateState.Field.DNI
                 }
             }
             _updateState.value = UpdateState.ValidationErrors(fieldErrors)
