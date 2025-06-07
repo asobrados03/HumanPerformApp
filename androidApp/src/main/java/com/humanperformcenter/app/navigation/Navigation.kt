@@ -3,6 +3,7 @@ package com.humanperformcenter.app.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -10,6 +11,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.humanperformcenter.app.SetStatusBarColor
 import com.humanperformcenter.di.AppModule
+import com.humanperformcenter.shared.data.model.LoginResponse
+import com.humanperformcenter.shared.session.SessionManager
 import com.humanperformcenter.ui.screens.AlterGScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
 import com.humanperformcenter.ui.screens.ChatScreen
@@ -18,6 +21,7 @@ import com.humanperformcenter.ui.screens.EntrenamientoScreen
 import com.humanperformcenter.ui.screens.FavoritesScreen
 import com.humanperformcenter.ui.screens.FisioterapiaScreen
 import com.humanperformcenter.ui.screens.LoginScreen
+import com.humanperformcenter.ui.screens.MyProfileScreen
 import com.humanperformcenter.ui.screens.NewBlogScreen
 import com.humanperformcenter.ui.screens.NewProductScreen
 import com.humanperformcenter.ui.screens.NutricionScreen
@@ -151,6 +155,9 @@ fun Navigation(
                     onEditProfile = {
                         navController.navigate(Screen.EditProfileScreen.route)
                     },
+                    onViewProfile = {
+                        navController.navigate(Screen.MyProfileScreen.route)
+                    },
                     onMenuClick = { option ->
                         when (option) {
                             MenuOption.FAVORITOS -> navController.navigate(Screen.FavoritesScreen.route)
@@ -177,6 +184,28 @@ fun Navigation(
         }
         composable(Screen.EditProfileScreen.route) {
             EditProfileRoute(navController = navController)
+        }
+        composable(Screen.MyProfileScreen.route) {
+            val userViewModel: UserViewModel = viewModel(
+                factory = UserViewModelFactory(AppModule.userUseCase)
+            )
+
+            val userState: LoginResponse? by userViewModel.userData
+                .collectAsState(initial = SessionManager.getCurrentUser())
+
+            LaunchedEffect(userState) {
+                if (userState == null) {
+                    navController.navigate(Screen.LoginScreen.route) {
+                        popUpTo(Screen.EditProfileScreen.route) { inclusive = true }
+                    }
+                }
+            }
+            if (userState == null) return@composable
+
+            MyProfileScreen(
+                user = userState!!,
+                navController = navController
+            )
         }
         composable(Screen.FavoritesScreen.route) {
             FavoritesScreen(
