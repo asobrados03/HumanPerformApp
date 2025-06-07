@@ -190,7 +190,7 @@ fun formatDate(date: String): String {
         } else {
             date // Si no tiene el formato esperado, devolver original
         }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         date // En caso de error, devolver original
     }
 }
