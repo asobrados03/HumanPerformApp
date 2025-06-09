@@ -40,4 +40,21 @@ object UserRepositoryImpl: UserRepository {
             Result.failure(e)
         }
     }
+
+    override suspend fun deleteUser(email: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val response: HttpResponse = ApiClient.httpClient.delete("${ApiClient.baseUrl}/user") {
+                parameter("email", email)
+            }
+            return@withContext when (response.status) {
+                HttpStatusCode.OK       -> Result.success(Unit)
+                HttpStatusCode.NotFound -> Result.failure(Exception("Usuario no encontrado"))
+                else                    -> Result.failure(
+                    Exception("Error al eliminar usuario: código HTTP ${response.status.value}")
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

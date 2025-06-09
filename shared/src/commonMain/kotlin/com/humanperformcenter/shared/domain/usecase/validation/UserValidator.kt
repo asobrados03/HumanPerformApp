@@ -1,6 +1,10 @@
 package com.humanperformcenter.shared.domain.usecase.validation
 
 import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult.RegisterField
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 object UserValidator {
     /**
@@ -108,7 +112,7 @@ object UserValidator {
             errors[RegisterField.LAST_NAME] = "Los apellidos son obligatorios"
         }
 
-        // 2) Email: no vacío + contiene '@' y un punto tras @
+        // 2) Email
         if (email.isBlank()) {
             errors[RegisterField.EMAIL] = "El correo electrónico es obligatorio"
         } else {
@@ -118,36 +122,49 @@ object UserValidator {
             }
         }
 
-        // 3) Teléfono: no vacío + solo dígitos + al menos 9 caracteres
+        // 3) Teléfono
         if (phone.isBlank()) {
             errors[RegisterField.PHONE] = "El teléfono es obligatorio"
         } else if (phone.any { !it.isDigit() } || phone.length < 9) {
             errors[RegisterField.PHONE] = "Teléfono inválido"
         }
 
-        // 4) Contraseña: no vacío + al menos 6 caracteres
+        // 4) Contraseña
         if (password.isBlank()) {
             errors[RegisterField.PASSWORD] = "La contraseña es obligatoria"
         } else if (password.length < 6) {
             errors[RegisterField.PASSWORD] = "La contraseña debe tener al menos 6 caracteres"
         }
 
-        // 5) Fecha de nacimiento: "dd/MM/yyyy"
+        // 5) Fecha de nacimiento con java.time
         if (dateOfBirthText.isBlank()) {
             errors[RegisterField.DATE_OF_BIRTH] = "La fecha de nacimiento es obligatoria"
         } else {
-            val partes = dateOfBirthText.split("/")
-            if (partes.size != 3 ||
-                partes.any { it.isBlank() } ||
-                partes.any { parte -> !parte.all { ch -> ch.isDigit() } }
-            ) {
-                errors[RegisterField.DATE_OF_BIRTH] = "Fecha inválida. Usa dd/MM/yyyy"
-            } else {
-                val d = partes[0].toIntOrNull() ?: -1
-                val m = partes[1].toIntOrNull() ?: -1
-                val y = partes[2].toIntOrNull() ?: -1
-                if (d !in 1..31 || m !in 1..12 || y < 1900) {
-                    errors[RegisterField.DATE_OF_BIRTH] = "Fecha fuera de rango"
+            val parts = dateOfBirthText.split("/")
+            val date: LocalDate? = try {
+                val d = parts.getOrNull(0)?.toInt() ?: throw IllegalArgumentException()
+                val m = parts.getOrNull(1)?.toInt() ?: throw IllegalArgumentException()
+                val y = parts.getOrNull(2)?.toInt() ?: throw IllegalArgumentException()
+                LocalDate(y, m, d)
+            } catch (_: Exception) {
+                null
+            }
+
+            when {
+                date == null -> {
+                    errors[RegisterField.DATE_OF_BIRTH] = "Fecha inválida. Usa dd/MM/yyyy"
+                }
+                date.year < 1900 -> {
+                    errors[RegisterField.DATE_OF_BIRTH] = "Fecha demasiado antigua"
+                }
+                else -> {
+                    // compara contra hoy en la zona del dispositivo
+                    val today = Clock.System.now()
+                        .toLocalDateTime(TimeZone.currentSystemDefault())
+                        .date
+                    if (date > today) {
+                        errors[RegisterField.DATE_OF_BIRTH] = "La fecha no puede ser futura"
+                    }
                 }
             }
         }
@@ -159,14 +176,14 @@ object UserValidator {
             errors[RegisterField.SEX] = "Debes seleccionar un sexo"
         }
 
-        // 7) Código Postal: no vacío + solo dígitos + al menos 5 cifras
+        // 7) Código Postal
         if (postcode.isBlank()) {
             errors[RegisterField.POSTCODE] = "El código postal es obligatorio"
         } else if (postcode.any { !it.isDigit() } || postcode.length < 5) {
             errors[RegisterField.POSTCODE] = "Código postal inválido"
         }
 
-        // 8) DNI: si no está en blanco, validarlo
+        // 8) DNI
         if (dni.isBlank()) {
             errors[RegisterField.DNI] = "El DNI es obligatorio"
         } else if (!isValidSpanishDNI(dni.uppercase())) {

@@ -11,4 +11,8 @@ class UserUseCase(private val userRepository: UserRepository) {
     suspend fun updateUser(user: LoginResponse): Result<LoginResponse> {
         return userRepository.updateUser(user)
     }
+
+    suspend fun deleteUser(email: String): Result<Unit> {
+        return userRepository.deleteUser(email)
+    }
 }

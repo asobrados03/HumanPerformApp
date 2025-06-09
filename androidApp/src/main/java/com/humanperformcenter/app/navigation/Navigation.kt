@@ -15,6 +15,7 @@ import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.shared.session.SessionManager
 import com.humanperformcenter.ui.screens.AlterGScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
+import com.humanperformcenter.ui.screens.ChangePasswordScreen
 import com.humanperformcenter.ui.screens.ChatScreen
 import com.humanperformcenter.ui.screens.DocumentScreen
 import com.humanperformcenter.ui.screens.EntrenamientoScreen
@@ -165,10 +166,30 @@ fun Navigation(
                             MenuOption.DOCUMENTO -> navController.navigate(Screen.DocumentScreen.route)
                             MenuOption.PAGO -> navController.navigate(Screen.PaymentScreen.route)
                             MenuOption.VER_PAGO -> navController.navigate(Screen.ViewPaymentScreen.route)
+                            MenuOption.CONFIGURACION -> navController.navigate(Screen.ConfigurationScreen.route)
                         }
                     }
                 )
             }
+        }
+        composable(Screen.ConfigurationScreen.route) {
+            val userViewModel: UserViewModel = viewModel(
+                factory = UserViewModelFactory(AppModule.userUseCase)
+            )
+
+            ConfigurationRoute(
+                navController = navController,
+                userViewModel = userViewModel
+            )
+        }
+
+        composable(Screen.ChangePasswordScreen.route) {
+            ChangePasswordScreen(
+                navController = navController,
+                onChangePassword = { current, newPass, confirm ->
+                    // Validaciones y llamada al ViewModel o API
+                }
+            )
         }
         composable(Screen.ChatScreen.route) {
             ChatScreen(navController = navController)

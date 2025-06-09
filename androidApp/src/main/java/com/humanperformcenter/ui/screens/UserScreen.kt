@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -59,118 +61,105 @@ fun UserScreen(
         },
         bottomBar = { NavigationBar(navController) },
         containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
-        Column(
+    ) { paddingValues ->
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(paddingValues)
         ) {
-            // -- HEADER ROJO --
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFB71C1C))
-                    .padding(vertical = 24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // foto de perfil
-                    UserProfileImage(user.profilePictureUrl)
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Text(
-                        text = user.fullName,
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = user.email,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
-                    Text(
-                        text = user.phone,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    // saldo
-                    Card(
-                        colors = cardColors(containerColor = Color.Yellow),
-                        shape = RoundedCornerShape(8.dp),
-                        elevation = cardElevation(defaultElevation = 4.dp)
-                    ) {
+            // -- HEADER ROJO como primer ítem --
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFB71C1C))
+                        .padding(vertical = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        UserProfileImage(user.profilePictureUrl)
+                        Spacer(Modifier.height(12.dp))
                         Text(
-                            text = "Saldo: € ${"%.2f".format(0.0)}",
-                            Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            fontWeight = FontWeight.SemiBold
+                            text = user.fullName,
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
                         )
-                    }
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        FilledTonalButton(onClick = {
-                            onViewProfile()
-                        }) {
-                            Text("Mi perfil")
-                        }
-
-                        Spacer(Modifier.width(12.dp))
-
-                        OutlinedButton(
-                            onClick = {
-                                onEditProfile()
-                            },
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color.White
-                            ),
-                            border = BorderStroke(
-                                width = 1.dp,
-                                color = Color.DarkGray
-                            )
+                        Text(
+                            text = user.email,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                        Text(
+                            text = user.phone,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Card(
+                            colors = cardColors(containerColor = Color.Yellow),
+                            shape = RoundedCornerShape(8.dp),
+                            elevation = cardElevation(defaultElevation = 4.dp)
                         ) {
-                            Text("Editar perfil")
+                            Text(
+                                text = "Saldo: € ${"%.2f".format(0.0)}",
+                                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            FilledTonalButton(onClick = onViewProfile) {
+                                Text("Mi perfil")
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            OutlinedButton(
+                                onClick = onEditProfile,
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = Color.White
+                                ),
+                                border = BorderStroke(1.dp, Color.DarkGray)
+                            ) {
+                                Text("Editar perfil")
+                            }
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            // -- Spacer antes de las opciones --
+            item { Spacer(Modifier.height(16.dp)) }
 
-            // -- MENÚ --
+            // -- LISTA DE MENÚ --
             val items = listOf(
-                MenuOption.FAVORITOS to "Mis favoritos",
-                MenuOption.CHAT        to "Chat",
-                MenuOption.DOCUMENTO   to "Documento",
-                MenuOption.PAGO        to "Método de pago",
-                MenuOption.VER_PAGO    to "Ver método de pago"
+                MenuOption.CONFIGURACION to "Configuración",
+                MenuOption.FAVORITOS      to "Mis favoritos",
+                MenuOption.CHAT           to "Chat",
+                MenuOption.DOCUMENTO      to "Documento",
+                MenuOption.PAGO           to "Método de pago",
+                MenuOption.VER_PAGO       to "Ver método de pago"
             )
 
-            Column {
-                items.forEach { (option, title) ->
-                    AppCard(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        onClick = { onMenuClick(option) }
+            items(items) { (option, title) ->
+                AppCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    onClick = { onMenuClick(option) }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(text = title, fontSize = 16.sp)
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = null
-                            )
-                        }
+                        Text(text = title, fontSize = 16.sp)
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null
+                        )
                     }
                 }
             }

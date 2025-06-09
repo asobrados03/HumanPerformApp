@@ -9,9 +9,12 @@ import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
 import com.humanperformcenter.shared.session.SessionManager
+import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -30,6 +33,9 @@ class UserViewModel(
     // 2) LiveData para exponer el estado de la operación de update
     private val _updateState = MutableLiveData<UpdateState>(UpdateState.Idle)
     val updateState: LiveData<UpdateState> = _updateState
+
+    private val _deleteState = MutableStateFlow<DeleteUserState>(DeleteUserState.Idle)
+    val deleteState: StateFlow<DeleteUserState> = _deleteState.asStateFlow()
 
     /**
      * Recibe un LoginResponse “candidato” (con campos fullName, dateOfBirth = "yyyy-MM-dd",
@@ -97,5 +103,31 @@ class UserViewModel(
      */
     fun clearUpdateState() {
         _updateState.value = UpdateState.Idle
+    }
+
+    fun deleteUser(email: String) {
+        viewModelScope.launch {
+            _deleteState.value = DeleteUserState.Loading
+
+            userUseCase.deleteUser(email).fold(
+                onSuccess = {
+                    _deleteState.value = DeleteUserState.Success
+                },
+                onFailure = { throwable ->
+                    _deleteState.value = when {
+                        // si el mensaje de excepción incluye "no encontrado"
+                        throwable.message?.contains("no encontrado", ignoreCase = true) == true ->
+                            DeleteUserState.NotFound(email)
+                        else ->
+                            DeleteUserState.Error(throwable.message ?: "Error desconocido")
+                    }
+                }
+            )
+        }
+    }
+
+    /** Úsalo si quieres resetear el flujo (por ejemplo al salir de la pantalla) */
+    fun resetDeleteState() {
+        _deleteState.value = DeleteUserState.Idle
     }
 }
