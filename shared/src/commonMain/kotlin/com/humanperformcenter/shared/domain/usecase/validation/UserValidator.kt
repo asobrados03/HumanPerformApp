@@ -136,29 +136,42 @@ object UserValidator {
             errors[RegisterField.PASSWORD] = "La contraseña debe tener al menos 6 caracteres"
         }
 
-        // 5) Fecha de nacimiento con java.time
+        // 5) Fecha de nacimiento
         if (dateOfBirthText.isBlank()) {
             errors[RegisterField.DATE_OF_BIRTH] = "La fecha de nacimiento es obligatoria"
         } else {
-            val parts = dateOfBirthText.split("/")
             val date: LocalDate? = try {
-                val d = parts.getOrNull(0)?.toInt() ?: throw IllegalArgumentException()
-                val m = parts.getOrNull(1)?.toInt() ?: throw IllegalArgumentException()
-                val y = parts.getOrNull(2)?.toInt() ?: throw IllegalArgumentException()
-                LocalDate(y, m, d)
+                // Verificar que sea formato ddMMyyyy (exactamente 8 dígitos)
+                if (dateOfBirthText.length != 8 || !dateOfBirthText.all { it.isDigit() }) {
+                    throw IllegalArgumentException()
+                }
+
+                val day = dateOfBirthText.substring(0, 2).toInt()
+                val month = dateOfBirthText.substring(2, 4).toInt()
+                val year = dateOfBirthText.substring(4, 8).toInt()
+
+                // Validaciones básicas de rangos
+                if (day !in 1..31 || month !in 1..12 || year < 1900) {
+                    throw IllegalArgumentException()
+                }
+
+                // Usar parse con formato ISO estándar (yyyy-MM-dd)
+                val isoDateString = "${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
+                LocalDate.parse(isoDateString)
+
             } catch (_: Exception) {
                 null
             }
 
             when {
                 date == null -> {
-                    errors[RegisterField.DATE_OF_BIRTH] = "Fecha inválida. Usa dd/MM/yyyy"
+                    errors[RegisterField.DATE_OF_BIRTH] = "Fecha inválida. Usa formato ddMMyyyy"
                 }
                 date.year < 1900 -> {
                     errors[RegisterField.DATE_OF_BIRTH] = "Fecha demasiado antigua"
                 }
                 else -> {
-                    // compara contra hoy en la zona del dispositivo
+                    // Compara contra hoy en la zona del dispositivo
                     val today = Clock.System.now()
                         .toLocalDateTime(TimeZone.currentSystemDefault())
                         .date
@@ -203,7 +216,7 @@ object UserValidator {
      */
     private fun isValidSpanishDNI(dni: String): Boolean {
         // Regex: 7 u 8 dígitos, seguidos de 1 letra (A–Z)
-        val regex = Regex("""^(\d{7,8})([A-Z])${'$'}""")
+        val regex = Regex("""^(\d{7,8})([A-Z])$""")
         val match = regex.matchEntire(dni) ?: return false
 
         val numberPart = match.groupValues[1]   // "12345678"
