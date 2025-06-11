@@ -156,7 +156,9 @@ object UserValidator {
                 }
 
                 // Usar parse con formato ISO estándar (yyyy-MM-dd)
-                val isoDateString = "${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
+                val isoDateString = "${year.toString().padStart(4, '0')}-${month.toString()
+                    .padStart(2, '0')}-${day.toString().padStart(2, '0')}"
+
                 LocalDate.parse(isoDateString)
 
             } catch (_: Exception) {
@@ -165,7 +167,7 @@ object UserValidator {
 
             when {
                 date == null -> {
-                    errors[RegisterField.DATE_OF_BIRTH] = "Fecha inválida. Usa formato ddMMyyyy"
+                    errors[RegisterField.DATE_OF_BIRTH] = "Fecha inválida"
                 }
                 date.year < 1900 -> {
                     errors[RegisterField.DATE_OF_BIRTH] = "Fecha demasiado antigua"

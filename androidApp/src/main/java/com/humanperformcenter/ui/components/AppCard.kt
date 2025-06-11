@@ -1,5 +1,6 @@
 package com.humanperformcenter.ui.components
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,7 +14,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun AppCard(
     onClick: () -> Unit = {},
-    modifier: Modifier = Modifier,
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     // Colores dinámicos según el tema (Material3)

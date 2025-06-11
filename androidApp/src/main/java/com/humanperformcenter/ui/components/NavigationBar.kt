@@ -15,55 +15,66 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.humanperformcenter.app.navigation.NavItem
 import com.humanperformcenter.R
-import com.humanperformcenter.app.navigation.Screen
+import com.humanperformcenter.app.navigation.Calendar
+import com.humanperformcenter.app.navigation.NavItem
+import com.humanperformcenter.app.navigation.NewBlog
+import com.humanperformcenter.app.navigation.NewProduct
+import com.humanperformcenter.app.navigation.User
 
 @Composable
 fun NavigationBar(navController: NavController) {
     val items = listOf(
-        NavItem(Screen.NewProductScreen.route, "Producto", R.drawable.exercise),
-        NavItem(Screen.CalendarScreen.route, "Calendario", R.drawable.calendar),
-        NavItem(Screen.NewBlogScreen.route, "Blog", R.drawable.stories),
-        NavItem(Screen.UserScreen.route, "Usuario", R.drawable.person)
+        NavItem(NewProduct, "Producto",  R.drawable.exercise),
+        NavItem(Calendar,   "Calendario", R.drawable.calendar),
+        NavItem(NewBlog,    "Blog",       R.drawable.stories),
+        NavItem(User,       "Usuario",    R.drawable.person)
     )
 
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.primary
+        contentColor   = MaterialTheme.colorScheme.primary
     ) {
-        val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+        val currentRoute = navController
+            .currentBackStackEntryAsState()
+            .value
+            ?.destination
+            ?.route
+
         items.forEach { item ->
+            // En lugar de convertir a string, comparamos con el objeto serializado
+            val routeString = item.route::class.qualifiedName
+
             NavigationBarItem(
                 icon = {
-                    // Cargar el recurso usando painterResource y ajustar el tamaño
                     Icon(
-                        painter = painterResource(id = item.icon),
+                        painter           = painterResource(id = item.icon),
                         contentDescription = item.title,
-                        modifier = Modifier.size(32.dp) // Ajusta el tamaño
+                        modifier          = Modifier.size(32.dp)
                     )
                 },
                 label = {
                     Text(
-                        text = item.title,
-                        fontSize = 14.sp,
+                        text      = item.title,
+                        fontSize  = 14.sp,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier  = Modifier.padding(top = 4.dp)
                     )
                 },
-                selected = currentRoute == item.route,
-                onClick = {
-                    if (currentRoute != item.route) {
-                        navController.navigate(item.route) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+                // Verificamos si la ruta actual coincide con el tipo de clase
+                selected = currentRoute?.contains(routeString ?: "") == true,
+                onClick  = {
+                    // Navegamos usando el objeto de ruta directamente, no el string
+                    navController.navigate(item.route) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
                         }
+                        launchSingleTop = true
+                        restoreState    = true
                     }
                 },
-                // No override de color aquí para que el color global se aplique
                 alwaysShowLabel = true,
-                enabled = true
+                enabled         = true
             )
         }
     }

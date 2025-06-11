@@ -47,7 +47,7 @@ object AuthRepositoryImpl : AuthRepository {
             }
         } catch (_: Exception) {
             // Timeout, sin red, JSON mal formado, etc.
-            Result.failure(Exception("Error de conexión. Revisa tu conexión a internet e inténtalo de nuevo."))
+            Result.failure(Exception("Error de servidor o conexión. Revisa tu conexión a internet e/o inténtalo de nuevo."))
         }
     }
 

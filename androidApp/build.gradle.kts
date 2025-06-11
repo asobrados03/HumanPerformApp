@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlinxSerialization)
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
 }
 
@@ -74,6 +75,7 @@ dependencies {
         exclude(group = "com.intellij", module = "annotations")
     }
     implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.coil.compose)
     implementation(project(":shared"))
     implementation(libs.core.ktx)

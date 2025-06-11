@@ -34,8 +34,8 @@ fun EditProfileRoute(navController: NavHostController) {
     // Si no hay usuario en memoria, redirigimos a Login
     LaunchedEffect(userState) {
         if (userState == null) {
-            navController.navigate(Screen.LoginScreen.route) {
-                popUpTo(Screen.EditProfileScreen.route) { inclusive = true }
+            navController.navigate(Login) {
+                popUpTo(EditProfile) { inclusive = true }
             }
         }
     }

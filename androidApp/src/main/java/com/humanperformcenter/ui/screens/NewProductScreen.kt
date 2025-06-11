@@ -28,6 +28,14 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.R
+import com.humanperformcenter.app.navigation.AlterG
+import com.humanperformcenter.app.navigation.Entrenamiento
+import com.humanperformcenter.app.navigation.Fisioterapia
+import com.humanperformcenter.app.navigation.Nutricion
+import com.humanperformcenter.app.navigation.Opositores
+import com.humanperformcenter.app.navigation.Pilates
+import com.humanperformcenter.app.navigation.Presoterapia
+import com.humanperformcenter.app.navigation.Taquilla
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
 
@@ -35,8 +43,7 @@ import com.humanperformcenter.ui.viewmodel.SessionViewModel
 @Composable
 fun NewProductScreen(
     navController: NavHostController,
-    sessionViewModel: SessionViewModel,
-    onPlaySound: (Int) -> Unit
+    sessionViewModel: SessionViewModel
 ) {
     val services = listOf(
         "NUTRICIÓN" to R.drawable.nutricion,
@@ -71,14 +78,14 @@ fun NewProductScreen(
                 AppCard(
                     onClick = {
                         when (name) {
-                            "NUTRICIÓN" -> navController.navigate("nutricion_screen")
-                            "ENTRENAMIENTO" -> navController.navigate("entrenamiento_screen")
-                            "FISIOTERAPIA" -> navController.navigate("fisioterapia_screen")
-                            "PILATES" -> navController.navigate("pilates_screen")
-                            "PRESOTERAPIA" -> navController.navigate("presoterapia_screen")
-                            "ENTRENAMIENTO OPOSITORES" -> navController.navigate("opositores_screen")
-                            "SERVICIO DE TAQUILLA PERSONAL" -> navController.navigate("taquilla_screen")
-                            "ALTER G Cinta antigravedad" -> navController.navigate("alterg_screen")
+                            "NUTRICIÓN" -> navController.navigate(Nutricion)
+                            "ENTRENAMIENTO" -> navController.navigate(Entrenamiento)
+                            "FISIOTERAPIA" -> navController.navigate(Fisioterapia)
+                            "PILATES" -> navController.navigate(Pilates)
+                            "PRESOTERAPIA" -> navController.navigate(Presoterapia)
+                            "ENTRENAMIENTO OPOSITORES" -> navController.navigate(Opositores)
+                            "SERVICIO DE TAQUILLA PERSONAL" -> navController.navigate(Taquilla)
+                            "ALTER G Cinta antigravedad" -> navController.navigate(AlterG)
                         }
                     }
                 ) {

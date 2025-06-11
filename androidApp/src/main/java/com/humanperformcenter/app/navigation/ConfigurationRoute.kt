@@ -35,7 +35,7 @@ fun ConfigurationRoute(
             DeleteUserState.Success -> {
                 // Limpia sesión y vuelve al login
                 SessionManager.clearUser()
-                navController.navigate(Screen.WelcomeScreen.route) {
+                navController.navigate(Welcome) {
                     popUpTo(navController.graph.startDestinationId) { inclusive = true }
                 }
             }
@@ -65,7 +65,7 @@ fun ConfigurationRoute(
             navController = navController,
             onLogout = {
                 SessionManager.clearUser()
-                navController.navigate(Screen.WelcomeScreen.route) {
+                navController.navigate(Welcome) {
                     popUpTo(navController.graph.startDestinationId) { inclusive = true }
                 }
             },
@@ -73,7 +73,7 @@ fun ConfigurationRoute(
                 userViewModel.deleteUser(currentEmail)
             },
             onChangePasswordRequested = {
-                navController.navigate(Screen.ChangePasswordScreen.route)
+                navController.navigate(ChangePassword)
             }
         )
 
