@@ -80,7 +80,7 @@ fun BlogDetailScreen(
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Cargando blogs...",
+                            text = "Cargando los detalles del blog seleccionado...",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }

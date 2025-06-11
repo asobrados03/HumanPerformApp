@@ -50,15 +50,4 @@ class BlogViewModel(
             }
         }
     }
-
-    /**
-     * Resetea el estado a Idle.
-     */
-    fun clearBlogsState() {
-        _state.value = BlogState.Idle
-    }
-
-    fun clearBlogDetailState() {
-        _detailState.value = BlogDetailState.Idle
-    }
 }

@@ -159,7 +159,6 @@ fun Navigation(
 
                     // Navegar después de que la composición esté estable
                     LaunchedEffect(Unit) {
-                        kotlinx.coroutines.delay(100) // Tiempo suficiente para estabilización
                         navController.navigate(Login) {
                             popUpTo(User) { inclusive = true }
                         }
