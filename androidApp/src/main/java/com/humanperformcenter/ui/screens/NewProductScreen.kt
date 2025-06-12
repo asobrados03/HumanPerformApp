@@ -1,6 +1,8 @@
 package com.humanperformcenter.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -93,11 +96,27 @@ fun NewProductScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(12.dp)
                     ) {
+                        val isDarkTheme = isSystemInDarkTheme()
+
                         Image(
                             painter = painterResource(id = iconRes),
                             contentDescription = name,
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier
+                                .size(48.dp)
+                                .then(
+                                    if (isDarkTheme) {
+                                        Modifier
+                                            .background(
+                                                color = Color.White,
+                                                shape = RoundedCornerShape(8.dp)
+                                            )
+                                            .padding(4.dp)
+                                    } else {
+                                        Modifier.padding(4.dp)
+                                    }
+                                )
                         )
+
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = name,
