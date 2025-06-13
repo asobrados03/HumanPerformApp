@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.humanperformcenter.shared.data.model.ChangePasswordRequest
 import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.shared.data.model.RegisterRequest
@@ -8,8 +9,11 @@ import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.AuthRepository
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.RedirectResponseException
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
@@ -78,6 +82,74 @@ object AuthRepositoryImpl : AuthRepository {
         } catch (_: Exception) {
             // Timeout, sin red, JSON mal formado, etc.
             Result.failure(Exception("Error de conexión. Revisa tu conexión a internet e inténtalo de nuevo."))
+        }
+    }
+
+    override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int): Result<Unit> {
+        return try {
+            val response: HttpResponse = ApiClient.httpClient.put("${ApiClient.baseUrl}/user/change-password") {
+                contentType(ContentType.Application.Json)
+                setBody(ChangePasswordRequest(
+                    currentPassword = currentPassword,
+                    newPassword = newPassword,
+                    userId = userId
+                ))
+
+                expectSuccess = false
+            }
+
+            when (response.status) {
+                HttpStatusCode.OK -> {
+                    Result.success(Unit)
+                }
+                HttpStatusCode.BadRequest -> {
+                    // Error de validación (contraseña muy débil, etc.)
+                    val errorBody: ErrorResponse = try {
+                        response.body()
+                    } catch (_: Exception) {
+                        ErrorResponse("Error de validación en los datos enviados")
+                    }
+                    Result.failure(Exception(errorBody.message))
+                }
+                HttpStatusCode.Unauthorized -> {
+                    // Contraseña actual incorrecta
+                    val errorBody: ErrorResponse = try {
+                        response.body()
+                    } catch (_: Exception) {
+                        ErrorResponse("Contraseña actual incorrecta")
+                    }
+                    Result.failure(Exception(errorBody.message))
+                }
+                HttpStatusCode.Forbidden -> {
+                    // Usuario no tiene permisos o sesión expirada
+                    Result.failure(Exception("Sesión expirada. Por favor, inicia sesión nuevamente"))
+                }
+                else -> {
+                    Result.failure(Exception("Error al cambiar contraseña. Inténtalo más tarde"))
+                }
+            }
+        } catch (e: ClientRequestException) {
+            // Manejo específico de errores del cliente (4xx)
+            val errorMessage = try {
+                e.response.body<ErrorResponse>().message
+            } catch (_: Exception) {
+                when (e.response.status) {
+                    HttpStatusCode.BadRequest -> "Datos inválidos"
+                    HttpStatusCode.Unauthorized -> "Contraseña actual incorrecta"
+                    HttpStatusCode.Forbidden -> "Sesión expirada"
+                    else -> "Error en la solicitud"
+                }
+            }
+            Result.failure(Exception(errorMessage))
+        } catch (_: ServerResponseException) {
+            // Errores del servidor (5xx)
+            Result.failure(Exception("Error del servidor. Inténtalo más tarde"))
+        } catch (_: RedirectResponseException) {
+            // Redirecciones inesperadas (3xx)
+            Result.failure(Exception("Error de redirección. Contacta soporte"))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(Exception("Error de conexión. Revisa tu conexión a internet e inténtalo de nuevo"))
         }
     }
 }

@@ -132,8 +132,14 @@ object UserValidator {
         // 4) Contraseña
         if (password.isBlank()) {
             errors[RegisterField.PASSWORD] = "La contraseña es obligatoria"
-        } else if (password.length < 6) {
-            errors[RegisterField.PASSWORD] = "La contraseña debe tener al menos 6 caracteres"
+        } else if (password.length < 8) {
+            errors[RegisterField.PASSWORD] = "La contraseña debe tener al menos 8 caracteres"
+        } else if (!password.contains(".*\\d.*".toRegex())) {
+            errors[RegisterField.PASSWORD] = "La contraseña debe contener al menos un número"
+        } else if (!password.contains("[A-Z]".toRegex())) {
+            errors[RegisterField.PASSWORD] = "La nueva contraseña debe contener al menos una mayúscula"
+        } else if(!password.contains("[a-z]".toRegex())) {
+            errors[RegisterField.PASSWORD] = "La nueva contraseña debe contener al menos una minúscula"
         }
 
         // 5) Fecha de nacimiento

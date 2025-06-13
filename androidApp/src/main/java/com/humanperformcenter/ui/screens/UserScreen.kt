@@ -158,7 +158,7 @@ fun UserScreen(
                         Text(text = title, fontSize = 16.sp)
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null
+                            contentDescription = "Ir"
                         )
                     }
                 }

@@ -2,17 +2,16 @@ package com.humanperformcenter.shared.domain.usecase
 
 import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.shared.domain.repository.UserRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 
 class UserUseCase(private val userRepository: UserRepository) {
-    /**
-     * Si la validación pasó, envía la actualización al repositorio.
-     * La llamada al repositorio puede devolver Result.success(nuevoUser) o Result.failure(t).
-     */
-    suspend fun updateUser(user: LoginResponse): Result<LoginResponse> {
-        return userRepository.updateUser(user)
+    suspend fun updateUser(user: LoginResponse): Result<LoginResponse> = withContext(Dispatchers.IO) {
+        return@withContext userRepository.updateUser(user)
     }
 
-    suspend fun deleteUser(email: String): Result<Unit> {
-        return userRepository.deleteUser(email)
+    suspend fun deleteUser(email: String): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext userRepository.deleteUser(email)
     }
 }

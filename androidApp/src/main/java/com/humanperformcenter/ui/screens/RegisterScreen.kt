@@ -132,16 +132,16 @@ fun RegisterScreen(
 
     LaunchedEffect(registerState) {
         if (registerState is RegisterState.ValidationErrors) {
-            val fe = (registerState as RegisterState.ValidationErrors).fieldErrors
-            nombreError = fe[RegisterField.FIRST_NAME] ?: ""
-            apellidosError = fe[RegisterField.LAST_NAME] ?: ""
-            emailError = fe[RegisterField.EMAIL] ?: ""
-            telefonoError = fe[RegisterField.PHONE] ?: ""
-            passwordError = fe[RegisterField.PASSWORD] ?: ""
-            fechaNacimientoError = fe[RegisterField.DATE_OF_BIRTH] ?: ""
-            sexError = fe[RegisterField.SEX] ?: ""
-            codigoPostalError = fe[RegisterField.POSTCODE] ?: ""
-            dniError = fe[RegisterField.DNI] ?: ""
+            val fieldErrors = (registerState as RegisterState.ValidationErrors).fieldErrors
+            nombreError = fieldErrors[RegisterField.FIRST_NAME] ?: ""
+            apellidosError = fieldErrors[RegisterField.LAST_NAME] ?: ""
+            emailError = fieldErrors[RegisterField.EMAIL] ?: ""
+            telefonoError = fieldErrors[RegisterField.PHONE] ?: ""
+            passwordError = fieldErrors[RegisterField.PASSWORD] ?: ""
+            fechaNacimientoError = fieldErrors[RegisterField.DATE_OF_BIRTH] ?: ""
+            sexError = fieldErrors[RegisterField.SEX] ?: ""
+            codigoPostalError = fieldErrors[RegisterField.POSTCODE] ?: ""
+            dniError = fieldErrors[RegisterField.DNI] ?: ""
         }
     }
 

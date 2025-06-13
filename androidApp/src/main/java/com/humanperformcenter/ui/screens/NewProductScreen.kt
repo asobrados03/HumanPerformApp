@@ -14,7 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,8 +28,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.R
 import com.humanperformcenter.app.navigation.AlterG
 import com.humanperformcenter.app.navigation.Entrenamiento
@@ -40,6 +38,8 @@ import com.humanperformcenter.app.navigation.Pilates
 import com.humanperformcenter.app.navigation.Presoterapia
 import com.humanperformcenter.app.navigation.Taquilla
 import com.humanperformcenter.ui.components.AppCard
+import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,9 +125,8 @@ fun NewProductScreen(
                             modifier = Modifier.weight(1f)
                         )
                         Icon(
-                            imageVector = Icons.Default.KeyboardDoubleArrowRight,
-                            contentDescription = "Ir",
-                            tint = Color.Gray
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Ir"
                         )
                     }
                 }

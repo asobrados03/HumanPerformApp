@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,12 +44,15 @@ import com.humanperformcenter.ui.screens.TaquillaScreen
 import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.ViewPaymentScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
+import com.humanperformcenter.ui.viewmodel.AuthViewModel
+import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
 import com.humanperformcenter.ui.viewmodel.BlogViewModel
 import com.humanperformcenter.ui.viewmodel.BlogViewModelFactory
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
 import com.humanperformcenter.ui.viewmodel.state.BlogDetailState
+import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
 
 @Composable
 fun Navigation(
@@ -194,14 +198,52 @@ fun Navigation(
                 userViewModel = userViewModel
             )
         }
-
         composable<ChangePassword> {
-            ChangePasswordScreen(
-                navController = navController,
-                onChangePassword = { current, newPass, confirm ->
-                    // Validaciones y llamada al ViewModel o API
-                }
+            val authViewModel: AuthViewModel = viewModel(
+                factory = AuthViewModelFactory(AppModule.authUseCase)
             )
+
+            val changePasswordState by authViewModel.isChangingPassword.observeAsState(ChangePasswordState.Idle)
+
+            val userViewModel: UserViewModel = viewModel(
+                factory = UserViewModelFactory(AppModule.userUseCase)
+            )
+
+            val userState = userViewModel.userData.collectAsState()
+
+            when (val user = userState.value) {
+                null -> {
+                    // Mostrar pantalla de carga mientras verificamos el estado
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+
+                    // Navegar después de que la composición esté estable
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Login) {
+                            popUpTo(Configuration) { inclusive = true }
+                        }
+                    }
+                }
+                else -> {
+                    ChangePasswordScreen(
+                        navController = navController,
+                        changePasswordState = changePasswordState,
+                        onChangePassword = { current, newPass, confirm, userId ->
+                            authViewModel.changePassword(current, newPass, confirm, userId)
+                        },
+                        onResetState = {
+                            authViewModel.resetChangePasswordState()
+                        },
+                        user = user
+                    )
+                }
+            }
+
+
         }
         composable<Chat> {
             ChatScreen(navController = navController)
