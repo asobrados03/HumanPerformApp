@@ -48,6 +48,7 @@ import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
 import com.humanperformcenter.ui.viewmodel.BlogViewModel
 import com.humanperformcenter.ui.viewmodel.BlogViewModelFactory
+import com.humanperformcenter.ui.viewmodel.SesionesDiaViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
@@ -294,7 +295,8 @@ fun Navigation(
             CalendarScreen(
                 navController = navController,
                 sessionViewModel = sessionViewModel,
-                onPlaySound = onPlaySound
+                onPlaySound = onPlaySound,
+                sesionesDiaViewModel = SesionesDiaViewModel()
             )
         }
         composable<NewBlog> {
