@@ -78,13 +78,11 @@ import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import androidx.compose.foundation.background
-import com.humanperformcenter.ui.viewmodel.SesionesDiaViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
     navController: NavHostController,
-    sesionesDiaViewModel: SesionesDiaViewModel,
     sessionViewModel: SessionViewModel,
     onPlaySound: (Int) -> Unit
 ) {
@@ -95,11 +93,10 @@ fun CalendarScreen(
     // Estado para el diálogo de reserva y tipo de sesión
     var showReservaDialog by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    var tipoSesion by remember { mutableStateOf("Nutrición") } // o "Fisioterapia"
+    var tipoSesion by remember { mutableStateOf("Entrenamiento") } // o "Fisioterapia"
 
     // Scope para llamadas asincronas
     val scope = rememberCoroutineScope()
-    val sesionesRemotas by sesionesDiaViewModel.sessions.collectAsState()
 
     Scaffold(
         topBar = {
@@ -162,9 +159,9 @@ fun CalendarScreen(
                 val localDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
                 if (localDate.year == displayedYear && localDate.month == displayedMonth) {
                     val color = when (session.service.lowercase()) {
-                        "Nutrición" -> Color(0xFFD32F2F)     // rojo
-                        "Entrenamiento" -> Color(0xFF4CAF50) // verde
-                        "Fisioterapia" -> Color(0xFF2196F3)  // azul
+                        "entrenamiento" -> Color(0xFF4CAF50) // verde
+                        "fisioterapia" -> Color(0xFF2196F3)  // azul
+                        "nutrición" -> Color(0xFFD32F2F)     // rojo
                         else -> Color(0xFF2196F3)            // por defecto azul
                     }
                     map[localDate] = color
@@ -325,22 +322,11 @@ fun CalendarScreen(
                                     .clickable {
                                         val isSunday = (dayIndex == 6)
                                         if (!isSunday) {
-                                            selectedDate = date
-                                            tipoSesion = "Nutrición"
+                                            selectedDate = if (selectedDate == date) null else date
                                             showReservaDialog = true
-                                            val tipoActual = tipoSesion
-                                            val serviceId = when (tipoActual.lowercase()) {
-                                                "Nutrición" -> 1
-                                                "Entrenamiento" -> 2
-                                                "Fisioterapia" -> 3
-
-                                                else -> 1
-                                            }
-                                            sesionesDiaViewModel.fetchAvailableSessions(serviceId, date, tipoActual)
                                         } else {
                                             selectedDate = date
-                                            tipoSesion = "Entrenamiento"
-                                            showReservaDialog = true
+                                            showReservaDialog = false
                                         }
                                     },
                                 contentAlignment = Alignment.Center
@@ -491,27 +477,15 @@ fun CalendarScreen(
                     Column {
                         Text("Selecciona sesión")
                         Column {
-                            listOf("Nutrición", "Entrenamiento", "Fisioterapia").forEach { tipo ->
+                            listOf("Entrenamiento", "Fisioterapia", "Nutrición").forEach { tipo ->
                                 val selected = tipoSesion == tipo
                                 Button(
-                                    onClick = {
-                                        tipoSesion = tipo
-
-                                        selectedDate?.let { fecha ->
-                                            val serviceId = when (tipo.lowercase()) {
-                                                "nutrición" -> 1
-                                                "entrenamiento" -> 2
-                                                "fisioterapia" -> 3
-                                                else -> 1
-                                            }
-                                            sesionesDiaViewModel.fetchAvailableSessions(serviceId, fecha, tipo)
-                                        }
-                                    },
+                                    onClick = { tipoSesion = tipo },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = when {
-                                            selected && tipo == "Nutrición" -> Color(0xFFD32F2F)
                                             selected && tipo == "Entrenamiento" -> Color(0xFF4CAF50)
                                             selected && tipo == "Fisioterapia" -> Color(0xFF2196F3)
+                                            selected && tipo == "Nutrición" -> Color(0xFFD32F2F)
                                             else -> Color(0xFFE0E0E0)
                                         }
                                     ),
@@ -530,43 +504,225 @@ fun CalendarScreen(
                 }
             },
             text = {
-                val horariosDisponibles = sesionesRemotas.map { it.hour }.distinct().sorted()
-                if (horariosDisponibles.isEmpty()) {
-                    Text("No hay sesiones disponibles para este día.", modifier = Modifier.padding(8.dp))
-                } else {
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        horariosDisponibles.chunked(3).forEach { fila ->
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 600.dp)
+                        .verticalScroll(scrollState)
+                ) {
+                    // Centro 1: El cerro
+                    Text("Centro 1: El cerro", fontWeight = FontWeight.Bold)
+                    val weekday = selectedDate!!.dayOfWeek
+                    val centro1MorningHours = when (weekday) {
+                        DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.THURSDAY -> listOf(
+                            "06:30", "07:30", "08:30", "09:30", "10:30", "11:30", "12:30"
+                        )
+                        DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY -> listOf(
+                            "08:30", "09:30", "10:30"
+                        )
+                        else -> emptyList()
+                    }
+
+                    val centro1EveningHours = when (weekday) {
+                        DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY -> listOf(
+                            "16:00", "17:00", "18:00", "19:00", "20:00"
+                        )
+                        DayOfWeek.TUESDAY, DayOfWeek.THURSDAY -> listOf(
+                            "17:00", "18:00"
+                        )
+                        else -> emptyList()
+                    }
+
+                    if (centro1MorningHours.isEmpty()) {
+                        Text("No hay horas disponibles.", modifier = Modifier.padding(vertical = 8.dp))
+                    } else {
+                        val buttonModifier = Modifier
+                            .width(80.dp)
+                            .height(40.dp)
+                        centro1MorningHours.chunked(3).forEach { rowHoras ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                fila.forEach { hora ->
-                                    val sesion = sesionesRemotas.firstOrNull { it.hour == hora }
-                                    val disponibilidad = if (sesion != null && sesion.capacity > 0) {
-                                        sesion.booked.toFloat() / sesion.capacity.toFloat()
-                                    } else 1f
-                                    val bgColor = when {
-                                        disponibilidad < 0.5f -> Color(0xFF4CAF50) // verde
-                                        disponibilidad < 1f -> Color(0xFFFFA000) // amarillo
-                                        else -> Color(0xFFD32F2F) // rojo
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .width(100.dp)
-                                            .height(40.dp)
-                                            .border(1.dp, bgColor, RoundedCornerShape(12.dp))
-                                            .clickable {
-                                                // Aquí puedes agregar lógica para reservar, navegar, etc.
-                                            },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(hora, color = bgColor)
+                                (0 until 3).forEach { index ->
+                                    if (index < rowHoras.size) {
+                                        val hora = rowHoras[index]
+                                        Box(
+                                            modifier = buttonModifier
+                                                .border(
+                                                    width = 1.dp,
+                                                    color = when (tipoSesion) {
+                                                        "Entrenamiento" -> Color(0xFF388E3C)
+                                                        "Fisioterapia" -> Color(0xFF1976D2)
+                                                        "Nutrición" -> Color(0xFFC62828)
+                                                        else -> Color.Gray
+                                                    },
+                                                    shape = RoundedCornerShape(16.dp)
+                                                )
+                                                .clickable {
+                                                    val session = Session(
+                                                        service = tipoSesion,
+                                                        product = "Centro 1",
+                                                        date = selectedDate!!.atTime(
+                                                            hora.substringBefore(":").toInt(),
+                                                            hora.substringAfter(":").toInt()
+                                                        ).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
+                                                        hour = hora,
+                                                        professional = "Asignado por el sistema"
+                                                    )
+                                                    scope.launch {
+                                                        sessionViewModel.insertSession(session)
+                                                    }
+                                                    showReservaDialog = false
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(text = hora)
+                                        }
+                                    } else {
+                                        Spacer(modifier = buttonModifier)
                                     }
                                 }
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.padding(vertical = 4.dp))
+
+                    if (centro1EveningHours.isEmpty()) {
+                        Text("No hay horas disponibles.", modifier = Modifier.padding(vertical = 8.dp))
+                    } else {
+                        val buttonModifier = Modifier
+                            .width(80.dp)
+                            .height(40.dp)
+                        centro1EveningHours.chunked(3).forEach { rowHoras ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                (0 until 3).forEach { index ->
+                                    if (index < rowHoras.size) {
+                                        val hora = rowHoras[index]
+                                        Box(
+                                            modifier = buttonModifier
+                                                .border(
+                                                    width = 1.dp,
+                                                    color = when (tipoSesion) {
+                                                        "Entrenamiento" -> Color(0xFF388E3C)
+                                                        "Fisioterapia" -> Color(0xFF1976D2)
+                                                        "Nutrición" -> Color(0xFFC62828)
+                                                        else -> Color.Gray
+                                                    },
+                                                    shape = RoundedCornerShape(16.dp)
+                                                )
+                                                .clickable {
+                                                    val session = Session(
+                                                        service = tipoSesion,
+                                                        product = "Centro 1",
+                                                        date = selectedDate!!.atTime(
+                                                            hora.substringBefore(":").toInt(),
+                                                            hora.substringAfter(":").toInt()
+                                                        ).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
+                                                        hour = hora,
+                                                        professional = "Asignado por el sistema"
+                                                    )
+                                                    scope.launch {
+                                                        sessionViewModel.insertSession(session)
+                                                    }
+                                                    showReservaDialog = false
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(text = hora)
+                                        }
+                                    } else {
+                                        Spacer(modifier = buttonModifier)
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.padding(vertical = 8.dp))
+
+                    // Centro 2: El sotillo
+                    Text("Centro 2: El sotillo", fontWeight = FontWeight.Bold)
+                    val centro2Hours = when (weekday) {
+                        DayOfWeek.MONDAY -> listOf("10:00", "11:00", "12:00", "17:00")
+                        DayOfWeek.TUESDAY -> listOf("09:00", "10:00")
+                        DayOfWeek.WEDNESDAY -> listOf("10:00", "11:00")
+                        DayOfWeek.THURSDAY -> listOf("10:00", "11:00", "12:00")
+                        DayOfWeek.FRIDAY -> listOf("09:00", "10:00", "11:00")
+                        else -> emptyList()
+                    }
+                    if (tipoSesion == "Nutrición") {
+                        Text("No disponible para nutrición", color = Color.Gray)
+                    } else {
+                        if (centro2Hours.isEmpty()) {
+                            Text("No hay horas disponibles.", modifier = Modifier.padding(vertical = 8.dp))
+                        } else {
+                            val buttonModifier = Modifier
+                                .width(80.dp)
+                                .height(40.dp)
+                            centro2Hours.chunked(3).forEach { rowHoras ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    (0 until 3).forEach { index ->
+                                        if (index < rowHoras.size) {
+                                            val hora = rowHoras[index]
+                                            Box(
+                                                modifier = buttonModifier
+                                                    .border(
+                                                        width = 1.dp,
+                                                        color = when (tipoSesion) {
+                                                            "Entrenamiento" -> Color(0xFF388E3C)
+                                                            "Fisioterapia" -> Color(0xFF1976D2)
+                                                            "Nutrición" -> Color(0xFFC62828)
+                                                            else -> Color.Gray
+                                                        },
+                                                        shape = RoundedCornerShape(16.dp)
+                                                    )
+                                                    .clickable {
+                                                        val session = Session(
+                                                            service = tipoSesion,
+                                                            product = "Centro 2",
+                                                            date = selectedDate!!.atTime(
+                                                                hora.substringBefore(":").toInt(),
+                                                                hora.substringAfter(":").toInt()
+                                                            ).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
+                                                            hour = hora,
+                                                            professional = "Asignado por el sistema"
+                                                        )
+                                                        scope.launch {
+                                                            sessionViewModel.insertSession(session)
+                                                        }
+                                                        showReservaDialog = false
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(text = hora)
+                                            }
+                                        } else {
+                                            Spacer(modifier = buttonModifier)
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
                         }
                     }
                 }
