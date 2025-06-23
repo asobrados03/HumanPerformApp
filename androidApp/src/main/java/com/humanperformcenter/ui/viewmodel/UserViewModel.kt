@@ -4,31 +4,38 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.humanperformcenter.shared.data.model.LoginResponse
+import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
-import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
-import com.humanperformcenter.shared.session.SessionManager
+import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
 import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 class UserViewModel(
     private val userUseCase: UserUseCase
 ) : ViewModel() {
 
-    // 1) Flujo en memoria que contiene el usuario logueado
-    val userData: StateFlow<LoginResponse?> = SessionManager.user
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = SessionManager.getCurrentUser()
-        )
+    private val _userData = MutableStateFlow<User?>(null)
+    val userData: StateFlow<User?> = _userData
+
+    // 2) Flag de carga
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    init {
+        viewModelScope.launch {
+            // Lee sólo UNA vez el user almacenado
+            val storedUser = SecureStorage.userFlow().firstOrNull()
+            _userData.value = storedUser
+            _isLoading.value = false
+        }
+    }
 
     // 2) LiveData para exponer el estado de la operación de update
     private val _updateState = MutableLiveData<UpdateState>(UpdateState.Idle)
@@ -38,12 +45,12 @@ class UserViewModel(
     val deleteState: StateFlow<DeleteUserState> = _deleteState.asStateFlow()
 
     /**
-     * Recibe un LoginResponse “candidato” (con campos fullName, dateOfBirth = "yyyy-MM-dd",
+     * Recibe un User “candidato” (con campos fullName, dateOfBirth = "yyyy-MM-dd",
      * sex, phone, postcode, dni, etc.). Primero lo valida mediante el caso de uso; si hay
      * errores, emite ValidationErrors con el mapa. Si no, emite Loading y llama a updateUser()
      * del caso de uso.
      */
-    fun updateUser(candidate: LoginResponse) {
+    fun updateUser(candidate: User) {
         // 1) Convertir dateOfBirth de "yyyy-MM-dd" (que la UI ya le pasó) a formato dd/MM/yyyy
         //    para validar en el caso de uso. Podemos invertir la cadena:
         val dobParts = candidate.dateOfBirth.split("-")
@@ -88,8 +95,6 @@ class UserViewModel(
             val result = userUseCase.updateUser(candidate)
 
             result.onSuccess { newUser ->
-                // Guardar en sesión y emitir Success
-                SessionManager.storeUser(newUser)
                 _updateState.value = UpdateState.Success(newUser)
             }.onFailure { throwable ->
                 _updateState.value =

@@ -1,8 +1,8 @@
 package com.humanperformcenter.shared.domain.repository
 
-import com.humanperformcenter.shared.data.model.LoginResponse
+import com.humanperformcenter.shared.data.model.User
 
 interface UserRepository {
-    suspend fun updateUser(user: LoginResponse): Result<LoginResponse>
+    suspend fun updateUser(user: User): Result<User>
     suspend fun deleteUser(email: String): Result<Unit>
 }

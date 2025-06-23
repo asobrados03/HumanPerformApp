@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -20,6 +19,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -37,7 +37,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.humanperformcenter.shared.data.model.LoginResponse
+import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
 
@@ -47,12 +47,14 @@ fun ChangePasswordScreen(
     changePasswordState: ChangePasswordState,
     onChangePassword: (String, String, String, Int) -> Unit,
     onResetState: () -> Unit,
-    user: LoginResponse
+    user: User
 ) {
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    var currentPasswordVisible by rememberSaveable { mutableStateOf(false) }
+    var newPasswordVisible by rememberSaveable { mutableStateOf(false) }
+    var confirmPasswordVisible by rememberSaveable { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -98,19 +100,27 @@ fun ChangePasswordScreen(
                 onValueChange = { currentPassword = it },
                 label = { Text("Contraseña actual") },
                 trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        val icon = if (passwordVisible) {
+                    IconButton(onClick = { currentPasswordVisible = !currentPasswordVisible }) {
+                        val icon = if (currentPasswordVisible) {
                             Icons.Default.Visibility
                         } else {
                             Icons.Default.VisibilityOff
                         }
                         Icon(
                             imageVector = icon,
-                            contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                            contentDescription = if (currentPasswordVisible) {
+                                "Ocultar contraseña"
+                            } else {
+                                "Mostrar contraseña"
+                            }
                         )
                     }
                 },
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (currentPasswordVisible){
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
@@ -118,19 +128,27 @@ fun ChangePasswordScreen(
                 onValueChange = { newPassword = it },
                 label = { Text("Nueva contraseña") },
                 trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        val icon = if (passwordVisible) {
+                    IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
+                        val icon = if (newPasswordVisible) {
                             Icons.Default.Visibility
                         } else {
                             Icons.Default.VisibilityOff
                         }
                         Icon(
                             imageVector = icon,
-                            contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                            contentDescription = if (newPasswordVisible) {
+                                "Ocultar contraseña"
+                            } else {
+                                "Mostrar contraseña"
+                            }
                         )
                     }
                 },
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (newPasswordVisible) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
@@ -138,19 +156,27 @@ fun ChangePasswordScreen(
                 onValueChange = { confirmPassword = it },
                 label = { Text("Confirmar nueva contraseña") },
                 trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        val icon = if (passwordVisible) {
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        val icon = if (confirmPasswordVisible) {
                             Icons.Default.Visibility
                         } else {
                             Icons.Default.VisibilityOff
                         }
                         Icon(
                             imageVector = icon,
-                            contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                            contentDescription = if (confirmPasswordVisible) {
+                                "Ocultar contraseña"
+                            } else {
+                                "Mostrar contraseña"
+                            }
                         )
                     }
                 },
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (confirmPasswordVisible) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 

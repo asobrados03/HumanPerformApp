@@ -79,6 +79,10 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(project(":shared"))
     implementation(libs.core.ktx)
+
+    implementation(libs.datastore.preferences)
+    implementation(libs.datastore)
+
     testImplementation(libs.junit.jupiter)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.material)

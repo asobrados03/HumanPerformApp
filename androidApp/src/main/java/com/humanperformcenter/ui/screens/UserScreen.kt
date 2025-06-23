@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.MenuOption
-import com.humanperformcenter.shared.data.model.LoginResponse
+import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
@@ -47,7 +47,7 @@ import com.humanperformcenter.ui.components.UserProfileImage
 @Composable
 fun UserScreen(
     navController: NavHostController,
-    user: LoginResponse,
+    user: User,
     onEditProfile: () -> Unit,
     onViewProfile: () -> Unit,
     onMenuClick: (MenuOption) -> Unit

@@ -17,17 +17,17 @@ object BlogRepositoryImpl: BlogRepository {
     override suspend fun readBlogs(): Result<List<BlogEntry>> = withContext(Dispatchers.IO) {
         return@withContext try {
             // Hacemos la petición GET al endpoint /blogs
-            val httpResponse: HttpResponse = ApiClient.httpClient.get("${ApiClient.baseUrl}/blogs") {
+            val resp: HttpResponse = ApiClient.httpClient.get("${ApiClient.baseUrl}/blog/blogs") {
                 contentType(ContentType.Application.Json)
             }
 
             // Comprobamos el código HTTP
-            if (httpResponse.status == HttpStatusCode.OK) {
+            if (resp.status == HttpStatusCode.OK) {
                 // Deserializamos la lista de BlogResponse
-                val blogs: List<BlogEntry> = httpResponse.body()
+                val blogs: List<BlogEntry> = resp.body()
                 Result.success(blogs)
             } else {
-                Result.failure(Exception("Error al leer blogs: código HTTP ${httpResponse.status.value}"))
+                Result.failure(Exception("Error al leer blogs: código HTTP ${resp.status.value}"))
             }
         } catch (e: Exception) {
             // Cualquier excepción (timeout, fallo de red, parseo…) cae aquí

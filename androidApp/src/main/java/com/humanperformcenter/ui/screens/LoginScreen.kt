@@ -1,14 +1,11 @@
 package com.humanperformcenter.ui.screens
 
-import android.content.Context
-import android.content.SharedPreferences
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
@@ -16,7 +13,6 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -35,7 +31,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -47,12 +42,6 @@ import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
 import com.humanperformcenter.ui.viewmodel.state.LoginState
-import androidx.core.content.edit
-
-private const val PREFS_NAME = "login_prefs"
-private const val KEY_EMAIL = "KEY_EMAIL"
-private const val KEY_PASSWORD = "KEY_PASSWORD"
-private const val KEY_REMEMBER = "KEY_REMEMBER"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,12 +50,8 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     navController: NavHostController
 ) {
-    val context = LocalContext.current
-    val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var remember by rememberSaveable { mutableStateOf(false) }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     var localErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -77,14 +62,14 @@ fun LoginScreen(
     val loginState by viewModel.loginState.observeAsState(LoginState.Idle)
 
     // 4) Al iniciar la pantalla, cargamos datos guardados (si “Recordar” estaba activo)
-    LaunchedEffect(Unit) {
+    /*LaunchedEffect(Unit) {
         val savedRemember = prefs.getBoolean(KEY_REMEMBER, false)
         if (savedRemember) {
             email = prefs.getString(KEY_EMAIL, "") ?: ""
             password = prefs.getString(KEY_PASSWORD, "") ?: ""
             remember = true
         }
-    }
+    }*/
 
     Scaffold(
         topBar = {
@@ -145,26 +130,6 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
-            Spacer(modifier = Modifier.padding(8.dp))
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = remember,
-                    onCheckedChange = { checked ->
-                        remember = checked
-                        if (!checked) {
-                            // Si se desmarca, borramos datos guardados
-                            prefs.edit {
-                                remove(KEY_EMAIL)
-                                remove(KEY_PASSWORD)
-                                putBoolean(KEY_REMEMBER, false)
-                            }
-                        }
-                    }
-                )
-                Text(text = "Recordar contraseña")
-            }
-
             // Mensaje de error local (antes de la llamada al servidor)
             localErrorMessage?.let {
                 Text(
@@ -207,19 +172,6 @@ fun LoginScreen(
                     }
 
                     // Guardar o borrar credenciales según “Recuérdame”
-                    if (remember) {
-                        prefs.edit {
-                            putString(KEY_EMAIL, email)
-                            putString(KEY_PASSWORD, password)
-                            putBoolean(KEY_REMEMBER, true)
-                        }
-                    } else {
-                        prefs.edit {
-                            remove(KEY_EMAIL)
-                            remove(KEY_PASSWORD)
-                            putBoolean(KEY_REMEMBER, false)
-                        }
-                    }
 
                     viewModel.login(email.trim(), password)
                 },

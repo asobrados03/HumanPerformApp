@@ -7,14 +7,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
-import com.humanperformcenter.shared.session.SessionManager
+import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.screens.ConfigurationScreen
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
+import kotlinx.coroutines.launch
 
 @Composable
 fun ConfigurationRoute(
@@ -24,19 +26,21 @@ fun ConfigurationRoute(
     // 1) Estado de borrado
     val deleteState by userViewModel.deleteState.collectAsState()
     // 2) Email actual de sesión
-    val currentEmail = SessionManager.getCurrentUser()?.email.orEmpty()
+    val user = SecureStorage.userFlow().collectAsState(initial = null).value
+    val currentEmail = user?.email.orEmpty()
 
     // 3) Contexto para Toasts
     val context = LocalContext.current
+
+    val scope = rememberCoroutineScope()
 
     // 4) Side-effects en un único LaunchedEffect
     LaunchedEffect(deleteState) {
         when (deleteState) {
             DeleteUserState.Success -> {
-                // Limpia sesión y vuelve al login
-                SessionManager.clearUser()
+                SecureStorage.clear()
                 navController.navigate(Welcome) {
-                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    popUpTo(Welcome) { inclusive = true }
                 }
             }
             is DeleteUserState.Error -> {
@@ -64,9 +68,11 @@ fun ConfigurationRoute(
         ConfigurationScreen(
             navController = navController,
             onLogout = {
-                SessionManager.clearUser()
-                navController.navigate(Welcome) {
-                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                scope.launch {
+                    SecureStorage.clear()
+                    navController.navigate(Welcome) {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    }
                 }
             },
             onDeleteAccount = {

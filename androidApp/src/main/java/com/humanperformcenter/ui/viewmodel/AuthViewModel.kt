@@ -9,7 +9,6 @@ import com.humanperformcenter.shared.data.model.RegisterRequest
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult
 import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
-import com.humanperformcenter.shared.session.SessionManager
 import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
 import com.humanperformcenter.ui.viewmodel.state.LoginState
 import com.humanperformcenter.ui.viewmodel.state.RegisterState
@@ -36,7 +35,6 @@ class AuthViewModel(
             val result: Result<LoginResponse> = authUseCase.login(email, password)
 
             result.onSuccess { loginResponse ->
-                SessionManager.storeUser(loginResponse)
                 _loginState.value = LoginState.Success(loginResponse)
             }.onFailure { throwable ->
                 val errorMsg = throwable.message ?: "Error desconocido"

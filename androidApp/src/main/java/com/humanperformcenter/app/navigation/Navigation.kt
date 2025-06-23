@@ -19,8 +19,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.humanperformcenter.app.SetStatusBarColor
 import com.humanperformcenter.di.AppModule
-import com.humanperformcenter.shared.data.model.LoginResponse
-import com.humanperformcenter.shared.session.SessionManager
 import com.humanperformcenter.ui.screens.AlterGScreen
 import com.humanperformcenter.ui.screens.BlogDetailScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
@@ -60,7 +58,6 @@ fun Navigation(
     navController: NavHostController,
     onPlaySound: (Int) -> Unit
 ) {
-    // Configuración del color de la barra de estado
     SetStatusBarColor(
         statusBarColor = Color(0xFFB71C1C),
         navigationBarColor = Color(0xFFB71C1C)
@@ -148,20 +145,18 @@ fun Navigation(
             val userViewModel: UserViewModel = viewModel(
                 factory = UserViewModelFactory(AppModule.userUseCase)
             )
+            val loading by userViewModel.isLoading.collectAsState()
+            val user    by userViewModel.userData.collectAsState()
 
-            val userState = userViewModel.userData.collectAsState()
-
-            when (val user = userState.value) {
-                null -> {
-                    // Mostrar pantalla de carga mientras verificamos el estado
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+            when {
+                loading -> {
+                    // Mostrar spinner mientras isLoading == true
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
-
-                    // Navegar después de que la composición esté estable
+                }
+                user == null -> {
+                    // Ya cargó y NO hay user: navegar a Login
                     LaunchedEffect(Unit) {
                         navController.navigate(Login) {
                             popUpTo(User) { inclusive = true }
@@ -171,7 +166,7 @@ fun Navigation(
                 else -> {
                     UserScreen(
                         navController = navController,
-                        user = user,
+                        user = user!!,
                         onEditProfile = { navController.navigate(EditProfile) },
                         onViewProfile = { navController.navigate(MyProfile) },
                         onMenuClick = { option ->
@@ -208,20 +203,17 @@ fun Navigation(
             val userViewModel: UserViewModel = viewModel(
                 factory = UserViewModelFactory(AppModule.userUseCase)
             )
+            val loading by userViewModel.isLoading.collectAsState()
+            val user    by userViewModel.userData.collectAsState()
 
-            val userState = userViewModel.userData.collectAsState()
-
-            when (val user = userState.value) {
-                null -> {
-                    // Mostrar pantalla de carga mientras verificamos el estado
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+            when {
+                loading -> {
+                    // Mostrar spinner mientras isLoading == true
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
-
-                    // Navegar después de que la composición esté estable
+                }
+                user ==  null -> {
                     LaunchedEffect(Unit) {
                         navController.navigate(Login) {
                             popUpTo(Configuration) { inclusive = true }
@@ -238,12 +230,10 @@ fun Navigation(
                         onResetState = {
                             authViewModel.resetChangePasswordState()
                         },
-                        user = user
+                        user = user!!
                     )
                 }
             }
-
-
         }
         composable<Chat> {
             ChatScreen(navController = navController)
@@ -264,23 +254,30 @@ fun Navigation(
             val userViewModel: UserViewModel = viewModel(
                 factory = UserViewModelFactory(AppModule.userUseCase)
             )
+            val loading by userViewModel.isLoading.collectAsState()
+            val userState by userViewModel.userData.collectAsState()
 
-            val userState: LoginResponse? by userViewModel.userData
-                .collectAsState(initial = SessionManager.getCurrentUser())
-
-            LaunchedEffect(userState) {
-                if (userState == null) {
-                    navController.navigate(Login) {
-                        popUpTo(User) { inclusive = true }
+            when {
+                loading -> {
+                    // Mostrar spinner mientras isLoading == true
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
                     }
                 }
+                userState ==  null -> {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(Login) {
+                            popUpTo(User) { inclusive = true }
+                        }
+                    }
+                }
+                else -> {
+                    MyProfileScreen(
+                        user = userState!!,
+                        navController = navController
+                    )
+                }
             }
-            if (userState == null) return@composable
-
-            MyProfileScreen(
-                user = userState!!,
-                navController = navController
-            )
         }
         composable<Favorites> {
             FavoritesScreen(

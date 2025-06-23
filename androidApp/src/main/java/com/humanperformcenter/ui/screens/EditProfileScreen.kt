@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.R
 import com.humanperformcenter.data.SexOption
-import com.humanperformcenter.shared.data.model.LoginResponse
+import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState.Field
@@ -65,9 +65,9 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
-    user: LoginResponse,
+    user: User,
     updateState: UpdateState,
-    onSave: (LoginResponse) -> Unit,
+    onSave: (User) -> Unit,
     navController: NavHostController
 ) {
     // 1) Snackbar para errores genéricos de red/servidor

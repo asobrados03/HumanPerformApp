@@ -1,15 +1,18 @@
 package com.humanperformcenter.shared.data.persistence
 
-import com.humanperformcenter.shared.data.model.LoginResponse
+import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.UserRepository
+import com.humanperformcenter.shared.domain.storage.SecureStorage
 import io.ktor.client.call.body
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.withContext
+import io.ktor.client.request.delete
+import io.ktor.client.request.parameter
+import io.ktor.client.request.put
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 
 object UserRepositoryImpl: UserRepository {
 
@@ -18,22 +21,22 @@ object UserRepositoryImpl: UserRepository {
      * Si el servidor responde 200 OK, devuelve Result.success(updatedUser).
      * Si responde otro código o lanza excepción, devuelve Result.failure con el error.
      */
-    override suspend fun updateUser(user: LoginResponse): Result<LoginResponse> = withContext(Dispatchers.IO) {
-        return@withContext try {
+    override suspend fun updateUser(user: User): Result<User> {
+        return try {
             // Realizamos la petición PUT al endpoint /user
-            val httpResponse: HttpResponse = ApiClient.httpClient.put("${ApiClient.baseUrl}/user") {
+            val resp: HttpResponse = ApiClient.httpClient.put("${ApiClient.baseUrl}/mobile/user") {
                 contentType(ContentType.Application.Json)
                 // El body se serializa automáticamente usando kotlinx-serialization
                 setBody(user)
             }
 
             // Comprobamos el código de estado HTTP
-            return@withContext if (httpResponse.status == HttpStatusCode.OK) {
-                // Deserializamos el JSON de respuesta a LoginResponse
-                val updatedUser: LoginResponse = httpResponse.body()
+            return if (resp.status == HttpStatusCode.OK) {
+                val updatedUser: User = resp.body()
+                SecureStorage.saveUser(updatedUser)
                 Result.success(updatedUser)
             } else {
-                Result.failure(Exception("Error al actualizar usuario: código HTTP ${httpResponse.status.value}"))
+                Result.failure(Exception("Error al actualizar usuario: código HTTP ${resp.status.value}"))
             }
         } catch (e: Exception) {
             // Si hay timeout, red de falla, JSON malformado, etc.
@@ -41,16 +44,16 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun deleteUser(email: String): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            val response: HttpResponse = ApiClient.httpClient.delete("${ApiClient.baseUrl}/user") {
+    override suspend fun deleteUser(email: String): Result<Unit> {
+        return try {
+            val resp: HttpResponse = ApiClient.httpClient.delete("${ApiClient.baseUrl}/mobile/user") {
                 parameter("email", email)
             }
-            return@withContext when (response.status) {
+            return when (resp.status) {
                 HttpStatusCode.OK       -> Result.success(Unit)
                 HttpStatusCode.NotFound -> Result.failure(Exception("Usuario no encontrado"))
                 else                    -> Result.failure(
-                    Exception("Error al eliminar usuario: código HTTP ${response.status.value}")
+                    Exception("Error al eliminar usuario: código HTTP ${resp.status.value}")
                 )
             }
         } catch (e: Exception) {

@@ -13,6 +13,6 @@ data class LoginResponse(
     val postcode: Int? = null,
     val dni: String? = null,
     val profilePictureUrl: String?,
-    // El token JWT o UUID que devuelva la API
-    val token: String? = null
+    val accessToken: String,
+    val refreshToken: String
 )
