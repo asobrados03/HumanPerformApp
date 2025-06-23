@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -38,6 +39,7 @@ import com.humanperformcenter.ui.screens.PaymentScreen
 import com.humanperformcenter.ui.screens.PilatesScreen
 import com.humanperformcenter.ui.screens.PresoterapiaScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
+import com.humanperformcenter.ui.screens.SplashScreen
 import com.humanperformcenter.ui.screens.TaquillaScreen
 import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.ViewPaymentScreen
@@ -64,279 +66,296 @@ fun Navigation(
         navigationBarColor = Color(0xFFB71C1C)
     )
 
-    NavHost(
-        navController = navController,
-        startDestination = if (sessionViewModel.isLoggedIn()) NewProduct else Welcome
-    ) {
-        composable<Welcome> {
-            WelcomeScreen(
-                onNavigateToRegister = {
-                    navController.navigate(Register) {
-                        popUpTo(Welcome) { inclusive = true }
-                    }
-                },
-                onNavigateToLogin = {
-                    navController.navigate(Login) {
-                        popUpTo(Welcome) { inclusive = true }
-                    }
-                }
-            )
-        }
-        composable<Register> {
-            RegisterScreen(
-                onRegistroExitoso = {
-                    navController.navigate(Login) {
-                        popUpTo(Register) { inclusive = true }
-                    }
-                },
-                onNavigateToLogin = {
-                    navController.navigate(Login){
-                        popUpTo(Register) { inclusive = true }
-                    }
-                },
-                navController = navController
-            )
-        }
-        composable<Login> {
-            LoginScreen(
-                onLoginSuccess = {
-                    navController.navigate(NewProduct) {
-                        popUpTo(Login) { inclusive = true }
-                    }
-                },
-                onNavigateToRegister = {
-                    navController.navigate(Register){
-                        popUpTo(Login) { inclusive = true }
-                    }
-                },
-                navController = navController
-            )
-        }
-        composable<NewProduct> {
-            NewProductScreen(
-                navController = navController,
-                sessionViewModel = sessionViewModel
-            )
-        }
-        composable<Entrenamiento> {
-            EntrenamientoScreen(navController, sessionViewModel)
-        }
-        composable<Nutricion> {
-            NutricionScreen(navController, sessionViewModel)
-        }
-        composable<Fisioterapia> {
-            FisioterapiaScreen(navController, sessionViewModel)
-        }
-        composable<Pilates> {
-            PilatesScreen(navController, sessionViewModel)
-        }
-        composable<Presoterapia> {
-            PresoterapiaScreen(navController, sessionViewModel)
-        }
-        composable<Opositores> {
-            OpositoresScreen(navController, sessionViewModel)
-        }
-        composable<Taquilla> {
-            TaquillaScreen(navController, sessionViewModel)
-        }
-        composable<AlterG> {
-            AlterGScreen(navController, sessionViewModel)
-        }
-        composable<User> {
-            val userViewModel: UserViewModel = viewModel(
-                factory = UserViewModelFactory(AppModule.userUseCase)
-            )
-            val loading by userViewModel.isLoading.collectAsState()
-            val user    by userViewModel.userData.collectAsState()
+    val isLoggedIn by sessionViewModel
+        .isLoggedInFlow
+        .collectAsState(initial = false)
 
-            when {
-                loading -> {
-                    // Mostrar spinner mientras isLoading == true
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                user == null -> {
-                    // Ya cargó y NO hay user: navegar a Login
-                    LaunchedEffect(Unit) {
+    key(isLoggedIn) {
+        NavHost(
+            navController = navController,
+            startDestination = Splash
+        ) {
+            composable<Splash> {
+                SplashScreen(navController, sessionViewModel)
+            }
+            composable<Welcome> {
+                WelcomeScreen(
+                    onNavigateToRegister = {
+                        navController.navigate(Register) {
+                            popUpTo(Welcome) { inclusive = true }
+                        }
+                    },
+                    onNavigateToLogin = {
                         navController.navigate(Login) {
-                            popUpTo(User) { inclusive = true }
+                            popUpTo(Welcome) { inclusive = true }
                         }
                     }
-                }
-                else -> {
-                    UserScreen(
-                        navController = navController,
-                        user = user!!,
-                        onEditProfile = { navController.navigate(EditProfile) },
-                        onViewProfile = { navController.navigate(MyProfile) },
-                        onMenuClick = { option ->
-                            when (option) {
-                                MenuOption.FAVORITOS -> navController.navigate(Favorites)
-                                MenuOption.CHAT -> navController.navigate(Chat)
-                                MenuOption.DOCUMENTO -> navController.navigate(Document)
-                                MenuOption.PAGO -> navController.navigate(Payment)
-                                MenuOption.VER_PAGO -> navController.navigate(ViewPayment)
-                                MenuOption.CONFIGURACION -> navController.navigate(Configuration)
+                )
+            }
+            composable<Register> {
+                RegisterScreen(
+                    onRegistroExitoso = {
+                        navController.navigate(Login) {
+                            popUpTo(Register) { inclusive = true }
+                        }
+                    },
+                    onNavigateToLogin = {
+                        navController.navigate(Login) {
+                            popUpTo(Register) { inclusive = true }
+                        }
+                    },
+                    navController = navController
+                )
+            }
+            composable<Login> {
+                LoginScreen(
+                    onLoginSuccess = {
+                        navController.navigate(NewProduct) {
+                            popUpTo(Login) { inclusive = true }
+                        }
+                    },
+                    onNavigateToRegister = {
+                        navController.navigate(Register) {
+                            popUpTo(Login) { inclusive = true }
+                        }
+                    },
+                    navController = navController
+                )
+            }
+            composable<NewProduct> {
+                NewProductScreen(
+                    navController = navController,
+                    sessionViewModel = sessionViewModel
+                )
+            }
+            composable<Entrenamiento> {
+                EntrenamientoScreen(navController, sessionViewModel)
+            }
+            composable<Nutricion> {
+                NutricionScreen(navController, sessionViewModel)
+            }
+            composable<Fisioterapia> {
+                FisioterapiaScreen(navController, sessionViewModel)
+            }
+            composable<Pilates> {
+                PilatesScreen(navController, sessionViewModel)
+            }
+            composable<Presoterapia> {
+                PresoterapiaScreen(navController, sessionViewModel)
+            }
+            composable<Opositores> {
+                OpositoresScreen(navController, sessionViewModel)
+            }
+            composable<Taquilla> {
+                TaquillaScreen(navController, sessionViewModel)
+            }
+            composable<AlterG> {
+                AlterGScreen(navController, sessionViewModel)
+            }
+            composable<User> {
+                val userViewModel: UserViewModel = viewModel(
+                    factory = UserViewModelFactory(AppModule.userUseCase)
+                )
+                val loading by userViewModel.isLoading.collectAsState()
+                val user by userViewModel.userData.collectAsState()
+
+                when {
+                    loading -> {
+                        // Mostrar spinner mientras isLoading == true
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    user == null -> {
+                        // Ya cargó y NO hay user: navegar a Login
+                        LaunchedEffect(Unit) {
+                            navController.navigate(Login) {
+                                popUpTo(User) { inclusive = true }
                             }
                         }
-                    )
+                    }
+
+                    else -> {
+                        UserScreen(
+                            navController = navController,
+                            user = user!!,
+                            onEditProfile = { navController.navigate(EditProfile) },
+                            onViewProfile = { navController.navigate(MyProfile) },
+                            onMenuClick = { option ->
+                                when (option) {
+                                    MenuOption.FAVORITOS -> navController.navigate(Favorites)
+                                    MenuOption.CHAT -> navController.navigate(Chat)
+                                    MenuOption.DOCUMENTO -> navController.navigate(Document)
+                                    MenuOption.PAGO -> navController.navigate(Payment)
+                                    MenuOption.VER_PAGO -> navController.navigate(ViewPayment)
+                                    MenuOption.CONFIGURACION -> navController.navigate(Configuration)
+                                }
+                            }
+                        )
+                    }
                 }
             }
-        }
-        composable<Configuration> {
-            val userViewModel: UserViewModel = viewModel(
-                factory = UserViewModelFactory(AppModule.userUseCase)
-            )
-
-            ConfigurationRoute(
-                navController = navController,
-                userViewModel = userViewModel
-            )
-        }
-        composable<ChangePassword> {
-            val authViewModel: AuthViewModel = viewModel(
-                factory = AuthViewModelFactory(AppModule.authUseCase)
-            )
-
-            val changePasswordState by authViewModel.isChangingPassword.observeAsState(ChangePasswordState.Idle)
-
-            val userViewModel: UserViewModel = viewModel(
-                factory = UserViewModelFactory(AppModule.userUseCase)
-            )
-            val loading by userViewModel.isLoading.collectAsState()
-            val user    by userViewModel.userData.collectAsState()
-
-            when {
-                loading -> {
-                    // Mostrar spinner mientras isLoading == true
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                user ==  null -> {
-                    LaunchedEffect(Unit) {
-                        navController.navigate(Login) {
-                            popUpTo(Configuration) { inclusive = true }
-                        }
-                    }
-                }
-                else -> {
-                    ChangePasswordScreen(
-                        navController = navController,
-                        changePasswordState = changePasswordState,
-                        onChangePassword = { current, newPass, confirm, userId ->
-                            authViewModel.changePassword(current, newPass, confirm, userId)
-                        },
-                        onResetState = {
-                            authViewModel.resetChangePasswordState()
-                        },
-                        user = user!!
-                    )
-                }
-            }
-        }
-        composable<Chat> {
-            ChatScreen(navController = navController)
-        }
-        composable<Document> {
-            DocumentScreen(navController = navController)
-        }
-        composable<Payment> {
-            PaymentScreen(navController = navController)
-        }
-        composable<ViewPayment> {
-            ViewPaymentScreen(navController = navController)
-        }
-        composable<EditProfile> {
-            EditProfileRoute(navController = navController)
-        }
-        composable<MyProfile> {
-            val userViewModel: UserViewModel = viewModel(
-                factory = UserViewModelFactory(AppModule.userUseCase)
-            )
-            val loading by userViewModel.isLoading.collectAsState()
-            val userState by userViewModel.userData.collectAsState()
-
-            when {
-                loading -> {
-                    // Mostrar spinner mientras isLoading == true
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                userState ==  null -> {
-                    LaunchedEffect(Unit) {
-                        navController.navigate(Login) {
-                            popUpTo(User) { inclusive = true }
-                        }
-                    }
-                }
-                else -> {
-                    MyProfileScreen(
-                        user = userState!!,
-                        navController = navController
-                    )
-                }
-            }
-        }
-        composable<Favorites> {
-            FavoritesScreen(
-                onSelect = { prof ->
-                    // Aquí podrías navegar a "detalle de profe" u otra acción
-                },
-                navController = navController
-            )
-        }
-        composable<Calendar> {
-            CalendarScreen(
-                navController = navController,
-                sessionViewModel = sessionViewModel,
-                onPlaySound = onPlaySound,
-                sesionesDiaViewModel = SesionesDiaViewModel(
-                    useCase = AppModule.sesionDiaUseCase
+            composable<Configuration> {
+                val userViewModel: UserViewModel = viewModel(
+                    factory = UserViewModelFactory(AppModule.userUseCase)
                 )
-            )
-        }
-        composable<NewBlog> {
-            val blogViewModel: BlogViewModel = viewModel(
-                factory = BlogViewModelFactory(AppModule.blogUseCase)
-            )
-            val state by blogViewModel.state.collectAsState()
-            LaunchedEffect(Unit) { blogViewModel.loadBlogs() }
 
-            NewBlogScreen(
-                navController = navController,
-                blogState     = state,
-                onEntryClick  = { entry ->
-                    navController.navigate(BlogDetail(entry.blogId))
-                },
-                onRetry       = { blogViewModel.loadBlogs() }
-            )
-        }
-        composable<BlogDetail> { backStack ->
-            val blogDetail = backStack.toRoute<BlogDetail>()
-            val parentEntry = remember(backStack) {
-                navController.getBackStackEntry(NewBlog)
+                ConfigurationRoute(
+                    navController = navController,
+                    userViewModel = userViewModel
+                )
             }
-            val blogViewModel: BlogViewModel = viewModel(
-                parentEntry,
-                factory = BlogViewModelFactory(AppModule.blogUseCase)
-            )
-            val detailState by blogViewModel.detailState.collectAsState() // Observar el estado del detalle
+            composable<ChangePassword> {
+                val authViewModel: AuthViewModel = viewModel(
+                    factory = AuthViewModelFactory(AppModule.authUseCase)
+                )
 
-            // Disparar la carga del detalle
-            LaunchedEffect(blogDetail.blogId) {
-                blogViewModel.loadBlogDetail(blogDetail.blogId)
+                val changePasswordState by authViewModel.isChangingPassword.observeAsState(
+                    ChangePasswordState.Idle
+                )
+
+                val userViewModel: UserViewModel = viewModel(
+                    factory = UserViewModelFactory(AppModule.userUseCase)
+                )
+                val loading by userViewModel.isLoading.collectAsState()
+                val user by userViewModel.userData.collectAsState()
+
+                when {
+                    loading -> {
+                        // Mostrar spinner mientras isLoading == true
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    user == null -> {
+                        LaunchedEffect(Unit) {
+                            navController.navigate(Login) {
+                                popUpTo(Configuration) { inclusive = true }
+                            }
+                        }
+                    }
+
+                    else -> {
+                        ChangePasswordScreen(
+                            navController = navController,
+                            changePasswordState = changePasswordState,
+                            onChangePassword = { current, newPass, confirm, userId ->
+                                authViewModel.changePassword(current, newPass, confirm, userId)
+                            },
+                            onResetState = {
+                                authViewModel.resetChangePasswordState()
+                            },
+                            user = user!!
+                        )
+                    }
+                }
             }
+            composable<Chat> {
+                ChatScreen(navController = navController)
+            }
+            composable<Document> {
+                DocumentScreen(navController = navController)
+            }
+            composable<Payment> {
+                PaymentScreen(navController = navController)
+            }
+            composable<ViewPayment> {
+                ViewPaymentScreen(navController = navController)
+            }
+            composable<EditProfile> {
+                EditProfileRoute(navController = navController)
+            }
+            composable<MyProfile> {
+                val userViewModel: UserViewModel = viewModel(
+                    factory = UserViewModelFactory(AppModule.userUseCase)
+                )
+                val loading by userViewModel.isLoading.collectAsState()
+                val userState by userViewModel.userData.collectAsState()
 
-            BlogDetailScreen(
-                navController = navController,
-                blog = (detailState as? BlogDetailState.Success)?.blog,
-                isLoading = detailState is BlogDetailState.Loading,
-                errorMessage = (detailState as? BlogDetailState.Error)?.message,
-                onRetry = { blogViewModel.loadBlogDetail(blogDetail.blogId) }
-            )
+                when {
+                    loading -> {
+                        // Mostrar spinner mientras isLoading == true
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    userState == null -> {
+                        LaunchedEffect(Unit) {
+                            navController.navigate(Login) {
+                                popUpTo(User) { inclusive = true }
+                            }
+                        }
+                    }
+
+                    else -> {
+                        MyProfileScreen(
+                            user = userState!!,
+                            navController = navController
+                        )
+                    }
+                }
+            }
+            composable<Favorites> {
+                FavoritesScreen(
+                    onSelect = { prof ->
+                        // Aquí podrías navegar a "detalle de profe" u otra acción
+                    },
+                    navController = navController
+                )
+            }
+            composable<Calendar> {
+                CalendarScreen(
+                    navController = navController,
+                    sessionViewModel = sessionViewModel,
+                    onPlaySound = onPlaySound,
+                    sesionesDiaViewModel = SesionesDiaViewModel(
+                        useCase = AppModule.sesionDiaUseCase
+                    )
+                )
+            }
+            composable<NewBlog> {
+                val blogViewModel: BlogViewModel = viewModel(
+                    factory = BlogViewModelFactory(AppModule.blogUseCase)
+                )
+                val state by blogViewModel.state.collectAsState()
+                LaunchedEffect(Unit) { blogViewModel.loadBlogs() }
+
+                NewBlogScreen(
+                    navController = navController,
+                    blogState = state,
+                    onEntryClick = { entry ->
+                        navController.navigate(BlogDetail(entry.blogId))
+                    },
+                    onRetry = { blogViewModel.loadBlogs() }
+                )
+            }
+            composable<BlogDetail> { backStack ->
+                val blogDetail = backStack.toRoute<BlogDetail>()
+                val parentEntry = remember(backStack) {
+                    navController.getBackStackEntry(NewBlog)
+                }
+                val blogViewModel: BlogViewModel = viewModel(
+                    parentEntry,
+                    factory = BlogViewModelFactory(AppModule.blogUseCase)
+                )
+                val detailState by blogViewModel.detailState.collectAsState() // Observar el estado del detalle
+
+                // Disparar la carga del detalle
+                LaunchedEffect(blogDetail.blogId) {
+                    blogViewModel.loadBlogDetail(blogDetail.blogId)
+                }
+
+                BlogDetailScreen(
+                    navController = navController,
+                    blog = (detailState as? BlogDetailState.Success)?.blog,
+                    isLoading = detailState is BlogDetailState.Loading,
+                    errorMessage = (detailState as? BlogDetailState.Error)?.message,
+                    onRetry = { blogViewModel.loadBlogDetail(blogDetail.blogId) }
+                )
+            }
         }
     }
 }

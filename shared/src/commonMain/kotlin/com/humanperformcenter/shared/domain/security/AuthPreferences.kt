@@ -29,7 +29,7 @@ object AuthPreferences {
             val ea = Crypto.encrypt(ab)
             val er = Crypto.encrypt(rb)
             // c) Codificar a Base64 con tu wrapper
-            m[KEY_ACCESS ] = Base64.encode(ea)
+            m[KEY_ACCESS] = Base64.encode(ea)
             m[KEY_REFRESH] = Base64.encode(er)
         }
     }

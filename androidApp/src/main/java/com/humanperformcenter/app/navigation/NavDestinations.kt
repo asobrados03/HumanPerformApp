@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable object Welcome
 @Serializable object Register
 @Serializable object Login
+@Serializable object Splash
 @Serializable object NewProduct
 @Serializable object Calendar
 @Serializable object NewBlog

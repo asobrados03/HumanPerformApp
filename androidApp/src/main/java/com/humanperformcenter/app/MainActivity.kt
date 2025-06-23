@@ -34,7 +34,9 @@ class MainActivity : ComponentActivity() {
             val context = this
             val sessionDao = SessionDatabase.getDatabase(context).sessionDao()
             val sessionRepository = SessionRepository(sessionDao)
-            val sessionViewModel: SessionViewModel = viewModel(factory = SessionViewModelFactory(sessionRepository))
+            val sessionViewModel: SessionViewModel = viewModel(
+                factory = SessionViewModelFactory(sessionRepository, prefs)
+            )
             HumanPerformAppTheme {
                 Navigation(
                     navController = navController,

@@ -44,6 +44,7 @@ object AuthRepositoryImpl : AuthRepository {
                     dni = data.dni,
                     profilePictureUrl = data.profilePictureUrl
                 )
+                SecureStorage.saveTokens(data.accessToken, data.refreshToken)
                 SecureStorage.saveUser(userData)
                 Result.success(data)
             }
