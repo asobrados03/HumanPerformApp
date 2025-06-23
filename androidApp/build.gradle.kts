@@ -6,6 +6,8 @@ plugins {
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
 }
 
+val ktorVersion = "2.3.2"
+
 android {
     namespace = "com.humanperformcenter"
     compileSdk = 35
@@ -53,7 +55,10 @@ android {
 }
 
 dependencies {
-
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
