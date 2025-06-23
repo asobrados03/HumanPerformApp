@@ -3,8 +3,7 @@ package com.humanperformcenter.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.data.model.SesionesDia
-import com.humanperformcenter.shared.data.persistence.SesionDiaRepositoryImp
-import com.humanperformcenter.shared.domain.repository.SesionDiaRepository
+import com.humanperformcenter.shared.data.persistence.SesionDiaRepositoryImpl
 import com.humanperformcenter.shared.domain.usecase.SesionDiaUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +14,7 @@ class SesionesDiaViewModel(
     private val useCase: SesionDiaUseCase // inyectalo aquí
 ) : ViewModel() {
 
-    private val repository = SesionDiaRepositoryImp
+    private val repository = SesionDiaRepositoryImpl
 
     private val _sessions = MutableStateFlow<List<SesionesDia>>(emptyList())
     val sessions: StateFlow<List<SesionesDia>> get() = _sessions
