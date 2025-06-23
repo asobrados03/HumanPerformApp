@@ -78,6 +78,7 @@ import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import androidx.compose.foundation.background
+import com.humanperformcenter.ui.viewmodel.BotonReservaCoach
 import com.humanperformcenter.ui.viewmodel.SesionesDiaViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -622,32 +623,21 @@ fun CalendarScreen(
                     Column {
                         coaches.forEach { coach ->
                             val disponibilidad = coach.booked.toFloat() / coach.capacity.toFloat()
-                            val bgColor = when {
-                                disponibilidad < 1f -> Color(0xFF4CAF50) // verde
-                                else -> Color(0xFFD32F2F) // rojo
-                            }
+                            val bgColor = if (disponibilidad < 1f) Color(0xFF4CAF50) else Color(0xFFD32F2F)
 
-                            Button(
-                                onClick = {
-                                    // Aquí se haría la reserva con coach.coach_id y horaSeleccionada
-                                    println("✅ Reservando con ${coach.coach_name} a las ${horaSeleccionada}")
+                            // Usa tu viewModel ya instanciado
+                            BotonReservaCoach(
+                                sessionViewModel = sessionViewModel, // asegúrate de tenerlo disponible aquí
+                                coachId = coach.coach_id,
+                                coachName = coach.coach_name ?: "Entrenador desconocido",
+                                coachCenterId = coach.center_id ?: return@forEach,
+                                serviceId = coach.service_id,
+                                selectedDate = selectedDate!!,
+                                hour = horaSeleccionada!!,
+                                onSuccess = {
                                     mostrarSelectorCoach = false
-                                },
-                                enabled = coach.booked < coach.capacity,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = bgColor)
-                            ) {
-                                Column {
-                                    Text(text = coach.coach_name ?: "Entrenador desconocido")
-                                    Text(
-                                        text = "Reservas: ${coach.booked} / ${coach.capacity}",
-                                        fontSize = 12.sp,
-                                        color = Color.White
-                                    )
                                 }
-                            }
+                            )
                         }
                     }
                 }

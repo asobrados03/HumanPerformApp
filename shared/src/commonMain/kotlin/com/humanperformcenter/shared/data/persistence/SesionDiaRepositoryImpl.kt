@@ -13,7 +13,7 @@ object SesionDiaRepositoryImpl : SesionDiaRepository {
     override suspend fun getSessionsByDay(serviceId: Int, weekStart: LocalDate): List<SesionesDia> {
         val client = ApiClient.httpClient
 
-        return client.get("${ApiClient.baseUrl}/api/mobile/daily") {
+        return client.get("${ApiClient.baseUrl}/mobile/daily") {
             parameter("service_id", serviceId)
             parameter("date", weekStart.toString()) // formato yyyy-MM-dd
         }.body()
