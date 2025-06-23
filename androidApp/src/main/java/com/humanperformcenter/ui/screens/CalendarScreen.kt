@@ -579,7 +579,6 @@ fun CalendarScreen(
             }
         )
     }
-
     // Diálogo de confirmación de borrado
     if (showDialog) {
         AlertDialog(
