@@ -1,4 +1,4 @@
-package com.humanperformcenter.data.remote.models
+package com.humanperformcenter.shared.data.model
 
 import kotlinx.serialization.Serializable
 

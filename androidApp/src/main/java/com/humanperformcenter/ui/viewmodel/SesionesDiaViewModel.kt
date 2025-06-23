@@ -2,20 +2,17 @@ package com.humanperformcenter.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.humanperformcenter.data.remote.models.SesionesDia
-import com.humanperformcenter.data.remote.SesionDiaRepository
+import com.humanperformcenter.shared.data.model.SesionesDia
+import com.humanperformcenter.shared.data.persistence.SessionRepositoryImpl
+import com.humanperformcenter.shared.domain.repository.SesionDiaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
 
 class SesionesDiaViewModel : ViewModel() {
 
-    private val repository = SesionDiaRepository()
+    private val repository = SessionRepositoryImpl
 
     private val _sessions = MutableStateFlow<List<SesionesDia>>(emptyList())
     val sessions: StateFlow<List<SesionesDia>> get() = _sessions
@@ -32,7 +29,7 @@ class SesionesDiaViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val result = repository.getWeeklySessions(serviceId, weekStart)
+                val result = repository.getSessionsByWeek(serviceId, date)
 
                 println("---- Resultados recibidos (${result.size}) ----")
                 result.forEach {
