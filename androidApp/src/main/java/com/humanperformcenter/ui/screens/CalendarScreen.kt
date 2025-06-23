@@ -338,9 +338,9 @@ fun CalendarScreen(
                                             }
                                             sesionesDiaViewModel.fetchAvailableSessions(serviceId, date, tipoActual)
                                         } else {
-                                            selectedDate = date
-                                            tipoSesion = "Entrenamiento"
-                                            showReservaDialog = true
+                                            // Si es domingo, no se puede seleccionar
+                                            selectedDate = null
+                                            showReservaDialog = false
                                         }
                                     },
                                 contentAlignment = Alignment.Center
@@ -535,7 +535,7 @@ fun CalendarScreen(
                     Text("No hay sesiones disponibles para este día.", modifier = Modifier.padding(8.dp))
                 } else {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        horariosDisponibles.chunked(3).forEach { fila ->
+                        horariosDisponibles.chunked(2).forEach { fila ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()

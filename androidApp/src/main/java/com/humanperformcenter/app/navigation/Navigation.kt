@@ -296,7 +296,9 @@ fun Navigation(
                 navController = navController,
                 sessionViewModel = sessionViewModel,
                 onPlaySound = onPlaySound,
-                sesionesDiaViewModel = SesionesDiaViewModel()
+                sesionesDiaViewModel = SesionesDiaViewModel(
+                    useCase = AppModule.sesionDiaUseCase
+                )
             )
         }
         composable<NewBlog> {

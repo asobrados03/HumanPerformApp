@@ -3,16 +3,19 @@ package com.humanperformcenter.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.data.model.SesionesDia
-import com.humanperformcenter.shared.data.persistence.SessionRepositoryImpl
+import com.humanperformcenter.shared.data.persistence.SesionDiaRepositoryImp
 import com.humanperformcenter.shared.domain.repository.SesionDiaRepository
+import com.humanperformcenter.shared.domain.usecase.SesionDiaUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
-class SesionesDiaViewModel : ViewModel() {
+class SesionesDiaViewModel(
+    private val useCase: SesionDiaUseCase // inyectalo aquí
+) : ViewModel() {
 
-    private val repository = SessionRepositoryImpl
+    private val repository = SesionDiaRepositoryImp
 
     private val _sessions = MutableStateFlow<List<SesionesDia>>(emptyList())
     val sessions: StateFlow<List<SesionesDia>> get() = _sessions
@@ -29,7 +32,7 @@ class SesionesDiaViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val result = repository.getSessionsByWeek(serviceId, date)
+                val result = useCase.getSessionsByDay(serviceId, date)
 
                 println("---- Resultados recibidos (${result.size}) ----")
                 result.forEach {
@@ -37,13 +40,7 @@ class SesionesDiaViewModel : ViewModel() {
                 }
 
                 _sessions.value = result.filter {
-                    val fecha = it.date.substring(0, 10)
-                    val coincideFecha = fecha == date.toString()
-                    val coincideTipo = itMatchesTipo(it.service_id, tipoSesion)
-
-                    println("Evaluando: $fecha == ${date} → $coincideFecha, tipoSesion → $coincideTipo")
-
-                    coincideFecha && coincideTipo
+                    itMatchesTipo(it.service_id, tipoSesion)
                 }
 
                 println("→ Sesiones filtradas: ${_sessions.value.size}")

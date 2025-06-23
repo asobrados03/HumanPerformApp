@@ -5,5 +5,5 @@ import com.humanperformcenter.shared.data.model.Session
 import kotlinx.datetime.LocalDate
 
 interface SesionDiaRepository {
-    suspend fun getSessionsByWeek(serviceId: Int, weekStart: LocalDate): List<SesionesDia>
+    suspend fun getSessionsByDay(serviceId: Int, date: LocalDate): List<SesionesDia>
 }
