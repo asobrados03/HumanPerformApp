@@ -58,5 +58,11 @@ class SesionesDiaViewModel(
             else -> false
         }
     }
+    private val _coachesForHour = MutableStateFlow<List<SesionesDia>>(emptyList())
+    val coachesForHour: StateFlow<List<SesionesDia>> get() = _coachesForHour
+
+    fun obtenerEntrenadoresPorHora(hora: String) {
+        _coachesForHour.value = _sessions.value.filter { it.hour == hora }
+    }
 }
 

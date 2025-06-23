@@ -101,6 +101,10 @@ fun CalendarScreen(
     val scope = rememberCoroutineScope()
     val sesionesRemotas by sesionesDiaViewModel.sessions.collectAsState()
 
+    // Estado para el selector de coach
+    var mostrarSelectorCoach by remember { mutableStateOf(false) }
+    var horaSeleccionada by remember { mutableStateOf<String?>(null) }
+
     Scaffold(
         topBar = {
             LogoAppBar(
@@ -558,7 +562,9 @@ fun CalendarScreen(
                                             .height(40.dp)
                                             .border(1.dp, bgColor, RoundedCornerShape(12.dp))
                                             .clickable {
-                                                // Aquí puedes agregar lógica para reservar, navegar, etc.
+                                                sesionesDiaViewModel.obtenerEntrenadoresPorHora(hora)
+                                                horaSeleccionada = hora
+                                                mostrarSelectorCoach = true
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -600,6 +606,51 @@ fun CalendarScreen(
                     onClick = { showDialog = false }
                 ) {
                     Text("Cancelar")
+                }
+            }
+        )
+    }
+    if (mostrarSelectorCoach && horaSeleccionada != null) {
+        AlertDialog(
+            onDismissRequest = { mostrarSelectorCoach = false },
+            confirmButton = {},
+            title = { Text("Entrenadores disponibles a las ${horaSeleccionada}") },
+            text = {
+                val coaches = sesionesDiaViewModel.coachesForHour.collectAsState().value
+                if (coaches.isEmpty()) {
+                    Text("No hay entrenadores disponibles para esta hora.")
+                } else {
+                    Column {
+                        coaches.forEach { coach ->
+                            val disponibilidad = coach.booked.toFloat() / coach.capacity.toFloat()
+                            val bgColor = when {
+                                disponibilidad < 1f -> Color(0xFF4CAF50) // verde
+                                else -> Color(0xFFD32F2F) // rojo
+                            }
+
+                            Button(
+                                onClick = {
+                                    // Aquí se haría la reserva con coach.coach_id y horaSeleccionada
+                                    println("✅ Reservando con ${coach.coach_name} a las ${horaSeleccionada}")
+                                    mostrarSelectorCoach = false
+                                },
+                                enabled = coach.booked < coach.capacity,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = bgColor)
+                            ) {
+                                Column {
+                                    Text(text = coach.coach_name ?: "Entrenador desconocido")
+                                    Text(
+                                        text = "Reservas: ${coach.booked} / ${coach.capacity}",
+                                        fontSize = 12.sp,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         )
