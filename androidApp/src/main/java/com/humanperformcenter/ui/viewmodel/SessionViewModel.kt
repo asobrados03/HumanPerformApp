@@ -1,10 +1,5 @@
 package com.humanperformcenter.ui.viewmodel
 
-import android.util.Log
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -12,18 +7,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.data.Session
 import com.humanperformcenter.data.SessionRepository
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
-import kotlinx.serialization.json.*
 
 class SessionViewModel(
     private val repository: SessionRepository,
@@ -70,7 +59,9 @@ class SessionViewModel(
         .map { it[KEY_ACCESS].orEmpty().isNotBlank() }
         .distinctUntilChanged()
 
-    suspend fun realizarReserva(
+    // Esto aquí no va no tiene ningún sentido esto es una vista de modelos
+    // Las llamadas al cliente Ktor (que es el object ApiClient) se hacen desde los repositorios
+    /*suspend fun realizarReserva(
         coachId: Int,
         hour: String,
         serviceId: Int,
@@ -130,40 +121,5 @@ class SessionViewModel(
         } finally {
             client.close()
         }
-    }
-}
-
-@Composable
-fun BotonReservaCoach(
-    sessionViewModel: SessionViewModel,
-    coachId: Int,
-    coachName: String,
-    coachCenterId: Int,
-    serviceId: Int,
-    selectedDate: LocalDate,
-    hour: String,
-    onSuccess: () -> Unit
-) {
-    val accessToken by sessionViewModel.accessToken.collectAsState()
-    val customerId by sessionViewModel.userId.collectAsState()
-    val scope = rememberCoroutineScope()
-
-    if (accessToken != null && customerId != null) {
-        androidx.compose.material3.Button(
-            onClick = {
-                scope.launch {
-                    sessionViewModel.realizarReserva(
-                        coachId = coachId,
-                        hour = hour,
-                        serviceId = serviceId,
-                        selectedDate = selectedDate,
-                        coachCenterId = coachCenterId
-                    )
-                    onSuccess()
-                }
-            }
-        ) {
-            androidx.compose.material3.Text("Reservar con $coachName")
-        }
-    }
+    }*/
 }
