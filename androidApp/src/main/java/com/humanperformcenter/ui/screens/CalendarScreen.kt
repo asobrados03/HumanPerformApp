@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -609,22 +610,52 @@ fun CalendarScreen(
         )
     }
     if (mostrarSelectorCoach && horaSeleccionada != null && selectedDate != null) {
-        //val hora = horaSeleccionada.take(5)
+        val coaches = sesionesDiaViewModel.coachesForHour.collectAsState().value
+        val customerIdNullable = sessionViewModel.userId.collectAsState().value
 
-        AlertDialog(
-            onDismissRequest = { mostrarSelectorCoach = false },
-            confirmButton = {},
-            title = { Text("Entrenadores disponibles a las $") },
-            text = {
-                val coaches = sesionesDiaViewModel.coachesForHour.collectAsState().value
-                val customerId = sessionViewModel.userId.collectAsState().value
+        if (coaches.none { it.booked < it.capacity }) {
+            AlertDialog(
+                onDismissRequest = { mostrarSelectorCoach = false },
+                confirmButton = {},
+                title = { Text("Sin entrenadores disponibles") },
+                text = { Text("No hay entrenadores disponibles para esta hora.") }
+            )
+        } else if (customerIdNullable != null) {
+            print("Customer pillado: $customerIdNullable")
+            val availableCoaches = coaches.filter { it.booked < it.capacity }
+            val serviceId = when (tipoSesion.lowercase()) {
+                "nutrición" -> 1
+                "entrenamiento" -> 2
+                "fisioterapia" -> 3
+                else -> 1
+            }
+            val fechaISO = selectedDate.toString()
+            val horaSeleccionadaFinal = horaSeleccionada!!
+            val customerId = customerIdNullable
 
-                if (coaches.none { it.booked < it.capacity }) {
-                    Text("No hay entrenadores disponibles para esta hora.")
-                } else {
-                    TODO()
+            LaunchedEffect(horaSeleccionadaFinal) {
+                val preferredCoachId = sesionesDiaViewModel.getPreferredCoachId(customerId, serviceId)
+                val coachElegido = availableCoaches.firstOrNull { it.coach_id == preferredCoachId }
+                    ?: availableCoaches.randomOrNull()
+
+                if (coachElegido != null) {
+                    try {
+                        sesionesDiaViewModel.realizarReserva(
+                            customerId = customerId,
+                            coachId = coachElegido.coach_id,
+                            serviceId = serviceId,
+                            centerId = 1,
+                            selectedDate = "$fechaISO $horaSeleccionadaFinal",
+                            hour = horaSeleccionadaFinal
+                        )
+                        mostrarSelectorCoach = false
+                        showReservaDialog = false
+                        horaSeleccionada = null
+                    } catch (e: Exception) {
+                        println("❌ Error al reservar: \${e.message}")
+                    }
                 }
             }
-        )
+        }
     }
 }
