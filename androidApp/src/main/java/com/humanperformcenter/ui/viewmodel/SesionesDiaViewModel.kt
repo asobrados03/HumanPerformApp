@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toJavaLocalDate
 
 class SesionesDiaViewModel(
     private val useCase: SesionDiaUseCase // inyectalo aquí
@@ -63,5 +64,39 @@ class SesionesDiaViewModel(
     fun obtenerEntrenadoresPorHora(hora: String) {
         _coachesForHour.value = _sessions.value.filter { it.hour == hora }
     }
+
+    suspend fun realizarReserva(
+        customerId: Int,
+        coachId: Int,
+        serviceId: Int,
+        centerId: Int,
+        selectedDate: String,
+        hour: String
+    ) {
+        val productId = useCase.getUserProductId()
+        val timeslotId = useCase.getTimeslotId(hour)
+
+        val reserva = com.humanperformcenter.shared.data.model.ReservaRequest(
+            customer_id = customerId,
+            coach_id = coachId,
+            session_timeslot_id = timeslotId,
+            service_id = serviceId,
+            product_id = productId,
+            center_id = centerId,
+            start_date = selectedDate
+        )
+        useCase.reservarSesion(reserva)
+    }
+
+    suspend fun getPreferredCoachId(customerId: Int, serviceId: Int): Int? {
+        return useCase.getPreferredCoach(customerId, serviceId)
+    }
+    suspend fun getUserProductId(): Int {
+        return useCase.getUserProductId()
+    }
+    suspend fun getTimeslotId(hora: String): Int {
+        return useCase.getTimeslotId(hora)
+    }
+
 }
 

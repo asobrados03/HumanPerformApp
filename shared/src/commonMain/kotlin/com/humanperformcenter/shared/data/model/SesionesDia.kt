@@ -11,5 +11,4 @@ data class SesionesDia(
     val coach_name: String?,
     val booked: Int,
     val capacity: Int,
-    val center_id: Int
 )

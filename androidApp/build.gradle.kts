@@ -87,6 +87,7 @@ dependencies {
 
     implementation(libs.datastore.preferences)
     implementation(libs.datastore)
+    implementation(libs.androidx.datastore.preferences.core.android)
 
     testImplementation(libs.junit.jupiter)
     ksp(libs.androidx.room.compiler)

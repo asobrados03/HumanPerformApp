@@ -535,7 +535,7 @@ fun CalendarScreen(
                     Text("No hay sesiones disponibles para este día.", modifier = Modifier.padding(8.dp))
                 } else {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        horariosDisponibles.chunked(2).forEach { fila ->
+                        horariosDisponibles.chunked(3).forEach { fila ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -552,9 +552,12 @@ fun CalendarScreen(
                                         disponibilidad < 1f -> Color(0xFFFFA000) // amarillo
                                         else -> Color(0xFFD32F2F) // rojo
                                     }
+
+                                    val horaFormateada = hora.substring(0,5) // Asegúrate de que la hora tenga el formato correcto
+
                                     Box(
                                         modifier = Modifier
-                                            .width(100.dp)
+                                            .width(70.dp)
                                             .height(40.dp)
                                             .border(1.dp, bgColor, RoundedCornerShape(12.dp))
                                             .clickable {
@@ -564,7 +567,7 @@ fun CalendarScreen(
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(hora, color = bgColor)
+                                        Text(horaFormateada, color = bgColor)
                                     }
                                 }
                             }
@@ -605,36 +608,21 @@ fun CalendarScreen(
             }
         )
     }
-    if (mostrarSelectorCoach && horaSeleccionada != null) {
+    if (mostrarSelectorCoach && horaSeleccionada != null && selectedDate != null) {
+        //val hora = horaSeleccionada.take(5)
+
         AlertDialog(
             onDismissRequest = { mostrarSelectorCoach = false },
             confirmButton = {},
-            title = { Text("Entrenadores disponibles a las ${horaSeleccionada}") },
+            title = { Text("Entrenadores disponibles a las $") },
             text = {
                 val coaches = sesionesDiaViewModel.coachesForHour.collectAsState().value
-                if (coaches.isEmpty()) {
+                val customerId = sessionViewModel.userId.collectAsState().value
+
+                if (coaches.none { it.booked < it.capacity }) {
                     Text("No hay entrenadores disponibles para esta hora.")
                 } else {
-                    Column {
-                        coaches.forEach { coach ->
-                            val disponibilidad = coach.booked.toFloat() / coach.capacity.toFloat()
-                            val bgColor = if (disponibilidad < 1f) Color(0xFF4CAF50) else Color(0xFFD32F2F)
-
-                            // Usa tu viewModel ya instanciado
-                            CoachReservationButton(
-                                sessionViewModel = sessionViewModel, // asegúrate de tenerlo disponible aquí
-                                coachId = coach.coach_id,
-                                coachName = coach.coach_name ?: "Entrenador desconocido",
-                                coachCenterId = coach.center_id ?: return@forEach,
-                                serviceId = coach.service_id,
-                                selectedDate = selectedDate!!,
-                                hour = horaSeleccionada!!,
-                                onSuccess = {
-                                    mostrarSelectorCoach = false
-                                }
-                            )
-                        }
-                    }
+                    TODO()
                 }
             }
         )
