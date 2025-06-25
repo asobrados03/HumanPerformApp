@@ -307,9 +307,13 @@ fun Navigation(
                 )
             }
             composable<Calendar> {
+                val userViewModel: UserViewModel = viewModel(
+                    factory = UserViewModelFactory(AppModule.userUseCase)
+                )
                 CalendarScreen(
                     navController = navController,
                     sessionViewModel = sessionViewModel,
+                    userViewModel = userViewModel,
                     onPlaySound = onPlaySound,
                     sesionesDiaViewModel = SesionesDiaViewModel(
                         useCase = AppModule.sesionDiaUseCase

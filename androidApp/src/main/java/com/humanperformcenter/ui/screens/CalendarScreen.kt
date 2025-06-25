@@ -76,6 +76,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import com.humanperformcenter.ui.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,6 +84,7 @@ fun CalendarScreen(
     navController: NavHostController,
     sesionesDiaViewModel: SesionesDiaViewModel,
     sessionViewModel: SessionViewModel,
+    userViewModel: UserViewModel,
     onPlaySound: (Int) -> Unit
 ) {
     // Estado para el diálogo de eliminación
@@ -610,8 +612,11 @@ fun CalendarScreen(
         )
     }
     if (mostrarSelectorCoach && horaSeleccionada != null && selectedDate != null) {
+        val user = userViewModel.userData.collectAsState().value
+        requireNotNull(user) { "Usuario no disponible. Asegúrate de estar autenticado." }
+        val customerId = user.id
+
         val coaches = sesionesDiaViewModel.coachesForHour.collectAsState().value
-        val customerIdNullable = sessionViewModel.userId.collectAsState().value
 
         if (coaches.none { it.booked < it.capacity }) {
             AlertDialog(
@@ -620,8 +625,7 @@ fun CalendarScreen(
                 title = { Text("Sin entrenadores disponibles") },
                 text = { Text("No hay entrenadores disponibles para esta hora.") }
             )
-        } else if (customerIdNullable != null) {
-            print("Customer pillado: $customerIdNullable")
+        } else {
             val availableCoaches = coaches.filter { it.booked < it.capacity }
             val serviceId = when (tipoSesion.lowercase()) {
                 "nutrición" -> 1
@@ -631,7 +635,6 @@ fun CalendarScreen(
             }
             val fechaISO = selectedDate.toString()
             val horaSeleccionadaFinal = horaSeleccionada!!
-            val customerId = customerIdNullable
 
             LaunchedEffect(horaSeleccionadaFinal) {
                 val preferredCoachId = sesionesDiaViewModel.getPreferredCoachId(customerId, serviceId)
@@ -651,8 +654,10 @@ fun CalendarScreen(
                         mostrarSelectorCoach = false
                         showReservaDialog = false
                         horaSeleccionada = null
+
+                        println("Reserva creada con éxito")
                     } catch (e: Exception) {
-                        println("❌ Error al reservar: \${e.message}")
+                        println("❌ Error al reservar: ${e.message}")
                     }
                 }
             }
