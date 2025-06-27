@@ -1,10 +1,11 @@
 package com.humanperformcenter.shared.domain.usecase.validation
 
 import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult.RegisterField
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 object UserValidator {
     /**
@@ -91,6 +92,7 @@ object UserValidator {
      * - dni: si no está vacío, debe ser válido (8 dígitos + letra checksum)
      * - términos y política: ambos true
      */
+    @OptIn(ExperimentalTime::class)
     fun validateRegister(
         firstName: String,
         lastName: String,

@@ -4,8 +4,6 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.humanperformcenter.data.Session
-import com.humanperformcenter.data.SessionDao
 
 @Database(entities = [Session::class], version = 2)
 abstract class SessionDatabase : RoomDatabase() {
@@ -22,7 +20,7 @@ abstract class SessionDatabase : RoomDatabase() {
                     SessionDatabase::class.java,
                     "session_database"
                 )
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(false)
                 .build()
                 INSTANCE = instance
                 instance

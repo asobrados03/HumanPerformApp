@@ -89,6 +89,10 @@ object AuthPreferences {
 
     /** Borra ambos tokens e info user (logout) */
     suspend fun clear(prefs: DataStore<Preferences>) {
-        prefs.edit { it.clear() }
+        prefs.edit { m ->
+            m.remove(KEY_ACCESS)
+            m.remove(KEY_REFRESH)
+            m.remove(KEY_USER_JSON)
+        }
     }
 }

@@ -17,7 +17,7 @@ object BlogRepositoryImpl: BlogRepository {
     override suspend fun readBlogs(): Result<List<BlogEntry>> = withContext(Dispatchers.IO) {
         return@withContext try {
             // Hacemos la petición GET al endpoint /blogs
-            val resp: HttpResponse = ApiClient.httpClient.get("${ApiClient.baseUrl}/blog/blogs") {
+            val resp: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/blogs") {
                 contentType(ContentType.Application.Json)
             }
 

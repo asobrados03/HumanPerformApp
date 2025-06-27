@@ -1,15 +1,11 @@
 [versions]
-agp = "8.10.1"
-kotlin = "2.1.0"
+agp = "8.11.0"
+kotlin = "2.2.0"
 coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 kotlinxSerializationJson = "1.8.1"
-ktorClientContentNegotiationVersion = "2.3.2"
-ktorClientCoreVersion = "2.3.2"
-ktorClientOkhttpVersion = "2.3.2"
-ktorSerializationGson = "2.3.2"
 lifecycleRuntimeKtx = "2.9.1"
 activityCompose = "1.10.1"
 composeBom = "2025.06.01"
@@ -22,11 +18,11 @@ roomCompiler = "2.7.2"
 material = "1.8.3"
 ui = "1.8.3"
 uiToolingPreview = "1.8.3"
-kotlinxDatetime = "0.6.2"
-junitJupiter = "5.11.4"
+kotlinxDatetime = "0.7.0"
+junitJupiter = "5.13.2"
 coreKtxVersion = "1.6.1"
-coil = "2.4.0"
-kotlinStdlib = "2.1.21"
+coil = "2.7.0"
+kotlinStdlib = "2.2.0"
 kotlinTest = "2.1.0"
 runner = "1.6.2"
 core = "1.6.1"
@@ -39,7 +35,9 @@ securityCrypto = "1.0.0"
 ktorClientAuth = "3.1.3"
 datastore = "1.1.7"
 kotlinxCoroutinesCore = "1.10.2"
-datastorePreferencesCoreAndroid = "1.1.7"
+logging = "2.0.3"
+ktorClientCio = "3.1.3"
+ktorClientLogging = "3.1.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -64,10 +62,6 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
 androidx-material = { group = "androidx.compose.material", name = "material", version.ref = "material" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
-ktor-client-content-negotiation-v232 = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClientContentNegotiationVersion" }
-ktor-client-core-v232 = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCoreVersion" }
-ktor-client-okhttp-v232 = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktorClientOkhttpVersion" }
-ktor-serialization-gson = { module = "io.ktor:ktor-serialization-gson", version.ref = "ktorSerializationGson" }
 ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "uiToolingPreview" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
@@ -88,7 +82,9 @@ ktor-client-auth = { group = "io.ktor", name = "ktor-client-auth", version.ref =
 datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
-androidx-datastore-preferences-core-android = { group = "androidx.datastore", name = "datastore-preferences-core-android", version.ref = "datastorePreferencesCoreAndroid" }
+logging = { group = "com.diamondedge", name = "logging", version.ref = "logging" }
+ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktorClientCio" }
+ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktorClientLogging" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

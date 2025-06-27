@@ -24,7 +24,7 @@ import io.ktor.http.contentType
 
 object AuthRepositoryImpl : AuthRepository {
     override suspend fun login(email: String, password: String): Result<LoginResponse> = try {
-        val resp: HttpResponse = ApiClient.httpClient.post("${ApiClient.baseUrl}/mobile/login") {
+        val resp: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/login") {
             contentType(ContentType.Application.Json)
             setBody(mapOf("email" to email, "password" to password))
             expectSuccess = false
@@ -50,7 +50,7 @@ object AuthRepositoryImpl : AuthRepository {
             }
             HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized -> {
                 val err: ErrorResponse = resp.body() ?: ErrorResponse("Credenciales inválidas")
-                Result.failure(Exception(err.message))
+                Result.failure(Exception(err.error))
             }
             else -> Result.failure(Exception("Error al iniciar sesión"))
         }
@@ -58,12 +58,12 @@ object AuthRepositoryImpl : AuthRepository {
         Result.failure(err)
     }
 
-    override suspend fun register(datos: RegisterRequest): Result<RegisterResponse> {
+    override suspend fun register(data: RegisterRequest): Result<RegisterResponse> {
         return try {
             // 1) Hacemos la petición y, si es 201, body() se deserializa a RegisterResponse
-            val resp: HttpResponse = ApiClient.httpClient.post("${ApiClient.baseUrl}/mobile/register") {
+            val resp: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/register") {
                 contentType(ContentType.Application.Json)
-                setBody(datos)
+                setBody(data)
             }
 
             return if (resp.status == HttpStatusCode.Created) {
@@ -72,12 +72,12 @@ object AuthRepositoryImpl : AuthRepository {
             } else {
                 // 2) Si no es 201, intentamos extraer el JSON {"error": "..."}
                 val errorBody: ErrorResponse = resp.body()
-                Result.failure(Exception(errorBody.message))
+                Result.failure(Exception(errorBody.error))
             }
         } catch (e: ClientRequestException) {
             // En caso de 400, 409 u otro cliente, extraemos el JSON de error
             val errorMessage = try {
-                e.response.body<ErrorResponse>().message
+                e.response.body<ErrorResponse>().error
             } catch (_: Exception) {
                 e.message
             }
@@ -90,7 +90,7 @@ object AuthRepositoryImpl : AuthRepository {
 
     override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int): Result<Unit> {
         return try {
-            val resp: HttpResponse = ApiClient.httpClient.put("${ApiClient.baseUrl}/mobile/change-password") {
+            val resp: HttpResponse = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/change-password") {
                 contentType(ContentType.Application.Json)
                 setBody(ChangePasswordRequest(
                     currentPassword = currentPassword,
@@ -112,16 +112,17 @@ object AuthRepositoryImpl : AuthRepository {
                     } catch (_: Exception) {
                         ErrorResponse("Error de validación en los datos enviados")
                     }
-                    Result.failure(Exception(errorBody.message))
+                    Result.failure(Exception(errorBody.error))
                 }
                 HttpStatusCode.Unauthorized -> {
                     // Contraseña actual incorrecta
                     val errorBody: ErrorResponse = try {
                         resp.body()
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                         ErrorResponse("Contraseña actual incorrecta")
                     }
-                    Result.failure(Exception(errorBody.message))
+                    Result.failure(Exception(errorBody.error))
                 }
                 HttpStatusCode.Forbidden -> {
                     // Usuario no tiene permisos o sesión expirada
@@ -134,7 +135,7 @@ object AuthRepositoryImpl : AuthRepository {
         } catch (e: ClientRequestException) {
             // Manejo específico de errores del cliente (4xx)
             val errorMessage = try {
-                e.response.body<ErrorResponse>().message
+                e.response.body<ErrorResponse>().error
             } catch (_: Exception) {
                 when (e.response.status) {
                     HttpStatusCode.BadRequest -> "Datos inválidos"

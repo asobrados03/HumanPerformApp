@@ -15,7 +15,7 @@ kotlin {
     // See: https://kotlinlang.org/docs/multiplatform-discover-project.html#targets
     androidLibrary {
         namespace = "com.humanperformcenter.shared"
-        compileSdk = 35
+        compileSdk = 36
         minSdk = 26
 
         withHostTestBuilder {
@@ -71,6 +71,10 @@ kotlin {
                 implementation(libs.ktor.serialization.kotlinx.json)
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.ktor.client.auth)
+                implementation(libs.ktor.client.cio)
+                implementation(libs.ktor.client.logging)
+
+                implementation(libs.logging)
 
                 api(libs.datastore.preferences)
                 api(libs.datastore)

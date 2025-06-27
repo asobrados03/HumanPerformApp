@@ -1,16 +1,19 @@
 package com.humanperformcenter.ui.util
 
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
-import java.io.File
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import java.io.File
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+@OptIn(ExperimentalTime::class)
 fun createICSFile(eventTitle: String, startDateTime: Instant, durationMinutes: Int = 60): String {
     val start = startDateTime.toLocalDateTime(TimeZone.currentSystemDefault())
     // start is LocalDateTime here, so we use plus(DateTimePeriod)
@@ -18,11 +21,11 @@ fun createICSFile(eventTitle: String, startDateTime: Instant, durationMinutes: I
     val end = endInstant.toLocalDateTime(TimeZone.currentSystemDefault())
 
     val dtStart = "%04d%02d%02dT%02d%02d%02d".format(
-        start.year, start.monthNumber, start.dayOfMonth,
+        start.year, start.month.number, start.day,
         start.hour, start.minute, start.second
     )
     val dtEnd = "%04d%02d%02dT%02d%02d%02d".format(
-        end.year, end.monthNumber, end.dayOfMonth,
+        end.year, end.month.number, end.day,
         end.hour, end.minute, end.second
     )
 

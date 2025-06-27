@@ -24,7 +24,7 @@ object UserRepositoryImpl: UserRepository {
     override suspend fun updateUser(user: User): Result<User> {
         return try {
             // Realizamos la petición PUT al endpoint /user
-            val resp: HttpResponse = ApiClient.httpClient.put("${ApiClient.baseUrl}/mobile/user") {
+            val resp: HttpResponse = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/user") {
                 contentType(ContentType.Application.Json)
                 // El body se serializa automáticamente usando kotlinx-serialization
                 setBody(user)
@@ -46,7 +46,7 @@ object UserRepositoryImpl: UserRepository {
 
     override suspend fun deleteUser(email: String): Result<Unit> {
         return try {
-            val resp: HttpResponse = ApiClient.httpClient.delete("${ApiClient.baseUrl}/mobile/user") {
+            val resp: HttpResponse = ApiClient.apiClient.delete("${ApiClient.baseUrl}/mobile/user") {
                 parameter("email", email)
             }
             return when (resp.status) {
