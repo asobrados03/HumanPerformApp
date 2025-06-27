@@ -62,7 +62,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.R
 import com.humanperformcenter.data.Session
-import com.humanperformcenter.ui.components.CoachReservationButton
+//import com.humanperformcenter.ui.components.CoachReservationButton
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.components.SessionItem
@@ -643,19 +643,25 @@ fun CalendarScreen(
 
                 if (coachElegido != null) {
                     try {
+                        val token = userViewModel.getToken() // 🔑 Obtener token desde SecureStorage
+                        val productId = sesionesDiaViewModel.getUserProductId()
+                        val sessionTimeslotId = sesionesDiaViewModel.getTimeslotId(horaSeleccionadaFinal)
+
                         sesionesDiaViewModel.realizarReserva(
+                            token = token,
                             customerId = customerId,
                             coachId = coachElegido.coach_id,
+                            sessionTimeslotId = sessionTimeslotId,
                             serviceId = serviceId,
-                            centerId = 1,
-                            selectedDate = "$fechaISO $horaSeleccionadaFinal",
-                            hour = horaSeleccionadaFinal
+                            productId = productId,
+                            startDate = "$fechaISO $horaSeleccionadaFinal"
                         )
+
                         mostrarSelectorCoach = false
                         showReservaDialog = false
                         horaSeleccionada = null
 
-                        println("Reserva creada con éxito")
+                        println("✅ Reserva enviada correctamente")
                     } catch (e: Exception) {
                         println("❌ Error al reservar: ${e.message}")
                     }
