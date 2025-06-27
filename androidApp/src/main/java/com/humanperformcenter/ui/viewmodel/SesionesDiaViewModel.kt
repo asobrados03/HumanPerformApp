@@ -2,6 +2,7 @@ package com.humanperformcenter.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.humanperformcenter.shared.data.model.ReservaRequest
 import com.humanperformcenter.shared.data.model.SesionesDia
 import com.humanperformcenter.shared.data.persistence.SesionDiaRepositoryImpl
 import com.humanperformcenter.shared.domain.usecase.SesionDiaUseCase
@@ -70,29 +71,43 @@ class SesionesDiaViewModel(
         coachId: Int,
         serviceId: Int,
         centerId: Int,
-        selectedDate: String,
-        hour: String
+        selectedDate: String, // "2025-06-27"
+        hour: String          // "09:00"
     ) {
-        val productId = useCase.getUserProductId()
+        val productId = useCase.getUserProductId(customerId)
         val timeslotId = useCase.getTimeslotId(hour)
 
-        val reserva = com.humanperformcenter.shared.data.model.ReservaRequest(
+        println("🎯 Realizando reserva con:")
+        println("→ customerId = $customerId")
+        println("→ coachId = $coachId")
+        println("→ timeslotId = $timeslotId")
+        println("→ serviceId = $serviceId")
+        println("→ productId = $productId")
+        println("→ centerId = $centerId")
+        println("→ start_date = $selectedDate")
+
+        val reserva = ReservaRequest(
             customer_id = customerId,
             coach_id = coachId,
             session_timeslot_id = timeslotId,
             service_id = serviceId,
             product_id = productId,
             center_id = centerId,
-            start_date = selectedDate
+            start_date = selectedDate // ¡NO le pongas hora!
         )
-        useCase.reservarSesion(reserva)
+
+        try {
+            useCase.reservarSesion(reserva)
+            println("✅ Reserva enviada correctamente")
+        } catch (e: Exception) {
+            println("❌ Error al reservar: ${e.message}")
+            e.printStackTrace()
+        }
     }
+
 
     suspend fun getPreferredCoachId(customerId: Int, serviceId: Int): Int? {
         return useCase.getPreferredCoach(customerId, serviceId)
-    }
-    suspend fun getUserProductId(): Int {
-        return useCase.getUserProductId()
     }
     suspend fun getTimeslotId(hora: String): Int {
         return useCase.getTimeslotId(hora)

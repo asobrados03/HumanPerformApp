@@ -17,8 +17,8 @@ class SesionDiaUseCase(private val repository: SesionDiaRepository) {
     suspend fun reservarSesion(request: ReservaRequest): ReservaResponse = withContext(Dispatchers.IO) {
         return@withContext repository.reservarSesion(request)
     }
-    suspend fun getUserProductId(): Int = withContext(Dispatchers.IO) {
-        return@withContext repository.getUserProductId()
+    suspend fun getUserProductId(customerId: Int): Int = withContext(Dispatchers.IO) {
+        return@withContext repository.getUserProductId(customerId)
     }
     suspend fun getPreferredCoach(customerId: Int, serviceId: Int): Int? = withContext(Dispatchers.IO) {
         return@withContext repository.getPreferredCoach(customerId, serviceId)

@@ -62,7 +62,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.R
 import com.humanperformcenter.data.Session
-import com.humanperformcenter.ui.components.CoachReservationButton
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.components.SessionItem
@@ -77,6 +76,11 @@ import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import com.humanperformcenter.ui.viewmodel.UserViewModel
+import kotlinx.coroutines.launch
+import kotlinx.datetime.toJavaLocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,6 +103,10 @@ fun CalendarScreen(
     // Scope para llamadas asincronas
     val scope = rememberCoroutineScope()
     val sesionesRemotas by sesionesDiaViewModel.sessions.collectAsState()
+
+    val user by userViewModel.userData.collectAsState()
+    val customerId = user?.id
+
 
     // Estado para el selector de coach
     var mostrarSelectorCoach by remember { mutableStateOf(false) }
@@ -256,7 +264,8 @@ fun CalendarScreen(
 
             // Mostrar el calendario del mes mostrado
             val firstDayOfMonth = LocalDate(displayedYear, displayedMonth, 1)
-            val isLeapYear = (displayedYear % 4 == 0) && (displayedYear % 100 != 0 || displayedYear % 400 == 0)
+            val isLeapYear =
+                (displayedYear % 4 == 0) && (displayedYear % 100 != 0 || displayedYear % 400 == 0)
             val daysInMonth = displayedMonth.length(isLeapYear)
             // Offset para que la semana empiece en lunes
             val offset = firstDayOfMonth.dayOfWeek.ordinal
@@ -278,9 +287,12 @@ fun CalendarScreen(
                         val dayNumber = cellIndex - offset + 1
                         if (cellIndex < offset || dayNumber > daysInMonth) {
                             val dayText = if (cellIndex < offset) {
-                                val prevMonth = if (displayedMonth.ordinal == 0) Month.DECEMBER else Month.entries[displayedMonth.ordinal - 1]
-                                val prevYear = if (displayedMonth.ordinal == 0) displayedYear - 1 else displayedYear
-                                val daysInPrevMonth = prevMonth.length((prevYear % 4 == 0) && (prevYear % 100 != 0 || prevYear % 400 == 0))
+                                val prevMonth =
+                                    if (displayedMonth.ordinal == 0) Month.DECEMBER else Month.entries[displayedMonth.ordinal - 1]
+                                val prevYear =
+                                    if (displayedMonth.ordinal == 0) displayedYear - 1 else displayedYear
+                                val daysInPrevMonth =
+                                    prevMonth.length((prevYear % 4 == 0) && (prevYear % 100 != 0 || prevYear % 400 == 0))
                                 (daysInPrevMonth - (offset - cellIndex) + 1).toString()
                             } else {
                                 ((dayNumber - daysInMonth)).toString()
@@ -303,13 +315,17 @@ fun CalendarScreen(
                                 isSunday -> Color.LightGray
                                 else -> Color.Transparent
                             }
-                            val textColor = if (eventColor != Color.Transparent) Color.White else MaterialTheme.colorScheme.onSurface
+                            val textColor =
+                                if (eventColor != Color.Transparent) Color.White else MaterialTheme.colorScheme.onSurface
                             val isToday = date == todayLocalDate
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(36.dp)
-                                    .background(color = cellBackgroundColor, shape = RoundedCornerShape(50))
+                                    .background(
+                                        color = cellBackgroundColor,
+                                        shape = RoundedCornerShape(50)
+                                    )
                                     .border(
                                         width = if (isToday) 2.dp else 0.dp,
                                         color = if (isToday) Color.Black else Color.Transparent,
@@ -339,7 +355,11 @@ fun CalendarScreen(
 
                                                 else -> 1
                                             }
-                                            sesionesDiaViewModel.fetchAvailableSessions(serviceId, date, tipoActual)
+                                            sesionesDiaViewModel.fetchAvailableSessions(
+                                                serviceId,
+                                                date,
+                                                tipoActual
+                                            )
                                         } else {
                                             // Si es domingo, no se puede seleccionar
                                             selectedDate = null
@@ -389,7 +409,8 @@ fun CalendarScreen(
                         modifier = Modifier.animateContentSize(),
                         state = dismissState,
                         backgroundContent = {
-                            val color by animateColorAsState(MaterialTheme.colorScheme.error,
+                            val color by animateColorAsState(
+                                MaterialTheme.colorScheme.error,
                                 label = "dismiss_background"
                             )
 
@@ -466,7 +487,9 @@ fun CalendarScreen(
                                         onClick = {
                                             val icsContent = createICSFile(
                                                 eventTitle = session.service,
-                                                startDateTime = Instant.fromEpochMilliseconds(session.date)
+                                                startDateTime = Instant.fromEpochMilliseconds(
+                                                    session.date
+                                                )
                                             )
                                             shareICS(context, icsContent)
                                             expanded = false
@@ -507,7 +530,11 @@ fun CalendarScreen(
                                                 "fisioterapia" -> 3
                                                 else -> 1
                                             }
-                                            sesionesDiaViewModel.fetchAvailableSessions(serviceId, fecha, tipo)
+                                            sesionesDiaViewModel.fetchAvailableSessions(
+                                                serviceId,
+                                                fecha,
+                                                tipo
+                                            )
                                         }
                                     },
                                     colors = ButtonDefaults.buttonColors(
@@ -535,7 +562,10 @@ fun CalendarScreen(
             text = {
                 val horariosDisponibles = sesionesRemotas.map { it.hour }.distinct().sorted()
                 if (horariosDisponibles.isEmpty()) {
-                    Text("No hay sesiones disponibles para este día.", modifier = Modifier.padding(8.dp))
+                    Text(
+                        "No hay sesiones disponibles para este día.",
+                        modifier = Modifier.padding(8.dp)
+                    )
                 } else {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         horariosDisponibles.chunked(3).forEach { fila ->
@@ -547,16 +577,17 @@ fun CalendarScreen(
                             ) {
                                 fila.forEach { hora ->
                                     val sesion = sesionesRemotas.firstOrNull { it.hour == hora }
-                                    val disponibilidad = if (sesion != null && sesion.capacity > 0) {
-                                        sesion.booked.toFloat() / sesion.capacity.toFloat()
-                                    } else 1f
+                                    val disponibilidad =
+                                        if (sesion != null && sesion.capacity > 0) {
+                                            sesion.booked.toFloat() / sesion.capacity.toFloat()
+                                        } else 1f
                                     val bgColor = when {
                                         disponibilidad < 0.5f -> Color(0xFF4CAF50) // verde
                                         disponibilidad < 1f -> Color(0xFFFFA000) // amarillo
                                         else -> Color(0xFFD32F2F) // rojo
                                     }
 
-                                    val horaFormateada = hora.substring(0,5) // Asegúrate de que la hora tenga el formato correcto
+                                    val horaFormateada = hora.substring(0, 5)
 
                                     Box(
                                         modifier = Modifier
@@ -564,9 +595,66 @@ fun CalendarScreen(
                                             .height(40.dp)
                                             .border(1.dp, bgColor, RoundedCornerShape(12.dp))
                                             .clickable {
-                                                sesionesDiaViewModel.obtenerEntrenadoresPorHora(hora)
-                                                horaSeleccionada = hora
-                                                mostrarSelectorCoach = true
+                                                println("🕒 Hora seleccionada: $hora")
+                                                println("📛 customerId obtenido: $customerId")
+                                                val serviceId = when (tipoSesion.lowercase()) {
+                                                    "nutrición" -> 1
+                                                    "entrenamiento" -> 2
+                                                    "fisioterapia" -> 3
+                                                    else -> 1
+                                                }
+                                                if (customerId != null) {
+                                                    sesionesDiaViewModel.obtenerEntrenadoresPorHora(
+                                                        hora
+                                                    )
+
+                                                    scope.launch {
+                                                        val preferredId =
+                                                            sesionesDiaViewModel.getPreferredCoachId(
+                                                                customerId,
+                                                                serviceId
+                                                            )
+                                                        println("👤 Preferred coach ID: $preferredId")
+
+                                                        val disponibles =
+                                                            sesionesDiaViewModel.coachesForHour.value.filter {
+                                                                it.booked < it.capacity
+                                                            }
+                                                        println("👥 Entrenadores disponibles: ${disponibles.size}")
+
+                                                        val coachSeleccionado =
+                                                            disponibles.find { it.coach_id == preferredId }
+                                                        println("👤 Coach seleccionado: ${coachSeleccionado?.coach_name ?: "Ninguno"}")
+                                                        println("hora: $hora")
+                                                        println("productId: ")
+                                                        println("timeslotId: ${sesionesDiaViewModel.getTimeslotId(hora)}")
+
+
+                                                        if (coachSeleccionado != null) {
+                                                            val startDateOnly = selectedDate.toString() // "2025-08-11"
+                                                            sesionesDiaViewModel.realizarReserva(
+                                                                customerId = customerId,
+                                                                coachId = coachSeleccionado.coach_id,
+                                                                serviceId = serviceId,
+                                                                centerId = 1,
+                                                                selectedDate = startDateOnly,
+                                                                hour = hora
+                                                            )
+                                                            println("👤 customerId en diálogo: $customerId")
+                                                            println("⏰ horaSeleccionada: $hora")
+                                                            println("📅 fechaSeleccionada: $selectedDate")
+                                                            mostrarSelectorCoach = false
+                                                            horaSeleccionada = null
+                                                            println("✅ Reserva directa con coach preferido")
+                                                        } else {
+                                                            sesionesDiaViewModel.obtenerEntrenadoresPorHora(
+                                                                hora
+                                                            )
+                                                            horaSeleccionada = hora
+                                                            mostrarSelectorCoach = true
+                                                        }
+                                                    }
+                                                }
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -611,56 +699,49 @@ fun CalendarScreen(
             }
         )
     }
-    if (mostrarSelectorCoach && horaSeleccionada != null && selectedDate != null) {
-        val user = userViewModel.userData.collectAsState().value
-        requireNotNull(user) { "Usuario no disponible. Asegúrate de estar autenticado." }
-        val customerId = user.id
+    if (mostrarSelectorCoach && horaSeleccionada != null) {
+        AlertDialog(
+            onDismissRequest = { mostrarSelectorCoach = false },
+            confirmButton = {},
+            title = { Text("Entrenadores disponibles a las ${horaSeleccionada}") },
+            text = {
+                val coaches = sesionesDiaViewModel.coachesForHour.collectAsState().value
+                if (coaches.isEmpty()) {
+                    Text("No hay entrenadores disponibles para esta hora.")
+                } else {
+                    Column {
+                        coaches.forEach { coach ->
+                            val disponibilidad = coach.booked.toFloat() / coach.capacity.toFloat()
+                            val bgColor = when {
+                                disponibilidad < 1f -> Color(0xFF4CAF50) // verde
+                                else -> Color(0xFFD32F2F) // rojo
+                            }
 
-        val coaches = sesionesDiaViewModel.coachesForHour.collectAsState().value
-
-        if (coaches.none { it.booked < it.capacity }) {
-            AlertDialog(
-                onDismissRequest = { mostrarSelectorCoach = false },
-                confirmButton = {},
-                title = { Text("Sin entrenadores disponibles") },
-                text = { Text("No hay entrenadores disponibles para esta hora.") }
-            )
-        } else {
-            val availableCoaches = coaches.filter { it.booked < it.capacity }
-            val serviceId = when (tipoSesion.lowercase()) {
-                "nutrición" -> 1
-                "entrenamiento" -> 2
-                "fisioterapia" -> 3
-                else -> 1
-            }
-            val fechaISO = selectedDate.toString()
-            val horaSeleccionadaFinal = horaSeleccionada!!
-
-            LaunchedEffect(horaSeleccionadaFinal) {
-                val preferredCoachId = sesionesDiaViewModel.getPreferredCoachId(customerId, serviceId)
-                val coachElegido = availableCoaches.firstOrNull { it.coach_id == preferredCoachId }
-                    ?: availableCoaches.randomOrNull()
-
-                if (coachElegido != null) {
-                    try {
-                        sesionesDiaViewModel.realizarReserva(
-                            customerId = customerId,
-                            coachId = coachElegido.coach_id,
-                            serviceId = serviceId,
-                            centerId = 1,
-                            selectedDate = "$fechaISO $horaSeleccionadaFinal",
-                            hour = horaSeleccionadaFinal
-                        )
-                        mostrarSelectorCoach = false
-                        showReservaDialog = false
-                        horaSeleccionada = null
-
-                        println("Reserva creada con éxito")
-                    } catch (e: Exception) {
-                        println("❌ Error al reservar: ${e.message}")
+                            Button(
+                                onClick = {
+                                    // Aquí se haría la reserva con coach.coach_id y horaSeleccionada
+                                    println("✅ Reservando con ${coach.coach_name} a las ${horaSeleccionada}")
+                                    mostrarSelectorCoach = false
+                                },
+                                enabled = coach.booked < coach.capacity,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = bgColor)
+                            ) {
+                                Column {
+                                    Text(text = coach.coach_name ?: "Entrenador desconocido")
+                                    Text(
+                                        text = "Reservas: ${coach.booked} / ${coach.capacity}",
+                                        fontSize = 12.sp,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
-        }
+        )
     }
 }

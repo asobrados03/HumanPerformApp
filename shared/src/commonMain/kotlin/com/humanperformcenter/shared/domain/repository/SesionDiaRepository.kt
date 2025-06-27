@@ -9,7 +9,7 @@ import kotlinx.datetime.LocalDate
 interface SesionDiaRepository {
     suspend fun getSessionsByDay(serviceId: Int, date: LocalDate): List<SesionesDia>
     suspend fun reservarSesion(reservaRequest: ReservaRequest): ReservaResponse
-    suspend fun getUserProductId(): Int
+    suspend fun getUserProductId(customerId: Int): Int
     suspend fun getPreferredCoach(customerId: Int, serviceId: Int): Int?
     suspend fun getTimeslotId(hora: String): Int
 }
