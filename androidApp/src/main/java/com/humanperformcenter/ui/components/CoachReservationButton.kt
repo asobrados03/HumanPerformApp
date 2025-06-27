@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-/*@Composable
+@Composable
 fun CoachReservationButton(
     sesionesDiaViewModel: SesionesDiaViewModel,
     coachName: String = "",
@@ -64,4 +64,3 @@ fun CoachReservationButton(
         Text("Reservar automáticamente")
     }
 }
-*/

@@ -11,13 +11,11 @@ import com.humanperformcenter.shared.domain.usecase.validation.EditValidationRes
 import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
 import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class UserViewModel(
     private val userUseCase: UserUseCase
@@ -130,13 +128,6 @@ class UserViewModel(
                     }
                 }
             )
-        }
-    }
-
-    suspend fun getToken(): String {
-        return withContext(Dispatchers.IO) {
-            SecureStorage.getAccessToken()
-                ?: throw IllegalStateException("Token no disponible")
         }
     }
 

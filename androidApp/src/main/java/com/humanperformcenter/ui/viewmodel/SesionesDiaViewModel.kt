@@ -9,14 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import io.ktor.client.*
-import io.ktor.client.plugins.DefaultRequest
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.serialization.json.Json
+import kotlinx.datetime.toJavaLocalDate
 
 class SesionesDiaViewModel(
     private val useCase: SesionDiaUseCase // inyectalo aquí
@@ -72,54 +65,27 @@ class SesionesDiaViewModel(
         _coachesForHour.value = _sessions.value.filter { it.hour == hora }
     }
 
-    fun realizarReserva(
-        token: String,
+    suspend fun realizarReserva(
         customerId: Int,
         coachId: Int,
-        sessionTimeslotId: Int,
         serviceId: Int,
-        productId: Int,
-        //centerId: Int,
-        startDate: String
+        centerId: Int,
+        selectedDate: String,
+        hour: String
     ) {
-        val client = HttpClient {
-            install(ContentNegotiation) {
-                json(Json { ignoreUnknownKeys = true })
-            }
-            install(DefaultRequest) {
-                header("Authorization", "Bearer $token")
-            }
-        }
+        val productId = useCase.getUserProductId()
+        val timeslotId = useCase.getTimeslotId(hour)
 
-        viewModelScope.launch {
-            try {
-                val response: HttpResponse = client.post("https://tudominio.com/api/mobile/reserve") {
-                    contentType(ContentType.Application.Json)
-                    setBody(
-                        mapOf(
-                            "customer_id" to customerId,
-                            "coach_id" to coachId,
-                            "session_timeslot_id" to sessionTimeslotId,
-                            "service_id" to serviceId,
-                            "product_id" to productId,
-                            //"center_id" to centerId,
-                            "start_date" to startDate,
-                            "status" to "active",
-                            "payment_status" to "pending",
-                            "payment_method" to "card"
-                        )
-                    )
-                }
-
-                if (response.status == HttpStatusCode.Created) {
-                    println("✅ Reserva creada correctamente")
-                } else {
-                    println("❌ Error HTTP ${response.status.value}: ${response.bodyAsText()}")
-                }
-            } catch (e: Exception) {
-                println("❌ Excepción al reservar: ${e.message}")
-            }
-        }
+        val reserva = com.humanperformcenter.shared.data.model.ReservaRequest(
+            customer_id = customerId,
+            coach_id = coachId,
+            session_timeslot_id = timeslotId,
+            service_id = serviceId,
+            product_id = productId,
+            center_id = centerId,
+            start_date = selectedDate
+        )
+        useCase.reservarSesion(reserva)
     }
 
     suspend fun getPreferredCoachId(customerId: Int, serviceId: Int): Int? {
