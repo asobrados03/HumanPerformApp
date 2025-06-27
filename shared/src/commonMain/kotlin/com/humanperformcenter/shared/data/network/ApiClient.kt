@@ -9,6 +9,10 @@ import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.DEFAULT
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
 import io.ktor.http.HttpStatusCode
@@ -28,6 +32,11 @@ object ApiClient {
 
     // 2) Cliente principal sin lógica de refresh en Auth
     val apiClient = HttpClient(CIO) {
+        install(Logging) {
+            logger = Logger.DEFAULT
+            level = LogLevel.ALL   // mira cabeceras y cuerpos
+        }
+
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
         install(Auth) {
             bearer {
@@ -44,9 +53,8 @@ object ApiClient {
                     val oldRefresh = storage.getRefreshToken()
                         ?: throw IllegalStateException("No hay refresh token")
 
-                    println("→ refreshTokens() usando refresh=$oldRefresh")
                     // Llamada de refresco *marcada* para que Ktor no la intercepte de nuevo
-                    val resp = client.post("$BASE/mobile/refresh") {
+                    val resp = authClient.post("$BASE/mobile/refresh") {
                         markAsRefreshTokenRequest()
                         bearerAuth(oldRefresh)
                     }
@@ -57,7 +65,6 @@ object ApiClient {
                     } else {
                         // parseo y guardado
                         val newTokens = resp.body<RefreshResponse>()
-                        println("   ✅ nuevos tokens: access=${newTokens.accessToken}")
                         storage.saveTokens(newTokens.accessToken, newTokens.refreshToken)
                         BearerTokens(newTokens.accessToken, newTokens.refreshToken)
                     }
