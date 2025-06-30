@@ -37,10 +37,13 @@ object SesionDiaRepositoryImpl : SesionDiaRepository {
 
     override suspend fun getUserProductId(customerId: Int): Int {
         val client = ApiClient.apiClient
-        val response = client.get("${ApiClient.baseUrl}/mobile/user-product")
+        val response = client.get("${ApiClient.baseUrl}/mobile/user-product") {
+            parameter("user_id", customerId)
+        }
         val json = response.body<Map<String, Int>>()
         return json["product_id"] ?: throw IllegalStateException("No se encontró el product_id")
     }
+
 
     override suspend fun getPreferredCoach(customerId: Int, serviceId: Int): Int? {
         val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/preferred-coach") {
