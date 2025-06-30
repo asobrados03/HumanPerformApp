@@ -1,5 +1,6 @@
 package com.humanperformcenter.ui.screens
 
+import android.util.Log.e
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -540,7 +541,11 @@ fun CalendarScreen(
                 }
             },
             text = {
-                val horariosDisponibles = sesionesRemotas.map { it.hour }.distinct().sorted()
+                val horariosDisponibles = sesionesRemotas
+                    .map { it.hour }
+                    .filter { it.endsWith(":00:00") || it.endsWith(":30:00") }
+                    .distinct()
+                    .sorted()
                 if (horariosDisponibles.isEmpty()) {
                     Text("No hay sesiones disponibles para este día.", modifier = Modifier.padding(8.dp))
                 } else {
@@ -622,6 +627,7 @@ fun CalendarScreen(
         val user = userViewModel.userData.collectAsState().value
         requireNotNull(user) { "Usuario no disponible. Asegúrate de estar autenticado." }
         val customerId = user.id
+        var errorReserva by remember { mutableStateOf<String?>(null) }
 
         val coaches = sesionesDiaViewModel.coachesForHour.collectAsState().value
 
@@ -670,6 +676,21 @@ fun CalendarScreen(
             }
         }
     }
+    val mensajeError by sesionesDiaViewModel.mensajeErrorReserva.collectAsState()
+
+    if (mensajeError != null) {
+        AlertDialog(
+            onDismissRequest = { sesionesDiaViewModel.clearMensajeError() },
+            title = { Text("Error de reserva") },
+            text = { Text(mensajeError ?: "") },
+            confirmButton = {
+                TextButton(onClick = { sesionesDiaViewModel.clearMensajeError() }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
 }
 
 private fun Month.length(isLeapYear: Boolean): Int = when (this) {

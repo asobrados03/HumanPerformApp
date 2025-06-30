@@ -10,6 +10,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.contentType
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.JsonObject
@@ -31,6 +32,9 @@ object SesionDiaRepositoryImpl : SesionDiaRepository {
         val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/reserve") {
             contentType(io.ktor.http.ContentType.Application.Json)
             setBody(reservaRequest)
+        }
+        if (response.status.value == 409) {
+            throw IllegalStateException("Ya tienes una reserva a esta hora.")
         }
         return response.body()
     }

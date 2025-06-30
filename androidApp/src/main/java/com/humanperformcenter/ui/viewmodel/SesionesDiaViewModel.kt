@@ -21,6 +21,9 @@ class SesionesDiaViewModel(
     private val _sessions = MutableStateFlow<List<SesionesDia>>(emptyList())
     val sessions: StateFlow<List<SesionesDia>> get() = _sessions
 
+    private val _mensajeErrorReserva = MutableStateFlow<String?>(null)
+    val mensajeErrorReserva: StateFlow<String?> = _mensajeErrorReserva
+
     fun fetchAvailableSessions(serviceId: Int, date: LocalDate, tipoSesion: String) {
         val weekStart = date.toString()
 
@@ -99,9 +102,10 @@ class SesionesDiaViewModel(
         try {
             useCase.reservarSesion(reserva)
             println("✅ Reserva enviada correctamente")
-        } catch (e: Exception) {
+            _mensajeErrorReserva.value = null
+        } catch (e: IllegalStateException) {
             println("❌ Error al reservar: ${e.message}")
-            e.printStackTrace()
+            _mensajeErrorReserva.value = e.message
         }
     }
 
@@ -109,8 +113,8 @@ class SesionesDiaViewModel(
     suspend fun getPreferredCoachId(customerId: Int, serviceId: Int): Int? {
         return useCase.getPreferredCoach(customerId, serviceId)
     }
-    suspend fun getTimeslotId(hora: String): Int {
-        return useCase.getTimeslotId(hora)
+    fun clearMensajeError() {
+        _mensajeErrorReserva.value = null
     }
 
 }
