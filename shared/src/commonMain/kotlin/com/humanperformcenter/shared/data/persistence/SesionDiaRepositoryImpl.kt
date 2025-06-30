@@ -55,13 +55,13 @@ object SesionDiaRepositoryImpl : SesionDiaRepository {
         return json["coach_id"]?.jsonPrimitive?.intOrNull
     }
     override suspend fun getTimeslotId(hora: String): Int {
+        val formattedHour = if (hora.length == 5) "$hora:00" else hora
         val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/timeslot-id") {
-            parameter("hour", hora)
+            parameter("hour", formattedHour)
         }
 
-        val json = response.body<JsonObject>()
-        return json["timeslot_id"]?.jsonPrimitive?.intOrNull
-            ?: throw IllegalStateException("No se encontró el timeslot_id para la hora $hora")
-    }
+        val json = response.body<Map<String, Int>>()
+        return json["session_timeslot_id"] ?: throw IllegalStateException("Respuesta inválida")
+        }
 
 }

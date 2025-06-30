@@ -93,7 +93,7 @@ class SesionesDiaViewModel(
             service_id = serviceId,
             product_id = productId,
             center_id = centerId,
-            start_date = selectedDate // ¡NO le pongas hora!
+            start_date = selectedDate
         )
 
         try {

@@ -655,7 +655,7 @@ fun CalendarScreen(
                             coachId = coachElegido.coach_id,
                             serviceId = serviceId,
                             centerId = 1,
-                            selectedDate = "$fechaISO $horaSeleccionadaFinal",
+                            selectedDate = fechaISO,
                             hour = horaSeleccionadaFinal
                         )
                         mostrarSelectorCoach = false
