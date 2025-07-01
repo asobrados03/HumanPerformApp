@@ -60,8 +60,8 @@ fun NewProductScreen(
     val misProductos = allServices.filter { it.id in userServiceIds }
     val otrosProductos = allServices.filterNot { it.id in userServiceIds }
 
-    var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Mis productos", "Reservar")
+
+
 
     Scaffold(
         topBar = {
@@ -73,56 +73,35 @@ fun NewProductScreen(
         bottomBar = { NavigationBar(navController = navController) },
         modifier = Modifier.fillMaxSize()
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            TabRow(selectedTabIndex = selectedTab) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(title) }
+        LazyColumn(
+            contentPadding = padding,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp)
+        ) {
+            if (misProductos.isNotEmpty()) {
+                item {
+                    Text(
+                        "Mis productos",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
+                }
+                items(misProductos) { service ->
+                    renderServiceCard(service, navController)
                 }
             }
 
-            when (selectedTab) {
-                0 -> MisProductosView(misProductos, navController)
-                1 -> ReservarView(otrosProductos, navController)
-            }
-        }
-    }
-}
-
-@Composable
-fun MisProductosView(misProductos: List<ServicioVisual>, navController: NavHostController) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize().padding(12.dp)
-    ) {
-        if (misProductos.isNotEmpty()) {
-            items(misProductos) { service ->
-                renderServiceCard(service, navController)
-            }
-        } else {
             item {
-                Text("No tienes productos contratados.")
+                Text(
+                    "Otros productos disponibles",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
             }
-        }
-    }
-}
-
-@Composable
-fun ReservarView(otrosProductos: List<ServicioVisual>, navController: NavHostController) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize().padding(12.dp)
-    ) {
-        if (otrosProductos.isNotEmpty()) {
             items(otrosProductos) { service ->
                 renderServiceCard(service, navController)
-            }
-        } else {
-            item {
-                Text("No hay servicios disponibles para contratar.")
             }
         }
     }
@@ -143,6 +122,7 @@ fun renderServiceCard(service: ServicioVisual, navController: NavHostController)
                 "ENTRENAMIENTO OPOSITORES" -> navController.navigate(Opositores)
                 "SERVICIO DE TAQUILLA PERSONAL" -> navController.navigate(Taquilla)
                 "ALTER G CINTA ANTIGRAVEDAD" -> navController.navigate(AlterG)
+                // Opcional: puedes hacer que este `when` funcione con `id` mejor que con `name`
             }
         }
     ) {
