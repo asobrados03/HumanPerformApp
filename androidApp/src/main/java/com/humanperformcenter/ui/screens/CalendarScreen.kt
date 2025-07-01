@@ -627,7 +627,12 @@ fun CalendarScreen(
         val user = userViewModel.userData.collectAsState().value
         requireNotNull(user) { "Usuario no disponible. Asegúrate de estar autenticado." }
         val customerId = user.id
-        var errorReserva by remember { mutableStateOf<String?>(null) }
+
+        LaunchedEffect(customerId) {
+            sessionViewModel.cargarServiciosPermitidos(customerId)
+        }
+
+        val serviciosPermitidos = sessionViewModel.allowedServices.collectAsState().value
 
         val coaches = sesionesDiaViewModel.coachesForHour.collectAsState().value
 

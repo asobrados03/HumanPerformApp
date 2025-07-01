@@ -48,7 +48,6 @@ object SesionDiaRepositoryImpl : SesionDiaRepository {
         return json["product_id"] ?: throw IllegalStateException("No se encontró el product_id")
     }
 
-
     override suspend fun getPreferredCoach(customerId: Int, serviceId: Int): Int? {
         val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/preferred-coach") {
             parameter("customer_id", customerId)
