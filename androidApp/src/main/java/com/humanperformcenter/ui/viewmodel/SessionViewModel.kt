@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.data.Session
 import com.humanperformcenter.data.SessionRepository
 import com.humanperformcenter.di.AppModule.userUseCase
+import com.humanperformcenter.shared.data.model.ServicioDispo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,8 +29,8 @@ class SessionViewModel(
     private val _accessToken = MutableStateFlow<String?>(null)
     val accessToken: StateFlow<String?> get() = _accessToken
 
-    private val _allowedServices = MutableStateFlow<List<Int>>(emptyList())
-    val allowedServices: StateFlow<List<Int>> get() = _allowedServices
+    private val _allowedServices = MutableStateFlow<List<ServicioDispo>>(emptyList())
+    val allowedServices: StateFlow<List<ServicioDispo>> get() = _allowedServices
 
     private val _userId = MutableStateFlow<Int?>(null)
     val userId: StateFlow<Int?> get() = _userId

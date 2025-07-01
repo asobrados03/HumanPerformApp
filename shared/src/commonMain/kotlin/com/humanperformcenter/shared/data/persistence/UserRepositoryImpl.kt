@@ -69,7 +69,7 @@ object UserRepositoryImpl: UserRepository {
                 parameters.append("user_id", customerId.toString())
             }
         }
-        return response.body<Map<String, List<ServicioDispo>>>()["service_ids"] ?: emptyList()
+        return response.body()
     }
 
 }

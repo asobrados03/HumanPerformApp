@@ -106,6 +106,11 @@ fun CalendarScreen(
     var mostrarSelectorCoach by remember { mutableStateOf(false) }
     var horaSeleccionada by remember { mutableStateOf<String?>(null) }
 
+    // Estado para el dropdown de tipo de sesión
+    val serviciosPermitidos = sessionViewModel.allowedServices.collectAsState().value
+    var dropdownExpanded by remember { mutableStateOf(false) }
+
+
     Scaffold(
         topBar = {
             LogoAppBar(
@@ -500,43 +505,49 @@ fun CalendarScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Selecciona sesión")
-                        Column {
-                            listOf("Nutrición", "Entrenamiento", "Fisioterapia").forEach { tipo ->
-                                val selected = tipoSesion == tipo
-                                Button(
-                                    onClick = {
-                                        tipoSesion = tipo
+                        Text(text = "Selecciona el tipo de sesión:", fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                                        selectedDate?.let { fecha ->
-                                            val serviceId = when (tipo.lowercase()) {
-                                                "nutrición" -> 1
-                                                "entrenamiento" -> 2
-                                                "fisioterapia" -> 3
-                                                else -> 1
-                                            }
-                                            sesionesDiaViewModel.fetchAvailableSessions(serviceId, fecha, tipo)
-                                        }
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = when {
-                                            selected && tipo == "Nutrición" -> Color(0xFFD32F2F)
-                                            selected && tipo == "Entrenamiento" -> Color(0xFF4CAF50)
-                                            selected && tipo == "Fisioterapia" -> Color(0xFF2196F3)
-                                            else -> Color(0xFFE0E0E0)
-                                        }
-                                    ),
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            // Dropdown
+                            Column {
+                                Text(
+                                    text = tipoSesion ?: "Seleccionar servicio",
+                                    color = Color.White,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
+                                        .background(Color(0xFFD32F2F), RoundedCornerShape(8.dp))
+                                        .padding(12.dp)
+                                        .clickable { dropdownExpanded = true }
+                                )
+
+                                DropdownMenu(
+                                    expanded = dropdownExpanded,
+                                    onDismissRequest = { dropdownExpanded = false },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color.White)
                                 ) {
-                                    Text(tipo)
+                                    serviciosPermitidos.forEach { servicio ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = servicio.name,
+                                                    color = if (tipoSesion == servicio.name) Color(0xFFD32F2F) else Color.Black
+                                                )
+                                            },
+                                            onClick = {
+                                                tipoSesion = servicio.name
+                                                dropdownExpanded = false
+                                                selectedDate?.let { fecha ->
+                                                    sesionesDiaViewModel.fetchAvailableSessions(servicio.id, fecha, servicio.name)
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
-                    IconButton(onClick = { showReservaDialog = false }) {
-                        Icon(Icons.Default.Close, contentDescription = "Cerrar")
                     }
                 }
             },

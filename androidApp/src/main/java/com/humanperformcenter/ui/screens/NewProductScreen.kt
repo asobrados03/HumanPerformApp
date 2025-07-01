@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.R
 import com.humanperformcenter.app.navigation.*
+import com.humanperformcenter.shared.data.model.ServicioVisual
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
@@ -43,20 +44,24 @@ fun NewProductScreen(
     }
 
     val userServices by sessionViewModel.allowedServices.collectAsState()
+    val userServiceIds = userServices.map { it.id }
 
-    val services = listOf(
-        1 to ("NUTRICIÓN" to R.drawable.nutricion),
-        2 to ("ENTRENAMIENTO" to R.drawable.entrenamiento),
-        3 to ("FISIOTERAPIA" to R.drawable.fisioterapia),
-        4 to ("PILATES" to R.drawable.pilates),
-        5 to ("PRESOTERAPIA" to R.drawable.presoterapia),
-        6 to ("ENTRENAMIENTO OPOSITORES" to R.drawable.opositores),
-        7 to ("SERVICIO DE TAQUILLA PERSONAL" to R.drawable.taquilla),
-        8 to ("ALTER G Cinta antigravedad" to R.drawable.alterg)
+    val allServices = listOf(
+        ServicioVisual(1, "NUTRICIÓN", R.drawable.nutricion),
+        ServicioVisual(2, "ENTRENAMIENTO", R.drawable.entrenamiento),
+        ServicioVisual(3, "FISIOTERAPIA", R.drawable.fisioterapia),
+        ServicioVisual(4, "PILATES", R.drawable.pilates),
+        ServicioVisual(5, "PRESOTERAPIA", R.drawable.presoterapia),
+        ServicioVisual(6, "ENTRENAMIENTO OPOSITORES", R.drawable.opositores),
+        ServicioVisual(7, "SERVICIO DE TAQUILLA PERSONAL", R.drawable.taquilla),
+        ServicioVisual(8, "ALTER G Cinta antigravedad", R.drawable.alterg)
     )
 
-    val misProductos = services.filter { (id, _) -> id in userServices }
-    val otrosProductos = services.filterNot { (id, _) -> id in userServices }
+    val misProductos = allServices.filter { it.id in userServiceIds }
+    val otrosProductos = allServices.filterNot { it.id in userServiceIds }
+
+
+
 
     Scaffold(
         topBar = {
@@ -83,7 +88,7 @@ fun NewProductScreen(
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
-                items(misProductos) { (_, service) ->
+                items(misProductos) { service ->
                     renderServiceCard(service, navController)
                 }
             }
@@ -95,7 +100,7 @@ fun NewProductScreen(
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
-            items(otrosProductos) { (_, service) ->
+            items(otrosProductos) { service ->
                 renderServiceCard(service, navController)
             }
         }
@@ -103,13 +108,12 @@ fun NewProductScreen(
 }
 
 @Composable
-fun renderServiceCard(service: Pair<String, Int>, navController: NavHostController) {
-    val (name, iconRes) = service
+fun renderServiceCard(service: ServicioVisual, navController: NavHostController) {
     val isDarkTheme = isSystemInDarkTheme()
 
     AppCard(
         onClick = {
-            when (name) {
+            when (service.name.uppercase()) {
                 "NUTRICIÓN" -> navController.navigate(Nutricion)
                 "ENTRENAMIENTO" -> navController.navigate(Entrenamiento)
                 "FISIOTERAPIA" -> navController.navigate(Fisioterapia)
@@ -117,7 +121,8 @@ fun renderServiceCard(service: Pair<String, Int>, navController: NavHostControll
                 "PRESOTERAPIA" -> navController.navigate(Presoterapia)
                 "ENTRENAMIENTO OPOSITORES" -> navController.navigate(Opositores)
                 "SERVICIO DE TAQUILLA PERSONAL" -> navController.navigate(Taquilla)
-                "ALTER G Cinta antigravedad" -> navController.navigate(AlterG)
+                "ALTER G CINTA ANTIGRAVEDAD" -> navController.navigate(AlterG)
+                // Opcional: puedes hacer que este `when` funcione con `id` mejor que con `name`
             }
         }
     ) {
@@ -126,8 +131,8 @@ fun renderServiceCard(service: Pair<String, Int>, navController: NavHostControll
             modifier = Modifier.padding(12.dp)
         ) {
             Image(
-                painter = painterResource(id = iconRes),
-                contentDescription = name,
+                painter = painterResource(id = service.icon),
+                contentDescription = service.name,
                 modifier = Modifier
                     .size(48.dp)
                     .then(
@@ -146,7 +151,7 @@ fun renderServiceCard(service: Pair<String, Int>, navController: NavHostControll
 
             Spacer(modifier = Modifier.width(16.dp))
             Text(
-                text = name,
+                text = service.name,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.weight(1f)
