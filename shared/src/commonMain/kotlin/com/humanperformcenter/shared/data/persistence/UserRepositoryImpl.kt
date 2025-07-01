@@ -6,6 +6,7 @@ import com.humanperformcenter.shared.domain.repository.UserRepository
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
+import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -60,4 +61,14 @@ object UserRepositoryImpl: UserRepository {
             Result.failure(e)
         }
     }
+
+    override suspend fun getUserAllowedServices(customerId: Int): List<Int> {
+        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-services") {
+            url {
+                parameters.append("user_id", customerId.toString())
+            }
+        }
+        return response.body<Map<String, List<Int>>>()["service_ids"] ?: emptyList()
+    }
+
 }

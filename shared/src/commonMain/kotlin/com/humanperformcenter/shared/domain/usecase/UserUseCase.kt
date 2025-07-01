@@ -14,4 +14,8 @@ class UserUseCase(private val userRepository: UserRepository) {
     suspend fun deleteUser(email: String): Result<Unit> = withContext(Dispatchers.IO) {
         return@withContext userRepository.deleteUser(email)
     }
+    suspend fun getUserAllowedServices(customerId: Int): List<Int> = withContext(Dispatchers.IO) {
+        return@withContext userRepository.getUserAllowedServices(customerId)
+    }
+
 }

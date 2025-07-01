@@ -66,6 +66,5 @@ object SesionDiaRepositoryImpl : SesionDiaRepository {
 
         val json = response.body<Map<String, Int>>()
         return json["session_timeslot_id"] ?: throw IllegalStateException("Respuesta inválida")
-        }
-
+    }
 }
