@@ -24,6 +24,9 @@ class UserViewModel(
     private val _userData = MutableStateFlow<User?>(null)
     val userData: StateFlow<User?> = _userData
 
+    private val _allowedServices = MutableStateFlow<List<Int>>(emptyList())
+    val allowedServices: StateFlow<List<Int>> get() = _allowedServices
+
     // 2) Flag de carga
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -135,4 +138,11 @@ class UserViewModel(
     fun resetDeleteState() {
         _deleteState.value = DeleteUserState.Idle
     }
+
+    fun cargarServiciosPermitidos(userId: Int) {
+        viewModelScope.launch {
+            _allowedServices.value = userUseCase.getUserAllowedServices(userId)
+        }
+    }
+
 }
