@@ -164,25 +164,6 @@ fun CalendarScreen(
             Month.DECEMBER to "Diciembre"
         )
 
-        // Map LocalDate -> Color según el tipo de sesión
-        val dayColorMap = remember(sessionList.value, displayedMonth, displayedYear) {
-            val map = mutableMapOf<LocalDate, Color>()
-            sessionList.value.forEach { session ->
-                val instant = Instant.fromEpochMilliseconds(session.date)
-                val localDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
-                if (localDate.year == displayedYear && localDate.month == displayedMonth) {
-                    val color = when (session.service.lowercase()) {
-                        "Nutrición" -> Color(0xFFD32F2F)     // rojo
-                        "Entrenamiento" -> Color(0xFF4CAF50) // verde
-                        "Fisioterapia" -> Color(0xFF2196F3)  // azul
-                        else -> Color(0xFF2196F3)            // por defecto azul
-                    }
-                    map[localDate] = color
-                }
-            }
-            map
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -302,7 +283,7 @@ fun CalendarScreen(
                             }
                         } else {
                             val date = LocalDate(displayedYear, displayedMonth, dayNumber)
-                            val eventColor = dayColorMap[date] ?: Color.Transparent
+                            val eventColor = Color.Transparent
                             val isSelected = selectedDate == date
                             val isSunday = (dayIndex == 6)
                             val cellBackgroundColor = when {
