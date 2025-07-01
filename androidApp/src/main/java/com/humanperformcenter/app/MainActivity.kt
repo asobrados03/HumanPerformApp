@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
             val sessionViewModel: SessionViewModel = viewModel(
                 factory = SessionViewModelFactory(sessionRepository, prefs)
             )
+
             HumanPerformAppTheme {
                 Navigation(
                     navController = navController,

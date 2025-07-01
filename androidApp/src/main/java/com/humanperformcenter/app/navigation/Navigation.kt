@@ -125,7 +125,10 @@ fun Navigation(
             composable<NewProduct> {
                 NewProductScreen(
                     navController = navController,
-                    sessionViewModel = sessionViewModel
+                    sessionViewModel = sessionViewModel,
+                    userViewModel = viewModel(
+                        factory = UserViewModelFactory(AppModule.userUseCase)
+                    )
                 )
             }
             composable<Entrenamiento> {
