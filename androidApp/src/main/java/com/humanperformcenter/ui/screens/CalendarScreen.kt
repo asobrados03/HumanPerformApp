@@ -56,7 +56,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -64,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.R
 import com.humanperformcenter.data.Session
+import com.humanperformcenter.shared.data.model.ServicioDispo
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.components.SessionItem
@@ -96,7 +99,8 @@ fun CalendarScreen(
     // Estado para el diálogo de reserva y tipo de sesión
     var showReservaDialog by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    var tipoSesion by remember { mutableStateOf("Nutrición") } // o "Fisioterapia"
+    var tipoSesion by remember { mutableStateOf<ServicioDispo?>(null) } // o "Fisioterapia"
+    var servicioSeleccionadoId by remember { mutableStateOf<Int?>(null) }
 
     // Scope para llamadas asincronas
     val scope = rememberCoroutineScope()
@@ -315,21 +319,18 @@ fun CalendarScreen(
                                     )
                                     .clickable {
                                         val isSunday = (dayIndex == 6)
+
                                         if (!isSunday) {
                                             selectedDate = date
-                                            tipoSesion = "Nutrición"
                                             showReservaDialog = true
-                                            val tipoActual = tipoSesion
-                                            val serviceId = when (tipoActual.lowercase()) {
-                                                "Nutrición" -> 1
-                                                "Entrenamiento" -> 2
-                                                "Fisioterapia" -> 3
 
-                                                else -> 1
+                                            val servicioSeleccionado = tipoSesion
+
+                                            if (servicioSeleccionado != null) {
+                                                val serviceId = servicioSeleccionado.id
+                                                sesionesDiaViewModel.fetchAvailableSessions(serviceId, date)
                                             }
-                                            sesionesDiaViewModel.fetchAvailableSessions(serviceId, date, tipoActual)
                                         } else {
-                                            // Si es domingo, no se puede seleccionar
                                             selectedDate = null
                                             showReservaDialog = false
                                         }
@@ -485,57 +486,67 @@ fun CalendarScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(text = "Selecciona el tipo de sesión:", fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(8.dp))
+                    var dropdownExpanded by remember { mutableStateOf(false) }
+                    var buttonWidth by remember { mutableStateOf(0) }
+
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Selecciona el tipo de sesión:",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
 
                         Box(modifier = Modifier.fillMaxWidth()) {
-                            // Dropdown
-                            Column {
-                                Text(
-                                    text = tipoSesion ?: "Seleccionar servicio",
-                                    color = Color.White,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color(0xFFD32F2F), RoundedCornerShape(8.dp))
-                                        .padding(12.dp)
-                                        .clickable { dropdownExpanded = true }
-                                )
-
-                                DropdownMenu(
-                                    expanded = dropdownExpanded,
-                                    onDismissRequest = { dropdownExpanded = false },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color.White)
-                                ) {
-                                    serviciosPermitidos.forEach { servicio ->
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    text = servicio.name,
-                                                    color = if (tipoSesion == servicio.name) Color(0xFFD32F2F) else Color.Black
-                                                )
-                                            },
-                                            onClick = {
-                                                tipoSesion = servicio.name
-                                                dropdownExpanded = false
-                                                selectedDate?.let { fecha ->
-                                                    sesionesDiaViewModel.fetchAvailableSessions(servicio.id, fecha, servicio.name)
-                                                }
-                                            }
-                                        )
+                            // Botón principal
+                            Text(
+                                text = tipoSesion?.name ?: "Seleccionar servicio",
+                                color = Color.White,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color(0xFFD32F2F), RoundedCornerShape(12.dp))
+                                    .padding(16.dp)
+                                    .clickable { dropdownExpanded = true }
+                                    .onGloballyPositioned { coordinates ->
+                                        buttonWidth = coordinates.size.width
                                     }
+                            )
+
+                            // Dropdown
+                            DropdownMenu(
+                                expanded = dropdownExpanded,
+                                onDismissRequest = { dropdownExpanded = false },
+                                modifier = Modifier
+                                    .width(with(LocalDensity.current) { buttonWidth.toDp() })
+                                    .background(Color.White)
+                            ) {
+                                serviciosPermitidos.forEach { servicio ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = servicio.name,
+                                                color = if (tipoSesion?.id == servicio.id) Color(0xFFD32F2F) else Color.Black,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        },
+                                        onClick = {
+                                            tipoSesion = servicio
+                                            servicioSeleccionadoId = servicio.id // ✅ guardamos el ID
+                                            dropdownExpanded = false
+                                            selectedDate?.let { fecha ->
+                                                sesionesDiaViewModel.fetchAvailableSessions(servicio.id, fecha)
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         }
                     }
+
                 }
             },
             text = {
                 val horariosDisponibles = sesionesRemotas
                     .map { it.hour }
-                    .filter { it.endsWith(":00:00") || it.endsWith(":30:00") }
                     .distinct()
                     .sorted()
                 if (horariosDisponibles.isEmpty()) {
@@ -637,16 +648,11 @@ fun CalendarScreen(
             )
         } else {
             val availableCoaches = coaches.filter { it.booked < it.capacity }
-            val serviceId = when (tipoSesion.lowercase()) {
-                "nutrición" -> 1
-                "entrenamiento" -> 2
-                "fisioterapia" -> 3
-                else -> 1
-            }
             val fechaISO = selectedDate.toString()
             val horaSeleccionadaFinal = horaSeleccionada!!
 
             LaunchedEffect(horaSeleccionadaFinal) {
+                val serviceId = servicioSeleccionadoId ?: return@LaunchedEffect
                 val preferredCoachId = sesionesDiaViewModel.getPreferredCoachId(customerId, serviceId)
                 val coachElegido = availableCoaches.firstOrNull { it.coach_id == preferredCoachId }
                     ?: availableCoaches.randomOrNull()

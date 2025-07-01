@@ -24,13 +24,12 @@ class SesionesDiaViewModel(
     private val _mensajeErrorReserva = MutableStateFlow<String?>(null)
     val mensajeErrorReserva: StateFlow<String?> = _mensajeErrorReserva
 
-    fun fetchAvailableSessions(serviceId: Int, date: LocalDate, tipoSesion: String) {
+    fun fetchAvailableSessions(serviceId: Int, date: LocalDate) {
         val weekStart = date.toString()
 
         println("==== FETCH DE SESIONES DISPONIBLES ====")
         println("Fecha seleccionada: $date")
         println("Inicio de semana: $weekStart")
-        println("Tipo de sesión: $tipoSesion")
         println("Service ID enviado: $serviceId")
         println("=======================================")
 
@@ -44,7 +43,7 @@ class SesionesDiaViewModel(
                 }
 
                 _sessions.value = result.filter {
-                    itMatchesTipo(it.service_id, tipoSesion)
+                    it.service_id == serviceId
                 }
 
                 println("→ Sesiones filtradas: ${_sessions.value.size}")
@@ -54,14 +53,6 @@ class SesionesDiaViewModel(
         }
     }
 
-    private fun itMatchesTipo(serviceId: Int, tipo: String): Boolean {
-        return when (tipo.lowercase()) {
-            "nutrición" -> serviceId == 1
-            "entrenamiento" -> serviceId == 2
-            "fisioterapia" -> serviceId == 3
-            else -> false
-        }
-    }
     private val _coachesForHour = MutableStateFlow<List<SesionesDia>>(emptyList())
     val coachesForHour: StateFlow<List<SesionesDia>> get() = _coachesForHour
 
