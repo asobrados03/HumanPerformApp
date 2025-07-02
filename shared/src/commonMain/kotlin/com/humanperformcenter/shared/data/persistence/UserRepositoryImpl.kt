@@ -2,6 +2,7 @@ package com.humanperformcenter.shared.data.persistence
 
 import com.humanperformcenter.shared.data.model.ServicioDispo
 import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.data.model.UserBooking
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.UserRepository
 import com.humanperformcenter.shared.domain.storage.SecureStorage
@@ -71,5 +72,15 @@ object UserRepositoryImpl: UserRepository {
         }
         return response.body()
     }
+
+    override suspend fun getUserBookings(customerId: Int): List<UserBooking> {
+        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-bookings") {
+            url {
+                parameters.append("user_id", customerId.toString())
+            }
+        }
+        return response.body()
+    }
+
 
 }

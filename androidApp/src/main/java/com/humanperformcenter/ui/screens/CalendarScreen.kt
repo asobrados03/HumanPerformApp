@@ -64,6 +64,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.humanperformcenter.R
 import com.humanperformcenter.data.Session
 import com.humanperformcenter.shared.data.model.ServicioDispo
@@ -131,7 +132,7 @@ fun CalendarScreen(
         val sessionList = sessionViewModel.getAllSessions
             .collectAsState(initial = emptyList())
 
-        if (sessionList.value.isEmpty()) {
+        /*if (sessionList.value.isEmpty()) {
             Text(
                 text = "No hay sesiones disponibles.",
                 modifier = Modifier
@@ -140,7 +141,7 @@ fun CalendarScreen(
                 textAlign = TextAlign.Center,
                 fontSize = 20.sp
             )
-        }
+        }*/
 
         // Procesar transacciones para el calendario y selección de día
         val todayInstant = Clock.System.now()
@@ -323,6 +324,8 @@ fun CalendarScreen(
                                         if (!isSunday) {
                                             selectedDate = date
                                             showReservaDialog = true
+                                            tipoSesion = null
+                                            sesionesDiaViewModel.clearSessions()
 
                                             val servicioSeleccionado = tipoSesion
 
@@ -358,7 +361,73 @@ fun CalendarScreen(
                 localDate.year == displayedYear && localDate.month == displayedMonth
             }
 
-            // Columna eficiente que muestra la lista de sesiones añadidas al sistema
+            // 🔁 NUEVO BLOQUE DE RESERVAS DEL USUARIO
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val user = userViewModel.userData.collectAsState().value
+            val userId = user?.id
+            val bookings by userViewModel.userBookings.collectAsState()
+
+            LaunchedEffect(userId) {
+                userId?.let {
+                    userViewModel.fetchUserBookings(it)
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Text(
+                    text = "Tus sesiones reservadas",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                if (bookings.isEmpty()) {
+                    Text(
+                        text = "No tienes sesiones reservadas.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            //.heightIn(max = 200.dp) // limitar altura y permitir espacio para navegación
+                    ) {
+                        items(bookings) { booking ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                                    .border(1.dp, Color.LightGray, RoundedCornerShape(12.dp))
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                booking.coach_profile_pic?.let { imageUrl ->
+                                    AsyncImage(
+                                        model = imageUrl,
+                                        contentDescription = "Coach image",
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .padding(end = 12.dp)
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("\uD83D\uDCC5 ${booking.date} - \uD83D\uDD52 ${booking.hour}")
+                                    Text("\uD83E\uDEF8 Servicio: ${booking.service}")
+                                    Text("\uD83C\uDFCB️ Entrenador: ${booking.coach_name}")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+           /* // Columna eficiente que muestra la lista de sesiones añadidas al sistema
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -472,7 +541,7 @@ fun CalendarScreen(
                         }
                     )
                 }
-            }
+            }*/
         }
     }
     // Diálogo de reserva de sesión
@@ -693,7 +762,6 @@ fun CalendarScreen(
             }
         )
     }
-
 }
 
 private fun Month.length(isLeapYear: Boolean): Int = when (this) {

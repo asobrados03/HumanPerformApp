@@ -2,6 +2,7 @@ package com.humanperformcenter.shared.domain.usecase
 
 import com.humanperformcenter.shared.data.model.ServicioDispo
 import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.data.model.UserBooking
 import com.humanperformcenter.shared.domain.repository.UserRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -18,5 +19,7 @@ class UserUseCase(private val userRepository: UserRepository) {
     suspend fun getUserAllowedServices(customerId: Int): List<ServicioDispo> = withContext(Dispatchers.IO) {
         return@withContext userRepository.getUserAllowedServices(customerId)
     }
-
+    suspend fun getUserBookings(customerId: Int): List<UserBooking> = withContext(Dispatchers.IO) {
+        return@withContext userRepository.getUserBookings(customerId)
+    }
 }

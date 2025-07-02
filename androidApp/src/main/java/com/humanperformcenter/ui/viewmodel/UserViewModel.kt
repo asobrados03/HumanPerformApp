@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.data.model.UserBooking
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
@@ -23,6 +24,9 @@ class UserViewModel(
 
     private val _userData = MutableStateFlow<User?>(null)
     val userData: StateFlow<User?> = _userData
+
+    private val _userBookings = MutableStateFlow<List<UserBooking>>(emptyList())
+    val userBookings: StateFlow<List<UserBooking>> get() = _userBookings
 
     // 2) Flag de carga
     private val _isLoading = MutableStateFlow(true)
@@ -135,4 +139,11 @@ class UserViewModel(
     fun resetDeleteState() {
         _deleteState.value = DeleteUserState.Idle
     }
+
+    fun fetchUserBookings(userId: Int) {
+        viewModelScope.launch {
+            _userBookings.value = userUseCase.getUserBookings(userId)
+        }
+    }
+
 }

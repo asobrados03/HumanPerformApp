@@ -100,6 +100,9 @@ class SesionesDiaViewModel(
         }
     }
 
+    fun clearSessions() {
+        _sessions.value = emptyList()
+    }
 
     suspend fun getPreferredCoachId(customerId: Int, serviceId: Int): Int? {
         return useCase.getPreferredCoach(customerId, serviceId)
