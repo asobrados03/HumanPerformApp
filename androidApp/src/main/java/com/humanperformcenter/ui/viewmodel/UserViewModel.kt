@@ -146,4 +146,19 @@ class UserViewModel(
         }
     }
 
+    fun deleteUserBooking(bookingId : Int ) {
+        viewModelScope.launch {
+            userUseCase.deleteUserBooking(bookingId).fold(
+                onSuccess = {
+                    println("Reserva eliminada exitosamente")
+                    fetchUserBookings(_userData.value?.id ?: 0)
+                },
+                onFailure = { throwable ->
+                    // Manejo de errores al eliminar la reserva
+                    println("Error al eliminar la reserva: ${throwable.message}")
+                }
+            )
+        }
+    }
+
 }

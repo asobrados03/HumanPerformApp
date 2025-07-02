@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowLeft
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowRight
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -49,6 +50,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -80,9 +82,12 @@ import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import com.humanperformcenter.ui.viewmodel.UserViewModel
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.toInstant
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
@@ -113,7 +118,8 @@ fun CalendarScreen(
 
     // Estado para el dropdown de tipo de sesión
     val serviciosPermitidos = sessionViewModel.allowedServices.collectAsState().value
-    var dropdownExpanded by remember { mutableStateOf(false) }
+
+    val menuExpandedMap = remember { mutableStateMapOf<Int, Boolean>() }
 
 
     Scaffold(
@@ -368,6 +374,7 @@ fun CalendarScreen(
             val userId = user?.id
             val bookings by userViewModel.userBookings.collectAsState()
 
+
             LaunchedEffect(userId) {
                 userId?.let {
                     userViewModel.fetchUserBookings(it)
@@ -392,11 +399,14 @@ fun CalendarScreen(
                     )
                 } else {
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            //.heightIn(max = 200.dp) // limitar altura y permitir espacio para navegación
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         items(bookings) { booking ->
+                            val dateformateada = booking.date.substring(0, 10)
+                            val horaformateada = booking.hour.substring(0, 5)
+                            val isExpanded = menuExpandedMap[booking.id] ?: false
+                            val context = LocalContext.current
+
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -410,139 +420,61 @@ fun CalendarScreen(
                                         model = imageUrl,
                                         contentDescription = "Coach image",
                                         modifier = Modifier
-                                            .size(48.dp)
+                                            .size(86.dp)
                                             .padding(end = 12.dp)
                                     )
                                 }
+
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text("\uD83D\uDCC5 ${booking.date} - \uD83D\uDD52 ${booking.hour}")
-                                    Text("\uD83E\uDEF8 Servicio: ${booking.service}")
-                                    Text("\uD83C\uDFCB️ Entrenador: ${booking.coach_name}")
+                                    Text("📅 $dateformateada - 🕒 $horaformateada")
+                                    Text("🧘 Servicio: ${booking.service}")
+                                    Text("🏋️ Entrenador: ${booking.coach_name}")
+                                }
+
+                                Box {
+                                    IconButton(onClick = {
+                                        menuExpandedMap[booking.id] = true
+                                    }) {
+                                        Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
+                                    }
+
+                                    DropdownMenu(
+                                        expanded = isExpanded,
+                                        onDismissRequest = { menuExpandedMap[booking.id] = false },
+                                        modifier = Modifier.background(Color.White)
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("Descargar evento") },
+                                            onClick = {
+                                                menuExpandedMap[booking.id] = false
+                                                val startDateTimeStr = LocalDateTime.parse("${dateformateada}T${horaformateada}:00")
+                                                val instant = startDateTimeStr.toInstant(TimeZone.currentSystemDefault())
+
+                                                val icsContent = createICSFile(
+                                                    eventTitle = booking.service,
+                                                    startDateTime = instant
+                                                )
+                                                shareICS(context, icsContent)
+                                            }
+                                        )
+
+                                        DropdownMenuItem(
+                                            text = { Text("Eliminar reserva") },
+                                            onClick = {
+                                                menuExpandedMap[booking.id] = false
+                                                booking.id.let { reservaId ->
+                                                    userViewModel.deleteUserBooking(reservaId)
+                                                    userId?.let { userViewModel.fetchUserBookings(it) }
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-           /* // Columna eficiente que muestra la lista de sesiones añadidas al sistema
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(filteredSessions, key = { session -> session.id }) { session ->
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        SwipeToDismissBoxValue.Settled,
-                        SwipeToDismissBoxDefaults.positionalThreshold
-                    )
-
-                    // Observa cuando se completa el swipe
-                    LaunchedEffect(dismissState.currentValue) {
-                        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart ||
-                            dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd) {
-                            sessionToDelete = session
-                            showDialog = true
-                            // Resetea el estado para evitar que se quede "dismissed"
-                            dismissState.snapTo(SwipeToDismissBoxValue.Settled)
-                        }
-                    }
-
-                    //Este elemento permite eliminar y editar las sesiones de la lista
-                    SwipeToDismissBox(
-                        modifier = Modifier.animateContentSize(),
-                        state = dismissState,
-                        backgroundContent = {
-                            val color by animateColorAsState(MaterialTheme.colorScheme.error,
-                                label = "dismiss_background"
-                            )
-
-                            if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
-                                Box(
-                                    Modifier
-                                        .fillMaxSize()
-                                        .background(color)
-                                        .padding(horizontal = 20.dp),
-                                    contentAlignment = Alignment.CenterEnd
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Delete Icon",
-                                        tint = MaterialTheme.colorScheme.onError
-                                    )
-                                }
-                            } else if (dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd) {
-                                Box(
-                                    Modifier
-                                        .fillMaxSize()
-                                        .background(color)
-                                        .padding(horizontal = 20.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Delete Icon",
-                                        tint = MaterialTheme.colorScheme.onError
-                                    )
-                                }
-                            }
-                        },
-                        enableDismissFromEndToStart = true,
-                        enableDismissFromStartToEnd = true,
-                        content = {
-                            // Context menu state for each SessionItem
-                            var expanded by remember { mutableStateOf(false) }
-                            val context = LocalContext.current
-                            Box {
-                                SessionItem(
-                                    session = session,
-                                    onClick = { expanded = true },
-                                    showDialog = showDialog,
-                                    setShowDialog = { showDialog = it },
-                                    sessionToDelete = sessionToDelete,
-                                    setSessionToDelete = { sessionToDelete = it }
-                                )
-                                DropdownMenu(
-                                    expanded = expanded,
-                                    onDismissRequest = { expanded = false },
-                                    modifier = Modifier.background(
-                                        color = MaterialTheme.colorScheme.surface,
-                                        shape = RoundedCornerShape(12.dp)
-                                    )
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("Eliminar cita") },
-                                        onClick = {
-                                            sessionToDelete = session
-                                            showDialog = true
-                                            expanded = false
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Cambiar cita") },
-                                        onClick = {
-                                            // Lógica para cambiar cita
-                                            expanded = false
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Descargar evento") },
-                                        onClick = {
-                                            val icsContent = createICSFile(
-                                                eventTitle = session.service,
-                                                startDateTime = Instant.fromEpochMilliseconds(session.date)
-                                            )
-                                            shareICS(context, icsContent)
-                                            expanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    )
-                }
-            }*/
-            
         }
     }
     // Diálogo de reserva de sesión
@@ -737,6 +669,9 @@ fun CalendarScreen(
                             selectedDate = fechaISO,
                             hour = horaSeleccionadaFinal
                         )
+                        customerId.let {
+                            userViewModel.fetchUserBookings(it)
+                        }
                         mostrarSelectorCoach = false
                         showReservaDialog = false
                         horaSeleccionada = null

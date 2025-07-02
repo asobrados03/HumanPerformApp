@@ -82,5 +82,18 @@ object UserRepositoryImpl: UserRepository {
         return response.body()
     }
 
+    override suspend fun deleteUserBooking(bookingId: Int): Result<Unit> {
+        return try {
+            val response: HttpResponse = ApiClient.apiClient.delete("${ApiClient.baseUrl}/mobile/booking/$bookingId")
+
+            if (response.status == HttpStatusCode.OK) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Error al eliminar la reserva: código HTTP ${response.status.value}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
 }

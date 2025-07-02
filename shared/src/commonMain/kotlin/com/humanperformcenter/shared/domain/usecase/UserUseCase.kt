@@ -22,4 +22,7 @@ class UserUseCase(private val userRepository: UserRepository) {
     suspend fun getUserBookings(customerId: Int): List<UserBooking> = withContext(Dispatchers.IO) {
         return@withContext userRepository.getUserBookings(customerId)
     }
+    suspend fun deleteUserBooking(bookingId: Int): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext userRepository.deleteUserBooking(bookingId)
+    }
 }
