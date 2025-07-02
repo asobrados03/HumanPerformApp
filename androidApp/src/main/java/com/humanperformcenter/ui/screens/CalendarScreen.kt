@@ -542,6 +542,7 @@ fun CalendarScreen(
                     )
                 }
             }*/
+            
         }
     }
     // Diálogo de reserva de sesión
