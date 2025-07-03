@@ -23,11 +23,3 @@ data class BlogDetail(val blogId: Int)
 @Serializable object Document
 @Serializable object Payment
 @Serializable object ViewPayment
-@Serializable object Entrenamiento
-@Serializable object Nutricion
-@Serializable object Fisioterapia
-@Serializable object Pilates
-@Serializable object Presoterapia
-@Serializable object Opositores
-@Serializable object Taquilla
-@Serializable object AlterG

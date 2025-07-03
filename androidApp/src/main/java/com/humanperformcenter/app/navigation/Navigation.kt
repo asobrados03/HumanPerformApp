@@ -1,5 +1,7 @@
 package com.humanperformcenter.app.navigation
 
+import SesionesDiaViewModelFactory
+import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -19,28 +21,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.humanperformcenter.app.SetStatusBarColor
+import com.humanperformcenter.data.SessionDao
+import com.humanperformcenter.data.SessionDatabase
+import com.humanperformcenter.data.SessionRepository
 import com.humanperformcenter.di.AppModule
-import com.humanperformcenter.ui.screens.AlterGScreen
 import com.humanperformcenter.ui.screens.BlogDetailScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
 import com.humanperformcenter.ui.screens.ChangePasswordScreen
 import com.humanperformcenter.ui.screens.ChatScreen
+import com.humanperformcenter.ui.screens.ContratarProductoScreen
 import com.humanperformcenter.ui.screens.DocumentScreen
-import com.humanperformcenter.ui.screens.EntrenamientoScreen
 import com.humanperformcenter.ui.screens.FavoritesScreen
-import com.humanperformcenter.ui.screens.FisioterapiaScreen
 import com.humanperformcenter.ui.screens.LoginScreen
 import com.humanperformcenter.ui.screens.MyProfileScreen
 import com.humanperformcenter.ui.screens.NewBlogScreen
 import com.humanperformcenter.ui.screens.NewProductScreen
-import com.humanperformcenter.ui.screens.NutricionScreen
-import com.humanperformcenter.ui.screens.OpositoresScreen
 import com.humanperformcenter.ui.screens.PaymentScreen
-import com.humanperformcenter.ui.screens.PilatesScreen
-import com.humanperformcenter.ui.screens.PresoterapiaScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
 import com.humanperformcenter.ui.screens.SplashScreen
-import com.humanperformcenter.ui.screens.TaquillaScreen
 import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.ViewPaymentScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
@@ -48,8 +46,11 @@ import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
 import com.humanperformcenter.ui.viewmodel.BlogViewModel
 import com.humanperformcenter.ui.viewmodel.BlogViewModelFactory
+import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.ui.viewmodel.ServiceProductViewModelFactory
 import com.humanperformcenter.ui.viewmodel.SesionesDiaViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.SessionViewModelFactory
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
 import com.humanperformcenter.ui.viewmodel.state.BlogDetailState
@@ -128,33 +129,22 @@ fun Navigation(
                     sessionViewModel = sessionViewModel,
                     userViewModel = viewModel(
                         factory = UserViewModelFactory(AppModule.userUseCase)
+                    ),
+                    serviceProductViewModel = viewModel(
+                        factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
                     )
                 )
             }
-            composable<Entrenamiento> {
-                EntrenamientoScreen(navController, sessionViewModel)
+
+            composable("servicio/{serviceId}") { backStackEntry ->
+                val serviceId = backStackEntry.arguments?.getString("serviceId")?.toIntOrNull()
+                val viewModel: ServiceProductViewModel = viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase))
+
+                serviceId?.let {
+                    ContratarProductoScreen(serviceId = it, navController = navController, viewModel = viewModel)
+                }
             }
-            composable<Nutricion> {
-                NutricionScreen(navController, sessionViewModel)
-            }
-            composable<Fisioterapia> {
-                FisioterapiaScreen(navController, sessionViewModel)
-            }
-            composable<Pilates> {
-                PilatesScreen(navController, sessionViewModel)
-            }
-            composable<Presoterapia> {
-                PresoterapiaScreen(navController, sessionViewModel)
-            }
-            composable<Opositores> {
-                OpositoresScreen(navController, sessionViewModel)
-            }
-            composable<Taquilla> {
-                TaquillaScreen(navController, sessionViewModel)
-            }
-            composable<AlterG> {
-                AlterGScreen(navController, sessionViewModel)
-            }
+
             composable<User> {
                 val userViewModel: UserViewModel = viewModel(
                     factory = UserViewModelFactory(AppModule.userUseCase)
@@ -313,14 +303,16 @@ fun Navigation(
                 val userViewModel: UserViewModel = viewModel(
                     factory = UserViewModelFactory(AppModule.userUseCase)
                 )
+                val sesionesDiaViewModel: SesionesDiaViewModel = viewModel(
+                    factory = SesionesDiaViewModelFactory(AppModule.sesionDiaUseCase)
+                )
+
                 CalendarScreen(
                     navController = navController,
                     sessionViewModel = sessionViewModel,
                     userViewModel = userViewModel,
                     onPlaySound = onPlaySound,
-                    sesionesDiaViewModel = SesionesDiaViewModel(
-                        useCase = AppModule.sesionDiaUseCase
-                    )
+                    sesionesDiaViewModel = sesionesDiaViewModel
                 )
             }
             composable<NewBlog> {

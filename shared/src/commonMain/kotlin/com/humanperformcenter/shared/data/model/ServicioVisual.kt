@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 data class ServicioVisual(
     val id: Int,
     val name: String,
-    val icon: Int
+    val icon: String? = null
 )

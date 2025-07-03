@@ -154,7 +154,6 @@ class UserViewModel(
                     fetchUserBookings(_userData.value?.id ?: 0)
                 },
                 onFailure = { throwable ->
-                    // Manejo de errores al eliminar la reserva
                     println("Error al eliminar la reserva: ${throwable.message}")
                 }
             )

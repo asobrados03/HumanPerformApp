@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 fun AppCard(
     onClick: () -> Unit = {},
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     // Colores dinámicos según el tema (Material3)
     val containerColor = MaterialTheme.colorScheme.surface
