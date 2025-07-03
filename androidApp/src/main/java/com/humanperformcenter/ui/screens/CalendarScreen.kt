@@ -144,17 +144,6 @@ fun CalendarScreen(
         val sessionList = sessionViewModel.getAllSessions
             .collectAsState(initial = emptyList())
 
-        /*if (sessionList.value.isEmpty()) {
-            Text(
-                text = "No hay sesiones disponibles.",
-                modifier = Modifier
-                    .fillMaxSize()
-                    .wrapContentHeight(Alignment.CenterVertically),
-                textAlign = TextAlign.Center,
-                fontSize = 20.sp
-            )
-        }*/
-
         // Procesar transacciones para el calendario y selección de día
         val todayInstant = Clock.System.now()
         val todayLocalDate = todayInstant.toLocalDateTime(TimeZone.currentSystemDefault()).date
