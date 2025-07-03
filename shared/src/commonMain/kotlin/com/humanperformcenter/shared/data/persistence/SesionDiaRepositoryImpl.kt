@@ -2,6 +2,8 @@ package com.humanperformcenter.shared.data.persistence
 
 import com.humanperformcenter.shared.data.model.ReservaRequest
 import com.humanperformcenter.shared.data.model.ReservaResponse
+import com.humanperformcenter.shared.data.model.ReservaUpdateRequest
+import com.humanperformcenter.shared.data.model.ReservaUpdateResponse
 import com.humanperformcenter.shared.data.model.SesionesDia
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.SesionDiaRepository
@@ -9,9 +11,11 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.intOrNull
@@ -35,6 +39,17 @@ object SesionDiaRepositoryImpl : SesionDiaRepository {
         }
         if (response.status.value == 409) {
             throw IllegalStateException("Ya tienes una reserva a esta hora.")
+        }
+        return response.body()
+    }
+
+    override suspend fun cambiarReservaSesion(reservaUpdateRequest: ReservaUpdateRequest): ReservaUpdateResponse {
+        val response = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/update-booking") {
+            contentType(io.ktor.http.ContentType.Application.Json)
+            setBody(reservaUpdateRequest)
+        }
+        if (!response.status.isSuccess()) {
+            throw IllegalStateException("Error al actualizar reserva: ${response.status}")
         }
         return response.body()
     }

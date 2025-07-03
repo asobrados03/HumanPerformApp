@@ -2,6 +2,8 @@ package com.humanperformcenter.shared.domain.usecase
 
 import com.humanperformcenter.shared.data.model.ReservaRequest
 import com.humanperformcenter.shared.data.model.ReservaResponse
+import com.humanperformcenter.shared.data.model.ReservaUpdateRequest
+import com.humanperformcenter.shared.data.model.ReservaUpdateResponse
 import com.humanperformcenter.shared.data.model.SesionesDia
 import com.humanperformcenter.shared.domain.repository.SesionDiaRepository
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +18,9 @@ class SesionDiaUseCase(private val repository: SesionDiaRepository) {
     }
     suspend fun reservarSesion(request: ReservaRequest): ReservaResponse = withContext(Dispatchers.IO) {
         return@withContext repository.reservarSesion(request)
+    }
+    suspend fun cambiarReservaSesion(request: ReservaUpdateRequest): ReservaUpdateResponse = withContext(Dispatchers.IO) {
+        return@withContext repository.cambiarReservaSesion(request)
     }
     suspend fun getUserProductId(customerId: Int): Int = withContext(Dispatchers.IO) {
         return@withContext repository.getUserProductId(customerId)

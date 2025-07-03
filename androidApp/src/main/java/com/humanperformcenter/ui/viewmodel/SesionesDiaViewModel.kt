@@ -3,6 +3,7 @@ package com.humanperformcenter.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.data.model.ReservaRequest
+import com.humanperformcenter.shared.data.model.ReservaUpdateRequest
 import com.humanperformcenter.shared.data.model.SesionesDia
 import com.humanperformcenter.shared.data.persistence.SesionDiaRepositoryImpl
 import com.humanperformcenter.shared.domain.usecase.SesionDiaUseCase
@@ -97,6 +98,39 @@ class SesionesDiaViewModel(
         } catch (e: IllegalStateException) {
             println("❌ Error al reservar: ${e.message}")
             _mensajeErrorReserva.value = e.message
+        }
+    }
+
+    suspend fun cambiarReservaSesion(
+        customerId: Int,
+        bookingId: Int,
+        newCoachId: Int,
+        newServiceId: Int,
+        newStartDate: String, // "2025-07-03"
+        hour: String
+    ) {
+        viewModelScope.launch {
+            try {
+                val productId = useCase.getUserProductId(customerId)
+                val timeslotId = useCase.getTimeslotId(hour)
+
+                val request = ReservaUpdateRequest(
+                    booking_id = bookingId,
+                    new_coach_id = newCoachId,
+                    new_service_id = newServiceId,
+                    new_product_id = productId,
+                    new_session_timeslot_id = timeslotId,
+                    new_start_date = newStartDate
+                )
+
+                useCase.cambiarReservaSesion(request)
+
+                println("✅ Reserva actualizada correctamente")
+                _mensajeErrorReserva.value = null
+            } catch (e: Exception) {
+                println("❌ Error al actualizar reserva: ${e.message}")
+                _mensajeErrorReserva.value = e.message
+            }
         }
     }
 
