@@ -70,6 +70,7 @@ import coil.compose.AsyncImage
 import com.humanperformcenter.R
 import com.humanperformcenter.data.Session
 import com.humanperformcenter.shared.data.model.ServicioDispo
+import com.humanperformcenter.shared.data.model.SesionesDia
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.components.SessionItem
@@ -82,6 +83,7 @@ import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import com.humanperformcenter.ui.viewmodel.UserViewModel
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toInstant
 import kotlin.time.Clock
@@ -111,6 +113,10 @@ fun CalendarScreen(
     // Scope para llamadas asincronas
     val scope = rememberCoroutineScope()
     val sesionesRemotas by sesionesDiaViewModel.sessions.collectAsState()
+
+    // Estado para el coach elegido y botón de confirmación
+    var coachElegido by remember { mutableStateOf<SesionesDia?>(null) }
+    var mostrarBotonConfirmar by remember { mutableStateOf(false) }
 
     // Estado para el selector de coach
     var mostrarSelectorCoach by remember { mutableStateOf(false) }
@@ -656,31 +662,64 @@ fun CalendarScreen(
             LaunchedEffect(horaSeleccionadaFinal) {
                 val serviceId = servicioSeleccionadoId ?: return@LaunchedEffect
                 val preferredCoachId = sesionesDiaViewModel.getPreferredCoachId(customerId, serviceId)
-                val coachElegido = availableCoaches.firstOrNull { it.coach_id == preferredCoachId }
+                coachElegido = availableCoaches.firstOrNull { it.coach_id == preferredCoachId }
                     ?: availableCoaches.randomOrNull()
-
-                if (coachElegido != null) {
-                    try {
-                        sesionesDiaViewModel.realizarReserva(
-                            customerId = customerId,
-                            coachId = coachElegido.coach_id,
-                            serviceId = serviceId,
-                            centerId = 1,
-                            selectedDate = fechaISO,
-                            hour = horaSeleccionadaFinal
-                        )
-                        customerId.let {
-                            userViewModel.fetchUserBookings(it)
-                        }
-                        mostrarSelectorCoach = false
-                        showReservaDialog = false
+                mostrarBotonConfirmar = true
+            }
+            if (mostrarBotonConfirmar && coachElegido != null && selectedDate != null && horaSeleccionada != null) {
+                AlertDialog(
+                    onDismissRequest = {
+                        mostrarBotonConfirmar = false
+                        coachElegido = null
                         horaSeleccionada = null
-
-                        println("Reserva creada con éxito")
-                    } catch (e: Exception) {
-                        println("❌ Error al reservar: ${e.message}")
+                    },
+                    confirmButton = {
+                        Button(onClick = {
+                            scope.launch {
+                                try {
+                                    sesionesDiaViewModel.realizarReserva(
+                                        customerId = customerId,
+                                        coachId = coachElegido!!.coach_id,
+                                        serviceId = servicioSeleccionadoId ?: return@launch,
+                                        centerId = 1,
+                                        selectedDate = selectedDate.toString(),
+                                        hour = horaSeleccionada!!
+                                    )
+                                    userViewModel.fetchUserBookings(customerId)
+                                    mostrarSelectorCoach = false
+                                    showReservaDialog = false
+                                    mostrarBotonConfirmar = false
+                                    horaSeleccionada = null
+                                    coachElegido = null
+                                    println("✅ Reserva confirmada por el usuario.")
+                                } catch (e: Exception) {
+                                    println("❌ Error al confirmar reserva: ${e.message}")
+                                }
+                            }
+                        }) {
+                            Text("Confirmar")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            mostrarBotonConfirmar = false
+                            coachElegido = null
+                            horaSeleccionada = null
+                        }) {
+                            Text("Cancelar")
+                        }
+                    },
+                    title = {
+                        Text("¡Confirmar reserva!")
+                    },
+                    text = {
+                        Column {
+                            Text("Reserva con: ${coachElegido!!.coach_name}")
+                            Text("Hora: ${horaSeleccionada!!.substring(0, 5)}")
+                            Text("Día: ${selectedDate.toString()}")
+                        }
                     }
-                }
+                )
             }
         }
     }
