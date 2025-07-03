@@ -1,7 +1,6 @@
 package com.humanperformcenter.ui.screens
 
-import android.R.attr.enabled
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
@@ -23,7 +23,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,7 +37,8 @@ import kotlin.collections.emptyList
 fun ContratarProductoScreen(
     serviceId: Int,
     navController: NavHostController,
-    viewModel: ServiceProductViewModel
+    viewModel: ServiceProductViewModel,
+    userId: Int
 ) {
     val productosMap by viewModel.serviceProducts.collectAsState()
     val productos = productosMap[serviceId] ?: emptyList()
@@ -48,6 +48,7 @@ fun ContratarProductoScreen(
 
     LaunchedEffect(serviceId) {
         viewModel.loadServiceProducts(serviceId)
+        viewModel.loadUserProducts(userId)
     }
 
     Scaffold(
@@ -71,7 +72,7 @@ fun ContratarProductoScreen(
             } else {
                 items(productos) { producto ->
 
-                    val contratado = productosContratados.any { it.id == producto.id && it.service_id == serviceId }
+                    val contratado = idsContratados.contains(producto.id)
 
                     AppCard(
                         onClick = {
@@ -80,7 +81,7 @@ fun ContratarProductoScreen(
                                     // lógica de contratación futura
                                 }
                             } else null
-                        } // desactiva interacción si ya contratado
+                        }
                     ) {
                         Row(
                             modifier = Modifier

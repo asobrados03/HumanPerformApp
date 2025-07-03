@@ -1,7 +1,6 @@
 package com.humanperformcenter.app.navigation
 
 import SesionesDiaViewModelFactory
-import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -21,9 +20,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.humanperformcenter.app.SetStatusBarColor
-import com.humanperformcenter.data.SessionDao
-import com.humanperformcenter.data.SessionDatabase
-import com.humanperformcenter.data.SessionRepository
 import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.ui.screens.BlogDetailScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
@@ -50,7 +46,6 @@ import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModelFactory
 import com.humanperformcenter.ui.viewmodel.SesionesDiaViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
-import com.humanperformcenter.ui.viewmodel.SessionViewModelFactory
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
 import com.humanperformcenter.ui.viewmodel.state.BlogDetailState
@@ -138,10 +133,11 @@ fun Navigation(
 
             composable("servicio/{serviceId}") { backStackEntry ->
                 val serviceId = backStackEntry.arguments?.getString("serviceId")?.toIntOrNull()
+                val userId by sessionViewModel.userId.collectAsState()
                 val viewModel: ServiceProductViewModel = viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase))
 
                 serviceId?.let {
-                    ContratarProductoScreen(serviceId = it, navController = navController, viewModel = viewModel)
+                    ContratarProductoScreen(serviceId = it, navController = navController, viewModel = viewModel, userId = userId!!)
                 }
             }
 
