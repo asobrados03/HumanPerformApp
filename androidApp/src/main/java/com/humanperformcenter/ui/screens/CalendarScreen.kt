@@ -558,10 +558,13 @@ fun CalendarScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 fila.forEach { hora ->
-                                    val sesion = sesionesRemotas.firstOrNull { it.hour == hora }
-                                    val disponibilidad = if (sesion != null && sesion.capacity > 0) {
-                                        sesion.booked.toFloat() / sesion.capacity.toFloat()
+                                    val sesionesPorHora = sesionesRemotas.filter { it.hour == hora }
+                                    val totalBooked = sesionesPorHora.sumOf { it.booked }
+                                    val totalCapacity = sesionesPorHora.sumOf { it.capacity }
+                                    val disponibilidad = if (totalCapacity > 0) {
+                                        totalBooked.toFloat() / totalCapacity.toFloat()
                                     } else 1f
+
                                     val bgColor = when {
                                         disponibilidad < 0.5f -> Color(0xFF4CAF50) // verde
                                         disponibilidad < 1f -> Color(0xFFFFA000) // amarillo
