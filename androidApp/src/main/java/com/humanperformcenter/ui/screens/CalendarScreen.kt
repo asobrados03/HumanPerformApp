@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -69,6 +70,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.humanperformcenter.R
 import com.humanperformcenter.data.Session
+import com.humanperformcenter.shared.data.model.ReservaUpdateRequest
 import com.humanperformcenter.shared.data.model.ServicioDispo
 import com.humanperformcenter.shared.data.model.SesionesDia
 import com.humanperformcenter.ui.components.LogoAppBar
@@ -117,6 +119,8 @@ fun CalendarScreen(
     // Estado para el coach elegido y botón de confirmación
     var coachElegido by remember { mutableStateOf<SesionesDia?>(null) }
     var mostrarBotonConfirmar by remember { mutableStateOf(false) }
+
+    var mostrarSelectorReservaExistente by remember { mutableStateOf(false) }
 
     // Estado para el selector de coach
     var mostrarSelectorCoach by remember { mutableStateOf(false) }
@@ -666,30 +670,41 @@ fun CalendarScreen(
                         horaSeleccionada = null
                     },
                     confirmButton = {
-                        Button(onClick = {
-                            scope.launch {
-                                try {
-                                    sesionesDiaViewModel.realizarReserva(
-                                        customerId = customerId,
-                                        coachId = coachElegido!!.coach_id,
-                                        serviceId = servicioSeleccionadoId ?: return@launch,
-                                        centerId = 1,
-                                        selectedDate = selectedDate.toString(),
-                                        hour = horaSeleccionada!!
-                                    )
-                                    userViewModel.fetchUserBookings(customerId)
-                                    mostrarSelectorCoach = false
-                                    showReservaDialog = false
-                                    mostrarBotonConfirmar = false
-                                    horaSeleccionada = null
-                                    coachElegido = null
-                                    println("✅ Reserva confirmada por el usuario.")
-                                } catch (e: Exception) {
-                                    println("❌ Error al confirmar reserva: ${e.message}")
+                        Row {
+                            Button(onClick = {
+                                scope.launch {
+                                    try {
+                                        sesionesDiaViewModel.realizarReserva(
+                                            customerId = customerId,
+                                            coachId = coachElegido!!.coach_id,
+                                            serviceId = servicioSeleccionadoId ?: return@launch,
+                                            centerId = 1,
+                                            selectedDate = selectedDate.toString(),
+                                            hour = horaSeleccionada!!
+                                        )
+                                        userViewModel.fetchUserBookings(customerId)
+                                        mostrarSelectorCoach = false
+                                        showReservaDialog = false
+                                        mostrarBotonConfirmar = false
+                                        horaSeleccionada = null
+                                        coachElegido = null
+                                        println("✅ Reserva confirmada por el usuario.")
+                                    } catch (e: Exception) {
+                                        println("❌ Error al confirmar reserva: ${e.message}")
+                                    }
                                 }
+                            }) {
+                                Text("Confirmar")
                             }
-                        }) {
-                            Text("Confirmar")
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            TextButton(onClick = {
+                                mostrarBotonConfirmar = false
+                                mostrarSelectorReservaExistente = true
+                            }) {
+                                Text("Cambiar")
+                            }
                         }
                     },
                     dismissButton = {
@@ -701,14 +716,90 @@ fun CalendarScreen(
                             Text("Cancelar")
                         }
                     },
-                    title = {
-                        Text("¡Confirmar reserva!")
-                    },
+                    title = { Text("¡Confirmar reserva!") },
                     text = {
                         Column {
                             Text("Reserva con: ${coachElegido!!.coach_name}")
                             Text("Hora: ${horaSeleccionada!!.substring(0, 5)}")
                             Text("Día: ${selectedDate.toString()}")
+                        }
+                    }
+                )
+            }
+            if (mostrarSelectorReservaExistente) {
+                val reservasUsuario = userViewModel.userBookings.collectAsState().value
+
+                AlertDialog(
+                    onDismissRequest = { mostrarSelectorReservaExistente = false },
+                    title = { Text("Selecciona una reserva para cambiar") },
+                    text = {
+                        Box(modifier = Modifier.heightIn(max = 400.dp)) {
+                            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                                items(reservasUsuario) { reserva ->
+                                    val fechaFormateada = reserva.date.substring(0, 10)
+                                    val horaFormateada = reserva.hour.substring(0, 5)
+                                    val isExpanded = menuExpandedMap[reserva.id] ?: false
+                                    val context = LocalContext.current
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 8.dp)
+                                            .border(1.dp, Color.LightGray, RoundedCornerShape(12.dp))
+                                            .padding(12.dp)
+                                            .clickable {
+                                                mostrarSelectorReservaExistente = false
+                                                scope.launch {
+                                                    try {
+                                                        sesionesDiaViewModel.cambiarReservaSesion(
+                                                            customerId = customerId,
+                                                            bookingId = reserva.id,
+                                                            newCoachId = coachElegido!!.coach_id,
+                                                            newServiceId = servicioSeleccionadoId ?: return@launch,
+                                                            newStartDate = selectedDate.toString(),
+                                                            hour = horaSeleccionada!!
+                                                        )
+                                                        userViewModel.fetchUserBookings(customerId)
+                                                        mostrarBotonConfirmar = false
+                                                        mostrarSelectorCoach = false
+                                                        coachElegido = null
+                                                        horaSeleccionada = null
+                                                        println("✅ Reserva cambiada correctamente.")
+                                                    } catch (e: Exception) {
+                                                        println("❌ Error al cambiar reserva: ${e.message}")
+                                                    }
+                                                }
+                                            },
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        reserva.coach_profile_pic?.let { imageUrl ->
+                                            AsyncImage(
+                                                model = imageUrl,
+                                                contentDescription = "Coach image",
+                                                modifier = Modifier
+                                                    .size(86.dp)
+                                                    .padding(end = 12.dp)
+                                            )
+                                        }
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("📅 $fechaFormateada - 🕒 $horaFormateada")
+                                            Text("🧘 Servicio: ${reserva.service}")
+                                            Text("🏋️ Entrenador: ${reserva.coach_name}")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            mostrarSelectorReservaExistente = false
+                            mostrarBotonConfirmar = false
+                            horaSeleccionada = null
+                            coachElegido = null
+                        }) {
+                            Text("Cancelar")
                         }
                     }
                 )
