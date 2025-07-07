@@ -1,5 +1,8 @@
 package com.humanperformcenter.shared.data.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ReservaUpdateRequest(
     val booking_id: Int,
     val new_coach_id: Int,
