@@ -45,4 +45,16 @@ class ServiceProductViewModel(
             println("User products loaded: ${products.size} items")
         }
     }
+
+    fun assignProductToUser(userId: Int, productId: Int) {
+        viewModelScope.launch {
+            val success = useCase.assignProductToUser(userId, productId)
+            if (success) {
+                println("✅ Producto asignado correctamente")
+                loadUserProducts(userId)
+            } else {
+                println("❌ Error al asignar producto")
+            }
+        }
+    }
 }

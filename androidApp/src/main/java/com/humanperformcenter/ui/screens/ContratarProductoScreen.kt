@@ -77,12 +77,10 @@ fun ContratarProductoScreen(
                     AppCard(
                         onClick = {
                             if (!contratado) {
-                                {
-                                    // lógica de contratación futura
-                                }
-                            } else null
+                                viewModel.assignProductToUser(userId, producto.id)
+                            }
                         }
-                    ) {
+                    ){
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()

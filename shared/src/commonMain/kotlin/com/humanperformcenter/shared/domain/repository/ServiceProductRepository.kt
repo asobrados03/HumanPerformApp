@@ -7,4 +7,5 @@ interface ServiceProductRepository {
     suspend fun getAllServices(): List<ServicioDispo>
     suspend fun getServiceProducts(serviceId: Int): List<ServicioItembien>
     suspend fun getUserProducts(customerId: Int): List<ServicioItembien>
+    suspend fun assignProductToUser(userId: Int, productId: Int): Boolean
 }
