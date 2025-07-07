@@ -19,8 +19,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -57,6 +61,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -85,7 +90,12 @@ import kotlinx.datetime.toLocalDateTime
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
+import kotlin.collections.get
+import kotlin.text.compareTo
+import kotlin.text.get
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -126,6 +136,19 @@ fun CalendarScreen(
     val serviciosPermitidos = sessionViewModel.allowedServices.collectAsState().value
 
     val menuExpandedMap = remember { mutableStateMapOf<Int, Boolean>() }
+
+    var showReservaConfirmDialog by remember { mutableStateOf(false) }
+    var pendingSelectedDate by remember { mutableStateOf<LocalDate?>(null) }
+
+    var mensajeLimiteSuperado by remember { mutableStateOf(false) }
+
+    var servicioFiltro by remember { mutableStateOf<ServicioDispo?>(null) }
+
+    val user = userViewModel.userData.collectAsState().value
+    val userBookings = userViewModel.userBookings.collectAsState().value
+    val weeklyLimits = sesionesDiaViewModel.weeklyLimits.collectAsState().value
+    val unlimitedSessions = sesionesDiaViewModel.unlimitedSessions.collectAsState().value
+
 
 
     Scaffold(
@@ -259,95 +282,137 @@ fun CalendarScreen(
             val totalCells = ((offset + daysInMonth + 6) / 7) * 7
 
             // Render calendar grid
-            val numWeeks = totalCells / 7
-            for (week in 0 until numWeeks) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    for (dayIndex in 0..6) {
-                        val cellIndex = week * 7 + dayIndex
-                        val dayNumber = cellIndex - offset + 1
-                        if (cellIndex < offset || dayNumber > daysInMonth) {
-                            val dayText = if (cellIndex < offset) {
-                                val prevMonth = if (displayedMonth.ordinal == 0) Month.DECEMBER else Month.entries[displayedMonth.ordinal - 1]
-                                val prevYear = if (displayedMonth.ordinal == 0) displayedYear - 1 else displayedYear
-                                val daysInPrevMonth = prevMonth.length((prevYear % 4 == 0) && (prevYear % 100 != 0 || prevYear % 400 == 0))
-                                (daysInPrevMonth - (offset - cellIndex) + 1).toString()
-                            } else {
-                                ((dayNumber - daysInMonth)).toString()
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(36.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = dayText, color = Color.Gray)
-                            }
-                        } else {
-                            val date = LocalDate(displayedYear, displayedMonth, dayNumber)
-                            val eventColor = Color.Transparent
-                            val isSelected = selectedDate == date
-                            val isSunday = (dayIndex == 6)
-                            val cellBackgroundColor = when {
-                                eventColor != Color.Transparent -> eventColor
-                                isSunday -> Color.LightGray
-                                else -> Color.Transparent
-                            }
-                            val textColor = if (eventColor != Color.Transparent) Color.White else MaterialTheme.colorScheme.onSurface
-                            val isToday = date == todayLocalDate
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(36.dp)
-                                    .background(color = cellBackgroundColor, shape = RoundedCornerShape(50))
-                                    .border(
-                                        width = if (isToday) 2.dp else 0.dp,
-                                        color = if (isToday) Color.Black else Color.Transparent,
-                                        shape = RoundedCornerShape(50)
-                                    )
-                                    .then(
-                                        if (isSelected)
-                                            Modifier
-                                                .border(
-                                                    width = 2.dp,
-                                                    color = MaterialTheme.colorScheme.primary,
-                                                    shape = RoundedCornerShape(50)
-                                                )
-                                        else Modifier
-                                    )
-                                    .clickable {
-                                        val isSunday = (dayIndex == 6)
+            val bookings by userViewModel.userBookings.collectAsState()
 
-                                        if (!isSunday) {
-                                            selectedDate = date
-                                            showReservaDialog = true
-                                            tipoSesion = null
-                                            sesionesDiaViewModel.clearSessions()
+            val weeklyLimits = sesionesDiaViewModel.weeklyLimits.collectAsState().value
 
-                                            val servicioSeleccionado = tipoSesion
+            val unlimitedSessions = sesionesDiaViewModel.unlimitedSessions.collectAsState().value
 
-                                            if (servicioSeleccionado != null) {
-                                                val serviceId = servicioSeleccionado.id
-                                                sesionesDiaViewModel.fetchAvailableSessions(serviceId, date)
-                                            }
-                                        } else {
-                                            selectedDate = null
-                                            showReservaDialog = false
-                                        }
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = dayNumber.toString(),
-                                    color = textColor,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold
+            fun seSuperoLimiteReserva(servicioId: Int): Boolean {
+                val ahora = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+                val inicioSemana = ahora.minus(ahora.dayOfWeek.ordinal, kotlinx.datetime.DateTimeUnit.DAY)
+                val finSemana = inicioSemana.plus(6, kotlinx.datetime.DateTimeUnit.DAY)
+
+                val reservasServicio = bookings.filter { it.service_id == servicioId }
+
+                // --- Recurrentes (semanales)
+                val semanalLimite = weeklyLimits[servicioId]
+                val semanalRealizadas = reservasServicio.count {
+                    val fecha = try { LocalDate.parse(it.date) } catch (_: Exception) { null }
+                    fecha != null && fecha in inicioSemana..finSemana
+                }
+                if (semanalLimite != null && semanalRealizadas >= semanalLimite) {
+                    return true
+                }
+
+                // --- Productos por sesiones totales (bonos)
+                val totalPermitido = unlimitedSessions[servicioId]
+                val totalRealizadas = reservasServicio.size
+
+                if (totalPermitido != null && totalRealizadas >= totalPermitido) {
+                    return true
+                }
+
+                return false
+            }
+
+
+            val weekStart = todayLocalDate.minus(todayLocalDate.dayOfWeek.ordinal, kotlinx.datetime.DateTimeUnit.DAY)
+            val weekEnd = weekStart.plus(6, kotlinx.datetime.DateTimeUnit.DAY)
+
+            val reservasEstaSemana = bookings.groupBy { it.service_id }.mapValues { (_, sesiones) ->
+                sesiones.count { ses ->
+                    val fecha = try {
+                        LocalDate.parse(ses.date.substring(0, 10))
+                    } catch (e: Exception) {
+                        null
+                    }
+                    fecha != null && fecha in weekStart..weekEnd
+                }
+            }
+
+            val reservedDates = bookings.mapNotNull { booking ->
+                try {
+                    LocalDate.parse(booking.date.substring(0, 10))
+                } catch (e: Exception) {
+                    null
+                }
+            }.toSet()
+
+            val calendarDays = buildList {
+                repeat(offset) {
+                    add(null) // Días vacíos antes del 1er día del mes
+                }
+                for (day in 1..daysInMonth) {
+                    add(LocalDate(displayedYear, displayedMonth, day))
+                }
+            }
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(7),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+            ) {
+                items(calendarDays) { date ->
+                    if (date == null) {
+                        Box(modifier = Modifier
+                            .size(40.dp)
+                            .padding(4.dp)
+                        )
+                    } else {
+                        val isToday = date == todayLocalDate
+                        val isSunday = date.dayOfWeek.ordinal == 6
+                        val isSelected = selectedDate == date
+                        val isReserved = reservedDates.contains(date)
+
+                        val bgColor = when {
+                            isSelected -> MaterialTheme.colorScheme.primary
+                            isReserved -> Color(0xFF64B5F6)
+                            isSunday -> Color.LightGray
+                            else -> Color.Transparent
+                        }
+
+                        val textColor = when {
+                            isSelected || isReserved -> Color.White
+                            else -> Color.Black
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .padding(4.dp)
+                                .clip(CircleShape)
+                                .background(bgColor)
+                                .border(
+                                    width = if (isToday) 2.dp else 0.dp,
+                                    color = if (isToday) Color.Black else Color.Transparent,
+                                    shape = CircleShape
                                 )
-                            }
+                                .clickable(enabled = !isSunday) {
+                                    if (isReserved) {
+                                        pendingSelectedDate = date
+                                        showReservaConfirmDialog = true
+                                    } else {
+                                        selectedDate = date
+                                        showReservaDialog = true
+                                        tipoSesion = null
+                                        sesionesDiaViewModel.clearSessions()
+
+                                        servicioSeleccionadoId?.let { servicioId ->
+                                            sesionesDiaViewModel.fetchAvailableSessions(servicioId, date)
+                                        }
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = date.dayOfMonth.toString(),
+                                color = textColor,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
                         }
                     }
                 }
@@ -355,24 +420,16 @@ fun CalendarScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Mostrar siempre todas las sesiones del mes/año mostrado, independientemente de si hay día seleccionado
-            val filteredSessions = sessionList.value.filter { session ->
-                val instant = Instant.fromEpochMilliseconds(session.date)
-                val localDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
-                localDate.year == displayedYear && localDate.month == displayedMonth
-            }
-
             // 🔁 NUEVO BLOQUE DE RESERVAS DEL USUARIO
             Spacer(modifier = Modifier.height(16.dp))
 
             val user = userViewModel.userData.collectAsState().value
             val userId = user?.id
-            val bookings by userViewModel.userBookings.collectAsState()
-
 
             LaunchedEffect(userId) {
                 userId?.let {
                     userViewModel.fetchUserBookings(it)
+                    sesionesDiaViewModel.fetchUserWeeklyLimit(it)
                 }
             }
 
@@ -380,7 +437,62 @@ fun CalendarScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
+
             ) {
+                Column(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)) {
+
+                    Text(
+                        text = "Filtrar por servicio:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+
+                    var expandedFiltro by remember { mutableStateOf(false) }
+                    var anchoBotonFiltro by remember { mutableStateOf(0) }
+
+                    Box {
+                        Text(
+                            text = servicioFiltro?.name ?: "Todas",
+                            color = Color.White,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF455A64), RoundedCornerShape(8.dp))
+                                .padding(12.dp)
+                                .clickable { expandedFiltro = true }
+                                .onGloballyPositioned { anchoBotonFiltro = it.size.width }
+                        )
+
+                        DropdownMenu(
+                            expanded = expandedFiltro,
+                            onDismissRequest = { expandedFiltro = false },
+                            modifier = Modifier
+                                .width(with(LocalDensity.current) { anchoBotonFiltro.toDp() })
+                                .background(Color.White)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Todas") },
+                                onClick = {
+                                    servicioFiltro = null
+                                    expandedFiltro = false
+                                }
+                            )
+                            serviciosPermitidos.forEach { servicio ->
+                                DropdownMenuItem(
+                                    text = { Text(servicio.name) },
+                                    onClick = {
+                                        servicioFiltro = servicio
+                                        expandedFiltro = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
                 Text(
                     text = "Tus sesiones reservadas",
                     style = MaterialTheme.typography.titleMedium,
@@ -396,7 +508,13 @@ fun CalendarScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(bookings) { booking ->
+                        val reservasFiltradas = if (servicioFiltro == null) {
+                            bookings
+                        } else {
+                            bookings.filter { it.service_id == servicioFiltro?.id }
+                        }
+
+                        items(reservasFiltradas) { booking ->
                             val dateformateada = booking.date.substring(0, 10)
                             val horaformateada = booking.hour.substring(0, 5)
                             val isExpanded = menuExpandedMap[booking.id] ?: false
@@ -454,11 +572,11 @@ fun CalendarScreen(
                                         )
 
                                         DropdownMenuItem(
-                                            text = { Text("Eliminar reserva") },
+                                            text = { Text("Cancelar reserva") },
                                             onClick = {
                                                 menuExpandedMap[booking.id] = false
                                                 booking.id.let { reservaId ->
-                                                    userViewModel.deleteUserBooking(reservaId)
+                                                    userViewModel.cancelUserBooking(reservaId)
                                                     userId?.let { userViewModel.fetchUserBookings(it) }
                                                 }
                                             }
@@ -472,8 +590,54 @@ fun CalendarScreen(
             }
         }
     }
+    if (showReservaConfirmDialog && pendingSelectedDate != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showReservaConfirmDialog = false
+                pendingSelectedDate = null
+            },
+            title = { Text("Ya tienes una reserva") },
+            text = { Text("¿Quieres continuar? Ya tienes una reserva este día.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedDate = pendingSelectedDate
+                        showReservaDialog = true
+                        tipoSesion = null
+                        sesionesDiaViewModel.clearSessions()
+
+                        servicioSeleccionadoId?.let { servicioId ->
+                            sesionesDiaViewModel.fetchAvailableSessions(servicioId, pendingSelectedDate!!)
+                        }
+
+                        showReservaConfirmDialog = false
+                        pendingSelectedDate = null
+                    }
+                ) {
+                    Text("Sí, continuar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showReservaConfirmDialog = false
+                        pendingSelectedDate = null
+                    }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
     // Diálogo de reserva de sesión
     if (showReservaDialog && selectedDate != null) {
+        LaunchedEffect(showReservaDialog) {
+            if (showReservaDialog) {
+                tipoSesion = null
+                servicioSeleccionadoId = null
+                sesionesDiaViewModel.clearSessions()
+            }
+        }
         AlertDialog(
             onDismissRequest = { showReservaDialog = false },
             confirmButton = {},
@@ -527,7 +691,7 @@ fun CalendarScreen(
                                         },
                                         onClick = {
                                             tipoSesion = servicio
-                                            servicioSeleccionadoId = servicio.id // ✅ guardamos el ID
+                                            servicioSeleccionadoId = servicio.id
                                             dropdownExpanded = false
                                             selectedDate?.let { fecha ->
                                                 sesionesDiaViewModel.fetchAvailableSessions(servicio.id, fecha)
@@ -542,10 +706,13 @@ fun CalendarScreen(
                 }
             },
             text = {
-                val horariosDisponibles = sesionesRemotas
-                    .map { it.hour }
-                    .distinct()
-                    .sorted()
+                val horariosDisponibles = if (tipoSesion == null) emptyList() else {
+                    sesionesRemotas
+                        .filter { it.service_id == tipoSesion?.id }
+                        .map { it.hour }
+                        .distinct()
+                        .sorted()
+                }
                 if (horariosDisponibles.isEmpty()) {
                     Text("No hay sesiones disponibles para este día.", modifier = Modifier.padding(8.dp))
                 } else {
@@ -579,9 +746,21 @@ fun CalendarScreen(
                                             .height(40.dp)
                                             .border(1.dp, bgColor, RoundedCornerShape(12.dp))
                                             .clickable {
-                                                sesionesDiaViewModel.obtenerEntrenadoresPorHora(hora)
-                                                horaSeleccionada = hora
-                                                mostrarSelectorCoach = true
+                                                val serviceId = servicioSeleccionadoId ?: return@clickable
+                                                if (user != null && seSuperoLimiteReserva(serviceId, selectedDate!!, weeklyLimits, unlimitedSessions, userBookings)) {
+                                                    mensajeLimiteSuperado = true
+                                                    // RESETEAR diálogo y estado
+                                                    showReservaDialog = false
+                                                    selectedDate = null
+                                                    tipoSesion = null
+                                                    servicioSeleccionadoId = null
+                                                    sesionesDiaViewModel.clearSessions()
+                                                    return@clickable
+                                                } else {
+                                                    sesionesDiaViewModel.obtenerEntrenadoresPorHora(hora)
+                                                    horaSeleccionada = hora
+                                                    mostrarSelectorCoach = true
+                                                }
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -633,9 +812,8 @@ fun CalendarScreen(
 
         LaunchedEffect(customerId) {
             sessionViewModel.cargarServiciosPermitidos(customerId)
+            sesionesDiaViewModel.fetchUserWeeklyLimit(customerId)
         }
-
-        val serviciosPermitidos = sessionViewModel.allowedServices.collectAsState().value
 
         val coaches = sesionesDiaViewModel.coachesForHour.collectAsState().value
 
@@ -715,6 +893,19 @@ fun CalendarScreen(
             }
         }
     }
+    if (mensajeLimiteSuperado) {
+        AlertDialog(
+            onDismissRequest = { mensajeLimiteSuperado = false },
+            confirmButton = {
+                TextButton(onClick = { mensajeLimiteSuperado = false }) {
+                    Text("OK")
+                }
+            },
+            title = { Text("Límite semanal alcanzado") },
+            text = { Text("No puedes realizar más reservas para este servicio esta semana.") }
+        )
+    }
+
     val mensajeError by sesionesDiaViewModel.mensajeErrorReserva.collectAsState()
 
     if (mensajeError != null) {
@@ -731,6 +922,7 @@ fun CalendarScreen(
     }
 }
 
+
 private fun Month.length(isLeapYear: Boolean): Int = when (this) {
     Month.JANUARY, Month.MARCH, Month.MAY, Month.JULY,
     Month.AUGUST, Month.OCTOBER, Month.DECEMBER -> 31
@@ -739,3 +931,37 @@ private fun Month.length(isLeapYear: Boolean): Int = when (this) {
 
     Month.FEBRUARY -> if (isLeapYear) 29 else 28
 }
+
+private fun seSuperoLimiteReserva(
+    serviceId: Int?,
+    selectedDate: LocalDate,
+    weeklyLimits: Map<Int, Int>,
+    unlimitedSessions: Map<Int, Int>,
+    bookings: List<com.humanperformcenter.shared.data.model.UserBooking>
+): Boolean {
+    val semanaInicio = selectedDate.minus(selectedDate.dayOfWeek.ordinal, kotlinx.datetime.DateTimeUnit.DAY)
+    val semanaFin = semanaInicio.plus(6, kotlinx.datetime.DateTimeUnit.DAY)
+
+    val reservasServicio = bookings.filter { it.service_id == serviceId }
+
+    val esRecurrente = weeklyLimits.containsKey(serviceId)
+    val limiteSemanal = weeklyLimits[serviceId] ?: Int.MAX_VALUE
+    val totalPermitido = unlimitedSessions[serviceId] ?: Int.MAX_VALUE
+
+    return if (esRecurrente) {
+        val estaSemana = reservasServicio.count {
+            val fecha = try {
+                LocalDate.parse(it.date.substring(0, 10))
+            } catch (e: Exception) {
+                null
+            }
+            fecha != null && fecha in semanaInicio..semanaFin
+        }
+        estaSemana >= limiteSemanal
+    } else {
+        reservasServicio.size >= totalPermitido
+    }
+}
+
+
+

@@ -5,6 +5,7 @@ import com.humanperformcenter.shared.data.model.ReservaResponse
 import com.humanperformcenter.shared.data.model.ReservaUpdateRequest
 import com.humanperformcenter.shared.data.model.ReservaUpdateResponse
 import com.humanperformcenter.shared.data.model.SesionesDia
+import com.humanperformcenter.shared.data.model.UserWeeklyLimitResponse
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.SesionDiaRepository
 import io.ktor.client.call.body
@@ -13,6 +14,7 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
@@ -81,4 +83,19 @@ object SesionDiaRepositoryImpl : SesionDiaRepository {
         val json = response.body<Map<String, Int>>()
         return json["session_timeslot_id"] ?: throw IllegalStateException("Respuesta inválida")
     }
+
+    override suspend fun getUserWeeklyLimit(userId: Int): UserWeeklyLimitResponse {
+        val response: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-weekly-limit") {
+            url {
+                parameters.append("user_id", userId.toString())
+            }
+        }
+
+        if (!response.status.isSuccess()) {
+            throw IllegalStateException("Error al obtener límite semanal: ${response.status}")
+        }
+
+        return response.body()
+    }
+
 }

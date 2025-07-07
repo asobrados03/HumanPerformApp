@@ -5,6 +5,7 @@ import com.humanperformcenter.shared.data.model.ReservaResponse
 import com.humanperformcenter.shared.data.model.ReservaUpdateRequest
 import com.humanperformcenter.shared.data.model.ReservaUpdateResponse
 import com.humanperformcenter.shared.data.model.SesionesDia
+import com.humanperformcenter.shared.data.model.UserWeeklyLimitResponse
 import kotlinx.datetime.LocalDate
 
 interface SesionDiaRepository {
@@ -14,4 +15,6 @@ interface SesionDiaRepository {
     suspend fun getUserProductId(customerId: Int): Int
     suspend fun getPreferredCoach(customerId: Int, serviceId: Int): Int?
     suspend fun getTimeslotId(hora: String): Int
+    suspend fun getUserWeeklyLimit(userId: Int): UserWeeklyLimitResponse
+
 }

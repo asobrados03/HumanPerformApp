@@ -25,6 +25,13 @@ class SesionesDiaViewModel(
     private val _mensajeErrorReserva = MutableStateFlow<String?>(null)
     val mensajeErrorReserva: StateFlow<String?> = _mensajeErrorReserva
 
+    private val _weeklyLimits = MutableStateFlow<Map<Int, Int>>(emptyMap())
+    val weeklyLimits: StateFlow<Map<Int, Int>> = _weeklyLimits
+
+    private val _unlimitedSessions = MutableStateFlow<Map<Int, Int>>(emptyMap())
+    val unlimitedSessions: StateFlow<Map<Int, Int>> get() = _unlimitedSessions
+
+
     fun fetchAvailableSessions(serviceId: Int, date: LocalDate) {
         val weekStart = date.toString()
 
@@ -145,5 +152,16 @@ class SesionesDiaViewModel(
         _mensajeErrorReserva.value = null
     }
 
+    fun fetchUserWeeklyLimit(userId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = useCase.getUserWeeklyLimit(userId)
+                _weeklyLimits.value = response.weekly_limit
+                _unlimitedSessions.value = response.unlimited_sessions
+            } catch (e: Exception) {
+                println("Error al cargar límites semanales: ${e.message}")
+            }
+        }
+    }
 }
 

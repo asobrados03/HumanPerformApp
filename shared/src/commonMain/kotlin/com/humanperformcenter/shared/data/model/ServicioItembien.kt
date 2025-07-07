@@ -9,6 +9,6 @@ data class ServicioItembien(
     val description: String? = null,
     val price: Double? = null,
     val image: String? = null,
-    val service_id: Int? = null,
+    val service_id: List<Int> = emptyList(),
     val isAvailable: Boolean? = true
 )

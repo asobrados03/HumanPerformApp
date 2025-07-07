@@ -8,6 +8,7 @@ data class UserBooking(
     val date: String,
     val hour: String,
     val service: String,
+    val service_id: Int?,
     val coach_name: String,
     val coach_profile_pic: String?
 )

@@ -5,6 +5,7 @@ import com.humanperformcenter.shared.data.model.ReservaResponse
 import com.humanperformcenter.shared.data.model.ReservaUpdateRequest
 import com.humanperformcenter.shared.data.model.ReservaUpdateResponse
 import com.humanperformcenter.shared.data.model.SesionesDia
+import com.humanperformcenter.shared.data.model.UserWeeklyLimitResponse
 import com.humanperformcenter.shared.domain.repository.SesionDiaRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -31,4 +32,6 @@ class SesionDiaUseCase(private val repository: SesionDiaRepository) {
     suspend fun getTimeslotId(hora: String): Int = withContext(Dispatchers.IO) {
         return@withContext repository.getTimeslotId(hora)
     }
-}
+    suspend fun getUserWeeklyLimit(customerId: Int): UserWeeklyLimitResponse = withContext(Dispatchers.IO) {
+        return@withContext repository.getUserWeeklyLimit(customerId)
+    }}

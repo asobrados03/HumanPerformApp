@@ -146,18 +146,19 @@ class UserViewModel(
         }
     }
 
-    fun deleteUserBooking(bookingId : Int ) {
+    fun cancelUserBooking(bookingId: Int) {
         viewModelScope.launch {
-            userUseCase.deleteUserBooking(bookingId).fold(
+            userUseCase.cancelUserBooking(bookingId).fold(
                 onSuccess = {
-                    println("Reserva eliminada exitosamente")
+                    println("Reserva cancelada exitosamente")
                     fetchUserBookings(_userData.value?.id ?: 0)
                 },
                 onFailure = { throwable ->
-                    println("Error al eliminar la reserva: ${throwable.message}")
+                    println("Error al cancelar la reserva: ${throwable.message}")
                 }
             )
         }
     }
+
 
 }

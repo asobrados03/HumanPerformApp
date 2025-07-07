@@ -9,5 +9,5 @@ interface UserRepository {
     suspend fun deleteUser(email: String): Result<Unit>
     suspend fun getUserAllowedServices(customerId: Int) : List<ServicioDispo>
     suspend fun getUserBookings(customerId: Int): List<UserBooking>
-    suspend fun deleteUserBooking(bookingId: Int): Result<Unit>
+    suspend fun cancelUserBooking(bookingId: Int): Result<Unit>
 }

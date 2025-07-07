@@ -99,7 +99,9 @@ fun NewProductScreen(
 fun MisProductosView(viewModel: ServiceProductViewModel, navController: NavHostController) {
 
     val productos by viewModel.userProducts.collectAsState()
+    println("MisProductosView: ${productos.size} productos contratados")
     val productosUnicos = productos.distinctBy { it.id }
+    println("MisProductosView: ${productosUnicos.size} productos únicos")
 
     LazyColumn(
         modifier = Modifier
@@ -157,7 +159,7 @@ fun ContratarView(
     navController: NavHostController
 ) {
     val productosContratados by viewModel.userProducts.collectAsState()
-    val idsContratados = productosContratados.map{ it.service_id}
+    val idsContratados = productosContratados.map { it.id }.toSet()
 
     LazyColumn(
         modifier = Modifier
@@ -167,8 +169,9 @@ fun ContratarView(
     ) {
         items(servicios) { servicio ->
             val imageUrl = servicio.image?.let { "http://163.172.71.195:8085/service_images/$it" }
-            val contratado = servicio.id in idsContratados
-
+            val contratado = productosContratados.any { producto ->
+                producto.service_id.contains(servicio.id)
+            }
             AppCard(onClick = {
                 navController.navigate("servicio/${servicio.id}")
             }) {

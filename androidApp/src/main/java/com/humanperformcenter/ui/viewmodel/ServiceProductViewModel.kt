@@ -42,6 +42,7 @@ class ServiceProductViewModel(
         viewModelScope.launch {
             val products = useCase.getUserProducts(userId)
             _userProducts.value = products
+            println("User products loaded: ${products.size} items")
         }
     }
 }
