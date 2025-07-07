@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServicioDispo
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.UserBooking
@@ -64,8 +65,31 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
+    override suspend fun getCoaches(): Result<List<Professional>> {
+        return try {
+            val resp: HttpResponse = ApiClient.apiClient.get(
+                "${ApiClient.baseUrl}/mobile/list_coaches"
+            ) {
+                contentType(ContentType.Application.Json)
+            }
+
+            if (resp.status == HttpStatusCode.OK) {
+                val coaches: List<Professional> = resp.body()
+                Result.success(coaches)
+            } else {
+                Result.failure(Exception("Error al leer entrenadores: código HTTP " +
+                        "${resp.status.value}"))
+            }
+        } catch (e: Exception) {
+            // Si hay timeout, red de falla, JSON malformado, etc.
+            Result.failure(e)
+        }
+    }
+
     override suspend fun getUserAllowedServices(customerId: Int): List<ServicioDispo> {
-        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-services") {
+        val response = ApiClient.apiClient.get(
+            "${ApiClient.baseUrl}/mobile/user-services"
+        ) {
             url {
                 parameters.append("user_id", customerId.toString())
             }

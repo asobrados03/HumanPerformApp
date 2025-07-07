@@ -2,8 +2,11 @@ package com.humanperformcenter.app.navigation
 
 import SesionesDiaViewModelFactory
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -21,6 +25,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.humanperformcenter.app.SetStatusBarColor
 import com.humanperformcenter.di.AppModule
+import com.humanperformcenter.ui.components.FullScreenLoading
+import com.humanperformcenter.ui.components.FullScreenTextLoading
 import com.humanperformcenter.ui.screens.BlogDetailScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
 import com.humanperformcenter.ui.screens.ChangePasswordScreen
@@ -50,6 +56,7 @@ import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
 import com.humanperformcenter.ui.viewmodel.state.BlogDetailState
 import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
+import com.humanperformcenter.ui.viewmodel.state.CoachState
 
 @Composable
 fun Navigation(
@@ -288,13 +295,39 @@ fun Navigation(
                 }
             }
             composable<Favorites> {
-                FavoritesScreen(
-                    onSelect = { prof ->
-                        // Aquí podrías navegar a "detalle de profe" u otra acción
-                    },
-                    navController = navController
+                val userViewModel: UserViewModel = viewModel(
+                    factory = UserViewModelFactory(AppModule.userUseCase)
                 )
+                val coachState by userViewModel.coachesState.collectAsState()
+
+                LaunchedEffect(Unit) {
+                    userViewModel.getCoaches()
+                }
+
+                when (coachState) {
+                    is CoachState.Loading -> {
+                        FullScreenTextLoading("Cargando entrenadores...", PaddingValues(16.dp))
+                    }
+                    is CoachState.Success -> {
+                        FavoritesScreen(
+                            coaches = (coachState as CoachState.Success).blogs,
+                            onSelect = { prof ->
+                                // acción con el entrenador seleccionado
+                            },
+                            navController = navController
+                        )
+                    }
+                    is CoachState.Error -> {
+                        // Muestra un mensaje de error
+                        val message = (coachState as CoachState.Error).message
+                        Text("Error: $message")
+                    }
+                    CoachState.Idle -> {
+                        FullScreenLoading()
+                    }
+                }
             }
+
             composable<Calendar> {
                 val userViewModel: UserViewModel = viewModel(
                     factory = UserViewModelFactory(AppModule.userUseCase)

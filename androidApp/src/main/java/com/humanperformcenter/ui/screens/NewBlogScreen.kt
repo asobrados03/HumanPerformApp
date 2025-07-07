@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.BlogEntry
 import com.humanperformcenter.ui.components.AppCard
+import com.humanperformcenter.ui.components.FullScreenTextLoading
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.viewmodel.state.BlogState
@@ -73,23 +74,7 @@ fun NewBlogScreen(
             }
 
             is BlogState.Loading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Cargando blogs...",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
+                FullScreenTextLoading("Cargando blogs...", paddingValues)
             }
 
             is BlogState.Success -> {

@@ -24,6 +24,8 @@ fun SplashScreen(
     // 2️⃣ Mientras isLoggedIn sea null => mostramos Spinner
     FullScreenLoading()
 
+    // AQUI PODRIAMOS LANZAR UNA CORRUTINA QUE REFRESCARA LOS TOKENS DE ACCESO (LLAMADA A /refresh)
+
     // 3️⃣ Cuando isLoggedIn cambia a true/false, navegamos y limpiamos backstack
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn != null) {

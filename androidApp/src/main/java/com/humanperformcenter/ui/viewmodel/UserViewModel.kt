@@ -10,6 +10,8 @@ import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
 import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
+import com.humanperformcenter.ui.viewmodel.state.BlogState
+import com.humanperformcenter.ui.viewmodel.state.CoachState
 import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,6 +49,10 @@ class UserViewModel(
 
     private val _deleteState = MutableStateFlow<DeleteUserState>(DeleteUserState.Idle)
     val deleteState: StateFlow<DeleteUserState> = _deleteState.asStateFlow()
+
+    private val _coachesState = MutableStateFlow<CoachState>(CoachState.Idle)
+    // Estado público inmutable
+    val coachesState: StateFlow<CoachState> = _coachesState.asStateFlow()
 
     /**
      * Recibe un User “candidato” (con campos fullName, dateOfBirth = "yyyy-MM-dd",
@@ -138,6 +144,19 @@ class UserViewModel(
     /** Úsalo si quieres resetear el flujo (por ejemplo al salir de la pantalla) */
     fun resetDeleteState() {
         _deleteState.value = DeleteUserState.Idle
+    }
+
+    fun getCoaches() {
+        _coachesState.value = CoachState.Loading
+        viewModelScope.launch {
+            userUseCase.getCoaches().onSuccess { professionals ->
+                _coachesState.value = CoachState.Success(professionals)
+            }.onFailure { throwable ->
+                _coachesState.value = CoachState.Error(
+                    throwable.message.orEmpty().ifEmpty { "Error desconocido al cargar blogs" }
+                )
+            }
+        }
     }
 
     fun fetchUserBookings(userId: Int) {

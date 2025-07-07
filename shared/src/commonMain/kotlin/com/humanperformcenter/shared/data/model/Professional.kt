@@ -1,11 +1,13 @@
 package com.humanperformcenter.shared.data.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Professional(
-    val id: String,
+    val id: Int,
     val name: String,
-    val type: ProfessionalType,
-    val photoUrl: String? = null
+    @SerialName("profile_photo")
+    val photoUrl: String? = null,
+    val service: String? = null
 )
