@@ -796,7 +796,6 @@ fun CalendarScreen(
                             TextButton(onClick = {
                                 mostrarBotonConfirmar = false
                                 mostrarSelectorReservaExistente = true
-                                userViewModel.fetchUserBookings(customerId)
                             }) {
                                 Text("Cambiar")
                             }
@@ -832,7 +831,6 @@ fun CalendarScreen(
                                 TextButton(onClick = {
                                     mostrarBotonConfirmar = false
                                     mostrarSelectorReservaExistente = true
-                                    userViewModel.fetchUserBookings(customerId)
                                 }) {
                                     Text("Cambiar")
                                 }
@@ -917,7 +915,6 @@ fun CalendarScreen(
                                                         println("❌ Error al cambiar reserva: ${e.message}")
                                                     }
                                                 }
-                                                userViewModel.fetchUserBookings(customerId)
                                             },
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
@@ -947,7 +944,6 @@ fun CalendarScreen(
                             mostrarBotonConfirmar = false
                             horaSeleccionada = null
                             coachElegido = null
-                            userViewModel.fetchUserBookings(customerId)
                         }) {
                             Text("Cancelar")
                         }
