@@ -62,6 +62,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -147,6 +148,8 @@ fun CalendarScreen(
     var mensajeLimiteSuperado by remember { mutableStateOf(false) }
 
     var servicioFiltro by remember { mutableStateOf<ServicioDispo?>(null) }
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
 
     val user = userViewModel.userData.collectAsState().value
     val userBookings = userViewModel.userBookings.collectAsState().value
@@ -288,53 +291,6 @@ fun CalendarScreen(
             // Render calendar grid
             val bookings by userViewModel.userBookings.collectAsState()
 
-            val weeklyLimits = sesionesDiaViewModel.weeklyLimits.collectAsState().value
-
-            val unlimitedSessions = sesionesDiaViewModel.unlimitedSessions.collectAsState().value
-
-            fun seSuperoLimiteReserva(servicioId: Int): Boolean {
-                val ahora = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-
-                val inicioSemana = ahora.minus(ahora.dayOfWeek.ordinal, kotlinx.datetime.DateTimeUnit.DAY)
-                val finSemana = inicioSemana.plus(6, kotlinx.datetime.DateTimeUnit.DAY)
-
-                val reservasServicio = bookings.filter { it.service_id == servicioId }
-
-                // --- Recurrentes (semanales)
-                val semanalLimite = weeklyLimits[servicioId]
-                val semanalRealizadas = reservasServicio.count {
-                    val fecha = try { LocalDate.parse(it.date) } catch (_: Exception) { null }
-                    fecha != null && fecha in inicioSemana..finSemana
-                }
-                if (semanalLimite != null && semanalRealizadas >= semanalLimite) {
-                    return true
-                }
-
-                // --- Productos por sesiones totales (bonos)
-                val totalPermitido = unlimitedSessions[servicioId]
-                val totalRealizadas = reservasServicio.size
-
-                if (totalPermitido != null && totalRealizadas >= totalPermitido) {
-                    return true
-                }
-
-                return false
-            }
-
-
-            val weekStart = todayLocalDate.minus(todayLocalDate.dayOfWeek.ordinal, kotlinx.datetime.DateTimeUnit.DAY)
-            val weekEnd = weekStart.plus(6, kotlinx.datetime.DateTimeUnit.DAY)
-
-            val reservasEstaSemana = bookings.groupBy { it.service_id }.mapValues { (_, sesiones) ->
-                sesiones.count { ses ->
-                    val fecha = try {
-                        LocalDate.parse(ses.date.substring(0, 10))
-                    } catch (e: Exception) {
-                        null
-                    }
-                    fecha != null && fecha in weekStart..weekEnd
-                }
-            }
 
             val reservedDates = bookings.mapNotNull { booking ->
                 try {
@@ -382,19 +338,20 @@ fun CalendarScreen(
                             isSelected || isReserved -> Color.White
                             else -> Color.Black
                         }
-
+                        val isPast = date < todayLocalDate
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
                                 .padding(4.dp)
                                 .clip(CircleShape)
                                 .background(bgColor)
+                                .alpha(if (isPast) 0.4f else 1f)
                                 .border(
                                     width = if (isToday) 2.dp else 0.dp,
                                     color = if (isToday) Color.Black else Color.Transparent,
                                     shape = CircleShape
                                 )
-                                .clickable(enabled = !isSunday) {
+                                .clickable(enabled = !isSunday && !isPast) {
                                     if (isReserved) {
                                         pendingSelectedDate = date
                                         showReservaConfirmDialog = true
@@ -512,12 +469,19 @@ fun CalendarScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        val reservasFiltradas = if (servicioFiltro == null) {
-                            bookings
-                        } else {
-                            bookings.filter { it.service_id == servicioFiltro?.id }
-                        }
 
+                        val reservasFiltradas = bookings.filter { booking ->
+                            val fecha = try {
+                                LocalDate.parse(booking.date.substring(0, 10))
+                            } catch (e: Exception) {
+                                null
+                            }
+
+                            val pasaFiltroFecha = fecha != null && fecha >= today
+                            val pasaFiltroServicio = servicioFiltro == null || booking.service_id == servicioFiltro!!.id
+
+                            pasaFiltroFecha && pasaFiltroServicio
+                        }
                         items(reservasFiltradas) { booking ->
                             val dateformateada = booking.date.substring(0, 10)
                             val horaformateada = booking.hour.substring(0, 5)
