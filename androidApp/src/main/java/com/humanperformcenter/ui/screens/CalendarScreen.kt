@@ -79,6 +79,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
@@ -129,8 +130,7 @@ fun CalendarScreen(
     var showReservaConfirmDialog by remember { mutableStateOf(false) }
     var pendingSelectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    var mensajeLimiteSuperado by remember { mutableStateOf(false) }
-
+    // Estado para el filtro de servicio
     var servicioFiltro by remember { mutableStateOf<ServicioDispo?>(null) }
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     var soloPuedeCambiar by remember { mutableStateOf(false) }
@@ -791,6 +791,7 @@ fun CalendarScreen(
                             TextButton(onClick = {
                                 mostrarBotonConfirmar = false
                                 mostrarSelectorReservaExistente = true
+                                userViewModel.fetchUserBookings(customerId)
                             }) {
                                 Text("Cambiar")
                             }
@@ -853,6 +854,10 @@ fun CalendarScreen(
                 )
             }
             if (mostrarSelectorReservaExistente) {
+
+                val startOfWeek = selectedDate!!.minus(selectedDate!!.dayOfWeek.ordinal, DateTimeUnit.DAY)
+                val endOfWeek = startOfWeek.plus(6, DateTimeUnit.DAY)
+
                 val reservasUsuario = userViewModel.userBookings
                     .collectAsState()
                     .value
@@ -865,7 +870,8 @@ fun CalendarScreen(
 
                         reserva.service_id == servicioSeleccionadoId &&
                                 fechaReserva != null &&
-                                fechaReserva >= today
+                                fechaReserva >= today &&
+                                fechaReserva in startOfWeek..endOfWeek
                     }
 
                 AlertDialog(
@@ -944,33 +950,6 @@ fun CalendarScreen(
                 )
             }
         }
-    }
-    if (mensajeLimiteSuperado) {
-        AlertDialog(
-            onDismissRequest = { mensajeLimiteSuperado = false },
-            confirmButton = {
-                TextButton(onClick = { mensajeLimiteSuperado = false }) {
-                    Text("OK")
-                }
-            },
-            title = { Text("Límite semanal alcanzado") },
-            text = { Text("No puedes realizar más reservas para este servicio esta semana.") }
-        )
-    }
-
-    val mensajeError by sesionesDiaViewModel.mensajeErrorReserva.collectAsState()
-
-    if (mensajeError != null) {
-        AlertDialog(
-            onDismissRequest = { sesionesDiaViewModel.clearMensajeError() },
-            title = { Text("Error de reserva") },
-            text = { Text(mensajeError ?: "") },
-            confirmButton = {
-                TextButton(onClick = { sesionesDiaViewModel.clearMensajeError() }) {
-                    Text("OK")
-                }
-            }
-        )
     }
 }
 
