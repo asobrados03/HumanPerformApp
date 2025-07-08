@@ -5,6 +5,7 @@ import com.humanperformcenter.shared.data.model.ServicioItembien
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -41,6 +42,20 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
             response.status.value in 200..299
         } catch (e: Exception) {
             println("❌ Error HTTP al contratar producto: ${e.message}")
+            false
+        }
+    }
+
+    override suspend fun unassignProductFromUser(userId: Int, productId: Int): Boolean {
+        return try {
+            val response = ApiClient.apiClient.delete("${ApiClient.baseUrl}/mobile/unassign-product") {
+                parameter("user_id", userId)
+                parameter("product_id", productId)
+            }
+            println("✅ DELETE status: ${response.status}")
+            response.status.value in 200..299
+        } catch (e: Exception) {
+            println("❌ Error al desasignar producto: ${e.message}")
             false
         }
     }

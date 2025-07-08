@@ -88,69 +88,12 @@ fun NewProductScreen(
             }
 
             when (selectedTab) {
-                0 -> MisProductosView(serviceProductViewModel, navController)
+                0 -> MisProductosView(viewModel = serviceProductViewModel, navController = navController, userId = user?.id ?: 0)
                 1 -> ContratarView(allServices, serviceProductViewModel,navController)
             }
         }
     }
 }
-
-@Composable
-fun MisProductosView(viewModel: ServiceProductViewModel, navController: NavHostController) {
-
-    val productos by viewModel.userProducts.collectAsState()
-    println("MisProductosView: ${productos.size} productos contratados")
-    val productosUnicos = productos.distinctBy { it.id }
-    println("MisProductosView: ${productosUnicos.size} productos únicos")
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        if (productos.isEmpty()) {
-            item {
-                Text("No tienes productos contratados.")
-            }
-        } else {
-            items(productosUnicos) { producto ->
-                val imageUrl = producto.image?.let { "http://163.172.71.195:8085/product_images/$it" }
-
-                AppCard(onClick = {
-                    // De momento no hace nada
-                    // Más adelante: lógica para cancelar
-                }) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(12.dp)
-                    ) {
-                        imageUrl?.let {
-                            AsyncImage(
-                                model = it,
-                                contentDescription = producto.name,
-                                modifier = Modifier
-                                    .size(69.dp)
-                                    .padding(end = 12.dp)
-                            )
-                        }
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(producto.name, fontWeight = FontWeight.Bold)
-                        }
-
-                        Text(
-                            text = "${producto.price?.toInt() ?: 0}€",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Red
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
 
 @Composable
 fun ContratarView(

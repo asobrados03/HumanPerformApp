@@ -1,8 +1,5 @@
 package com.humanperformcenter.ui.screens
 
-import android.util.Log.e
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,7 +15,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -29,14 +25,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowLeft
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowRight
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,12 +37,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxDefaults
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -76,12 +65,10 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.humanperformcenter.R
 import com.humanperformcenter.data.Session
-import com.humanperformcenter.shared.data.model.ReservaUpdateRequest
 import com.humanperformcenter.shared.data.model.ServicioDispo
 import com.humanperformcenter.shared.data.model.SesionesDia
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
-import com.humanperformcenter.ui.components.SessionItem
 import com.humanperformcenter.ui.util.createICSFile
 import com.humanperformcenter.ui.util.shareICS
 import com.humanperformcenter.ui.viewmodel.SesionesDiaViewModel
@@ -92,16 +79,14 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlin.collections.get
-import kotlin.text.compareTo
-import kotlin.text.get
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
@@ -145,11 +130,10 @@ fun CalendarScreen(
     var showReservaConfirmDialog by remember { mutableStateOf(false) }
     var pendingSelectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    var mensajeLimiteSuperado by remember { mutableStateOf(false) }
-
+    // Estado para el filtro de servicio
     var servicioFiltro by remember { mutableStateOf<ServicioDispo?>(null) }
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-
+    var soloPuedeCambiar by remember { mutableStateOf(false) }
 
     val user = userViewModel.userData.collectAsState().value
     val userBookings = userViewModel.userBookings.collectAsState().value
@@ -171,8 +155,6 @@ fun CalendarScreen(
             .fillMaxSize()
             .padding(bottom = 0.dp)
     ) { paddingValues ->
-        val sessionList = sessionViewModel.getAllSessions
-            .collectAsState(initial = emptyList())
 
         // Procesar transacciones para el calendario y selección de día
         val todayInstant = Clock.System.now()
@@ -285,12 +267,8 @@ fun CalendarScreen(
             // Offset para que la semana empiece en lunes
             val offset = firstDayOfMonth.dayOfWeek.ordinal
 
-            // Total cells to show in calendar grid (weeks * 7)
-            val totalCells = ((offset + daysInMonth + 6) / 7) * 7
-
             // Render calendar grid
             val bookings by userViewModel.userBookings.collectAsState()
-
 
             val reservedDates = bookings.mapNotNull { booking ->
                 try {
@@ -411,7 +389,7 @@ fun CalendarScreen(
                     )
 
                     var expandedFiltro by remember { mutableStateOf(false) }
-                    var anchoBotonFiltro by remember { mutableStateOf(0) }
+                    var anchoBotonFiltro by remember { mutableIntStateOf(0) }
 
                     Box {
                         Text(
@@ -607,7 +585,12 @@ fun CalendarScreen(
             }
         }
         AlertDialog(
-            onDismissRequest = { showReservaDialog = false },
+            onDismissRequest = {
+                showReservaDialog = false
+                user?.id?.let { userId ->
+                        userViewModel.fetchUserBookings(userId)
+                }
+            },
             confirmButton = {},
             title = {
                 Row(
@@ -716,19 +699,17 @@ fun CalendarScreen(
                                             .clickable {
                                                 val serviceId = servicioSeleccionadoId ?: return@clickable
                                                 if (user != null && seSuperoLimiteReserva(serviceId, selectedDate!!, weeklyLimits, unlimitedSessions, userBookings)) {
-                                                    mensajeLimiteSuperado = true
-                                                    // RESETEAR diálogo y estado
-                                                    showReservaDialog = false
-                                                    selectedDate = null
-                                                    tipoSesion = null
-                                                    servicioSeleccionadoId = null
-                                                    sesionesDiaViewModel.clearSessions()
-                                                    return@clickable
+                                                    soloPuedeCambiar = true
+                                                    sesionesDiaViewModel.obtenerEntrenadoresPorHora(hora)
+                                                    horaSeleccionada = hora
+                                                    mostrarSelectorCoach = true
                                                 } else {
+                                                    soloPuedeCambiar = false
                                                     sesionesDiaViewModel.obtenerEntrenadoresPorHora(hora)
                                                     horaSeleccionada = hora
                                                     mostrarSelectorCoach = true
                                                 }
+
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -794,7 +775,6 @@ fun CalendarScreen(
             )
         } else {
             val availableCoaches = coaches.filter { it.booked < it.capacity }
-            val fechaISO = selectedDate.toString()
             val horaSeleccionadaFinal = horaSeleccionada!!
 
             LaunchedEffect(horaSeleccionadaFinal) {
@@ -812,40 +792,48 @@ fun CalendarScreen(
                         horaSeleccionada = null
                     },
                     confirmButton = {
-                        Row {
-                            Button(onClick = {
-                                scope.launch {
-                                    try {
-                                        sesionesDiaViewModel.realizarReserva(
-                                            customerId = customerId,
-                                            coachId = coachElegido!!.coach_id,
-                                            serviceId = servicioSeleccionadoId ?: return@launch,
-                                            centerId = 1,
-                                            selectedDate = selectedDate.toString(),
-                                            hour = horaSeleccionada!!
-                                        )
-                                        userViewModel.fetchUserBookings(customerId)
-                                        mostrarSelectorCoach = false
-                                        showReservaDialog = false
-                                        mostrarBotonConfirmar = false
-                                        horaSeleccionada = null
-                                        coachElegido = null
-                                        println("✅ Reserva confirmada por el usuario.")
-                                    } catch (e: Exception) {
-                                        println("❌ Error al confirmar reserva: ${e.message}")
-                                    }
-                                }
-                            }) {
-                                Text("Confirmar")
-                            }
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
+                        if (soloPuedeCambiar) {
                             TextButton(onClick = {
                                 mostrarBotonConfirmar = false
                                 mostrarSelectorReservaExistente = true
                             }) {
                                 Text("Cambiar")
+                            }
+                        } else {
+                            Row {
+                                Button(onClick = {
+                                    scope.launch {
+                                        try {
+                                            sesionesDiaViewModel.realizarReserva(
+                                                customerId = customerId,
+                                                coachId = coachElegido!!.coach_id,
+                                                serviceId = servicioSeleccionadoId ?: return@launch,
+                                                centerId = 1,
+                                                selectedDate = selectedDate.toString(),
+                                                hour = horaSeleccionada!!
+                                            )
+                                            userViewModel.fetchUserBookings(customerId)
+                                            mostrarSelectorCoach = false
+                                            showReservaDialog = false
+                                            mostrarBotonConfirmar = false
+                                            horaSeleccionada = null
+                                            coachElegido = null
+                                        } catch (e: Exception) {
+                                            println("❌ Error al confirmar reserva: ${e.message}")
+                                        }
+                                    }
+                                }) {
+                                    Text("Confirmar")
+                                }
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                TextButton(onClick = {
+                                    mostrarBotonConfirmar = false
+                                    mostrarSelectorReservaExistente = true
+                                }) {
+                                    Text("Cambiar")
+                                }
                             }
                         }
                     },
@@ -869,7 +857,25 @@ fun CalendarScreen(
                 )
             }
             if (mostrarSelectorReservaExistente) {
-                val reservasUsuario = userViewModel.userBookings.collectAsState().value
+
+                val startOfWeek = selectedDate!!.minus(selectedDate!!.dayOfWeek.ordinal, DateTimeUnit.DAY)
+                val endOfWeek = startOfWeek.plus(6, DateTimeUnit.DAY)
+
+                val reservasUsuario = userViewModel.userBookings
+                    .collectAsState()
+                    .value
+                    .filter { reserva ->
+                        val fechaReserva = try {
+                            LocalDate.parse(reserva.date.substring(0, 10))
+                        } catch (e: Exception) {
+                            null
+                        }
+
+                        reserva.service_id == servicioSeleccionadoId &&
+                                fechaReserva != null &&
+                                fechaReserva >= today &&
+                                fechaReserva in startOfWeek..endOfWeek
+                    }
 
                 AlertDialog(
                     onDismissRequest = { mostrarSelectorReservaExistente = false },
@@ -880,8 +886,6 @@ fun CalendarScreen(
                                 items(reservasUsuario) { reserva ->
                                     val fechaFormateada = reserva.date.substring(0, 10)
                                     val horaFormateada = reserva.hour.substring(0, 5)
-                                    val isExpanded = menuExpandedMap[reserva.id] ?: false
-                                    val context = LocalContext.current
 
                                     Row(
                                         modifier = Modifier
@@ -947,33 +951,6 @@ fun CalendarScreen(
                 )
             }
         }
-    }
-    if (mensajeLimiteSuperado) {
-        AlertDialog(
-            onDismissRequest = { mensajeLimiteSuperado = false },
-            confirmButton = {
-                TextButton(onClick = { mensajeLimiteSuperado = false }) {
-                    Text("OK")
-                }
-            },
-            title = { Text("Límite semanal alcanzado") },
-            text = { Text("No puedes realizar más reservas para este servicio esta semana.") }
-        )
-    }
-
-    val mensajeError by sesionesDiaViewModel.mensajeErrorReserva.collectAsState()
-
-    if (mensajeError != null) {
-        AlertDialog(
-            onDismissRequest = { sesionesDiaViewModel.clearMensajeError() },
-            title = { Text("Error de reserva") },
-            text = { Text(mensajeError ?: "") },
-            confirmButton = {
-                TextButton(onClick = { sesionesDiaViewModel.clearMensajeError() }) {
-                    Text("OK")
-                }
-            }
-        )
     }
 }
 

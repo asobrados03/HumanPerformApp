@@ -20,4 +20,7 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
     suspend fun assignProductToUser(userId: Int, productId: Int): Boolean = withContext(Dispatchers.IO) {
         return@withContext serviceProductRepository.assignProductToUser(userId, productId)
     }
+    suspend fun unassignProductFromUser(userId: Int, productId: Int): Boolean = withContext(Dispatchers.IO) {
+        return@withContext serviceProductRepository.unassignProductFromUser(userId, productId)
+    }
 }
