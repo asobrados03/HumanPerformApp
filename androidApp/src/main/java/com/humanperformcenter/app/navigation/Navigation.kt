@@ -40,6 +40,7 @@ import com.humanperformcenter.ui.screens.MyProfileScreen
 import com.humanperformcenter.ui.screens.NewBlogScreen
 import com.humanperformcenter.ui.screens.NewProductScreen
 import com.humanperformcenter.ui.screens.PaymentScreen
+import com.humanperformcenter.ui.screens.ProductoDetalleScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
 import com.humanperformcenter.ui.screens.SplashScreen
 import com.humanperformcenter.ui.screens.UserScreen
@@ -389,6 +390,19 @@ fun Navigation(
                     errorMessage = (detailState as? BlogDetailState.Error)?.message,
                     onRetry = { blogViewModel.loadBlogDetail(blogDetail.blogId) }
                 )
+            }
+            composable("producto-detalle") {
+                val viewModel: ServiceProductViewModel = viewModel(
+                    factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
+                )
+                val producto = viewModel.productoSeleccionado
+
+                if (producto != null) {
+                    ProductoDetalleScreen(producto = producto, navController = navController)
+                } else {
+                    // fallback si se entra sin producto válido
+                    Text("Producto no disponible")
+                }
             }
         }
     }

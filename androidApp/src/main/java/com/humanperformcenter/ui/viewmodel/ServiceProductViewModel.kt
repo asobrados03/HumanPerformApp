@@ -22,6 +22,8 @@ class ServiceProductViewModel(
     private val _userProducts = MutableStateFlow<List<ServicioItembien>>(emptyList())
     val userProducts: StateFlow<List<ServicioItembien>> get() = _userProducts
 
+    var productoSeleccionado: ServicioItembien? = null
+
     fun loadAllServices() {
         viewModelScope.launch {
             val services = useCase.getAllServices()
@@ -54,6 +56,17 @@ class ServiceProductViewModel(
                 loadUserProducts(userId)
             } else {
                 println("❌ Error al asignar producto")
+            }
+        }
+    }
+
+    fun unassignProductFromUser(productId: Int, userId: Int) {
+        viewModelScope.launch {
+            val success = useCase.unassignProductFromUser(userId, productId)
+            if (success) {
+                loadUserProducts(userId)
+            } else {
+                println("❌ Error al descontratar producto")
             }
         }
     }
