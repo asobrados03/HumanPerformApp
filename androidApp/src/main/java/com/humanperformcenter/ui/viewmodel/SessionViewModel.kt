@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 
 class SessionViewModel(
     private val repository: SessionRepository,
-    private val prefs: DataStore<Preferences>
+    prefs: DataStore<Preferences>
 ) : ViewModel() {
 
     val getAllSessions: Flow<List<Session>> = repository.getAllSessions()

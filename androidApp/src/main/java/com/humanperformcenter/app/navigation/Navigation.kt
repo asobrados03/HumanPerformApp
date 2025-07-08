@@ -26,6 +26,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.humanperformcenter.app.SetStatusBarColor
 import com.humanperformcenter.di.AppModule
+import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.components.FullScreenTextLoading
 import com.humanperformcenter.ui.screens.BlogDetailScreen
@@ -73,6 +75,14 @@ fun Navigation(
     val isLoggedIn by sessionViewModel
         .isLoggedInFlow
         .collectAsState(initial = false)
+
+    LaunchedEffect(Unit) {
+        ApiClient.logoutEvents.collect {
+            navController.navigate(Welcome) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
 
     key(isLoggedIn) {
         NavHost(
