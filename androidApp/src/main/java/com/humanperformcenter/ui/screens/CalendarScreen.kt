@@ -585,7 +585,12 @@ fun CalendarScreen(
             }
         }
         AlertDialog(
-            onDismissRequest = { showReservaDialog = false },
+            onDismissRequest = {
+                showReservaDialog = false
+                user?.id?.let { userId ->
+                        userViewModel.fetchUserBookings(userId)
+                }
+            },
             confirmButton = {},
             title = {
                 Row(
