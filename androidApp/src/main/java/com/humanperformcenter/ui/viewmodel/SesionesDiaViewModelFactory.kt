@@ -1,7 +1,8 @@
+package com.humanperformcenter.ui.viewmodel
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.humanperformcenter.shared.domain.usecase.SesionDiaUseCase
-import com.humanperformcenter.ui.viewmodel.SesionesDiaViewModel
 
 class SesionesDiaViewModelFactory(
     private val useCase: SesionDiaUseCase

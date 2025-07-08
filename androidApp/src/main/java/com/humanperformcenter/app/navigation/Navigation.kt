@@ -1,6 +1,6 @@
 package com.humanperformcenter.app.navigation
 
-import SesionesDiaViewModelFactory
+import com.humanperformcenter.ui.viewmodel.SesionesDiaViewModelFactory
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,7 +27,6 @@ import androidx.navigation.toRoute
 import com.humanperformcenter.app.SetStatusBarColor
 import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.network.ApiClient
-import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.components.FullScreenTextLoading
 import com.humanperformcenter.ui.screens.BlogDetailScreen
