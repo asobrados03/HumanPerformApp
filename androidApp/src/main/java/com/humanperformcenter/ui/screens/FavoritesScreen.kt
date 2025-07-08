@@ -22,9 +22,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,6 +43,7 @@ import com.humanperformcenter.shared.data.model.Professional
 @Composable
 fun FavoritesScreen(
     coaches: List<Professional>,
+    selectedCoachId: Int?,
     onSelect: (Professional) -> Unit,
     navController: NavHostController
 ) {
@@ -66,13 +72,19 @@ fun FavoritesScreen(
                 )
             }
             items(coaches) { prof ->
+                val isSelected = prof.id == selectedCoachId
+
                 Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSelected) Color(0xFFAAF683)
+                        else MaterialTheme.colorScheme.surface
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                         .clickable { onSelect(prof) },
                     shape = RoundedCornerShape(8.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    elevation = CardDefaults.cardElevation(2.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -93,13 +105,24 @@ fun FavoritesScreen(
                             Icon(
                                 imageVector = Icons.Default.AccountCircle,
                                 contentDescription = "Avatar por defecto",
+                                tint = if (isSelected)
+                                    MaterialTheme.colorScheme.onPrimary
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
                             )
                         }
                         Spacer(Modifier.width(12.dp))
-                        Text(text = prof.name, fontSize = 16.sp)
+                        Text(
+                            text = prof.name,
+                            fontSize = 16.sp,
+                            color = if (isSelected)
+                                MaterialTheme.colorScheme.onPrimary
+                            else
+                                MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
             }
