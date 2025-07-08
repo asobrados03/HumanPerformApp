@@ -38,6 +38,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -117,6 +120,8 @@ fun RegisterScreen(
     var aceptoPolitica by rememberSaveable { mutableStateOf(false) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     // Sexo desplegable
     val sexOptions = listOf(
         SexOption("Masculino", "Male", Icons.Default.Man),
@@ -146,6 +151,7 @@ fun RegisterScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             LogoAppBar(
                 showBackArrow = false,
@@ -490,6 +496,11 @@ fun RegisterScreen(
                 }
                 is RegisterState.Success -> {
                     LaunchedEffect(Unit) {
+                        snackbarHostState.showSnackbar(
+                            message = "Te has registrado exitosamente",
+                            actionLabel = "OK",
+                            duration = SnackbarDuration.Short
+                        )
                         viewModel.resetStates()
                         onRegistroExitoso()
                     }

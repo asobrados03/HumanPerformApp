@@ -149,7 +149,6 @@ fun Navigation(
                     )
                 )
             }
-
             composable("servicio/{serviceId}") { backStackEntry ->
                 val serviceId = backStackEntry.arguments?.getString("serviceId")?.toIntOrNull()
                 val userId by sessionViewModel.userId.collectAsState()
@@ -159,7 +158,6 @@ fun Navigation(
                     ContratarProductoScreen(serviceId = it, navController = navController, viewModel = viewModel, userId = userId!!)
                 }
             }
-
             composable<User> {
                 val userViewModel: UserViewModel = viewModel(
                     factory = UserViewModelFactory(AppModule.userUseCase)
