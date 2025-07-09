@@ -99,11 +99,8 @@ fun MisProductosView(
                 Column {
                     TextButton(onClick = {
                         // Acción de VER DETALLES
-                        mostrarDialogoProducto = false
-                        productoSeleccionado = null
                         viewModel.productoSeleccionado = productoSeleccionado
-                        navController.navigate("producto-detalle")
-                        mostrarDialogoProducto = false
+                        navController.navigate("producto-detalle/${productoSeleccionado!!.id}")
                     }) {
                         Text("Ver detalles")
                     }

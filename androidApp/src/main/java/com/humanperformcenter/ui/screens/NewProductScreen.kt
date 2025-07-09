@@ -113,7 +113,7 @@ fun ContratarView(
         items(servicios) { servicio ->
             val imageUrl = servicio.image?.let { "http://163.172.71.195:8085/service_images/$it" }
             val contratado = productosContratados.any { producto ->
-                producto.service_id.contains(servicio.id)
+                producto.serviceIds.contains(servicio.id)
             }
             AppCard(onClick = {
                 navController.navigate("servicio/${servicio.id}")

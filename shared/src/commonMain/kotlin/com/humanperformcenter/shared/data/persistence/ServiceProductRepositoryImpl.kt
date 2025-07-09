@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.humanperformcenter.shared.data.model.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.ServicioDispo
 import com.humanperformcenter.shared.data.model.ServicioItembien
 import com.humanperformcenter.shared.data.network.ApiClient
@@ -10,13 +11,27 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.serialization.json.Json
 
 object ServiceProductRepositoryImpl: ServiceProductRepository {
     override suspend fun getAllServices(): List<ServicioDispo> {
-        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/services")
-        return response.body()
+        return try {
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/services")
+            val text = response.bodyAsText()
+
+            if (text.contains("error", ignoreCase = true)) {
+                println("❌ Error del backend: $text")
+                emptyList()
+            } else {
+                Json.decodeFromString(text)
+            }
+        } catch (e: Exception) {
+            println("❌ Excepción al obtener servicios: ${e.message}")
+            emptyList()
+        }
     }
 
     override suspend fun getServiceProducts(serviceId: Int): List<ServicioItembien> {
@@ -27,10 +42,22 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
     }
 
     override suspend fun getUserProducts(customerId: Int): List<ServicioItembien> {
-        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-products") {
-            parameter("user_id", customerId)
+        return try {
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-products") {
+                parameter("user_id", customerId)
+            }
+
+            val responseText = response.bodyAsText()
+            if (responseText.contains("error", ignoreCase = true)) {
+                println("❌ Error del servidor: $responseText")
+                emptyList()
+            } else {
+                Json.decodeFromString(responseText)
+            }
+        } catch (e: Exception) {
+            println("❌ Excepción al obtener productos: ${e.message}")
+            emptyList()
         }
-        return response.body()
     }
 
     override suspend fun assignProductToUser(userId: Int, productId: Int): Boolean {
@@ -57,6 +84,28 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
         } catch (e: Exception) {
             println("❌ Error al desasignar producto: ${e.message}")
             false
+        }
+    }
+
+    override suspend fun getProductDetails(userId: Int, productId: Int): ProductDetailResponse? {
+        return try {
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/product-details") {
+                parameter("user_id", userId)
+                parameter("product_id", productId)
+            }
+            val text = response.bodyAsText()
+
+            println("📦 Respuesta del backend (detalles): $text") // ✅ Añade esta línea
+
+            if (text.contains("error", ignoreCase = true)) {
+                println("❌ Error backend: $text")
+                null
+            } else {
+                Json.decodeFromString<ProductDetailResponse>(text)
+            }
+        } catch (e: Exception) {
+            println("❌ Excepción en getProductDetails: ${e.message}")
+            null
         }
     }
 }

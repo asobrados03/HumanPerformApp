@@ -1,67 +1,119 @@
 package com.humanperformcenter.ui.screens
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.humanperformcenter.shared.data.model.ServicioItembien
+import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.LogoAppBar
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 
 @Composable
 fun ProductoDetalleScreen(
-    producto: ServicioItembien,
+    productId: Int,
+    userId: Int,
+    viewModel: ServiceProductViewModel,
     navController: NavHostController
 ) {
+    val detailState = viewModel.productDetails.collectAsState()
+    val detail = detailState.value
+
+    LaunchedEffect(productId, userId) {
+        viewModel.fetchProductDetails(userId, productId)
+    }
+
     Scaffold(
         topBar = {
-            LogoAppBar(showBackArrow = true) {
-                navController.popBackStack()
-            }
+            LogoAppBar(
+                showBackArrow = true,
+                onBackNavClicked = { navController.popBackStack() }
+            )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-            producto.image?.let {
-                AsyncImage(
-                    model = "http://163.172.71.195:8085/product_images/$it",
-                    contentDescription = producto.name,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+        if (detail == null) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else {
+            val parsedDate = try {
+                LocalDate.parse(detail.created_at.substring(0, 10))
+            } catch (e: Exception) {
+                null
             }
 
-            Text(producto.name, style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(8.dp))
+            val fechaFormateada = parsedDate?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: "¿?"
+            val fechaCaducidad = parsedDate?.plusDays(detail.valid_due?.toLong() ?: 0)
+                ?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: "¿?"
 
-            Text(
-                producto.description ?: "Sin descripción.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                detail.image?.let {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = "${ApiClient.baseUrl}/product_images/${detail.image.orEmpty().trim()}",
+                            contentDescription = "Imagen del producto",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 180.dp)
+                                .padding(bottom = 16.dp)
+                        )
 
-            Text(
-                text = "${producto.price?.toInt() ?: 0} €",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.Red
-            )
+                    }
+                }
+
+                Text(
+                    detail.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                detail.description?.let {
+                    Text(it, style = MaterialTheme.typography.bodyMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                Text("Caducidad de ${detail.valid_due ?: "?"} días", style = MaterialTheme.typography.bodySmall)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("📅 Fecha de obtención: $fechaFormateada")
+                Text("⏳ Fecha de caducidad: $fechaCaducidad")
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text("🧾 Servicios incluidos:", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+                detail.services.forEach {
+                    Text("• ${it.name}", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
         }
     }
 }
+

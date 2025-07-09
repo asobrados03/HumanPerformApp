@@ -2,6 +2,7 @@ package com.humanperformcenter.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.humanperformcenter.shared.data.model.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.ServicioDispo
 import com.humanperformcenter.shared.data.model.ServicioItembien
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
@@ -21,6 +22,9 @@ class ServiceProductViewModel(
 
     private val _userProducts = MutableStateFlow<List<ServicioItembien>>(emptyList())
     val userProducts: StateFlow<List<ServicioItembien>> get() = _userProducts
+
+    private val _productDetails = MutableStateFlow<ProductDetailResponse?>(null)
+    val productDetails: StateFlow<ProductDetailResponse?> get() = _productDetails
 
     var productoSeleccionado: ServicioItembien? = null
 
@@ -70,4 +74,11 @@ class ServiceProductViewModel(
             }
         }
     }
+
+    fun fetchProductDetails(userId: Int, productId: Int) {
+        viewModelScope.launch {
+            _productDetails.value = useCase.getProductDetails(userId, productId)
+        }
+    }
+
 }
