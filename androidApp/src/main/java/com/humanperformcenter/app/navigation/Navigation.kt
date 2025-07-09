@@ -148,11 +148,18 @@ fun Navigation(
             }
             composable("servicio/{serviceId}") { backStackEntry ->
                 val serviceId = backStackEntry.arguments?.getString("serviceId")?.toIntOrNull()
-                val userId by sessionViewModel.userId.collectAsState()
-                val viewModel: ServiceProductViewModel = viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase))
+                val userIdState = sessionViewModel.userId.collectAsState()
+                val userId = userIdState.value
+                val viewModel: ServiceProductViewModel =
+                    viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase))
 
                 serviceId?.let {
-                    ContratarProductoScreen(serviceId = it, navController = navController, viewModel = viewModel, userId = userId!!)
+                    ContratarProductoScreen(
+                        serviceId = it,
+                        navController = navController,
+                        viewModel = viewModel,
+                        userId = userId!!
+                    )
                 }
             }
             composable<User> {
@@ -316,6 +323,7 @@ fun Navigation(
                     is CoachState.Loading -> {
                         FullScreenTextLoading("Cargando entrenadores...", PaddingValues(16.dp))
                     }
+
                     is CoachState.Success -> {
                         FavoritesScreen(
                             coaches = (coachState as CoachState.Success).coaches,
@@ -326,11 +334,13 @@ fun Navigation(
                             navController = navController
                         )
                     }
+
                     is CoachState.Error -> {
                         // Muestra un mensaje de error
                         val message = (coachState as CoachState.Error).message
                         Text("Error: $message")
                     }
+
                     CoachState.Idle -> {
                         FullScreenLoading()
                     }
@@ -393,17 +403,19 @@ fun Navigation(
                     onRetry = { blogViewModel.loadBlogDetail(blogDetail.blogId) }
                 )
             }
-            composable("producto-detalle") {
-                val viewModel: ServiceProductViewModel = viewModel(
-                    factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
-                )
-                val producto = viewModel.productoSeleccionado
+            composable("producto-detalle/{productoId}") { backStackEntry ->
+                val productoId = backStackEntry.arguments?.getString("productoId")?.toIntOrNull()
+                val userIdState = sessionViewModel.userId.collectAsState()
+                val userId = userIdState.value
+                val viewModel: ServiceProductViewModel = viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase))
 
-                if (producto != null) {
-                    ProductoDetalleScreen(producto = producto, navController = navController)
-                } else {
-                    // fallback si se entra sin producto válido
-                    Text("Producto no disponible")
+                if (productoId != null && userId != null) {
+                    ProductoDetalleScreen(
+                        productId = productoId,
+                        userId = userId,
+                        viewModel = viewModel,
+                        navController = navController
+                    )
                 }
             }
         }

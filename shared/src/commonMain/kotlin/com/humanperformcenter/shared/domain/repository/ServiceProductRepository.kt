@@ -1,12 +1,14 @@
 package com.humanperformcenter.shared.domain.repository
 
-import com.humanperformcenter.shared.data.model.ServiceAvailable
-import com.humanperformcenter.shared.data.model.ServiceItem
+import com.humanperformcenter.shared.data.model.ProductDetailResponse
+import com.humanperformcenter.shared.data.model.ServicioDispo
+import com.humanperformcenter.shared.data.model.ServicioItembien
 
 interface ServiceProductRepository {
-    suspend fun getAllServices(): List<ServiceAvailable>
-    suspend fun getServiceProducts(serviceId: Int): List<ServiceItem>
-    suspend fun getUserProducts(customerId: Int): List<ServiceItem>
+    suspend fun getAllServices(): List<ServicioDispo>
+    suspend fun getServiceProducts(serviceId: Int): List<ServicioItembien>
+    suspend fun getUserProducts(customerId: Int): List<ServicioItembien>
     suspend fun assignProductToUser(userId: Int, productId: Int): Boolean
     suspend fun unassignProductFromUser(userId: Int, productId: Int): Boolean
+    suspend fun getProductDetails(userId: Int, productId: Int): ProductDetailResponse?
 }

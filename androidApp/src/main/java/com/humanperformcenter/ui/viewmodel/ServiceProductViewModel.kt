@@ -2,8 +2,9 @@ package com.humanperformcenter.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.humanperformcenter.shared.data.model.ServiceAvailable
-import com.humanperformcenter.shared.data.model.ServiceItem
+import com.humanperformcenter.shared.data.model.ProductDetailResponse
+import com.humanperformcenter.shared.data.model.ServicioDispo
+import com.humanperformcenter.shared.data.model.ServicioItembien
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,16 +14,19 @@ class ServiceProductViewModel(
     private val useCase: ServiceProductUseCase
 ) : ViewModel() {
 
-    private val _allServices = MutableStateFlow<List<ServiceAvailable>>(emptyList())
-    val allServices: StateFlow<List<ServiceAvailable>> get() = _allServices
+    private val _allServices = MutableStateFlow<List<ServicioDispo>>(emptyList())
+    val allServices: StateFlow<List<ServicioDispo>> get() = _allServices
 
-    private val _serviceProducts = MutableStateFlow<Map<Int, List<ServiceItem>>>(emptyMap())
-    val serviceProducts: StateFlow<Map<Int, List<ServiceItem>>> get() = _serviceProducts
+    private val _serviceProducts = MutableStateFlow<Map<Int, List<ServicioItembien>>>(emptyMap())
+    val serviceProducts: StateFlow<Map<Int, List<ServicioItembien>>> get() = _serviceProducts
 
-    private val _userProducts = MutableStateFlow<List<ServiceItem>>(emptyList())
-    val userProducts: StateFlow<List<ServiceItem>> get() = _userProducts
+    private val _userProducts = MutableStateFlow<List<ServicioItembien>>(emptyList())
+    val userProducts: StateFlow<List<ServicioItembien>> get() = _userProducts
 
-    var productoSeleccionado: ServiceItem? = null
+    private val _productDetails = MutableStateFlow<ProductDetailResponse?>(null)
+    val productDetails: StateFlow<ProductDetailResponse?> get() = _productDetails
+
+    var productoSeleccionado: ServicioItembien? = null
 
     fun loadAllServices() {
         viewModelScope.launch {
@@ -70,4 +74,11 @@ class ServiceProductViewModel(
             }
         }
     }
+
+    fun fetchProductDetails(userId: Int, productId: Int) {
+        viewModelScope.launch {
+            _productDetails.value = useCase.getProductDetails(userId, productId)
+        }
+    }
+
 }
