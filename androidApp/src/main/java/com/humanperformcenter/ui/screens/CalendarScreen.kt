@@ -65,13 +65,13 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.humanperformcenter.R
 import com.humanperformcenter.data.Session
-import com.humanperformcenter.shared.data.model.ServicioDispo
-import com.humanperformcenter.shared.data.model.SesionesDia
+import com.humanperformcenter.shared.data.model.ServiceAvailable
+import com.humanperformcenter.shared.data.model.DaySession
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.util.createICSFile
 import com.humanperformcenter.ui.util.shareICS
-import com.humanperformcenter.ui.viewmodel.SesionesDiaViewModel
+import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
@@ -93,7 +93,7 @@ import kotlin.time.ExperimentalTime
 @Composable
 fun CalendarScreen(
     navController: NavHostController,
-    sesionesDiaViewModel: SesionesDiaViewModel,
+    daySessionViewModel: DaySessionViewModel,
     sessionViewModel: SessionViewModel,
     userViewModel: UserViewModel,
     onPlaySound: (Int) -> Unit
@@ -105,15 +105,15 @@ fun CalendarScreen(
     // Estado para el diálogo de reserva y tipo de sesión
     var showReservaDialog by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    var tipoSesion by remember { mutableStateOf<ServicioDispo?>(null) } // o "Fisioterapia"
+    var tipoSesion by remember { mutableStateOf<ServiceAvailable?>(null) } // o "Fisioterapia"
     var servicioSeleccionadoId by remember { mutableStateOf<Int?>(null) }
 
     // Scope para llamadas asincronas
     val scope = rememberCoroutineScope()
-    val sesionesRemotas by sesionesDiaViewModel.sessions.collectAsState()
+    val sesionesRemotas by daySessionViewModel.sessions.collectAsState()
 
     // Estado para el coach elegido y botón de confirmación
-    var coachElegido by remember { mutableStateOf<SesionesDia?>(null) }
+    var coachElegido by remember { mutableStateOf<DaySession?>(null) }
     var mostrarBotonConfirmar by remember { mutableStateOf(false) }
 
     var mostrarSelectorReservaExistente by remember { mutableStateOf(false) }
@@ -131,7 +131,7 @@ fun CalendarScreen(
     var pendingSelectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
     // Estado para el filtro de servicio
-    var servicioFiltro by remember { mutableStateOf<ServicioDispo?>(null) }
+    var servicioFiltro by remember { mutableStateOf<ServiceAvailable?>(null) }
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val currentYear = today.year
     val currentMonth = today.month
@@ -142,8 +142,8 @@ fun CalendarScreen(
 
     val user = userViewModel.userData.collectAsState().value
     val userBookings = userViewModel.userBookings.collectAsState().value
-    val weeklyLimits = sesionesDiaViewModel.weeklyLimits.collectAsState().value
-    val unlimitedSessions = sesionesDiaViewModel.unlimitedSessions.collectAsState().value
+    val weeklyLimits = daySessionViewModel.weeklyLimits.collectAsState().value
+    val unlimitedSessions = daySessionViewModel.unlimitedSessions.collectAsState().value
 
     Scaffold(
         topBar = {
@@ -306,7 +306,7 @@ fun CalendarScreen(
                     } else {
                         val isToday = date == today
                         val isSunday = date.dayOfWeek.ordinal == 6
-                        val holidays = sesionesDiaViewModel.holidays.collectAsState().value
+                        val holidays = daySessionViewModel.holidays.collectAsState().value
                         val isHoliday = holidays.contains(date)
                         val isSelected = selectedDate == date
                         val isReserved = reservedDates.contains(date)
@@ -356,10 +356,10 @@ fun CalendarScreen(
                                         selectedDate = date
                                         showReservaDialog = true
                                         tipoSesion = null
-                                        sesionesDiaViewModel.clearSessions()
+                                        daySessionViewModel.clearSessions()
 
                                         servicioSeleccionadoId?.let { servicioId ->
-                                            sesionesDiaViewModel.fetchAvailableSessions(servicioId, date)
+                                            daySessionViewModel.fetchAvailableSessions(servicioId, date)
                                         }
                                     }
                                 },
@@ -387,10 +387,10 @@ fun CalendarScreen(
             LaunchedEffect(userId) {
                 userId?.let {
                     userViewModel.fetchUserBookings(it)
-                    sesionesDiaViewModel.fetchUserWeeklyLimit(it)
+                    daySessionViewModel.fetchUserWeeklyLimit(it)
                     sessionViewModel.cargarServiciosPermitidos(it)
-                    sesionesDiaViewModel.fetchUserWeeklyLimit(it)
-                    sesionesDiaViewModel.fetchHolidays()
+                    daySessionViewModel.fetchUserWeeklyLimit(it)
+                    daySessionViewModel.fetchHolidays()
                 }
             }
 
@@ -575,10 +575,10 @@ fun CalendarScreen(
                         selectedDate = pendingSelectedDate
                         showReservaDialog = true
                         tipoSesion = null
-                        sesionesDiaViewModel.clearSessions()
+                        daySessionViewModel.clearSessions()
 
                         servicioSeleccionadoId?.let { servicioId ->
-                            sesionesDiaViewModel.fetchAvailableSessions(servicioId, pendingSelectedDate!!)
+                            daySessionViewModel.fetchAvailableSessions(servicioId, pendingSelectedDate!!)
                         }
 
                         showReservaConfirmDialog = false
@@ -606,7 +606,7 @@ fun CalendarScreen(
             if (showReservaDialog) {
                 tipoSesion = null
                 servicioSeleccionadoId = null
-                sesionesDiaViewModel.clearSessions()
+                daySessionViewModel.clearSessions()
             }
         }
         AlertDialog(
@@ -670,7 +670,7 @@ fun CalendarScreen(
                                             servicioSeleccionadoId = servicio.id
                                             dropdownExpanded = false
                                             selectedDate?.let { fecha ->
-                                                sesionesDiaViewModel.fetchAvailableSessions(servicio.id, fecha)
+                                                daySessionViewModel.fetchAvailableSessions(servicio.id, fecha)
                                             }
                                         }
                                     )
@@ -684,7 +684,7 @@ fun CalendarScreen(
             text = {
                 val horariosDisponibles = if (tipoSesion == null) emptyList() else {
                     sesionesRemotas
-                        .filter { it.service_id == tipoSesion?.id }
+                        .filter { it.serviceId == tipoSesion?.id }
                         .map { it.hour }
                         .distinct()
                         .sorted()
@@ -725,12 +725,12 @@ fun CalendarScreen(
                                                 val serviceId = servicioSeleccionadoId ?: return@clickable
                                                 if (user != null && seSuperoLimiteReserva(serviceId, selectedDate!!, weeklyLimits, unlimitedSessions, userBookings)) {
                                                     soloPuedeCambiar = true
-                                                    sesionesDiaViewModel.obtenerEntrenadoresPorHora(hora)
+                                                    daySessionViewModel.obtenerEntrenadoresPorHora(hora)
                                                     horaSeleccionada = hora
                                                     mostrarSelectorCoach = true
                                                 } else {
                                                     soloPuedeCambiar = false
-                                                    sesionesDiaViewModel.obtenerEntrenadoresPorHora(hora)
+                                                    daySessionViewModel.obtenerEntrenadoresPorHora(hora)
                                                     horaSeleccionada = hora
                                                     mostrarSelectorCoach = true
                                                 }
@@ -784,7 +784,7 @@ fun CalendarScreen(
         requireNotNull(user) { "Usuario no disponible. Asegúrate de estar autenticado." }
         val customerId = user.id
 
-        val coaches = sesionesDiaViewModel.coachesForHour.collectAsState().value
+        val coaches = daySessionViewModel.coachesForHour.collectAsState().value
 
         if (coaches.none { it.booked < it.capacity }) {
             AlertDialog(
@@ -799,8 +799,8 @@ fun CalendarScreen(
 
             LaunchedEffect(horaSeleccionadaFinal) {
                 val serviceId = servicioSeleccionadoId ?: return@LaunchedEffect
-                val preferredCoachId = sesionesDiaViewModel.getPreferredCoachId(customerId, serviceId)
-                coachElegido = availableCoaches.firstOrNull { it.coach_id == preferredCoachId }
+                val preferredCoachId = daySessionViewModel.getPreferredCoachId(customerId, serviceId)
+                coachElegido = availableCoaches.firstOrNull { it.coachId == preferredCoachId }
                     ?: availableCoaches.randomOrNull()
                 mostrarBotonConfirmar = true
             }
@@ -824,9 +824,9 @@ fun CalendarScreen(
                                 Button(onClick = {
                                     scope.launch {
                                         try {
-                                            sesionesDiaViewModel.realizarReserva(
+                                            daySessionViewModel.realizarReserva(
                                                 customerId = customerId,
-                                                coachId = coachElegido!!.coach_id,
+                                                coachId = coachElegido!!.coachId,
                                                 serviceId = servicioSeleccionadoId ?: return@launch,
                                                 centerId = 1,
                                                 selectedDate = selectedDate.toString(),
@@ -869,7 +869,7 @@ fun CalendarScreen(
                     title = { Text("¡Confirmar reserva!") },
                     text = {
                         Column {
-                            Text("Reserva con: ${coachElegido!!.coach_name}")
+                            Text("Reserva con: ${coachElegido!!.coachName}")
                             Text("Hora: ${horaSeleccionada!!.substring(0, 5)}")
                             Text("Día: ${selectedDate.toString()}")
                         }
@@ -917,10 +917,10 @@ fun CalendarScreen(
                                                 mostrarSelectorReservaExistente = false
                                                 scope.launch {
                                                     try {
-                                                        sesionesDiaViewModel.cambiarReservaSesion(
+                                                        daySessionViewModel.cambiarReservaSesion(
                                                             customerId = customerId,
                                                             bookingId = reserva.id,
-                                                            newCoachId = coachElegido!!.coach_id,
+                                                            newCoachId = coachElegido!!.coachId,
                                                             newServiceId = servicioSeleccionadoId ?: return@launch,
                                                             newStartDate = selectedDate.toString(),
                                                             hour = horaSeleccionada!!

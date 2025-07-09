@@ -1,7 +1,7 @@
 package com.humanperformcenter.shared.data.persistence
 
-import com.humanperformcenter.shared.data.model.ServicioDispo
-import com.humanperformcenter.shared.data.model.ServicioItembien
+import com.humanperformcenter.shared.data.model.ServiceAvailable
+import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
 import io.ktor.client.call.body
@@ -14,19 +14,19 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 
 object ServiceProductRepositoryImpl: ServiceProductRepository {
-    override suspend fun getAllServices(): List<ServicioDispo> {
+    override suspend fun getAllServices(): List<ServiceAvailable> {
         val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/services")
         return response.body()
     }
 
-    override suspend fun getServiceProducts(serviceId: Int): List<ServicioItembien> {
+    override suspend fun getServiceProducts(serviceId: Int): List<ServiceItem> {
         val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/service-products") {
             parameter("service_id", serviceId)
         }
         return response.body()
     }
 
-    override suspend fun getUserProducts(customerId: Int): List<ServicioItembien> {
+    override suspend fun getUserProducts(customerId: Int): List<ServiceItem> {
         val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-products") {
             parameter("user_id", customerId)
         }

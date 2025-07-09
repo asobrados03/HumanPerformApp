@@ -16,12 +16,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.humanperformcenter.shared.data.model.ServicioItembien
+import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.ui.components.LogoAppBar
 
 @Composable
 fun ProductoDetalleScreen(
-    producto: ServicioItembien,
+    producto: ServiceItem,
     navController: NavHostController
 ) {
     Scaffold(

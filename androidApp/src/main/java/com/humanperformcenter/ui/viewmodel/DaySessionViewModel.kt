@@ -2,25 +2,24 @@ package com.humanperformcenter.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.humanperformcenter.shared.data.model.ReservaRequest
-import com.humanperformcenter.shared.data.model.ReservaUpdateRequest
-import com.humanperformcenter.shared.data.model.SesionesDia
-import com.humanperformcenter.shared.data.persistence.SesionDiaRepositoryImpl
-import com.humanperformcenter.shared.domain.usecase.SesionDiaUseCase
+import com.humanperformcenter.shared.data.model.ReserveRequest
+import com.humanperformcenter.shared.data.model.ReserveUpdateRequest
+import com.humanperformcenter.shared.data.model.DaySession
+import com.humanperformcenter.shared.data.persistence.DaySessionRepositoryImpl
+import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.toJavaLocalDate
 
-class SesionesDiaViewModel(
-    private val useCase: SesionDiaUseCase // inyectalo aquí
+class DaySessionViewModel(
+    private val useCase: DaySessionUseCase // inyectalo aquí
 ) : ViewModel() {
 
-    private val repository = SesionDiaRepositoryImpl
+    private val repository = DaySessionRepositoryImpl
 
-    private val _sessions = MutableStateFlow<List<SesionesDia>>(emptyList())
-    val sessions: StateFlow<List<SesionesDia>> get() = _sessions
+    private val _sessions = MutableStateFlow<List<DaySession>>(emptyList())
+    val sessions: StateFlow<List<DaySession>> get() = _sessions
 
     private val _mensajeErrorReserva = MutableStateFlow<String?>(null)
     val mensajeErrorReserva: StateFlow<String?> = _mensajeErrorReserva
@@ -47,11 +46,11 @@ class SesionesDiaViewModel(
 
                 println("---- Resultados recibidos (${result.size}) ----")
                 result.forEach {
-                    println("→ ${it.date} | ${it.hour} | service_id=${it.service_id} | coach=${it.coach_name} | booked=${it.booked}/${it.capacity}")
+                    println("→ ${it.date} | ${it.hour} | service_id=${it.serviceId} | coach=${it.coachName} | booked=${it.booked}/${it.capacity}")
                 }
 
                 _sessions.value = result.filter {
-                    it.service_id == serviceId
+                    it.serviceId == serviceId
                 }
 
                 println("→ Sesiones filtradas: ${_sessions.value.size}")
@@ -61,8 +60,8 @@ class SesionesDiaViewModel(
         }
     }
 
-    private val _coachesForHour = MutableStateFlow<List<SesionesDia>>(emptyList())
-    val coachesForHour: StateFlow<List<SesionesDia>> get() = _coachesForHour
+    private val _coachesForHour = MutableStateFlow<List<DaySession>>(emptyList())
+    val coachesForHour: StateFlow<List<DaySession>> get() = _coachesForHour
 
     fun obtenerEntrenadoresPorHora(hora: String) {
         _coachesForHour.value = _sessions.value.filter { it.hour == hora }
@@ -88,7 +87,7 @@ class SesionesDiaViewModel(
         println("→ centerId = $centerId")
         println("→ start_date = $selectedDate")
 
-        val reserva = ReservaRequest(
+        val reserva = ReserveRequest(
             customer_id = customerId,
             coach_id = coachId,
             session_timeslot_id = timeslotId,
@@ -121,7 +120,7 @@ class SesionesDiaViewModel(
                 val productId = useCase.getUserProductId(customerId)
                 val timeslotId = useCase.getTimeslotId(hour)
 
-                val request = ReservaUpdateRequest(
+                val request = ReserveUpdateRequest(
                     booking_id = bookingId,
                     new_coach_id = newCoachId,
                     new_service_id = newServiceId,

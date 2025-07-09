@@ -3,7 +3,7 @@ package com.humanperformcenter.shared.data.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ReservaRequest (
+data class ReserveRequest (
     val customer_id: Int,
     val coach_id: Int,
     val session_timeslot_id: Int,

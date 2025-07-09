@@ -1,6 +1,6 @@
 package com.humanperformcenter.app.navigation
 
-import com.humanperformcenter.ui.viewmodel.SesionesDiaViewModelFactory
+import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,7 +51,7 @@ import com.humanperformcenter.ui.viewmodel.BlogViewModel
 import com.humanperformcenter.ui.viewmodel.BlogViewModelFactory
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModelFactory
-import com.humanperformcenter.ui.viewmodel.SesionesDiaViewModel
+import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
@@ -341,8 +341,8 @@ fun Navigation(
                 val userViewModel: UserViewModel = viewModel(
                     factory = UserViewModelFactory(AppModule.userUseCase)
                 )
-                val sesionesDiaViewModel: SesionesDiaViewModel = viewModel(
-                    factory = SesionesDiaViewModelFactory(AppModule.sesionDiaUseCase)
+                val daySessionViewModel: DaySessionViewModel = viewModel(
+                    factory = DaySessionViewModelFactory(AppModule.daySessionUseCase)
                 )
 
                 CalendarScreen(
@@ -350,7 +350,7 @@ fun Navigation(
                     sessionViewModel = sessionViewModel,
                     userViewModel = userViewModel,
                     onPlaySound = onPlaySound,
-                    sesionesDiaViewModel = sesionesDiaViewModel
+                    daySessionViewModel = daySessionViewModel
                 )
             }
             composable<NewBlog> {

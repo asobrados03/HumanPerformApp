@@ -1,8 +1,6 @@
 package com.humanperformcenter.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,14 +13,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.humanperformcenter.R
-import com.humanperformcenter.app.navigation.*
-import com.humanperformcenter.shared.data.model.ServicioDispo
+import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
@@ -97,7 +92,7 @@ fun NewProductScreen(
 
 @Composable
 fun ContratarView(
-    servicios: List<ServicioDispo>,
+    servicios: List<ServiceAvailable>,
     viewModel: ServiceProductViewModel,
     navController: NavHostController
 ) {
@@ -113,7 +108,7 @@ fun ContratarView(
         items(servicios) { servicio ->
             val imageUrl = servicio.image?.let { "http://163.172.71.195:8085/service_images/$it" }
             val contratado = productosContratados.any { producto ->
-                producto.service_id.contains(servicio.id)
+                producto.serviceId.contains(servicio.id)
             }
             AppCard(onClick = {
                 navController.navigate("servicio/${servicio.id}")

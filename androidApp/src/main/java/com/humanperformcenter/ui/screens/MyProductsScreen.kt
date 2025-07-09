@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.humanperformcenter.shared.data.model.ServicioItembien
+import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 
@@ -38,7 +38,7 @@ fun MisProductosView(
     println("MisProductosView: ${productos.size} productos contratados")
     val productosUnicos = productos.distinctBy { it.id }
     println("MisProductosView: ${productosUnicos.size} productos únicos")
-    var productoSeleccionado by remember { mutableStateOf<ServicioItembien?>(null) }
+    var productoSeleccionado by remember { mutableStateOf<ServiceItem?>(null) }
     var mostrarDialogoProducto by remember { mutableStateOf(false) }
 
     LazyColumn(

@@ -1,7 +1,7 @@
 package com.humanperformcenter.shared.data.persistence
 
 import com.humanperformcenter.shared.data.model.Professional
-import com.humanperformcenter.shared.data.model.ServicioDispo
+import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.UserBooking
 import com.humanperformcenter.shared.data.network.ApiClient
@@ -86,7 +86,7 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun getUserAllowedServices(customerId: Int): List<ServicioDispo> {
+    override suspend fun getUserAllowedServices(customerId: Int): List<ServiceAvailable> {
         val response = ApiClient.apiClient.get(
             "${ApiClient.baseUrl}/mobile/user-services"
         ) {

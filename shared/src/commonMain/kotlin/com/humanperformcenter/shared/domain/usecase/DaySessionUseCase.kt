@@ -1,26 +1,26 @@
 package com.humanperformcenter.shared.domain.usecase
 
-import com.humanperformcenter.shared.data.model.ReservaRequest
-import com.humanperformcenter.shared.data.model.ReservaResponse
-import com.humanperformcenter.shared.data.model.ReservaUpdateRequest
-import com.humanperformcenter.shared.data.model.ReservaUpdateResponse
-import com.humanperformcenter.shared.data.model.SesionesDia
+import com.humanperformcenter.shared.data.model.ReserveRequest
+import com.humanperformcenter.shared.data.model.ReserveResponse
+import com.humanperformcenter.shared.data.model.ReserveUpdateRequest
+import com.humanperformcenter.shared.data.model.ReserveUpdateResponse
+import com.humanperformcenter.shared.data.model.DaySession
 import com.humanperformcenter.shared.data.model.UserWeeklyLimitResponse
-import com.humanperformcenter.shared.domain.repository.SesionDiaRepository
+import com.humanperformcenter.shared.domain.repository.DaySessionRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 
-class SesionDiaUseCase(private val repository: SesionDiaRepository) {
+class DaySessionUseCase(private val repository: DaySessionRepository) {
 
-    suspend fun getSessionsByDay(serviceId: Int, date: LocalDate): List<SesionesDia> = withContext(Dispatchers.IO) {
+    suspend fun getSessionsByDay(serviceId: Int, date: LocalDate): List<DaySession> = withContext(Dispatchers.IO) {
         return@withContext repository.getSessionsByDay(serviceId, date)
     }
-    suspend fun reservarSesion(request: ReservaRequest): ReservaResponse = withContext(Dispatchers.IO) {
+    suspend fun reservarSesion(request: ReserveRequest): ReserveResponse = withContext(Dispatchers.IO) {
         return@withContext repository.reservarSesion(request)
     }
-    suspend fun cambiarReservaSesion(request: ReservaUpdateRequest): ReservaUpdateResponse = withContext(Dispatchers.IO) {
+    suspend fun cambiarReservaSesion(request: ReserveUpdateRequest): ReserveUpdateResponse = withContext(Dispatchers.IO) {
         return@withContext repository.cambiarReservaSesion(request)
     }
     suspend fun getUserProductId(customerId: Int): Int = withContext(Dispatchers.IO) {

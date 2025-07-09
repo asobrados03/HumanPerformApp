@@ -1,7 +1,7 @@
 package com.humanperformcenter.shared.domain.usecase
 
 import com.humanperformcenter.shared.data.model.Professional
-import com.humanperformcenter.shared.data.model.ServicioDispo
+import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.UserBooking
 import com.humanperformcenter.shared.domain.repository.UserRepository
@@ -22,7 +22,7 @@ class UserUseCase(private val userRepository: UserRepository) {
         return@withContext userRepository.getCoaches()
     }
 
-    suspend fun getUserAllowedServices(customerId: Int): List<ServicioDispo> = withContext(Dispatchers.IO) {
+    suspend fun getUserAllowedServices(customerId: Int): List<ServiceAvailable> = withContext(Dispatchers.IO) {
         return@withContext userRepository.getUserAllowedServices(customerId)
     }
     suspend fun getUserBookings(customerId: Int): List<UserBooking> = withContext(Dispatchers.IO) {
