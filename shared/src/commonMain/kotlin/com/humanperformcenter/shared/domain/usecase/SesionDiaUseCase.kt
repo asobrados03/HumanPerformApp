@@ -34,4 +34,8 @@ class SesionDiaUseCase(private val repository: SesionDiaRepository) {
     }
     suspend fun getUserWeeklyLimit(customerId: Int): UserWeeklyLimitResponse = withContext(Dispatchers.IO) {
         return@withContext repository.getUserWeeklyLimit(customerId)
-    }}
+    }
+    suspend fun getHolidays(): List<String> = withContext(Dispatchers.IO) {
+        return@withContext repository.getHolidays()
+    }
+}

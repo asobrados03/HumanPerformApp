@@ -286,6 +286,13 @@ fun CalendarScreen(
                 }
             }
 
+            val coloresPorServicio = mapOf(
+                1 to Color(0xFF97DE98),    // Verde claro
+                2 to Color(0xFF84B8E3), // Azul claro
+                3 to Color(0xFFECDB6C),               // Amarillo suave
+                4 to Color(0xFFDE8B75)         // Naranja suave
+            )
+
             LazyVerticalGrid(
                 columns = GridCells.Fixed(7),
                 modifier = Modifier
@@ -301,16 +308,21 @@ fun CalendarScreen(
                     } else {
                         val isToday = date == today
                         val isSunday = date.dayOfWeek.ordinal == 6
+                        val holidays = sesionesDiaViewModel.holidays.collectAsState().value
+                        val isHoliday = holidays.contains(date)
                         val isSelected = selectedDate == date
                         val isReserved = reservedDates.contains(date)
+                        val reservasEseDia = bookings.filter { LocalDate.parse(it.date.substring(0, 10)) == date }
+                        val colorReserva = reservasEseDia
+                            .firstOrNull()?.service_id
+                            ?.let { coloresPorServicio[it] } ?: Color(0xFF6B426C)
 
                         val bgColor = when {
                             isSelected -> MaterialTheme.colorScheme.primary
-                            isReserved -> Color(0xFF64B5F6)
-                            isSunday -> Color.LightGray
+                            reservasEseDia.isNotEmpty() -> colorReserva
+                            isSunday || isHoliday -> Color.LightGray
                             else -> Color.Transparent
                         }
-
 
                         val textColor = when {
                             isSelected || isReserved -> Color.White
@@ -318,7 +330,7 @@ fun CalendarScreen(
                         }
                         val isPast = date < today
 
-                        val puedeSeleccionarFecha = !isSunday && !isPast && (
+                        val puedeSeleccionarFecha = !isSunday && !isPast && !isHoliday && (
                                 (today.day < 17 && date.year == today.year && date.month == currentMonth) ||
                                         (today.day >= 17 && (
                                                 (date.year == today.year && date.month == currentMonth) ||
@@ -326,14 +338,13 @@ fun CalendarScreen(
                                                 ))
                                 )
 
-
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
                                 .padding(4.dp)
                                 .clip(CircleShape)
                                 .background(bgColor)
-                                .alpha(if (!puedeSeleccionarFecha || isPast) 0.4f else 1f)
+                                .alpha(if (!puedeSeleccionarFecha) 0.4f else 1f)
                                 .border(
                                     width = if (isToday) 2.dp else 0.dp,
                                     color = if (isToday) Color.Black else Color.Transparent,
@@ -379,6 +390,9 @@ fun CalendarScreen(
                 userId?.let {
                     userViewModel.fetchUserBookings(it)
                     sesionesDiaViewModel.fetchUserWeeklyLimit(it)
+                    sessionViewModel.cargarServiciosPermitidos(it)
+                    sesionesDiaViewModel.fetchUserWeeklyLimit(it)
+                    sesionesDiaViewModel.fetchHolidays()
                 }
             }
 
@@ -475,12 +489,15 @@ fun CalendarScreen(
                             val horaformateada = booking.hour.substring(0, 5)
                             val isExpanded = menuExpandedMap[booking.id] ?: false
                             val context = LocalContext.current
+                            val colorFondoTarjeta = coloresPorServicio[booking.service_id] ?: Color(0xFF6B426C)
+
 
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp)
                                     .border(1.dp, Color.LightGray, RoundedCornerShape(12.dp))
+                                    .background(colorFondoTarjeta)
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -587,7 +604,7 @@ fun CalendarScreen(
     }
     // Diálogo de reserva de sesión
     if (showReservaDialog && selectedDate != null) {
-        LaunchedEffect(showReservaDialog) {
+        LaunchedEffect(true) {
             if (showReservaDialog) {
                 tipoSesion = null
                 servicioSeleccionadoId = null
@@ -768,11 +785,6 @@ fun CalendarScreen(
         val user = userViewModel.userData.collectAsState().value
         requireNotNull(user) { "Usuario no disponible. Asegúrate de estar autenticado." }
         val customerId = user.id
-
-        LaunchedEffect(customerId) {
-            sessionViewModel.cargarServiciosPermitidos(customerId)
-            sesionesDiaViewModel.fetchUserWeeklyLimit(customerId)
-        }
 
         val coaches = sesionesDiaViewModel.coachesForHour.collectAsState().value
 

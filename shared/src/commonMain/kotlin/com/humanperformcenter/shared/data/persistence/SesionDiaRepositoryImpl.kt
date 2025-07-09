@@ -98,4 +98,12 @@ object SesionDiaRepositoryImpl : SesionDiaRepository {
         return response.body()
     }
 
+    override suspend fun getHolidays(): List<String> {
+        val response: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/holidays")
+        if (!response.status.isSuccess()) {
+            throw IllegalStateException("Error al obtener festivos: ${response.status}")
+        }
+        return response.body()
+    }
+
 }

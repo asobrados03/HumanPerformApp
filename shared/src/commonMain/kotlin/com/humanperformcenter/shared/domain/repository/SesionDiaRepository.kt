@@ -16,5 +16,5 @@ interface SesionDiaRepository {
     suspend fun getPreferredCoach(customerId: Int, serviceId: Int): Int?
     suspend fun getTimeslotId(hora: String): Int
     suspend fun getUserWeeklyLimit(userId: Int): UserWeeklyLimitResponse
-
+    suspend fun getHolidays(): List<String>
 }

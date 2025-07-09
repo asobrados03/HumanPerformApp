@@ -148,9 +148,21 @@ class SesionesDiaViewModel(
     suspend fun getPreferredCoachId(customerId: Int, serviceId: Int): Int? {
         return useCase.getPreferredCoach(customerId, serviceId)
     }
-    fun clearMensajeError() {
-        _mensajeErrorReserva.value = null
+
+    private val _holidays = MutableStateFlow<List<LocalDate>>(emptyList())
+    val holidays: StateFlow<List<LocalDate>> get() = _holidays
+
+    suspend fun fetchHolidays() {
+        viewModelScope.launch {
+            try {
+                val result = useCase.getHolidays() // Devuelve List<String>
+                _holidays.value = result.map { LocalDate.parse(it) }
+            } catch (e: Exception) {
+                println("❌ Error al cargar festivos: ${e.message}")
+            }
+        }
     }
+
 
     fun fetchUserWeeklyLimit(userId: Int) {
         viewModelScope.launch {
