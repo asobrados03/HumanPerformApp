@@ -496,8 +496,8 @@ fun CalendarScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp)
-                                    .border(1.dp, Color.LightGray, RoundedCornerShape(12.dp))
-                                    .background(colorFondoTarjeta)
+                                    .background((colorFondoTarjeta), RoundedCornerShape(12.dp))
+                                    .border(3.dp, Color.LightGray, RoundedCornerShape(12.dp))
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
