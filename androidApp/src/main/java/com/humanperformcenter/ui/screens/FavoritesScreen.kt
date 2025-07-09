@@ -65,7 +65,7 @@ fun FavoritesScreen(
         ) {
             item {
                 Text(
-                    text = "Entrenadores",
+                    text = "Profesionales del deporte",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     modifier = Modifier.padding(vertical = 8.dp)

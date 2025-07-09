@@ -15,9 +15,11 @@ import com.humanperformcenter.ui.viewmodel.state.CoachState
 import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class UserViewModel(
@@ -53,6 +55,9 @@ class UserViewModel(
     private val _coachesState = MutableStateFlow<CoachState>(CoachState.Idle)
     // Estado público inmutable
     val coachesState: StateFlow<CoachState> = _coachesState.asStateFlow()
+
+    val favoriteCoachId: StateFlow<Int?> = SecureStorage.favoriteCoachFlow()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /**
      * Recibe un User “candidato” (con campos fullName, dateOfBirth = "yyyy-MM-dd",
@@ -156,6 +161,12 @@ class UserViewModel(
                     throwable.message.orEmpty().ifEmpty { "Error desconocido al cargar blogs" }
                 )
             }
+        }
+    }
+
+    fun markFavorite(id: Int) {
+        viewModelScope.launch {
+            SecureStorage.saveFavoriteCoach(id)
         }
     }
 

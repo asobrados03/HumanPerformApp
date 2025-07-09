@@ -3,14 +3,52 @@ package com.humanperformcenter.shared.domain.storage
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.domain.security.AuthPreferences
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
 
-expect object SecureStorage {
-    fun init(prefs: DataStore<Preferences>)
-    fun getAccessToken(): String?
-    fun getRefreshToken(): String?
-    suspend fun saveTokens(access: String, refresh: String)
-    suspend fun saveUser(user: User)
-    fun userFlow(): Flow<User?>
-    suspend fun clear()
+object SecureStorage {
+    private lateinit var prefs: DataStore<Preferences>
+
+    /** Inicializa el storage. Llama esto desde Android con tu prefs */
+    fun init(prefs: DataStore<Preferences>) {
+        this.prefs = prefs
+    }
+
+    /** Devuelve el access token actual o null si no hay */
+    fun getAccessToken(): String? = runBlocking {
+        AuthPreferences.accessTokenFlow(prefs)
+            .firstOrNull()
+            .takeIf { !it.isNullOrBlank() }
+    }
+
+    /** Devuelve el refresh token actual o null si no hay */
+    fun getRefreshToken(): String? = runBlocking {
+        AuthPreferences.refreshTokenFlow(prefs)
+            .firstOrNull()
+            .takeIf { !it.isNullOrBlank() }
+    }
+
+    /** Guarda ambos tokens (suspende) */
+    suspend fun saveTokens(access: String, refresh: String) {
+        AuthPreferences.saveTokens(prefs, access, refresh)
+    }
+
+    suspend fun saveUser(user: User) {
+        AuthPreferences.saveUser(prefs, user)
+    }
+
+    fun userFlow(): Flow<User?> = AuthPreferences.userFlow(prefs)
+
+    suspend fun saveFavoriteCoach(id: Int) {
+        AuthPreferences.saveFavoriteCoach(prefs, id)
+    }
+
+    fun favoriteCoachFlow(): Flow<Int?> = AuthPreferences.favoriteCoachFlow(prefs)
+
+    /** Borra tokens (logout) */
+    suspend fun clear() {
+        AuthPreferences.clear(prefs)
+    }
 }

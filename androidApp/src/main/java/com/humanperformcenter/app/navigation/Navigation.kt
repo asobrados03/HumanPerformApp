@@ -12,9 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -308,9 +306,7 @@ fun Navigation(
                     factory = UserViewModelFactory(AppModule.userUseCase)
                 )
                 val coachState by userViewModel.coachesState.collectAsState()
-
-                // Estado local para marcar favorito
-                var favoriteId by remember { mutableStateOf<Int?>(null) }
+                val favoriteId by userViewModel.favoriteCoachId.collectAsState()
 
                 LaunchedEffect(Unit) {
                     userViewModel.getCoaches()
@@ -323,10 +319,9 @@ fun Navigation(
                     is CoachState.Success -> {
                         FavoritesScreen(
                             coaches = (coachState as CoachState.Success).coaches,
-                            selectedCoachId = favoriteId,               // <-- lo pasamos aquí
+                            selectedCoachId = favoriteId,
                             onSelect = { prof ->
-                                favoriteId = prof.id                    // <-- lo actualizamos
-                                // aquí podrías también: viewModel.markFavorite(prof.id)
+                                userViewModel.markFavorite(prof.id)
                             },
                             navController = navController
                         )
