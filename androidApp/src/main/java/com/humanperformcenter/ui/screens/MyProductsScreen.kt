@@ -111,7 +111,7 @@ fun MisProductosView(
                         mostrarDialogoProducto = false
                         productoSeleccionado = null
                     }) {
-                        Text("Descontratar", color = Color.Red)
+                        Text("Darse de baja", color = Color.Red)
                     }
                 }
             },
