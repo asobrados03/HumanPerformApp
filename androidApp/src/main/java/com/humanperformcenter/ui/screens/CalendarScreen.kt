@@ -133,6 +133,11 @@ fun CalendarScreen(
     // Estado para el filtro de servicio
     var servicioFiltro by remember { mutableStateOf<ServicioDispo?>(null) }
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val currentYear = today.year
+    val currentMonth = today.month
+    val mesSiguiente = Month.entries[(currentMonth.ordinal + 1) % 12]
+    val anioMesSiguiente = if (currentMonth == Month.DECEMBER) today.year + 1 else today.year
+
     var soloPuedeCambiar by remember { mutableStateOf(false) }
 
     val user = userViewModel.userData.collectAsState().value
@@ -155,12 +160,6 @@ fun CalendarScreen(
             .fillMaxSize()
             .padding(bottom = 0.dp)
     ) { paddingValues ->
-
-        // Procesar transacciones para el calendario y selección de día
-        val todayInstant = Clock.System.now()
-        val todayLocalDate = todayInstant.toLocalDateTime(TimeZone.currentSystemDefault()).date
-        val currentYear = todayLocalDate.year
-        val currentMonth = todayLocalDate.month
 
         // Estados para mes y año mostrados (navegación)
         var displayedMonth by remember { mutableStateOf(currentMonth) }
@@ -300,7 +299,7 @@ fun CalendarScreen(
                             .padding(4.dp)
                         )
                     } else {
-                        val isToday = date == todayLocalDate
+                        val isToday = date == today
                         val isSunday = date.dayOfWeek.ordinal == 6
                         val isSelected = selectedDate == date
                         val isReserved = reservedDates.contains(date)
@@ -312,24 +311,35 @@ fun CalendarScreen(
                             else -> Color.Transparent
                         }
 
+
                         val textColor = when {
                             isSelected || isReserved -> Color.White
                             else -> Color.Black
                         }
-                        val isPast = date < todayLocalDate
+                        val isPast = date < today
+
+                        val puedeSeleccionarFecha = !isSunday && !isPast && (
+                                (today.day < 17 && date.year == today.year && date.month == currentMonth) ||
+                                        (today.day >= 17 && (
+                                                (date.year == today.year && date.month == currentMonth) ||
+                                                        (date.year == anioMesSiguiente && date.month == mesSiguiente)
+                                                ))
+                                )
+
+
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
                                 .padding(4.dp)
                                 .clip(CircleShape)
                                 .background(bgColor)
-                                .alpha(if (isPast) 0.4f else 1f)
+                                .alpha(if (!puedeSeleccionarFecha || isPast) 0.4f else 1f)
                                 .border(
                                     width = if (isToday) 2.dp else 0.dp,
                                     color = if (isToday) Color.Black else Color.Transparent,
                                     shape = CircleShape
                                 )
-                                .clickable(enabled = !isSunday && !isPast) {
+                                .clickable(enabled = puedeSeleccionarFecha) {
                                     if (isReserved) {
                                         pendingSelectedDate = date
                                         showReservaConfirmDialog = true
@@ -347,7 +357,7 @@ fun CalendarScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = date.dayOfMonth.toString(),
+                                text = date.day.toString(),
                                 color = textColor,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp
