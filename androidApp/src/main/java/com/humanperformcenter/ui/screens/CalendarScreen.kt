@@ -145,8 +145,6 @@ fun CalendarScreen(
     val weeklyLimits = sesionesDiaViewModel.weeklyLimits.collectAsState().value
     val unlimitedSessions = sesionesDiaViewModel.unlimitedSessions.collectAsState().value
 
-
-
     Scaffold(
         topBar = {
             LogoAppBar(
@@ -272,7 +270,7 @@ fun CalendarScreen(
             val reservedDates = bookings.mapNotNull { booking ->
                 try {
                     LocalDate.parse(booking.date.substring(0, 10))
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     null
                 }
             }.toSet()
@@ -475,7 +473,7 @@ fun CalendarScreen(
                         val reservasFiltradas = bookings.filter { booking ->
                             val fecha = try {
                                 LocalDate.parse(booking.date.substring(0, 10))
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 null
                             }
 
@@ -626,7 +624,7 @@ fun CalendarScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     var dropdownExpanded by remember { mutableStateOf(false) }
-                    var buttonWidth by remember { mutableStateOf(0) }
+                    var buttonWidth by remember { mutableIntStateOf(0) }
 
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
@@ -889,7 +887,7 @@ fun CalendarScreen(
                     .filter { reserva ->
                         val fechaReserva = try {
                             LocalDate.parse(reserva.date.substring(0, 10))
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             null
                         }
 
@@ -993,8 +991,8 @@ private fun seSuperoLimiteReserva(
     unlimitedSessions: Map<Int, Int>,
     bookings: List<com.humanperformcenter.shared.data.model.UserBooking>
 ): Boolean {
-    val semanaInicio = selectedDate.minus(selectedDate.dayOfWeek.ordinal, kotlinx.datetime.DateTimeUnit.DAY)
-    val semanaFin = semanaInicio.plus(6, kotlinx.datetime.DateTimeUnit.DAY)
+    val semanaInicio = selectedDate.minus(selectedDate.dayOfWeek.ordinal, DateTimeUnit.DAY)
+    val semanaFin = semanaInicio.plus(6, DateTimeUnit.DAY)
 
     val reservasServicio = bookings.filter { it.service_id == serviceId }
 
@@ -1006,7 +1004,7 @@ private fun seSuperoLimiteReserva(
         val estaSemana = reservasServicio.count {
             val fecha = try {
                 LocalDate.parse(it.date.substring(0, 10))
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 null
             }
             fecha != null && fecha in semanaInicio..semanaFin
