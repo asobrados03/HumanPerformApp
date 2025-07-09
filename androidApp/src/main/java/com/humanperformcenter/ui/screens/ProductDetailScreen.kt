@@ -3,10 +3,7 @@ package com.humanperformcenter.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,11 +15,10 @@ import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.LogoAppBar
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 
 @Composable
-fun ProductoDetalleScreen(
+fun ProductDetailScreen(
     productId: Int,
     userId: Int,
     viewModel: ServiceProductViewModel,

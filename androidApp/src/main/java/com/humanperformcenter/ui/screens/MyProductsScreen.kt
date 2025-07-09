@@ -29,7 +29,7 @@ import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 
 @Composable
-fun MisProductosView(
+fun MyProductsScreen(
     viewModel: ServiceProductViewModel,
     navController: NavHostController,
     userId: Int

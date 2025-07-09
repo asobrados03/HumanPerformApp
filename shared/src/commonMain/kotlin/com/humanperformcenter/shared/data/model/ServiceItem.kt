@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ServicioItembien(
+data class ServiceItem(
     val id: Int,
     val name: String,
     val description: String? = null,
@@ -16,4 +16,3 @@ data class ServicioItembien(
 
     val isAvailable: Boolean? = true
 )
-

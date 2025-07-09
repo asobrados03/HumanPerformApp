@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.domain.usecase
 
+import com.humanperformcenter.shared.data.model.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
@@ -23,4 +24,6 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
     suspend fun unassignProductFromUser(userId: Int, productId: Int): Boolean = withContext(Dispatchers.IO) {
         return@withContext serviceProductRepository.unassignProductFromUser(userId, productId)
     }
+    suspend fun getProductDetails(userId: Int, productId: Int): ProductDetailResponse? =
+        serviceProductRepository.getProductDetails(userId, productId)
 }

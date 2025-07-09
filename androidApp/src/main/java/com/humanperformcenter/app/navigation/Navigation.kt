@@ -31,7 +31,7 @@ import com.humanperformcenter.ui.screens.BlogDetailScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
 import com.humanperformcenter.ui.screens.ChangePasswordScreen
 import com.humanperformcenter.ui.screens.ChatScreen
-import com.humanperformcenter.ui.screens.ContratarProductoScreen
+import com.humanperformcenter.ui.screens.HireProductScreen
 import com.humanperformcenter.ui.screens.DocumentScreen
 import com.humanperformcenter.ui.screens.FavoritesScreen
 import com.humanperformcenter.ui.screens.LoginScreen
@@ -39,7 +39,7 @@ import com.humanperformcenter.ui.screens.MyProfileScreen
 import com.humanperformcenter.ui.screens.NewBlogScreen
 import com.humanperformcenter.ui.screens.NewProductScreen
 import com.humanperformcenter.ui.screens.PaymentScreen
-import com.humanperformcenter.ui.screens.ProductoDetalleScreen
+import com.humanperformcenter.ui.screens.ProductDetailScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
 import com.humanperformcenter.ui.screens.SplashScreen
 import com.humanperformcenter.ui.screens.UserScreen
@@ -154,7 +154,7 @@ fun Navigation(
                     viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase))
 
                 serviceId?.let {
-                    ContratarProductoScreen(
+                    HireProductScreen(
                         serviceId = it,
                         navController = navController,
                         viewModel = viewModel,
@@ -404,14 +404,14 @@ fun Navigation(
                 )
             }
             composable("producto-detalle/{productoId}") { backStackEntry ->
-                val productoId = backStackEntry.arguments?.getString("productoId")?.toIntOrNull()
+                val productId = backStackEntry.arguments?.getString("productoId")?.toIntOrNull()
                 val userIdState = sessionViewModel.userId.collectAsState()
                 val userId = userIdState.value
                 val viewModel: ServiceProductViewModel = viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase))
 
-                if (productoId != null && userId != null) {
-                    ProductoDetalleScreen(
-                        productId = productoId,
+                if (productId != null && userId != null) {
+                    ProductDetailScreen(
+                        productId = productId,
                         userId = userId,
                         viewModel = viewModel,
                         navController = navController
