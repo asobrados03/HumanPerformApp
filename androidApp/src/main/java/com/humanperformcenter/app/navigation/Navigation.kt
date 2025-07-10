@@ -403,21 +403,28 @@ fun Navigation(
                     onRetry = { blogViewModel.loadBlogDetail(blogDetail.blogId) }
                 )
             }
-            composable("producto-detalle/{productoId}") { backStackEntry ->
-                val productId = backStackEntry.arguments?.getString("productoId")?.toIntOrNull()
-                val userIdState = sessionViewModel.userId.collectAsState()
-                val userId = userIdState.value
-                val viewModel: ServiceProductViewModel = viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase))
+            composable<ProductoDetalle> { backStackEntry ->
+                val productoDetalle = backStackEntry.toRoute<ProductoDetalle>()
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(NewProduct)
+                }
 
-                if (productId != null && userId != null) {
+                val viewModel: ServiceProductViewModel = viewModel(
+                    parentEntry,
+                    factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
+                )
+                val userId by sessionViewModel.userId.collectAsState()
+
+                if (userId != null) {
                     ProductDetailScreen(
-                        productId = productId,
-                        userId = userId,
+                        productId = productoDetalle.productoId,
+                        userId = userId!!,
                         viewModel = viewModel,
                         navController = navController
                     )
                 }
             }
+
         }
     }
 }

@@ -24,6 +24,8 @@ import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Tab
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,13 +56,6 @@ fun NewProductScreen(
         }
     }
 
-
-    val userServices by sessionViewModel.allowedServices.collectAsState()
-    val userServiceIds = userServices.map { it.id }
-
-    var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Mis productos", "Contratar")
-
     Scaffold(
         topBar = {
             LogoAppBar(
@@ -72,7 +67,10 @@ fun NewProductScreen(
         modifier = Modifier.fillMaxSize()
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            TabRow(selectedTabIndex = selectedTab) {
+            val tabs = listOf("Mis productos", "Contratar")
+            var selectedTab by remember { mutableIntStateOf(0) }
+
+            PrimaryTabRow(selectedTabIndex = selectedTab) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTab == index,
@@ -81,10 +79,17 @@ fun NewProductScreen(
                     )
                 }
             }
-
             when (selectedTab) {
-                0 -> MyProductsScreen(viewModel = serviceProductViewModel, navController = navController, userId = user?.id ?: 0)
-                1 -> ContratarView(allServices, serviceProductViewModel,navController)
+                0 -> MyProductsScreen(
+                    viewModel = serviceProductViewModel,
+                    navController = navController,
+                    userId = user?.id ?: 0
+                )
+                1 -> ContratarView(
+                    servicios = allServices,
+                    viewModel = serviceProductViewModel,
+                    navController = navController
+                )
             }
         }
     }
@@ -97,7 +102,6 @@ fun ContratarView(
     navController: NavHostController
 ) {
     val productosContratados by viewModel.userProducts.collectAsState()
-    val idsContratados = productosContratados.map { it.id }.toSet()
 
     LazyColumn(
         modifier = Modifier

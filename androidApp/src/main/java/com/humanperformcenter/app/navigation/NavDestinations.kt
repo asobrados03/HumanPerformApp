@@ -12,6 +12,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class BlogDetail(val blogId: Int)
+@Serializable
+data class ProductoDetalle(val productoId: Int)
 
 @Serializable object User
 @Serializable object Configuration
