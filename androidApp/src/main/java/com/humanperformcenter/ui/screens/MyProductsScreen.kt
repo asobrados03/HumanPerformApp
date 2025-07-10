@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.humanperformcenter.app.navigation.ProductoDetalle
+import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
@@ -101,7 +101,7 @@ fun MyProductsScreen(
                     TextButton(onClick = {
                         // Acción de VER DETALLES
                         viewModel.productoSeleccionado = productoSeleccionado
-                        navController.navigate(ProductoDetalle(productoSeleccionado!!.id))
+                        navController.navigate(ProductDetail(productoSeleccionado!!.id))
                     }) {
                         Text("Ver detalles")
                     }

@@ -403,8 +403,8 @@ fun Navigation(
                     onRetry = { blogViewModel.loadBlogDetail(blogDetail.blogId) }
                 )
             }
-            composable<ProductoDetalle> { backStackEntry ->
-                val productoDetalle = backStackEntry.toRoute<ProductoDetalle>()
+            composable<ProductDetail> { backStackEntry ->
+                val productDetail = backStackEntry.toRoute<ProductDetail>()
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry(NewProduct)
                 }
@@ -417,7 +417,7 @@ fun Navigation(
 
                 if (userId != null) {
                     ProductDetailScreen(
-                        productId = productoDetalle.productoId,
+                        productId = productDetail.productId,
                         userId = userId!!,
                         viewModel = viewModel,
                         navController = navController

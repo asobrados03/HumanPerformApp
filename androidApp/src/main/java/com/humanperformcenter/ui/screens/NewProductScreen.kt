@@ -85,7 +85,7 @@ fun NewProductScreen(
                     navController = navController,
                     userId = user?.id ?: 0
                 )
-                1 -> ContratarView(
+                1 -> HireView(
                     servicios = allServices,
                     viewModel = serviceProductViewModel,
                     navController = navController
@@ -96,7 +96,7 @@ fun NewProductScreen(
 }
 
 @Composable
-fun ContratarView(
+fun HireView(
     servicios: List<ServiceAvailable>,
     viewModel: ServiceProductViewModel,
     navController: NavHostController
