@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.humanperformcenter.shared.data.model.CouponApplyRequest
 import com.humanperformcenter.shared.data.model.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.ServiceItem
@@ -94,6 +95,29 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
         } catch (e: Exception) {
             println("❌ Excepción en getProductDetails: ${e.message}")
             null
+        }
+    }
+
+    override suspend fun applyCoupon(code: String, userId: Int, productId: Int): Boolean {
+        return try {
+            val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/apply-coupon") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    CouponApplyRequest(
+                        coupon_code = code,
+                        user_id = userId,
+                        product_id = productId
+                    )
+                )
+            }
+
+            val responseText = response.bodyAsText()
+            println("🎫 Respuesta apply-coupon: $responseText")
+
+            responseText.contains("success", ignoreCase = true)
+        } catch (e: Exception) {
+            println("❌ Error al aplicar cupón: ${e.message}")
+            false
         }
     }
 }

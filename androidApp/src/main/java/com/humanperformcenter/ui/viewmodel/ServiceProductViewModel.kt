@@ -81,4 +81,10 @@ class ServiceProductViewModel(
         }
     }
 
+    fun aplicarCupon(codigo: String, userId: Int, productId: Int, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val success = useCase.applyCoupon(codigo, userId, productId)
+            onResult(success)
+        }
+    }
 }
