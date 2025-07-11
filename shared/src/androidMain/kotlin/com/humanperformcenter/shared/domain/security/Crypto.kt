@@ -3,6 +3,8 @@ package com.humanperformcenter.shared.domain.security
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import java.security.KeyStore
+import java.security.KeyStoreException
+import javax.crypto.BadPaddingException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -56,9 +58,23 @@ actual object Crypto {
     }
 
     actual fun decrypt(cipherMessage: ByteArray): ByteArray {
+        // Extraemos el IV y los datos cifrados
         val iv = cipherMessage.copyOfRange(0, cipher.blockSize)
         val data = cipherMessage.copyOfRange(cipher.blockSize, cipherMessage.size)
-        cipher.init(Cipher.DECRYPT_MODE, getKey(), IvParameterSpec(iv))
-        return cipher.doFinal(data)
+
+        return try {
+            // Inicializamos en modo DESCIFRADO con la clave y el IV
+            cipher.init(Cipher.DECRYPT_MODE, getKey(), IvParameterSpec(iv))
+            // Devolvemos el resultado; si el padding no encaja, saltará BadPaddingException
+            cipher.doFinal(data)
+        } catch (e: BadPaddingException) {
+            // El padding es incorrecto: la clave/IV no coinciden con los datos
+            println("BadPaddingException: {$e}")
+            throw CryptoException.DecryptionFailed
+        } catch (e: KeyStoreException) {
+            // Problema con el Keystore (p. ej. clave borrada)
+            println("KeyStoreException: {$e}")
+            throw CryptoException.DecryptionFailed
+        }
     }
 }

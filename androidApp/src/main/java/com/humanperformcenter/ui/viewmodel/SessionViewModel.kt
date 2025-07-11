@@ -2,13 +2,13 @@ package com.humanperformcenter.ui.viewmodel
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.data.Session
 import com.humanperformcenter.data.SessionRepository
 import com.humanperformcenter.di.AppModule.userUseCase
 import com.humanperformcenter.shared.data.model.ServiceAvailable
+import com.humanperformcenter.shared.domain.security.AuthPreferences.accessTokenFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -62,11 +62,7 @@ class SessionViewModel(
         }
     }
 
-    companion object {
-        private val KEY_ACCESS = stringPreferencesKey("access_token_enc")
-    }
-
-    val isLoggedInFlow: Flow<Boolean> = prefs.data
-        .map { it[KEY_ACCESS].orEmpty().isNotBlank() }
+    val isLoggedInFlow: Flow<Boolean> = accessTokenFlow(prefs)
+        .map { token -> token.isNotBlank() }
         .distinctUntilChanged()
 }

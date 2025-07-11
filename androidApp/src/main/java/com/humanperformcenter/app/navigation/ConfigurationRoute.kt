@@ -7,7 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
@@ -33,6 +36,9 @@ fun ConfigurationRoute(
     val context = LocalContext.current
 
     val scope = rememberCoroutineScope()
+
+    // State to track logout operation
+    var isLoggingOut by remember { mutableStateOf(false) }
 
     // 4) Side-effects en un único LaunchedEffect
     LaunchedEffect(deleteState) {
@@ -68,12 +74,21 @@ fun ConfigurationRoute(
         ConfigurationScreen(
             navController = navController,
             onLogout = {
+                // Prevent multiple logout attempts
+                if (isLoggingOut) return@ConfigurationScreen
+
+                isLoggingOut = true
                 scope.launch {
                     SecureStorage.clear()
+
                     navController.navigate(Welcome) {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        popUpTo(Welcome) {
+                            inclusive = true
+                        }
                     }
+                    isLoggingOut = false
                 }
+
             },
             onDeleteAccount = {
                 userViewModel.deleteUser(currentEmail)

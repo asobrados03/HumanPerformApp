@@ -3,9 +3,11 @@ package com.humanperformcenter.shared.domain.security
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.humanperformcenter.shared.data.model.User
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 
@@ -35,29 +37,58 @@ object AuthPreferences {
         }
     }
 
-    /** Flujo que emite el access token desencriptado */
-    fun accessTokenFlow(prefs: DataStore<Preferences>): Flow<String> =
+    // 2) Helper: un Flow de Preferences “seguro” que limpia el DataStore si detecta error de descifrado
+    private fun safePrefsFlow(
+        prefs: DataStore<Preferences>
+    ): Flow<Preferences> =
         prefs.data
-            .map { m: Preferences ->
-                m[KEY_ACCESS]?.let { b64 ->
-                    // 1) Base64 String -> ByteArray criptográfico
-                    val cipherBytes = Base64.decode(b64)
-                    // 2) Desencriptar
-                    val plainBytes  = Crypto.decrypt(cipherBytes)
-                    // 3) ByteArray -> String
-                    plainBytes.decodeToString()
-                }.orEmpty()
+            .catch { e ->
+                if (e is CryptoException.DecryptionFailed) {
+                    // 2.1) Limpiamos TODO el DataStore
+                    prefs.edit { it.clear() }
+                    // 2.2) Emitimos un emptyPreferences() para que siga el flujo con valores por defecto
+                    emit(emptyPreferences())
+                } else {
+                    throw e
+                }
             }
 
-    /** Flujo que emite el refresh token desencriptado */
-    fun refreshTokenFlow(prefs: DataStore<Preferences>): Flow<String> =
-        prefs.data
-            .map { m: Preferences ->
-                m[KEY_REFRESH]?.let { b64 ->
-                    val cipherBytes = Base64.decode(b64)
-                    val plainBytes  = Crypto.decrypt(cipherBytes)
-                    plainBytes.decodeToString()
+
+    /** Flujo que emite el access token desencriptado */
+    fun accessTokenFlow(prefs: DataStore<Preferences>): Flow<String> =
+        safePrefsFlow(prefs)
+            .map { m ->
+                m[KEY_ACCESS]?.let { b64 ->
+                    Base64.decode(b64).let { cipherBytes ->
+                        Crypto.decrypt(cipherBytes)
+                    }.decodeToString()
                 }.orEmpty()
+            }
+            .catch { e ->
+                if (e is CryptoException.DecryptionFailed) {
+                    prefs.edit { it.clear() }
+                    emit("")
+                } else {
+                    throw e
+                }
+            }
+
+    fun refreshTokenFlow(prefs: DataStore<Preferences>): Flow<String> =
+        safePrefsFlow(prefs)
+            .map { m ->
+                m[KEY_REFRESH]?.let { b64 ->
+                    Base64.decode(b64).let { cipherBytes ->
+                        Crypto.decrypt(cipherBytes)
+                    }.decodeToString()
+                }.orEmpty()
+            }
+            .catch { e ->
+                if (e is CryptoException.DecryptionFailed) {
+                    prefs.edit { it.clear() }
+                    emit("")
+                } else {
+                    throw e
+                }
             }
 
 
@@ -75,18 +106,23 @@ object AuthPreferences {
     }
 
     fun userFlow(prefs: DataStore<Preferences>): Flow<User?> =
-        prefs.data.map { m ->
-            m[KEY_USER_JSON]?.let { b64 ->
-                // a) Base64 -> bytes cifrados
-                val cipherBytes = Base64.decode(b64)
-                // b) cifrados -> JSON bytes
-                val jsonBytes   = Crypto.decrypt(cipherBytes)
-                // c) JSON bytes -> String
-                val json        = jsonBytes.decodeToString()
-                // d) String -> User
-                Json.decodeFromString<User>(json)
+        safePrefsFlow(prefs)
+            .map { m ->
+                m[KEY_USER_JSON]?.let { b64 ->
+                    val cipherBytes = Base64.decode(b64)
+                    val jsonBytes   = Crypto.decrypt(cipherBytes)
+                    val json        = jsonBytes.decodeToString()
+                    Json.decodeFromString<User>(json)
+                }
             }
-        }
+            .catch { e ->
+                if (e is CryptoException.DecryptionFailed) {
+                    prefs.edit { it.clear() }
+                    emit(null)
+                } else {
+                    throw e
+                }
+            }
 
     suspend fun saveFavoriteCoach(
         prefs: DataStore<Preferences>,
@@ -103,24 +139,29 @@ object AuthPreferences {
     }
 
     fun favoriteCoachFlow(prefs: DataStore<Preferences>): Flow<Int?> =
-        prefs.data.map { m ->
-            m[KEY_FAV_COACH]?.let { b64 ->
-                // a) Base64 -> bytes cifrados
-                val cipher = Base64.decode(b64)
-                // b) bytes cifrados -> bytes planos
-                val plain  = Crypto.decrypt(cipher)
-                // c) bytes -> String -> Int?
-                plain.decodeToString().toIntOrNull()
+        safePrefsFlow(prefs)
+            .map { m ->
+                m[KEY_FAV_COACH]?.let { b64 ->
+                    Base64.decode(b64).let { cipherBytes ->
+                        Crypto.decrypt(cipherBytes)
+                    }.decodeToString().toIntOrNull()
+                }
             }
-        }
+            .catch { e ->
+                if (e is CryptoException.DecryptionFailed) {
+                    prefs.edit { it.clear() }
+                    emit(null)
+                } else {
+                    throw e
+                }
+            }
 
-    /** Borra ambos tokens e info user (logout) */
+    /**
+     * Clears ALL user-related data from DataStore
+     */
     suspend fun clear(prefs: DataStore<Preferences>) {
-        prefs.edit { m ->
-            m.remove(KEY_ACCESS)
-            m.remove(KEY_REFRESH)
-            m.remove(KEY_USER_JSON)
-            m.remove(KEY_FAV_COACH)
+        prefs.edit { preferences ->
+            preferences.clear()
         }
     }
 }
