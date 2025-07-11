@@ -59,6 +59,9 @@ fun HireProductScreen(
     var productoIdSeleccionado by remember { mutableStateOf<Int?>(null) }
     var cuponTexto by remember { mutableStateOf("") }
 
+    var mostrarSeleccionPago by remember { mutableStateOf(false) }
+
+
     LaunchedEffect(serviceId) {
         viewModel.loadServiceProducts(serviceId)
         viewModel.loadUserProducts(userId)
@@ -141,6 +144,7 @@ fun HireProductScreen(
         ModalBottomSheet(
             onDismissRequest = {
                 mostrarCuponSheet = false
+                mostrarSeleccionPago = false
                 productoIdSeleccionado = null
                 cuponTexto = ""
             },
@@ -149,55 +153,87 @@ fun HireProductScreen(
             val context = LocalContext.current
 
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("¿Tienes un cupón?", style = MaterialTheme.typography.titleMedium)
 
-                OutlinedTextField(
-                    value = cuponTexto,
-                    onValueChange = { cuponTexto = it },
-                    label = { Text("Código de cupón") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (!mostrarSeleccionPago) {
+                    // Pantalla de cupón
+                    Text("¿Tienes un cupón?", style = MaterialTheme.typography.titleMedium)
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = cuponTexto,
+                        onValueChange = { cuponTexto = it },
+                        label = { Text("Código de cupón") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                Button(
-                    onClick = {
-                        viewModel.aplicarCupon(
-                            codigo = cuponTexto.trim(),
-                            userId = userId,
-                            productId = productoIdSeleccionado!!
-                        ) { success ->
-                            if (success) {
-                                viewModel.assignProductToUser(userId, productoIdSeleccionado!!)
-                                Toast.makeText(context, "Cupón aplicado correctamente", Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(context, "Cupón inválido o no válido para este producto", Toast.LENGTH_SHORT).show()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            viewModel.aplicarCupon(
+                                codigo = cuponTexto.trim(),
+                                userId = userId,
+                                productId = productoIdSeleccionado!!
+                            ) { success ->
+                                if (success) {
+                                    Toast.makeText(context, "Cupón aplicado", Toast.LENGTH_SHORT).show()
+                                    mostrarSeleccionPago = true
+                                } else {
+                                    Toast.makeText(context, "Cupón no válido para este producto", Toast.LENGTH_SHORT).show()
+                                }
                             }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Aplicar cupón")
+                    }
 
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TextButton(
+                        onClick = {
+                            Toast.makeText(context, "Sin cupón", Toast.LENGTH_SHORT).show()
+                            mostrarSeleccionPago = true
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Omitir cupón y continuar")
+                    }
+
+                } else {
+                    // Pantalla de selección de método de pago
+                    Text("Selecciona método de pago", style = MaterialTheme.typography.titleMedium)
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            viewModel.assignProductToUser(userId, productoIdSeleccionado!!)
+                            Toast.makeText(context, "Contratado con tarjeta", Toast.LENGTH_SHORT).show()
                             mostrarCuponSheet = false
+                            mostrarSeleccionPago = false
                             productoIdSeleccionado = null
                             cuponTexto = ""
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Aplicar y contratar")
-                }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Pagar con tarjeta")
+                    }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                TextButton(
-                    onClick = {
-                        viewModel.assignProductToUser(userId, productoIdSeleccionado!!)
-                        Toast.makeText(context, "Producto contratado sin cupón", Toast.LENGTH_SHORT).show()
-
-                        mostrarCuponSheet = false
-                        productoIdSeleccionado = null
-                        cuponTexto = ""
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Omitir cupón y contratar")
+                    Button(
+                        onClick = {
+                            viewModel.assignProductToUser(userId, productoIdSeleccionado!!)
+                            Toast.makeText(context, "Contratado en efectivo", Toast.LENGTH_SHORT).show()
+                            mostrarCuponSheet = false
+                            mostrarSeleccionPago = false
+                            productoIdSeleccionado = null
+                            cuponTexto = ""
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Pagar en efectivo")
+                    }
                 }
             }
         }
