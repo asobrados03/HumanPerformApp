@@ -26,4 +26,8 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
     }
     suspend fun getProductDetails(userId: Int, productId: Int): ProductDetailResponse? =
         serviceProductRepository.getProductDetails(userId, productId)
+
+    suspend fun applyCoupon(code: String, userId: Int, productId: Int): Boolean = withContext(Dispatchers.IO) {
+        return@withContext serviceProductRepository.applyCoupon(code, userId, productId)
+    }
 }

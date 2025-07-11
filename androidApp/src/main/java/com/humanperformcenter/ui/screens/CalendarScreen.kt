@@ -866,7 +866,12 @@ fun CalendarScreen(
                             Text("Cancelar")
                         }
                     },
-                    title = { Text("¡Confirmar reserva!") },
+                    title = { Text(if(soloPuedeCambiar){
+                                "Cambiar reserva existente"
+                            } else {
+                                "Confirmar reserva"
+                            }
+                    ) },
                     text = {
                         Column {
                             Text("Reserva con: ${coachElegido!!.coachName}")
