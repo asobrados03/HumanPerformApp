@@ -107,7 +107,7 @@ class DaySessionViewModel(
         }
     }
 
-    suspend fun cambiarReservaSesion(
+    fun cambiarReservaSesion(
         customerId: Int,
         bookingId: Int,
         newCoachId: Int,
@@ -151,7 +151,7 @@ class DaySessionViewModel(
     private val _holidays = MutableStateFlow<List<LocalDate>>(emptyList())
     val holidays: StateFlow<List<LocalDate>> get() = _holidays
 
-    suspend fun fetchHolidays() {
+    fun fetchHolidays() {
         viewModelScope.launch {
             try {
                 val result = useCase.getHolidays() // Devuelve List<String>
