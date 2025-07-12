@@ -36,6 +36,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.humanperformcenter.android.ui.components.PaymentWebView
+import com.humanperformcenter.shared.domain.repository.PaymentRepository
+import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
+import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
@@ -207,12 +211,14 @@ fun HireProductScreen(
 
                     Button(
                         onClick = {
+                            /*
                             viewModel.assignProductToUser(userId, productoIdSeleccionado!!)
                             Toast.makeText(context, "Contratado con tarjeta", Toast.LENGTH_SHORT).show()
                             mostrarCuponSheet = false
                             mostrarSeleccionPago = false
                             productoIdSeleccionado = null
                             cuponTexto = ""
+                            */
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -239,3 +245,22 @@ fun HireProductScreen(
         }
     }
 }
+
+@Composable
+fun PantallaPago(viewModel: PaymentViewModel, onClose: () -> Unit) {
+    val url by viewModel.paymentUrl.collectAsState()
+
+    if (url != null) {
+        PaymentWebView(url = url!!, onResult = { success ->
+            // Aquí puedes navegar, mostrar alertas, cerrar modal, etc.
+            if (success) {
+                // Pago exitoso
+            } else {
+                // Pago cancelado o fallido
+            }
+            onClose()
+            viewModel.limpiarEstado()
+        })
+    }
+}
+
