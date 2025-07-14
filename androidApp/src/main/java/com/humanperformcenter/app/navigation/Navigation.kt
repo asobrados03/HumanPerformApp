@@ -268,9 +268,6 @@ fun Navigation(
             composable<Document> {
                 DocumentScreen(navController = navController)
             }
-            composable<Payment> {
-                PaymentScreen(navController = navController)
-            }
             composable<ViewPayment> {
                 ViewPaymentScreen(navController = navController)
             }

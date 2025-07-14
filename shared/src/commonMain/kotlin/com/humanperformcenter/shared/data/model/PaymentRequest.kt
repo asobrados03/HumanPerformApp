@@ -1,14 +1,11 @@
 package com.humanperformcenter.shared.data.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class PaymentRequest(
-    val amount: String,
-    val currency: String,
-    val country: String,
-    val customerId: String,
-    val customerEmail: String,
-    val transactionId: String,
-    val successUrl: String,
-    val errorUrl: String,
-    val cancelUrl: String,
-    val statusUrl: String
+    val customer_id: Int,
+    val amount: Double,
+    val product_id: Int,
+    val email: String
 )

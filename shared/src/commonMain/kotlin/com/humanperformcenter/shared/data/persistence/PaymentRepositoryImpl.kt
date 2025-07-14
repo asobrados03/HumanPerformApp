@@ -2,75 +2,24 @@ package com.humanperformcenter.shared.data.persistence
 
 import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.shared.domain.repository.PaymentRepository
-import com.humanperformcenter.shared.domain.security.Crypto_Pays
-import com.humanperformcenter.shared.data.model.EncryptedResult
-import io.ktor.client.*
+import com.humanperformcenter.shared.data.model.PaymentUrlResponse
+import com.humanperformcenter.shared.data.network.ApiClient
 import io.ktor.client.request.*
-import io.ktor.client.request.forms.submitForm
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.serialization.json.Json
 
-object PaymentRepositoryImpl : PaymentRepository {
 
-    private lateinit var httpClient: HttpClient
-    private lateinit var merchantId: String
-    private lateinit var productId: String
-    private lateinit var sharedSecret: String
-    private lateinit var baseUrl: String
-
-    fun init(
-        httpClient: HttpClient,
-        merchantId: String,
-        productId: String,
-        sharedSecret: String,
-        baseUrl: String
-    ) {
-        this.httpClient = httpClient
-        this.merchantId = merchantId
-        this.productId = productId
-        this.sharedSecret = sharedSecret
-        this.baseUrl = baseUrl
-    }
-
+object PaymentRepositoryImpl: PaymentRepository {
     override suspend fun generatePaymentUrl(request: PaymentRequest): String {
-        val params = mapOf(
-            "merchantId" to merchantId,
-            "productId" to productId,
-            "merchantTransactionId" to request.transactionId,
-            "amount" to request.amount,
-            "currency" to request.currency,
-            "country" to request.country,
-            "paymentSolution" to "creditcards",
-            "customerId" to request.customerId,
-            "customerEmail" to request.customerEmail,
-            "successURL" to request.successUrl,
-            "errorURL" to request.errorUrl,
-            "cancelURL" to request.cancelUrl,
-            "statusURL" to request.statusUrl
-        )
+        val client = ApiClient.apiClient
 
-        val paramString = params.entries.joinToString("&") { "${it.key}=${it.value}" }
-
-        val crypto = Crypto_Pays
-        val integrityCheck = crypto.sha256(paramString)
-        val encrypted: EncryptedResult = crypto.encryptAES(paramString, sharedSecret)
-
-        val response: HttpResponse = httpClient.submitForm(
-            url = "$baseUrl/EPGCheckout/rest/online/tokenize",
-            formParameters = Parameters.build {
-                append("merchantId", merchantId)
-                append("encrypted", encrypted.encrypted)
-                append("integrityCheck", integrityCheck)
-            },
-            encodeInQuery = false
-        ) {
-            headers {
-                append("apiVersion", "5")
-                append("encryptionMode", "CBC")
-                append("iv", encrypted.iv)
-            }
+        val response: HttpResponse = client.post("${ApiClient.baseUrl}/payments/initiate") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
         }
-
-        return response.bodyAsText()
+        val body = response.bodyAsText()
+        return Json.decodeFromString<PaymentUrlResponse>(body).paymentUrl
     }
 }
+
