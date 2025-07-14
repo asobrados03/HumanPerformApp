@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.humanperformcenter.shared.data.model.EstadisticasUsuario
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.User
@@ -118,6 +119,15 @@ object UserRepositoryImpl: UserRepository {
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override suspend fun getUserStats(customerId: Int): EstadisticasUsuario {
+        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-stats") {
+            url {
+                parameters.append("user_id", customerId.toString())
+            }
+        }
+        return response.body()
     }
 
 }

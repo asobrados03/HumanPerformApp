@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.domain.usecase
 
+import com.humanperformcenter.shared.data.model.EstadisticasUsuario
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.User
@@ -25,10 +26,16 @@ class UserUseCase(private val userRepository: UserRepository) {
     suspend fun getUserAllowedServices(customerId: Int): List<ServiceAvailable> = withContext(Dispatchers.IO) {
         return@withContext userRepository.getUserAllowedServices(customerId)
     }
+
     suspend fun getUserBookings(customerId: Int): List<UserBooking> = withContext(Dispatchers.IO) {
         return@withContext userRepository.getUserBookings(customerId)
     }
+
     suspend fun cancelUserBooking(bookingId: Int): Result<Unit> = withContext(Dispatchers.IO) {
         return@withContext userRepository.cancelUserBooking(bookingId)
+    }
+
+    suspend fun getUserStats(customerId: Int): EstadisticasUsuario = withContext(Dispatchers.IO) {
+        return@withContext userRepository.getUserStats(customerId)
     }
 }
