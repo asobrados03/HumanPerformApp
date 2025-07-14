@@ -52,15 +52,27 @@ class ServiceProductViewModel(
         }
     }
 
-    fun assignProductToUser(userId: Int, productId: Int) {
+    fun assignProductToUser(
+        userId: Int,
+        productId: Int,
+        paymentMethod: String,
+        couponCode: String? = null,
+        onResult: (Boolean) -> Unit = {}
+    ) {
         viewModelScope.launch {
-            val success = useCase.assignProductToUser(userId, productId)
+            val success = useCase.assignProductToUser(
+                userId = userId,
+                productId = productId,
+                paymentMethod = paymentMethod,
+                couponCode = couponCode,
+            )
             if (success) {
                 println("✅ Producto asignado correctamente")
                 loadUserProducts(userId)
             } else {
                 println("❌ Error al asignar producto")
             }
+            onResult(success)
         }
     }
 

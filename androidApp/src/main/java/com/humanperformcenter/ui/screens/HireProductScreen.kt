@@ -227,8 +227,14 @@ fun HireProductScreen(
 
                     Button(
                         onClick = {
-                            viewModel.assignProductToUser(userId, productoIdSeleccionado!!)
-                            Toast.makeText(context, "Contratado en efectivo", Toast.LENGTH_SHORT).show()
+                            viewModel.assignProductToUser(
+                                userId = userId,
+                                productId = productoIdSeleccionado!!,
+                                paymentMethod = "cash", // o "card"
+                                couponCode = cuponTexto.takeIf { it.isNotBlank() },
+                            ) { success ->
+                                Toast.makeText(context, if (success) "Producto asignado" else "Error al asignar", Toast.LENGTH_SHORT).show()
+                            }
                             mostrarCuponSheet = false
                             mostrarSeleccionPago = false
                             productoIdSeleccionado = null

@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.humanperformcenter.shared.data.model.AssignProductRequest
 import com.humanperformcenter.shared.data.model.CouponApplyRequest
 import com.humanperformcenter.shared.data.model.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.ServiceAvailable
@@ -16,6 +17,11 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 
 object ServiceProductRepositoryImpl: ServiceProductRepository {
     override suspend fun getAllServices(): List<ServiceAvailable> {
@@ -49,15 +55,32 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
         return response.body()
     }
 
-    override suspend fun assignProductToUser(userId: Int, productId: Int): Boolean {
+    override suspend fun assignProductToUser(
+        userId: Int,
+        productId: Int,
+        paymentMethod: String,
+        couponCode: String?,
+    ): Boolean {
+        val request = AssignProductRequest(
+            user_id = userId,
+            product_id = productId,
+            payment_method = paymentMethod,
+            coupon_code = couponCode,
+        )
+
         return try {
             val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/assign-product") {
                 contentType(ContentType.Application.Json)
-                setBody(mapOf("user_id" to userId, "product_id" to productId))
+                setBody(request)
             }
-            response.status.value in 200..299
+
+            val body = response.bodyAsText()
+            println("📦 Asignación producto → $body")
+
+            val json = Json.parseToJsonElement(body).jsonObject
+            json["success"]?.jsonPrimitive?.booleanOrNull == true
         } catch (e: Exception) {
-            println("❌ Error HTTP al contratar producto: ${e.message}")
+            println("❌ Error al asignar producto: ${e.message}")
             false
         }
     }

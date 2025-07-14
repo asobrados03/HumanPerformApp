@@ -18,9 +18,15 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
     suspend fun getUserProducts(customerId: Int): List<ServiceItem> = withContext(Dispatchers.IO) {
         return@withContext serviceProductRepository.getUserProducts(customerId)
     }
-    suspend fun assignProductToUser(userId: Int, productId: Int): Boolean = withContext(Dispatchers.IO) {
-        return@withContext serviceProductRepository.assignProductToUser(userId, productId)
+    suspend fun assignProductToUser(
+        userId: Int,
+        productId: Int,
+        paymentMethod: String,
+        couponCode: String? = null,
+    ): Boolean = withContext(Dispatchers.IO) {
+        serviceProductRepository.assignProductToUser(userId, productId, paymentMethod, couponCode)
     }
+
     suspend fun unassignProductFromUser(userId: Int, productId: Int): Boolean = withContext(Dispatchers.IO) {
         return@withContext serviceProductRepository.unassignProductFromUser(userId, productId)
     }
