@@ -1,6 +1,5 @@
 package com.humanperformcenter.app.navigation
 
-import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,37 +26,35 @@ import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.components.FullScreenTextLoading
-import com.humanperformcenter.ui.screens.BlogDetailScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
 import com.humanperformcenter.ui.screens.ChangePasswordScreen
 import com.humanperformcenter.ui.screens.ChatScreen
-import com.humanperformcenter.ui.screens.HireProductScreen
 import com.humanperformcenter.ui.screens.DocumentScreen
 import com.humanperformcenter.ui.screens.EnterEmailScreen
 import com.humanperformcenter.ui.screens.FavoritesScreen
+import com.humanperformcenter.ui.screens.HireProductScreen
 import com.humanperformcenter.ui.screens.LoginScreen
 import com.humanperformcenter.ui.screens.MyProfileScreen
-import com.humanperformcenter.ui.screens.NewBlogScreen
 import com.humanperformcenter.ui.screens.NewProductScreen
 import com.humanperformcenter.ui.screens.PasswordResetInfoScreen
-import com.humanperformcenter.ui.screens.PaymentScreen
 import com.humanperformcenter.ui.screens.ProductDetailScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
 import com.humanperformcenter.ui.screens.SplashScreen
 import com.humanperformcenter.ui.screens.UserScreen
+import com.humanperformcenter.ui.screens.UserStatsScreen
 import com.humanperformcenter.ui.screens.ViewPaymentScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
-import com.humanperformcenter.ui.viewmodel.BlogViewModel
-import com.humanperformcenter.ui.viewmodel.BlogViewModelFactory
+import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
+import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
+import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModel
+import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModelFactory
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModelFactory
-import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
-import com.humanperformcenter.ui.viewmodel.state.BlogDetailState
 import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
 import com.humanperformcenter.ui.viewmodel.state.CoachState
 import com.humanperformcenter.ui.viewmodel.state.ResetPasswordState
@@ -286,9 +283,6 @@ fun Navigation(
             composable<Document> {
                 DocumentScreen(navController = navController)
             }
-            composable<Payment> {
-                PaymentScreen(navController = navController)
-            }
             composable<ViewPayment> {
                 ViewPaymentScreen(navController = navController)
             }
@@ -381,44 +375,27 @@ fun Navigation(
                     daySessionViewModel = daySessionViewModel
                 )
             }
-            composable<NewBlog> {
-                val blogViewModel: BlogViewModel = viewModel(
-                    factory = BlogViewModelFactory(AppModule.blogUseCase)
+            composable<Stats> {
+                val statsViewModel: EstadisticasUsuarioViewModel = viewModel(
+                    factory = EstadisticasUsuarioViewModelFactory(AppModule.userUseCase)
                 )
-                val state by blogViewModel.state.collectAsState()
-                LaunchedEffect(Unit) { blogViewModel.loadBlogs() }
+                val userId by sessionViewModel.userId.collectAsState()
 
-                NewBlogScreen(
+                LaunchedEffect(userId) {
+                    statsViewModel.cargarEstadisticas(userId!!)
+                }
+
+                UserStatsScreen(
                     navController = navController,
-                    blogState = state,
-                    onEntryClick = { entry ->
-                        navController.navigate(BlogDetail(entry.blogId))
+                    statsViewModel = statsViewModel,
+                    userId = userId?: 0,
+                    onEntryClick = { blogEntry ->
+                        navController.navigate(BlogDetail(blogEntry.blogId)) {
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     },
-                    onRetry = { blogViewModel.loadBlogs() }
-                )
-            }
-            composable<BlogDetail> { backStack ->
-                val blogDetail = backStack.toRoute<BlogDetail>()
-                val parentEntry = remember(backStack) {
-                    navController.getBackStackEntry(NewBlog)
-                }
-                val blogViewModel: BlogViewModel = viewModel(
-                    parentEntry,
-                    factory = BlogViewModelFactory(AppModule.blogUseCase)
-                )
-                val detailState by blogViewModel.detailState.collectAsState() // Observar el estado del detalle
-
-                // Disparar la carga del detalle
-                LaunchedEffect(blogDetail.blogId) {
-                    blogViewModel.loadBlogDetail(blogDetail.blogId)
-                }
-
-                BlogDetailScreen(
-                    navController = navController,
-                    blog = (detailState as? BlogDetailState.Success)?.blog,
-                    isLoading = detailState is BlogDetailState.Loading,
-                    errorMessage = (detailState as? BlogDetailState.Error)?.message,
-                    onRetry = { blogViewModel.loadBlogDetail(blogDetail.blogId) }
+                    onRetry = { statsViewModel.cargarEstadisticas(userId ?: 0) }
                 )
             }
             composable<ProductDetail> { backStackEntry ->
