@@ -1,37 +1,53 @@
 package com.humanperformcenter.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material.Button
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
-import com.humanperformcenter.ui.components.LogoAppBar
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.ui.components.PaymentWebView
 
 @Composable
-fun PaymentScreen(navController: NavHostController) {
-    Scaffold(
-        topBar = {
-            LogoAppBar(
-                showBackArrow = true,
-                onBackNavClicked = { navController.popBackStack() }
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("Pantalla para añadir o editar un método de pago.")
+fun PaymentScreen(viewModel: PaymentViewModel) {
+    val paymentUrl by viewModel.paymentUrl.collectAsState()
+    val error by viewModel.error.collectAsState()
+    val context = LocalContext.current
+
+    when {
+        paymentUrl == null && error == null -> {
+            CircularProgressIndicator()
         }
+
+        paymentUrl != null -> {
+            PaymentWebView(
+                url = paymentUrl!!,
+                onPaymentSuccess = {
+                    Toast.makeText(context, "Pago exitoso", Toast.LENGTH_LONG).show()
+                    viewModel.limpiarEstado()
+                },
+                onPaymentCancelled = {
+                    Toast.makeText(context, "Pago cancelado", Toast.LENGTH_LONG).show()
+                    viewModel.limpiarEstado()
+                }
+            )
+        }
+
+        error != null -> {
+            Column {
+                Text("Error: $error", color = Color.Red)
+                Button(onClick = { viewModel.limpiarEstado() }) {
+                    Text("Reintentar")
+                }
+            }
+        }
+
     }
 }
+
+

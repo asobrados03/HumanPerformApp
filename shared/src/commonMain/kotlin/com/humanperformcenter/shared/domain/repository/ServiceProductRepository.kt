@@ -8,7 +8,12 @@ interface ServiceProductRepository {
     suspend fun getAllServices(): List<ServiceAvailable>
     suspend fun getServiceProducts(serviceId: Int): List<ServiceItem>
     suspend fun getUserProducts(customerId: Int): List<ServiceItem>
-    suspend fun assignProductToUser(userId: Int, productId: Int): Boolean
+    suspend fun assignProductToUser(
+        userId: Int,
+        productId: Int,
+        paymentMethod: String,
+        couponCode: String? = null,
+    ): Boolean
     suspend fun unassignProductFromUser(userId: Int, productId: Int): Boolean
     suspend fun getProductDetails(userId: Int, productId: Int): ProductDetailResponse?
     suspend fun applyCoupon(code: String, userId: Int, productId: Int): Boolean

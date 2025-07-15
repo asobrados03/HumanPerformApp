@@ -18,7 +18,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.humanperformcenter.R
 import com.humanperformcenter.app.navigation.Calendar
 import com.humanperformcenter.app.navigation.NavItem
-import com.humanperformcenter.app.navigation.NewBlog
+import com.humanperformcenter.app.navigation.Stats
 import com.humanperformcenter.app.navigation.NewProduct
 import com.humanperformcenter.app.navigation.User
 
@@ -27,7 +27,7 @@ fun NavigationBar(navController: NavController) {
     val items = listOf(
         NavItem(NewProduct, "Producto",  R.drawable.exercise),
         NavItem(Calendar,   "Calendario", R.drawable.calendar),
-        NavItem(NewBlog,    "Blog",       R.drawable.stories),
+        NavItem(Stats,      "Estadísticas",R.drawable.stories),
         NavItem(User,       "Usuario",    R.drawable.person)
     )
 

@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 @Serializable object PasswordResetInfo
 @Serializable object NewProduct
 @Serializable object Calendar
-@Serializable object NewBlog
+@Serializable object Stats
 
 @Serializable
 data class BlogDetail(val blogId: Int)

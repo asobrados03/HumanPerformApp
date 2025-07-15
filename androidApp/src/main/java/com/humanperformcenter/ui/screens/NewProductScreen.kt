@@ -26,8 +26,6 @@ import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
-import com.humanperformcenter.android.ui.components.PaymentWebView
-import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
