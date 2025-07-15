@@ -1,5 +1,6 @@
 package com.humanperformcenter.ui.screens
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,20 +56,25 @@ fun ProductDetailScreen(
 
             Column(
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(padding)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .fillMaxSize()
                     .verticalScroll(rememberScrollState())
             ) {
-                detail?.let { producto ->
-                    // Imagen
-                    AsyncImage(
-                        model = producto.image,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                    )
+                detail.let { producto ->
+                    val imageUrl = producto.image?.let { "http://163.172.71.195:8085/product_images/$it" }
+
+                    imageUrl?.let {
+                        AsyncImage(
+                            model = it,
+                            contentDescription = producto.name,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -76,74 +82,63 @@ fun ProductDetailScreen(
                     Text(
                         text = producto.name,
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     // Descripción
                     Text(
                         text = producto.description ?: "No hay descripción disponible.",
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .fillMaxWidth()
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Fecha de obtención
+                    // Fechas y precios
                     producto.created_at?.let {
-                        val fechaFormateada = formatDate(it)
-                        Text("Fecha de obtención: $fechaFormateada")
+                        Text("Fecha de obtención: ${it.substring(0, 10)}", modifier = Modifier.fillMaxWidth())
                     }
-
-                    // Fecha de caducidad
                     producto.expiry_date?.let {
-                        val fechaCaducidad = formatDate(it)
-                        Text("Fecha de caducidad: $fechaCaducidad")
+                        Text("Fecha de caducidad: ${it.substring(0, 10)}", modifier = Modifier.fillMaxWidth())
                     }
-
-                    // Precio original
                     producto.amount?.let {
-                        Text("Precio: %.2f€".format(it))
+                        Text("Precio: %.2f€".format(it), modifier = Modifier.fillMaxWidth())
                     }
-
-                    // Descuento
                     producto.discount?.let {
-                        Text("Descuento: %.2f€".format(it))
+                        Text("Descuento: %.2f€".format(it), modifier = Modifier.fillMaxWidth())
                     }
-
-                    // Total pagado
                     producto.total_amount?.let {
-                        Text("Total pagado: %.2f€".format(it))
+                        Text("Total pagado: %.2f€".format(it), modifier = Modifier.fillMaxWidth())
                     }
-
-                    // Método de pago
                     producto.payment_method?.let {
-                        Text("Pago con: ${it.replaceFirstChar { c -> c.uppercase() }}")
+                        Text("Pago con: ${it.replaceFirstChar { c -> c.uppercase() }}", modifier = Modifier.fillMaxWidth())
                     }
-
-                    // Estado del pago
                     producto.payment_status?.let {
-                        Text("Estado de pago: ${it.replaceFirstChar { c -> c.uppercase() }}")
+                        Text("Estado de pago: ${it.replaceFirstChar { c -> c.uppercase() }}", modifier = Modifier.fillMaxWidth())
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Servicios asociados
+                    // Servicios incluidos
                     Text(
                         text = "Servicios incluidos:",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     if (producto.services.isNotEmpty()) {
                         producto.services.forEach { servicio ->
-                            Text("• ${servicio.name}")
+                            Text("• ${servicio.name}", modifier = Modifier.fillMaxWidth())
                         }
                     } else {
-                        Text("No hay servicios asociados.")
+                        Text("No hay servicios asociados.", modifier = Modifier.fillMaxWidth())
                     }
                 }
             }
-
         }
     }
 }
