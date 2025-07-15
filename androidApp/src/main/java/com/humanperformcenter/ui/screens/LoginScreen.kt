@@ -37,6 +37,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.humanperformcenter.app.navigation.EnterEmail
+import com.humanperformcenter.app.navigation.Login
+import com.humanperformcenter.app.navigation.PasswordResetInfo
+import com.humanperformcenter.app.navigation.Register
 import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
@@ -61,20 +65,10 @@ fun LoginScreen(
     )
     val loginState by viewModel.loginState.observeAsState(LoginState.Idle)
 
-    // 4) Al iniciar la pantalla, cargamos datos guardados (si “Recordar” estaba activo)
-    /*LaunchedEffect(Unit) {
-        val savedRemember = prefs.getBoolean(KEY_REMEMBER, false)
-        if (savedRemember) {
-            email = prefs.getString(KEY_EMAIL, "") ?: ""
-            password = prefs.getString(KEY_PASSWORD, "") ?: ""
-            remember = true
-        }
-    }*/
-
     Scaffold(
         topBar = {
             LogoAppBar(
-                showBackArrow = false,
+                showBackArrow = true,
                 onBackNavClicked = { navController.popBackStack() }
             )
         },
@@ -187,7 +181,9 @@ fun LoginScreen(
 
             // Enlace “¿Olvidaste tu contraseña?”
             TextButton(
-                onClick = { /* TODO: implementar recuperación de contraseña */ },
+                onClick = {
+                    navController.navigate(EnterEmail)
+                },
                 modifier = Modifier.padding(8.dp)
             ) {
                 Text("¿Olvidaste tu contraseña?")

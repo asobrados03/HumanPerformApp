@@ -5,6 +5,7 @@ import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.shared.data.model.RegisterRequest
 import com.humanperformcenter.shared.data.model.RegisterResponse
+import com.humanperformcenter.shared.data.model.ResetPasswordRequest
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.AuthRepository
@@ -85,6 +86,51 @@ object AuthRepositoryImpl : AuthRepository {
         } catch (_: Exception) {
             // Timeout, sin red, JSON mal formado, etc.
             Result.failure(Exception("Error de conexión. Revisa tu conexión a internet e inténtalo de nuevo."))
+        }
+    }
+
+    override suspend fun resetPassword(email: String): Result<Unit> {
+        return try {
+            val resp: HttpResponse = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/reset-password") {
+                contentType(ContentType.Application.Json)
+                setBody(ResetPasswordRequest(
+                    email = email
+                ))
+
+                expectSuccess = false
+            }
+
+            when (resp.status) {
+                HttpStatusCode.OK -> {
+                    Result.success(Unit)
+                }
+                HttpStatusCode.NotFound -> {
+                    // Error de validación (contraseña muy débil, etc.)
+                    val errorBody: ErrorResponse = try {
+                        resp.body()
+                    } catch (_: Exception) {
+                        ErrorResponse("Error no se ha encontrado el usuario asociado al email")
+                    }
+                    Result.failure(Exception(errorBody.error))
+                }
+                else -> {
+                    Result.failure(Exception("Error al restablecer la contraseña. Inténtalo más tarde"))
+                }
+            }
+        } catch (e: ClientRequestException) {
+            val errorMessage = try {
+                e.response.body<ErrorResponse>().error
+            } catch (_: Exception) {
+                when (e.response.status) {
+                    HttpStatusCode.NotFound -> "Usuario no encontrado"
+                    else -> "Error en la solicitud"
+                }
+            }
+
+            Result.failure(Exception(errorMessage))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(Exception("Error de conexión. Revisa tu conexión a internet e inténtalo de nuevo"))
         }
     }
 

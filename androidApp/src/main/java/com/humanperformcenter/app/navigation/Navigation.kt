@@ -33,11 +33,13 @@ import com.humanperformcenter.ui.screens.ChangePasswordScreen
 import com.humanperformcenter.ui.screens.ChatScreen
 import com.humanperformcenter.ui.screens.HireProductScreen
 import com.humanperformcenter.ui.screens.DocumentScreen
+import com.humanperformcenter.ui.screens.EnterEmailScreen
 import com.humanperformcenter.ui.screens.FavoritesScreen
 import com.humanperformcenter.ui.screens.LoginScreen
 import com.humanperformcenter.ui.screens.MyProfileScreen
 import com.humanperformcenter.ui.screens.NewBlogScreen
 import com.humanperformcenter.ui.screens.NewProductScreen
+import com.humanperformcenter.ui.screens.PasswordResetInfoScreen
 import com.humanperformcenter.ui.screens.PaymentScreen
 import com.humanperformcenter.ui.screens.ProductDetailScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
@@ -58,6 +60,7 @@ import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
 import com.humanperformcenter.ui.viewmodel.state.BlogDetailState
 import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
 import com.humanperformcenter.ui.viewmodel.state.CoachState
+import com.humanperformcenter.ui.viewmodel.state.ResetPasswordState
 
 @Composable
 fun Navigation(
@@ -93,14 +96,10 @@ fun Navigation(
             composable<Welcome> {
                 WelcomeScreen(
                     onNavigateToRegister = {
-                        navController.navigate(Register) {
-                            popUpTo(Welcome) { inclusive = true }
-                        }
+                        navController.navigate(Register)
                     },
                     onNavigateToLogin = {
-                        navController.navigate(Login) {
-                            popUpTo(Welcome) { inclusive = true }
-                        }
+                        navController.navigate(Login)
                     }
                 )
             }
@@ -112,9 +111,7 @@ fun Navigation(
                         }
                     },
                     onNavigateToLogin = {
-                        navController.navigate(Login) {
-                            popUpTo(Register) { inclusive = true }
-                        }
+                        navController.navigate(Login)
                     },
                     navController = navController
                 )
@@ -127,12 +124,33 @@ fun Navigation(
                         }
                     },
                     onNavigateToRegister = {
-                        navController.navigate(Register) {
-                            popUpTo(Login) { inclusive = true }
-                        }
+                        navController.navigate(Register)
                     },
                     navController = navController
                 )
+            }
+            composable<EnterEmail> {
+                val authViewModel: AuthViewModel = viewModel(
+                    factory = AuthViewModelFactory(AppModule.authUseCase)
+                )
+                val resetPasswordState by authViewModel.isResettingPassword.observeAsState(
+                    ResetPasswordState.Idle
+                )
+
+                EnterEmailScreen(
+                    onEmailSubmit = { email ->
+                        // Llamada en segundo plano de la petición a la API a traves del authViewModel
+                        authViewModel.resetPassword(email)
+                    },
+                    resetPasswordState = resetPasswordState,
+                    onResetState = {
+                        authViewModel.resetResettingPasswordState()
+                    },
+                    navController = navController
+                )
+            }
+            composable<PasswordResetInfo> {
+                PasswordResetInfoScreen(navController = navController)
             }
             composable<NewProduct> {
                 NewProductScreen(

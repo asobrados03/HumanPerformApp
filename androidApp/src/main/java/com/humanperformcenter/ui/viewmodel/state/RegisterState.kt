@@ -6,7 +6,7 @@ import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidatio
 sealed class RegisterState {
     object Idle : RegisterState()
     object Loading : RegisterState()
-    data class Success(val user: RegisterResponse) : RegisterState()
+    data class Success(val message: RegisterResponse) : RegisterState()
     data class Error(val message: String) : RegisterState()
 
     /**

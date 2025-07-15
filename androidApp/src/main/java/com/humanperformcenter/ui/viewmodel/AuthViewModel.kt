@@ -12,6 +12,7 @@ import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
 import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
 import com.humanperformcenter.ui.viewmodel.state.LoginState
 import com.humanperformcenter.ui.viewmodel.state.RegisterState
+import com.humanperformcenter.ui.viewmodel.state.ResetPasswordState
 import kotlinx.coroutines.launch
 import kotlin.onSuccess
 
@@ -27,6 +28,9 @@ class AuthViewModel(
 
     private val _isChangingPassword = MutableLiveData<ChangePasswordState>(ChangePasswordState.Idle)
     val isChangingPassword: LiveData<ChangePasswordState> = _isChangingPassword
+
+    private val _isResettingPassword = MutableLiveData<ResetPasswordState>(ResetPasswordState.Idle)
+    val isResettingPassword: LiveData<ResetPasswordState> = _isResettingPassword
 
     fun login(email: String, password: String) {
         _loginState.value = LoginState.Loading
@@ -71,6 +75,17 @@ class AuthViewModel(
         }
     }
 
+    fun resetPassword(email: String) {
+        _isResettingPassword.value = ResetPasswordState.Loading
+
+        viewModelScope.launch {
+            val result = authUseCase.resetPassword(email)
+            _isResettingPassword.value = result
+                .map { ResetPasswordState.Success("Contraseña restablecida exitosamente") }
+                .getOrElse { ResetPasswordState.Error(it.message ?: "Restablecimiento de contraseña fallido") }
+        }
+    }
+
     fun changePassword(
         currentPassword: String,
         newPassword: String,
@@ -94,5 +109,9 @@ class AuthViewModel(
 
     fun resetChangePasswordState() {
         _isChangingPassword.value = ChangePasswordState.Idle
+    }
+
+    fun resetResettingPasswordState() {
+        _isResettingPassword.value = ResetPasswordState.Idle
     }
 }

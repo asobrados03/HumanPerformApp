@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -32,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -61,7 +64,7 @@ fun ChangePasswordScreen(
     LaunchedEffect(changePasswordState) {
         if (changePasswordState is ChangePasswordState.Success) {
             snackbarHostState.showSnackbar(
-                message = "Has cambiado la contraseña exitosamente",
+                message = changePasswordState.message,
                 actionLabel = "OK",
                 duration = SnackbarDuration.Short
             )
@@ -121,6 +124,8 @@ fun ChangePasswordScreen(
                 } else {
                     PasswordVisualTransformation()
                 },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
@@ -149,6 +154,8 @@ fun ChangePasswordScreen(
                 } else {
                     PasswordVisualTransformation()
                 },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
@@ -177,6 +184,8 @@ fun ChangePasswordScreen(
                 } else {
                     PasswordVisualTransformation()
                 },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth()
             )
 

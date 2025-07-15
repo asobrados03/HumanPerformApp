@@ -154,7 +154,7 @@ fun RegisterScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             LogoAppBar(
-                showBackArrow = false,
+                showBackArrow = true,
                 onBackNavClicked = { navController.popBackStack() }
             )
         },

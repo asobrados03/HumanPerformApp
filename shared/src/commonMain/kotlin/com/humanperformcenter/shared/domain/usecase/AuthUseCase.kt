@@ -18,6 +18,10 @@ class AuthUseCase(private val authRepository: AuthRepository) {
         return@withContext authRepository.register(data)
     }
 
+    suspend fun resetPassword(email: String): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext authRepository.resetPassword(email)
+    }
+
     suspend fun changePassword(
         currentPassword: String,
         newPassword: String,
