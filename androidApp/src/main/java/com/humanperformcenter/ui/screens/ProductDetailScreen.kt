@@ -2,11 +2,14 @@ package com.humanperformcenter.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -50,62 +53,94 @@ fun ProductDetailScreen(
                 null
             }
 
-            val fechaFormateada = parsedDate?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: "¿?"
-            val fechaCaducidad = parsedDate?.plusDays(detail.valid_due?.toLong() ?: 0)
-                ?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: "¿?"
-
             Column(
                 modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
+                    .padding(16.dp)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.Start
             ) {
-                detail.image?.let {
-                    Box(
+                detail?.let { producto ->
+                    // Imagen
+                    AsyncImage(
+                        model = producto.image,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            model = "${ApiClient.baseUrl}/product_images/${detail.image.orEmpty().trim()}",
-                            contentDescription = "Imagen del producto",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 180.dp)
-                                .padding(bottom = 16.dp)
-                        )
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    )
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Nombre del producto
+                    Text(
+                        text = producto.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    // Descripción
+                    Text(
+                        text = producto.description ?: "No hay descripción disponible.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Fecha de obtención
+                    producto.created_at?.let {
+                        val fechaFormateada = formatDate(it)
+                        Text("Fecha de obtención: $fechaFormateada")
                     }
-                }
 
-                Text(
-                    detail.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+                    // Fecha de caducidad
+                    producto.expiry_date?.let {
+                        val fechaCaducidad = formatDate(it)
+                        Text("Fecha de caducidad: $fechaCaducidad")
+                    }
 
-                detail.description?.let {
-                    Text(it, style = MaterialTheme.typography.bodyMedium)
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
+                    // Precio original
+                    producto.amount?.let {
+                        Text("Precio: %.2f€".format(it))
+                    }
 
-                Text("Caducidad de ${detail.valid_due ?: "?"} días", style = MaterialTheme.typography.bodySmall)
+                    // Descuento
+                    producto.discount?.let {
+                        Text("Descuento: %.2f€".format(it))
+                    }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    // Total pagado
+                    producto.total_amount?.let {
+                        Text("Total pagado: %.2f€".format(it))
+                    }
 
-                Text("📅 Fecha de obtención: $fechaFormateada")
-                Text("⏳ Fecha de caducidad: $fechaCaducidad")
+                    // Método de pago
+                    producto.payment_method?.let {
+                        Text("Pago con: ${it.replaceFirstChar { c -> c.uppercase() }}")
+                    }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                    // Estado del pago
+                    producto.payment_status?.let {
+                        Text("Estado de pago: ${it.replaceFirstChar { c -> c.uppercase() }}")
+                    }
 
-                Text("🧾 Servicios incluidos:", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-                detail.services.forEach {
-                    Text("• ${it.name}", style = MaterialTheme.typography.bodySmall)
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Servicios asociados
+                    Text(
+                        text = "Servicios incluidos:",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    if (producto.services.isNotEmpty()) {
+                        producto.services.forEach { servicio ->
+                            Text("• ${servicio.name}")
+                        }
+                    } else {
+                        Text("No hay servicios asociados.")
+                    }
                 }
             }
 

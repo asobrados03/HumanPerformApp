@@ -107,7 +107,7 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
             }
             val text = response.bodyAsText()
 
-            println("📦 Respuesta del backend (detalles): $text") // ✅ Añade esta línea
+            println("📦 Respuesta del backend (detalles): $text")
 
             if (text.contains("error", ignoreCase = true)) {
                 println("❌ Error backend: $text")
