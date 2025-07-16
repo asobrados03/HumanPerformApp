@@ -24,6 +24,9 @@ import androidx.navigation.toRoute
 import com.humanperformcenter.app.SetStatusBarColor
 import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.data.persistence.PaymentRepositoryImpl
+import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
+import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.components.FullScreenTextLoading
 import com.humanperformcenter.ui.screens.CalendarScreen
@@ -37,6 +40,8 @@ import com.humanperformcenter.ui.screens.LoginScreen
 import com.humanperformcenter.ui.screens.MyProfileScreen
 import com.humanperformcenter.ui.screens.NewProductScreen
 import com.humanperformcenter.ui.screens.PasswordResetInfoScreen
+import com.humanperformcenter.ui.screens.PaymentScreen
+import com.humanperformcenter.ui.screens.PaymentSuccessScreen
 import com.humanperformcenter.ui.screens.ProductDetailScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
 import com.humanperformcenter.ui.screens.SplashScreen
@@ -50,6 +55,7 @@ import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
 import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModel
 import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModelFactory
+import com.humanperformcenter.ui.viewmodel.PaymentViewModelFactory
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModelFactory
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
@@ -165,16 +171,24 @@ fun Navigation(
                 val serviceId = backStackEntry.arguments?.getString("serviceId")?.toIntOrNull()
                 val userIdState = sessionViewModel.userId.collectAsState()
                 val userId = userIdState.value
+
+                val userViewModel: UserViewModel = viewModel(factory = UserViewModelFactory(AppModule.userUseCase))
+                val user by userViewModel.userData.collectAsState()
+                val email = user?.email ?: ""
+
                 val viewModel: ServiceProductViewModel =
                     viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase))
 
                 serviceId?.let {
-                    HireProductScreen(
-                        serviceId = it,
-                        navController = navController,
-                        viewModel = viewModel,
-                        userId = userId!!
-                    )
+                    if (userId != null && email.isNotBlank()) {
+                        HireProductScreen(
+                            serviceId = it,
+                            navController = navController,
+                            viewModel = viewModel,
+                            userId = userId,
+                            userEmail = email
+                        )
+                    }
                 }
             }
             composable<User> {
@@ -285,6 +299,14 @@ fun Navigation(
             }
             composable<ViewPayment> {
                 ViewPaymentScreen(navController = navController)
+            }
+            composable<StartPayment> {
+                val viewModel = remember { PaymentViewModel(PaymentUseCase(PaymentRepositoryImpl)) }
+
+                PaymentScreen(viewModel = viewModel, navController = navController)
+            }
+            composable<PaymentSuccess> {
+                PaymentSuccessScreen(navController = navController)
             }
             composable<EditProfile> {
                 EditProfileRoute(navController = navController)

@@ -7,10 +7,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+//import androidx.lifecycle.ViewModel
 
 class PaymentViewModel(
     private val useCase: PaymentUseCase
-) {
+) /*: ViewModel()*/ {
 
     private val _paymentUrl = MutableStateFlow<String?>(null)
     val paymentUrl: StateFlow<String?> = _paymentUrl.asStateFlow()
@@ -19,6 +20,7 @@ class PaymentViewModel(
     val error: StateFlow<String?> = _error.asStateFlow()
 
     fun generarUrlDePago(request: PaymentRequest) {
+        println("🔧 Generando URL de pago...")
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 val url = useCase(request)

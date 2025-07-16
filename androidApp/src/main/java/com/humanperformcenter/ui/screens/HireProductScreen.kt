@@ -1,5 +1,6 @@
 package com.humanperformcenter.ui.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,12 +37,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.humanperformcenter.ui.components.PaymentWebView
-import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import kotlin.collections.emptyList
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.humanperformcenter.app.navigation.StartPayment
+import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
+import com.humanperformcenter.shared.data.persistence.PaymentRepositoryImpl
+import com.humanperformcenter.ui.viewmodel.PaymentViewModelFactory
+import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,7 +56,8 @@ fun HireProductScreen(
     serviceId: Int,
     navController: NavHostController,
     viewModel: ServiceProductViewModel,
-    userId: Int
+    userId: Int,
+    userEmail: String
 ) {
     val productosMap by viewModel.serviceProducts.collectAsState()
     val productos = productosMap[serviceId] ?: emptyList()
@@ -63,6 +71,11 @@ fun HireProductScreen(
 
     var mostrarSeleccionPago by remember { mutableStateOf(false) }
 
+    val paymentViewModel = remember { PaymentViewModel(PaymentUseCase(PaymentRepositoryImpl)) }
+
+    /*val paymentViewModel: PaymentViewModel = viewModel(
+        factory = PaymentViewModelFactory(PaymentUseCase(PaymentRepositoryImpl))
+    )*/
 
     LaunchedEffect(serviceId) {
         viewModel.loadServiceProducts(serviceId)
@@ -207,16 +220,47 @@ fun HireProductScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    val context = LocalContext.current
+
                     Button(
                         onClick = {
-                            /*
-                            viewModel.assignProductToUser(userId, productoIdSeleccionado!!)
-                            Toast.makeText(context, "Contratado con tarjeta", Toast.LENGTH_SHORT).show()
+                            val selectedProductId = productoIdSeleccionado
+                            val email = userEmail
+
+                            if (selectedProductId == null || email.isBlank()) {
+                                Toast.makeText(context, "Faltan datos del producto o email", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+
+                            viewModel.assignProductToUser(
+                                userId = userId,
+                                productId = selectedProductId,
+                                paymentMethod = "card",
+                                couponCode = cuponTexto.takeIf { it.isNotBlank() }
+                            ) { success ->
+                                if (success) {
+                                    println("✅ Producto asignado correctamente")
+
+                                    Log.d("Pago", "userId: $userId")
+                                    Log.d("Pago", "productoId: $productoIdSeleccionado")
+                                    Log.d("Pago", "email: $userEmail")
+                                    Log.d("Pago", "paymentViewModel: ${paymentViewModel::class.simpleName}")
+
+                                    val request = PaymentRequest(
+                                        customer_id = userId,
+                                        product_id = selectedProductId,
+                                        email = email
+                                    )
+
+                                    paymentViewModel.generarUrlDePago(request)
+                                    navController.navigate(StartPayment)
+                                } else {
+                                    Toast.makeText(context, "No se pudo asignar el producto", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
                             mostrarCuponSheet = false
                             mostrarSeleccionPago = false
-                            productoIdSeleccionado = null
-                            cuponTexto = ""
-                            */
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {

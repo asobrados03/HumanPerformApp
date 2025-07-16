@@ -27,3 +27,5 @@ data class ProductDetail(val productId: Int)
 @Serializable object Document
 @Serializable object Payment
 @Serializable object ViewPayment
+@Serializable object StartPayment
+@Serializable object PaymentSuccess
