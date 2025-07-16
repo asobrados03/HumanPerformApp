@@ -12,15 +12,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
 @Composable
-fun UserProfileImage(photoUrl: String?) {
-    if (!photoUrl.isNullOrBlank()) {
+fun UserProfileImage(photoName: String?) {
+    val baseUrl = "http://163.172.71.195:8085/profile_pic/"
+
+    if (!photoName.isNullOrBlank()) {
         AsyncImage(
-            model = photoUrl,
+            model = "$baseUrl$photoName",
             contentDescription = "Foto de usuario",
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(80.dp)
                 .clip(CircleShape)

@@ -15,11 +15,15 @@ import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.RedirectResponseException
 import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.plugins.expectSuccess
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 
@@ -43,7 +47,7 @@ object AuthRepositoryImpl : AuthRepository {
                     dateOfBirth = data.dateOfBirth,
                     postcode = data.postcode,
                     dni = data.dni,
-                    profilePictureUrl = data.profilePictureUrl
+                    profilePictureName = data.profilePictureName
                 )
                 SecureStorage.saveTokens(data.accessToken, data.refreshToken)
                 SecureStorage.saveUser(userData)
@@ -61,31 +65,42 @@ object AuthRepositoryImpl : AuthRepository {
 
     override suspend fun register(data: RegisterRequest): Result<RegisterResponse> {
         return try {
-            // 1) Hacemos la petición y, si es 201, body() se deserializa a RegisterResponse
-            val resp: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/register") {
-                contentType(ContentType.Application.Json)
-                setBody(data)
+            // 1) Construye la lista de partes
+            val parts = formData {
+                data.profilePicBytes?.let { bytes ->
+                    append("profile_pic", bytes, Headers.build {
+                        append(HttpHeaders.ContentType, "image/jpeg")
+                        append(HttpHeaders.ContentDisposition,
+                            "filename=\"${data.profilePicName}\"")
+                    })
+                }
+                append("nombre",       data.nombre)
+                append("apellidos",    data.apellidos)
+                append("email",        data.email)
+                append("telefono",     data.telefono)
+                append("password",     data.password)
+                append("sexo",         data.sexo)
+                append("fecha_nacimiento", data.fechaNacimiento) // ddMMyyyy
+                append("codigo_postal",   data.codigoPostal)
+                append("dni",             data.dni)
             }
 
-            return if (resp.status == HttpStatusCode.Created) {
-                val registerResponse: RegisterResponse = resp.body()
-                Result.success(registerResponse)
+            // 2) Envío con MULTIPART, sin tocar el Content-Type manualmente
+            val response: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/register") {
+                setBody(MultiPartFormDataContent(parts))
+                // NO hagas `contentType(ContentType.MultiPart.FormData)` aquí,
+                // que rompería el boundary :contentReference[oaicite:0]{index=0}
+            }
+
+            // 3) Procesa la respuesta
+            if (response.status == HttpStatusCode.Created) {
+                Result.success(response.body())
             } else {
-                // 2) Si no es 201, intentamos extraer el JSON {"error": "..."}
-                val errorBody: ErrorResponse = resp.body()
-                Result.failure(Exception(errorBody.error))
+                val err = response.body<ErrorResponse>()
+                Result.failure(Exception(err.error))
             }
-        } catch (e: ClientRequestException) {
-            // En caso de 400, 409 u otro cliente, extraemos el JSON de error
-            val errorMessage = try {
-                e.response.body<ErrorResponse>().error
-            } catch (_: Exception) {
-                e.message
-            }
-            Result.failure(Exception(errorMessage))
-        } catch (_: Exception) {
-            // Timeout, sin red, JSON mal formado, etc.
-            Result.failure(Exception("Error de conexión. Revisa tu conexión a internet e inténtalo de nuevo."))
+        } catch (e: Exception) {
+            Result.failure(Exception("Error al registrar: ${e.message}"))
         }
     }
 

@@ -12,7 +12,7 @@ data class LoginResponse(
     val dateOfBirth: String,
     val postcode: Int? = null,
     val dni: String? = null,
-    val profilePictureUrl: String?,
+    val profilePictureName: String?,
     val accessToken: String,
     val refreshToken: String
 )

@@ -1,5 +1,9 @@
 package com.humanperformcenter.ui.screens
 
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,11 +54,13 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -74,6 +80,7 @@ import com.humanperformcenter.ui.util.DateVisualTransformation
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
 import com.humanperformcenter.ui.viewmodel.state.RegisterState
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,6 +126,32 @@ fun RegisterScreen(
     var aceptoTerminos by rememberSaveable { mutableStateOf(false) }
     var aceptoPolitica by rememberSaveable { mutableStateOf(false) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+
+    // 🔹 Estados para la imagen de perfil
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var profilePicBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var profilePicName by remember { mutableStateOf<String?>(null) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            coroutineScope.launch {
+                // Leer bytes
+                context.contentResolver.openInputStream(it)?.use { stream ->
+                    profilePicBytes = stream.readBytes()
+                }
+                // Obtener nombre de archivo
+                context.contentResolver.query(it, null, null, null, null)?.use { cursor ->
+                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (cursor.moveToFirst() && nameIndex >= 0) {
+                        profilePicName = cursor.getString(nameIndex)
+                    }
+                }
+            }
+        }
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -171,6 +204,12 @@ fun RegisterScreen(
         ) {
             Text("Registro", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(16.dp))
+
+            // 🔹 Botón para seleccionar imagen
+            Button(onClick = { imagePickerLauncher.launch("image/*") }) {
+                Text(text = profilePicName ?: "Seleccionar foto de perfil")
+            }
+            Spacer(Modifier.height(8.dp))
 
             // Nombre / Apellidos / Email / Teléfono / Contraseña
             OutlinedTextField(
@@ -536,7 +575,9 @@ fun RegisterScreen(
                                 sexValue,
                                 fechaNacimientoText,
                                 codigoPostal,
-                                dni
+                                dni,
+                                profilePicBytes,
+                                profilePicName
                             )
                             viewModel.register(req)
                         }
