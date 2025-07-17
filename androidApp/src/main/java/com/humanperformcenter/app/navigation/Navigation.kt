@@ -55,7 +55,6 @@ import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
 import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModel
 import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModelFactory
-import com.humanperformcenter.ui.viewmodel.PaymentViewModelFactory
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModelFactory
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
@@ -191,34 +190,23 @@ fun Navigation(
                     }
                 }
             }
-            composable<User> {
+            composable<User> { backStackEntry ->
                 val userViewModel: UserViewModel = viewModel(
                     factory = UserViewModelFactory(AppModule.userUseCase)
                 )
                 val loading by userViewModel.isLoading.collectAsState()
-                val user by userViewModel.userData.collectAsState()
 
                 when {
                     loading -> {
-                        // Mostrar spinner mientras isLoading == true
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator()
-                        }
-                    }
-
-                    user == null -> {
-                        // Ya cargó y NO hay user: navegar a Login
-                        LaunchedEffect(Unit) {
-                            navController.navigate(Login) {
-                                popUpTo(User) { inclusive = true }
-                            }
                         }
                     }
 
                     else -> {
                         UserScreen(
                             navController = navController,
-                            user = user!!,
+                            userViewModel = userViewModel,
                             onEditProfile = { navController.navigate(EditProfile) },
                             onViewProfile = { navController.navigate(MyProfile) },
                             onMenuClick = { option ->
@@ -412,7 +400,7 @@ fun Navigation(
                     statsViewModel = statsViewModel,
                     userId = userId?: 0,
                     onEntryClick = { blogEntry ->
-                        navController.navigate(BlogDetail(blogEntry.blogId)) {
+                        navController.navigate(StatsDetail(blogEntry.blogId)) {
                             launchSingleTop = true
                             restoreState = true
                         }

@@ -13,7 +13,7 @@ import kotlinx.serialization.Serializable
 @Serializable object Stats
 
 @Serializable
-data class BlogDetail(val blogId: Int)
+data class StatsDetail(val id: Int)
 @Serializable
 data class ProductDetail(val productId: Int)
 

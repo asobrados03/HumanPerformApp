@@ -39,8 +39,6 @@ object ApiClient {
             sink = logoutEvents
         }
 
-        install(Logging) { level = LogLevel.BODY }
-
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }

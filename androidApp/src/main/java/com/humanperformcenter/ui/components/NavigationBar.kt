@@ -27,7 +27,7 @@ fun NavigationBar(navController: NavController) {
     val items = listOf(
         NavItem(NewProduct, "Producto",  R.drawable.exercise),
         NavItem(Calendar,   "Calendario", R.drawable.calendar),
-        NavItem(Stats,      "Estadísticas",R.drawable.stories),
+        NavItem(Stats,      "Estadísticas",R.drawable.stats),
         NavItem(User,       "Usuario",    R.drawable.person)
     )
 

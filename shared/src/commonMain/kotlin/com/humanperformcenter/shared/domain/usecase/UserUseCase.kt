@@ -11,8 +11,8 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 
 class UserUseCase(private val userRepository: UserRepository) {
-    suspend fun updateUser(user: User): Result<User> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.updateUser(user)
+    suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User> = withContext(Dispatchers.IO) {
+        return@withContext userRepository.updateUser(user, profilePicBytes)
     }
 
     suspend fun deleteUser(email: String): Result<Unit> = withContext(Dispatchers.IO) {

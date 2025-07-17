@@ -10,14 +10,21 @@ import com.humanperformcenter.shared.domain.repository.UserRepository
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.contentType
+import io.ktor.utils.io.InternalAPI
+import kotlinx.serialization.json.Json
 
 object UserRepositoryImpl: UserRepository {
 
@@ -26,25 +33,48 @@ object UserRepositoryImpl: UserRepository {
      * Si el servidor responde 200 OK, devuelve Result.success(updatedUser).
      * Si responde otro código o lanza excepción, devuelve Result.failure con el error.
      */
-    override suspend fun updateUser(user: User): Result<User> {
+    override suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User> {
         return try {
-            // Realizamos la petición PUT al endpoint /user
-            val resp: HttpResponse = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/user") {
-                contentType(ContentType.Application.Json)
-                // El body se serializa automáticamente usando kotlinx-serialization
-                setBody(user)
+            // 1) Serializamos el User a JSON
+            val userJson = Json.encodeToString(User.serializer(), user)
+
+            // 2) Construimos los distintos parts del formulario
+            val formData = formData {
+                // Campo "user" con JSON
+                append(
+                    key = "user",
+                    value = userJson,
+                    headers = Headers.build {
+                        append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    }
+                )
+
+                // Si hay bytes de imagen, lo añadimos como archivo
+                profilePicBytes?.let { bytes ->
+                    append("profile_pic", bytes, Headers.build {
+                        append(HttpHeaders.ContentType, "image/jpeg")
+                        append(HttpHeaders.ContentDisposition,
+                            "filename=\"${user.profilePictureName}\"")
+                    })
+                }
             }
 
-            // Comprobamos el código de estado HTTP
-            return if (resp.status == HttpStatusCode.OK) {
+            // 3) Hacemos la petición PUT con multipart/form-data
+            val resp: HttpResponse = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/user") {
+                setBody(MultiPartFormDataContent(formData))
+            }
+
+            // 4) Procesamos la respuesta
+            if (resp.status == HttpStatusCode.OK) {
                 val updatedUser: User = resp.body()
                 SecureStorage.saveUser(updatedUser)
                 Result.success(updatedUser)
             } else {
-                Result.failure(Exception("Error al actualizar usuario: código HTTP ${resp.status.value}"))
+                Result.failure(
+                    Exception("Error al actualizar usuario: código HTTP ${resp.status.value}")
+                )
             }
         } catch (e: Exception) {
-            // Si hay timeout, red de falla, JSON malformado, etc.
             Result.failure(e)
         }
     }

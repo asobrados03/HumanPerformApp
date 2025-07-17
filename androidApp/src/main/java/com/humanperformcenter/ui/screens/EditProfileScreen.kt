@@ -1,5 +1,9 @@
 package com.humanperformcenter.ui.screens
 
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -48,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -57,6 +62,7 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.R
 import com.humanperformcenter.data.SexOption
 import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.ui.components.EditableUserProfileImage
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState.Field
@@ -67,12 +73,47 @@ import kotlinx.coroutines.launch
 fun EditProfileScreen(
     user: User,
     updateState: UpdateState,
-    onSave: (User) -> Unit,
+    onSave: (User, ByteArray?) -> Unit,
     navController: NavHostController
 ) {
     // 1) Snackbar para errores genéricos de red/servidor
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    // ◀─ Nuevo: estados para la foto de perfil
+    var profilePicBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var profilePicName by remember { mutableStateOf(user.profilePictureName) }
+    var profilePicUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+
+    // ◀─ Nuevo: launcher para galería
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            navController
+                .previousBackStackEntry
+                ?.savedStateHandle
+                ?.set("new_profile_uri", it.toString())
+
+            // ① actualizamos URI local en el VM
+            //userViewModel.setProfilePicUri(it)
+            profilePicUri = it
+
+            // ② y seguimos leyendo bytes y nombre como antes
+            coroutineScope.launch {
+                context.contentResolver.openInputStream(it)?.use { stream ->
+                    profilePicBytes = stream.readBytes()
+                }
+                context.contentResolver.query(it, null, null, null, null)?.use { cursor ->
+                    val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (cursor.moveToFirst() && idx >= 0) {
+                        profilePicName = cursor.getString(idx)
+                    }
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -180,6 +221,13 @@ fun EditProfileScreen(
                         .fillMaxWidth()
                         .padding(bottom = 24.dp),
                     textAlign = TextAlign.Center
+                )
+
+                EditableUserProfileImage(
+                    photoName = profilePicName,
+                    photoUri  = profilePicUri,       // ◀─ aquí
+                    onChangePhotoClick = { imagePickerLauncher.launch("image/*") },
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
 
                 // --- Correo (no editable) ---
@@ -379,11 +427,12 @@ fun EditProfileScreen(
                             sex = nuevoSexo,
                             phone = phone.trim(),
                             postcode = postcodeInt,
-                            dni = dni.ifBlank { null }
+                            dni = dni.ifBlank { null },
+                            profilePictureName = profilePicName
                         )
 
                         // Limpiar errores previos y delegar en el ViewModel
-                        onSave(updated)
+                        onSave(updated, profilePicBytes)
                     },
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)

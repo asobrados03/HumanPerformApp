@@ -1,5 +1,6 @@
 package com.humanperformcenter.ui.components
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.size
@@ -17,11 +18,21 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
 @Composable
-fun UserProfileImage(photoName: String?) {
+fun UserProfileImage(photoName: String? = null, photoUri: Uri? = null) {
     val baseUrl = "http://163.172.71.195:8085/profile_pic/"
-
-    if (!photoName.isNullOrBlank()) {
-        AsyncImage(
+    when {
+        // ① si hay URI local, la mostramos
+        photoUri != null -> AsyncImage(
+            model = photoUri,
+            contentDescription = "Foto de usuario",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .border(2.dp, Color.White, CircleShape)
+        )
+        // ② si no URI pero sí nombre remoto, construimos la URL
+        !photoName.isNullOrBlank() -> AsyncImage(
             model = "$baseUrl$photoName",
             contentDescription = "Foto de usuario",
             contentScale = ContentScale.Crop,
@@ -30,8 +41,8 @@ fun UserProfileImage(photoName: String?) {
                 .clip(CircleShape)
                 .border(2.dp, Color.White, CircleShape)
         )
-    } else {
-        Icon(
+        // ③ fallback
+        else -> Icon(
             imageVector = Icons.Default.AccountCircle,
             contentDescription = "Avatar por defecto",
             tint = MaterialTheme.colorScheme.onSurfaceVariant,

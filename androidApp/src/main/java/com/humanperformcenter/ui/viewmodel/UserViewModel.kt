@@ -1,5 +1,6 @@
 package com.humanperformcenter.ui.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -65,7 +66,7 @@ class UserViewModel(
      * errores, emite ValidationErrors con el mapa. Si no, emite Loading y llama a updateUser()
      * del caso de uso.
      */
-    fun updateUser(candidate: User) {
+    fun updateUser(candidate: User, profilePicBytes: ByteArray?) {
         // 1) Convertir dateOfBirth de "yyyy-MM-dd" (que la UI ya le pasó) a formato dd/MM/yyyy
         //    para validar en el caso de uso. Podemos invertir la cadena:
         val dobParts = candidate.dateOfBirth.split("-")
@@ -107,10 +108,11 @@ class UserViewModel(
         _updateState.value = UpdateState.Loading
 
         viewModelScope.launch {
-            val result = userUseCase.updateUser(candidate)
+            val result = userUseCase.updateUser(candidate, profilePicBytes)
 
             result.onSuccess { newUser ->
                 _updateState.value = UpdateState.Success(newUser)
+                _userData.value = newUser
             }.onFailure { throwable ->
                 _updateState.value =
                     UpdateState.Error(throwable.message ?: "Error desconocido")
@@ -189,5 +191,4 @@ class UserViewModel(
             )
         }
     }
-
 }

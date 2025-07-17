@@ -51,9 +51,9 @@ fun EditProfileRoute(navController: NavHostController) {
             EditProfileScreen(
                 user = userState!!,
                 updateState = updateState,
-                onSave = { updatedUser ->
+                onSave = { updatedUser, profilePicBytes ->
                     userViewModel.clearUpdateState()
-                    userViewModel.updateUser(updatedUser)
+                    userViewModel.updateUser(updatedUser, profilePicBytes)
                 },
                 navController = navController
             )
