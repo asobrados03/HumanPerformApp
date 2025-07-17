@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.humanperformcenter.app.navigation.Navigation
 import com.humanperformcenter.data.SessionDatabase
 import com.humanperformcenter.data.SessionRepository
+import com.humanperformcenter.shared.domain.storage.DataStoreProvider
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.storage.createDataStore
 import com.humanperformcenter.ui.theme.HumanPerformAppTheme
@@ -19,14 +20,10 @@ import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModelFactory
 
 class MainActivity : ComponentActivity() {
-    private val prefs: DataStore<Preferences> by lazy {
-        createDataStore(applicationContext)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        SecureStorage.init(prefs)
+        SecureStorage.init(DataStoreProvider.get(applicationContext))
 
         enableEdgeToEdge()
         setContent {
@@ -35,7 +32,7 @@ class MainActivity : ComponentActivity() {
             val sessionDao = SessionDatabase.getDatabase(context).sessionDao()
             val sessionRepository = SessionRepository(sessionDao)
             val sessionViewModel: SessionViewModel = viewModel(
-                factory = SessionViewModelFactory(sessionRepository, prefs)
+                factory = SessionViewModelFactory(sessionRepository, DataStoreProvider.get(applicationContext))
             )
 
             HumanPerformAppTheme {
