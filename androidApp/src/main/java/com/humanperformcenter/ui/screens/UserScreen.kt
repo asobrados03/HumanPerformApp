@@ -77,7 +77,7 @@ fun UserScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        UserProfileImage(user.profilePictureName)
+                        UserProfileImage(user.profilePictureUrl)
                         //Boton de texto con el texto "Editar"
                         Spacer(Modifier.height(12.dp))
                         Text(
