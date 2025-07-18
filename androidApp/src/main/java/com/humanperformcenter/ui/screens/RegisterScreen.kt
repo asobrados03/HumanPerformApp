@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Man
@@ -120,6 +121,9 @@ fun RegisterScreen(
     var codigoPostal by rememberSaveable { mutableStateOf("") }
     var codigoPostalError by remember { mutableStateOf("") }
 
+    var direccionPostal by rememberSaveable { mutableStateOf("") }
+    var direccionPostalError by rememberSaveable { mutableStateOf("") }
+
     var dni by rememberSaveable { mutableStateOf("") }
     var dniError by remember { mutableStateOf("") }
 
@@ -179,6 +183,7 @@ fun RegisterScreen(
             fechaNacimientoError = fieldErrors[RegisterField.DATE_OF_BIRTH] ?: ""
             sexError = fieldErrors[RegisterField.SEX] ?: ""
             codigoPostalError = fieldErrors[RegisterField.POSTCODE] ?: ""
+            direccionPostalError = fieldErrors[RegisterField.POSTAL_ADDRESS] ?: ""
             dniError = fieldErrors[RegisterField.DNI] ?: ""
         }
     }
@@ -425,6 +430,20 @@ fun RegisterScreen(
 
             Spacer(Modifier.height(8.dp))
 
+            OutlinedTextField(
+                value = direccionPostal,
+                onValueChange = {
+                    direccionPostal = it
+                    if (direccionPostalError.isNotEmpty()) direccionPostalError = ""
+                },
+                label = { Text("Dirección Postal") },
+                leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(8.dp))
+
             // Código postal / DNI
             OutlinedTextField(
                 value = codigoPostal,
@@ -433,7 +452,7 @@ fun RegisterScreen(
                     if (codigoPostalError.isNotEmpty()) codigoPostalError = ""
                 },
                 label = { Text("Código Postal") },
-                leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.LocationCity, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -575,6 +594,7 @@ fun RegisterScreen(
                                 sexValue,
                                 fechaNacimientoText,
                                 codigoPostal,
+                                direccionPostal,
                                 dni,
                                 profilePicBytes,
                                 profilePicName

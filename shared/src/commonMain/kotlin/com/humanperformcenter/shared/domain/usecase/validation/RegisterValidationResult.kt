@@ -16,6 +16,7 @@ sealed class RegisterValidationResult {
         DATE_OF_BIRTH,
         SEX,
         POSTCODE,
+        POSTAL_ADDRESS,
         DNI
     }
 }

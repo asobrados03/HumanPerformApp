@@ -102,6 +102,7 @@ object UserValidator {
         dateOfBirthText: String,
         selectedSexBackend: String?,
         postcode: String,
+        address: String,
         dni: String
     ): RegisterValidationResult {
         val errors = mutableMapOf<RegisterField, String>()
@@ -204,6 +205,11 @@ object UserValidator {
             errors[RegisterField.POSTCODE] = "El código postal es obligatorio"
         } else if (postcode.any { !it.isDigit() } || postcode.length < 5) {
             errors[RegisterField.POSTCODE] = "Código postal inválido"
+        }
+
+        // Dirección postal
+        if (address.isBlank()) {
+            errors[RegisterField.POSTAL_ADDRESS] = "La dirección postal es obligatoria"
         }
 
         // 8) DNI

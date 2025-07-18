@@ -57,6 +57,7 @@ class AuthViewModel(
             dateOfBirthText = data.fechaNacimiento,
             selectedSexBackend = data.sexo,
             postcode = data.codigoPostal,
+            address = data.direccionPostal,
             dni = data.dni
         )
 

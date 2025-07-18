@@ -13,8 +13,8 @@ data class RegisterRequest(
     val sexo: String,
     @SerialName("fecha_nacimiento")
     val fechaNacimiento: String, // formato "YYYY-MM-DD"
-    @SerialName("codigo_postal")
     val codigoPostal: String,
+    val direccionPostal: String,
     val dni: String,
     val profilePicBytes: ByteArray?,
     val profilePicName: String?

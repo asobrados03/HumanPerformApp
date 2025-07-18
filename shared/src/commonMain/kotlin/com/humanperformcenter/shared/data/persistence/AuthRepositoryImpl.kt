@@ -81,7 +81,8 @@ object AuthRepositoryImpl : AuthRepository {
                 append("password",     data.password)
                 append("sexo",         data.sexo)
                 append("fecha_nacimiento", data.fechaNacimiento) // ddMMyyyy
-                append("codigo_postal",   data.codigoPostal)
+                append("codigoPostal",   data.codigoPostal)
+                append("direccionPostal", data.direccionPostal)
                 append("dni",             data.dni)
             }
 
