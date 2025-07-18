@@ -41,12 +41,7 @@ import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
-import kotlin.collections.emptyList
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.humanperformcenter.app.navigation.StartPayment
-import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
-import com.humanperformcenter.shared.data.persistence.PaymentRepositoryImpl
-import com.humanperformcenter.ui.viewmodel.PaymentViewModelFactory
 import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
 
 
@@ -57,7 +52,10 @@ fun HireProductScreen(
     navController: NavHostController,
     viewModel: ServiceProductViewModel,
     userId: Int,
-    userEmail: String
+    userEmail: String,
+    userStreet: String,
+    userPostal: String,
+    paymentViewModel: PaymentViewModel
 ) {
     val productosMap by viewModel.serviceProducts.collectAsState()
     val productos = productosMap[serviceId] ?: emptyList()
@@ -68,14 +66,19 @@ fun HireProductScreen(
     var mostrarCuponSheet by remember { mutableStateOf(false) }
     var productoIdSeleccionado by remember { mutableStateOf<Int?>(null) }
     var cuponTexto by remember { mutableStateOf("") }
-
     var mostrarSeleccionPago by remember { mutableStateOf(false) }
 
-    val paymentViewModel = remember { PaymentViewModel(PaymentUseCase(PaymentRepositoryImpl)) }
+    val paymentUrl by paymentViewModel.paymentUrl.collectAsState()
 
-    /*val paymentViewModel: PaymentViewModel = viewModel(
-        factory = PaymentViewModelFactory(PaymentUseCase(PaymentRepositoryImpl))
-    )*/
+    val context = LocalContext.current
+
+    LaunchedEffect(paymentUrl) {
+        if (!paymentUrl.isNullOrBlank()) {
+            Toast.makeText(context, "Abriendo pasarela de pago...", Toast.LENGTH_SHORT).show()
+            Log.d("Pago", "🔗 URL detectada desde ViewModel: $paymentUrl")
+            navController.navigate(StartPayment)
+        }
+    }
 
     LaunchedEffect(serviceId) {
         viewModel.loadServiceProducts(serviceId)
@@ -165,12 +168,9 @@ fun HireProductScreen(
             },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
-            val context = LocalContext.current
-
             Column(modifier = Modifier.padding(16.dp)) {
 
                 if (!mostrarSeleccionPago) {
-                    // Pantalla de cupón
                     Text("¿Tienes un cupón?", style = MaterialTheme.typography.titleMedium)
 
                     OutlinedTextField(
@@ -215,12 +215,9 @@ fun HireProductScreen(
                     }
 
                 } else {
-                    // Pantalla de selección de método de pago
                     Text("Selecciona método de pago", style = MaterialTheme.typography.titleMedium)
 
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    val context = LocalContext.current
 
                     Button(
                         onClick = {
@@ -239,21 +236,15 @@ fun HireProductScreen(
                                 couponCode = cuponTexto.takeIf { it.isNotBlank() }
                             ) { success ->
                                 if (success) {
-                                    println("✅ Producto asignado correctamente")
-
-                                    Log.d("Pago", "userId: $userId")
-                                    Log.d("Pago", "productoId: $productoIdSeleccionado")
-                                    Log.d("Pago", "email: $userEmail")
-                                    Log.d("Pago", "paymentViewModel: ${paymentViewModel::class.simpleName}")
-
                                     val request = PaymentRequest(
                                         customer_id = userId,
                                         product_id = selectedProductId,
-                                        email = email
+                                        email = email,
+                                        billing_street = userStreet,
+                                        billing_postal = userPostal
                                     )
 
                                     paymentViewModel.generarUrlDePago(request)
-                                    navController.navigate(StartPayment)
                                 } else {
                                     Toast.makeText(context, "No se pudo asignar el producto", Toast.LENGTH_SHORT).show()
                                 }
@@ -274,7 +265,7 @@ fun HireProductScreen(
                             viewModel.assignProductToUser(
                                 userId = userId,
                                 productId = productoIdSeleccionado!!,
-                                paymentMethod = "cash", // o "card"
+                                paymentMethod = "cash",
                                 couponCode = cuponTexto.takeIf { it.isNotBlank() },
                             ) { success ->
                                 Toast.makeText(context, if (success) "Producto asignado" else "Error al asignar", Toast.LENGTH_SHORT).show()
@@ -293,4 +284,3 @@ fun HireProductScreen(
         }
     }
 }
-

@@ -55,6 +55,7 @@ import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
 import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModel
 import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModelFactory
+import com.humanperformcenter.ui.viewmodel.PaymentViewModelFactory
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModelFactory
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
@@ -78,6 +79,8 @@ fun Navigation(
     val isLoggedIn by sessionViewModel
         .isLoggedInFlow
         .collectAsState(initial = false)
+
+    val paymentViewModel = remember { PaymentViewModel(PaymentUseCase(PaymentRepositoryImpl)) }
 
     LaunchedEffect(Unit) {
         ApiClient.logoutEvents.collect {
@@ -174,6 +177,8 @@ fun Navigation(
                 val userViewModel: UserViewModel = viewModel(factory = UserViewModelFactory(AppModule.userUseCase))
                 val user by userViewModel.userData.collectAsState()
                 val email = user?.email ?: ""
+                val userStreet = user?.postAddress ?: ""
+                val userPostal = user?.postcode ?: ""
 
                 val viewModel: ServiceProductViewModel =
                     viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase))
@@ -185,7 +190,10 @@ fun Navigation(
                             navController = navController,
                             viewModel = viewModel,
                             userId = userId,
-                            userEmail = email
+                            userEmail = email,
+                            userStreet = userStreet,
+                            userPostal = userPostal.toString(),
+                            paymentViewModel = paymentViewModel
                         )
                     }
                 }
@@ -289,9 +297,7 @@ fun Navigation(
                 ViewPaymentScreen(navController = navController)
             }
             composable<StartPayment> {
-                val viewModel = remember { PaymentViewModel(PaymentUseCase(PaymentRepositoryImpl)) }
-
-                PaymentScreen(viewModel = viewModel, navController = navController)
+                PaymentScreen(viewModel = paymentViewModel, navController = navController)
             }
             composable<PaymentSuccess> {
                 PaymentSuccessScreen(navController = navController)
