@@ -46,6 +46,7 @@ object AuthRepositoryImpl : AuthRepository {
                     sex = data.sex,
                     dateOfBirth = data.dateOfBirth,
                     postcode = data.postcode,
+                    postAddress = data.postAddress,
                     dni = data.dni,
                     profilePictureName = data.profilePictureName
                 )

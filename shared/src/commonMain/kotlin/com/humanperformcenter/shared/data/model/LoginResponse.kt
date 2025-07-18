@@ -11,6 +11,7 @@ data class LoginResponse(
     val sex: String,
     val dateOfBirth: String,
     val postcode: Int? = null,
+    val postAddress: String,
     val dni: String? = null,
     val profilePictureName: String?,
     val accessToken: String,
