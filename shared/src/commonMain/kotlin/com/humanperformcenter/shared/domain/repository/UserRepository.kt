@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.domain.repository
 
+import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.EstadisticasUsuario
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
@@ -10,6 +11,7 @@ interface UserRepository {
     suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User>
     suspend fun deleteUser(email: String): Result<Unit>
     suspend fun getCoaches(): Result<List<Professional>>
+    suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit>
     suspend fun getUserAllowedServices(customerId: Int) : List<ServiceAvailable>
     suspend fun getUserBookings(customerId: Int): List<UserBooking>
     suspend fun cancelUserBooking(bookingId: Int): Result<Unit>

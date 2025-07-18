@@ -1,5 +1,7 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
+import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.EstadisticasUsuario
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
@@ -113,6 +115,28 @@ object UserRepositoryImpl: UserRepository {
             }
         } catch (e: Exception) {
             // Si hay timeout, red de falla, JSON malformado, etc.
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit> {
+        return try {
+            val resp: HttpResponse = ApiClient.apiClient.delete(
+                "${ApiClient.baseUrl}/mobile/user/photo"
+            ) {
+                url {
+                    parameters.append("profilePictureName", req.profilePictureName.toString())
+                    parameters.append("email", req.email)
+                }
+            }
+            return when (resp.status) {
+                HttpStatusCode.OK       -> Result.success(resp.body())
+                HttpStatusCode.NotFound -> Result.failure(Exception(resp.body<ErrorResponse>().error))
+                else                    -> Result.failure(
+                    Exception("Error al eliminar la foto de perfil: código HTTP ${resp.status.value}")
+                )
+            }
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }

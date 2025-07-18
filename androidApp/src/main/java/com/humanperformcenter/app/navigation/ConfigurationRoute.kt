@@ -29,7 +29,7 @@ fun ConfigurationRoute(
     // 1) Estado de borrado
     val deleteState by userViewModel.deleteState.collectAsState()
     // 2) Email actual de sesión
-    val user = SecureStorage.userFlow().collectAsState(initial = null).value
+    val user by userViewModel.userData.collectAsState()
     val currentEmail = user?.email.orEmpty()
 
     // 3) Contexto para Toasts
@@ -48,6 +48,7 @@ fun ConfigurationRoute(
                 navController.navigate(Welcome) {
                     popUpTo(Welcome) { inclusive = true }
                 }
+                userViewModel.resetDeleteState()
             }
             is DeleteUserState.Error -> {
                 Toast.makeText(

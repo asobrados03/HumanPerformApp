@@ -11,7 +11,7 @@ data class User(
     val sex: String,
     val dateOfBirth: String,
     val postcode: Int? = null,
-    val postAddress: String,
+    val postAddress: String? = null,
     val dni: String? = null,
     val profilePictureName: String?
 )

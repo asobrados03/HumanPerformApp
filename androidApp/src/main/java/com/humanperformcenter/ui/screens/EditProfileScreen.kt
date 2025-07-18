@@ -42,7 +42,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,25 +60,37 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
 import com.humanperformcenter.R
 import com.humanperformcenter.data.SexOption
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.ui.components.EditableUserProfileImage
 import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.components.ProfilePhotoSheet
+import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.ui.viewmodel.state.DeleteProfilePicState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState.Field
 import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
     user: User,
-    updateState: UpdateState,
+    userViewModel: UserViewModel,
     onSave: (User, ByteArray?) -> Unit,
+    onDeleteProfilePic: () -> Unit,
     navController: NavHostController
 ) {
-    // 1) Snackbar para errores genéricos de red/servidor
+    val updateState: UpdateState by userViewModel.updateState
+        .observeAsState(initial = UpdateState.Idle)
+
+    val deleteProfilePicState: DeleteProfilePicState by userViewModel.deleteProfilePicState
+        .collectAsState(initial = DeleteProfilePicState.Idle)
+
+    // Snackbar para errores genéricos de red/servidor
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -85,6 +99,11 @@ fun EditProfileScreen(
     var profilePicBytes by remember { mutableStateOf<ByteArray?>(null) }
     var profilePicName by remember { mutableStateOf(user.profilePictureName) }
     var profilePicUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+
+    // Estado para el ModalBottomSheet
+    var showSheet by remember { mutableStateOf(false) }
+
+    var tempCameraUri by rememberSaveable { mutableStateOf<Uri?>(null) }
 
     // ◀─ Nuevo: launcher para galería
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -115,6 +134,36 @@ fun EditProfileScreen(
         }
     }
 
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            tempCameraUri?.let { uri ->
+                // 3) mismo patrón: guardamos en el SavedStateHandle
+                navController
+                    .previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("new_profile_uri", uri.toString())
+
+                // 4) actualizamos el estado local
+                profilePicUri = uri
+
+                // 5) leemos bytes y nombre como haces en galería
+                coroutineScope.launch {
+                    // bytes
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        profilePicBytes = stream.readBytes()
+                    }
+                    // nombre (aquí, como es un file provider, extraemos del path)
+                    val name = uri.lastPathSegment
+                        ?.substringAfterLast('/')
+                        ?: "IMG_${System.currentTimeMillis()}.jpg"
+                    profilePicName = name
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             LogoAppBar(
@@ -138,9 +187,30 @@ fun EditProfileScreen(
             LaunchedEffect(updateState) {
                 when (val state = updateState) {
                     is UpdateState.Success -> {
+                        userViewModel.clearUpdateState()
                         navController.popBackStack()
                     }
                     is UpdateState.Error -> {
+                        userViewModel.clearUpdateState()
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = state.message,
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                    else -> Unit
+                }
+            }
+
+            LaunchedEffect(deleteProfilePicState) {
+                when(val state = deleteProfilePicState) {
+                    is DeleteProfilePicState.Success -> {
+                        userViewModel.clearDeleteProfilePicState()
+                        navController.popBackStack()
+                    }
+                    is DeleteProfilePicState.Error -> {
+                        userViewModel.clearDeleteProfilePicState()
                         coroutineScope.launch {
                             snackbarHostState.showSnackbar(
                                 message = state.message,
@@ -197,7 +267,7 @@ fun EditProfileScreen(
             // 5) Cuando updateState cambie a ValidationErrors, volcamos los mensajes a los estados locales
             LaunchedEffect(updateState) {
                 if (updateState is UpdateState.ValidationErrors) {
-                    val fieldErrors = updateState.fieldErrors
+                    val fieldErrors = (updateState as UpdateState.ValidationErrors).fieldErrors
                     fullNameError = fieldErrors[Field.FULL_NAME] ?: ""
                     dateOfBirthError = fieldErrors[Field.DATE_OF_BIRTH] ?: ""
                     sexError = fieldErrors[Field.SEX] ?: ""
@@ -225,10 +295,44 @@ fun EditProfileScreen(
 
                 EditableUserProfileImage(
                     photoName = profilePicName,
-                    photoUri  = profilePicUri,       // ◀─ aquí
-                    onChangePhotoClick = { imagePickerLauncher.launch("image/*") },
+                    photoUri  = profilePicUri,
+                    onChangePhotoClick = { showSheet = true },
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
+
+                if (showSheet) {
+                    ProfilePhotoSheet(
+                        showSheet      = true,
+                        onDismiss      = { showSheet = false },
+                        onDelete       = {
+                            onDeleteProfilePic()
+                            profilePicName = null
+                            profilePicUri  = null
+                            profilePicBytes= null
+                            showSheet      = false
+                        },
+                        onCamera       = {
+                            showSheet = false
+                            // 1) crear archivo temporal
+                            val file = File(
+                                context.cacheDir,
+                                "IMG_${System.currentTimeMillis()}.jpg"
+                            )
+                            val uri = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.provider",
+                                file
+                            )
+                            tempCameraUri = uri
+                            // 2) lanzar cámara
+                            cameraLauncher.launch(uri)
+                        },
+                        onGallery      = {
+                            showSheet = false
+                            imagePickerLauncher.launch("image/*")
+                        }
+                    )
+                }
 
                 // --- Correo (no editable) ---
                 OutlinedTextField(

@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -16,7 +15,6 @@ import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.ui.screens.EditProfileScreen
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
-import com.humanperformcenter.ui.viewmodel.state.UpdateState
 
 @Composable
 fun EditProfileRoute(navController: NavHostController) {
@@ -25,13 +23,6 @@ fun EditProfileRoute(navController: NavHostController) {
     )
     val loading by userViewModel.isLoading.collectAsState()
     val userState by userViewModel.userData.collectAsState()
-
-    val updateState: UpdateState by userViewModel.updateState
-        .observeAsState(initial = UpdateState.Idle)
-
-    LaunchedEffect(Unit) {
-        userViewModel.clearUpdateState()
-    }
 
     when {
         loading -> {
@@ -50,11 +41,11 @@ fun EditProfileRoute(navController: NavHostController) {
         else -> {
             EditProfileScreen(
                 user = userState!!,
-                updateState = updateState,
+                userViewModel = userViewModel,
                 onSave = { updatedUser, profilePicBytes ->
-                    userViewModel.clearUpdateState()
                     userViewModel.updateUser(updatedUser, profilePicBytes)
                 },
+                onDeleteProfilePic = {userViewModel.deleteProfilePic(userState!!)},
                 navController = navController
             )
         }

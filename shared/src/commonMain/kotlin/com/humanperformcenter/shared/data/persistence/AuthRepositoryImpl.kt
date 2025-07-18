@@ -90,8 +90,6 @@ object AuthRepositoryImpl : AuthRepository {
             // 2) Envío con MULTIPART, sin tocar el Content-Type manualmente
             val response: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/register") {
                 setBody(MultiPartFormDataContent(parts))
-                // NO hagas `contentType(ContentType.MultiPart.FormData)` aquí,
-                // que rompería el boundary :contentReference[oaicite:0]{index=0}
             }
 
             // 3) Procesa la respuesta

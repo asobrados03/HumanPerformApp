@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.domain.usecase
 
+import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.EstadisticasUsuario
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
@@ -21,6 +22,10 @@ class UserUseCase(private val userRepository: UserRepository) {
 
     suspend fun getCoaches(): Result<List<Professional>> = withContext(Dispatchers.IO) {
         return@withContext userRepository.getCoaches()
+    }
+
+    suspend fun deleteProfilePic(req: DeleteProfilePicRequest) = withContext(Dispatchers.IO) {
+        return@withContext userRepository.deleteProfilePic(req)
     }
 
     suspend fun getUserAllowedServices(customerId: Int): List<ServiceAvailable> = withContext(Dispatchers.IO) {

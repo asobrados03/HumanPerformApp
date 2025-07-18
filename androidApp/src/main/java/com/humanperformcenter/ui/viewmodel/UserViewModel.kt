@@ -1,18 +1,19 @@
 package com.humanperformcenter.ui.viewmodel
 
-import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.UserBooking
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
 import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
-import com.humanperformcenter.ui.viewmodel.state.BlogState
 import com.humanperformcenter.ui.viewmodel.state.CoachState
+import com.humanperformcenter.ui.viewmodel.state.DeleteProfilePicState
 import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,6 +57,9 @@ class UserViewModel(
     private val _coachesState = MutableStateFlow<CoachState>(CoachState.Idle)
     // Estado público inmutable
     val coachesState: StateFlow<CoachState> = _coachesState.asStateFlow()
+
+    private val _deleteProfilePicState = MutableStateFlow<DeleteProfilePicState>(DeleteProfilePicState.Idle)
+    val deleteProfilePicState: StateFlow<DeleteProfilePicState> = _deleteProfilePicState.asStateFlow()
 
     val favoriteCoachId: StateFlow<Int?> = SecureStorage.favoriteCoachFlow()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -164,6 +168,35 @@ class UserViewModel(
                 )
             }
         }
+    }
+
+    fun deleteProfilePic(user: User) {
+        _deleteProfilePicState.value = DeleteProfilePicState.Loading
+        viewModelScope.launch {
+            userUseCase.deleteProfilePic(
+                DeleteProfilePicRequest(
+                    email = user.email,
+                    profilePictureName = user.profilePictureName
+                )
+            ).fold(
+                onSuccess = {
+                    _deleteProfilePicState.value = DeleteProfilePicState.Success
+
+                    _userData.value = _userData.value
+                        ?.copy(profilePictureName = null)
+
+                    SecureStorage.saveUser(_userData.value!!)
+                },
+                onFailure = { throwable ->
+                    _deleteProfilePicState.value =
+                        DeleteProfilePicState.Error(throwable.message ?: "Error desconocido")
+                }
+            )
+        }
+    }
+
+    fun clearDeleteProfilePicState() {
+        _deleteProfilePicState.value = DeleteProfilePicState.Idle
     }
 
     fun markFavorite(id: Int) {
