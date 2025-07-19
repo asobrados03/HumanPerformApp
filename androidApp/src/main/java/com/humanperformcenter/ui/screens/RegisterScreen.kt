@@ -69,6 +69,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.humanperformcenter.R
@@ -76,12 +77,15 @@ import com.humanperformcenter.data.SexOption
 import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.model.RegisterRequest
 import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult.RegisterField
+import com.humanperformcenter.ui.components.EditableUserProfileImage
 import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.components.ProfilePhotoSheet
 import com.humanperformcenter.ui.util.DateVisualTransformation
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
 import com.humanperformcenter.ui.viewmodel.state.RegisterState
 import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,22 +140,53 @@ fun RegisterScreen(
     val coroutineScope = rememberCoroutineScope()
     var profilePicBytes by remember { mutableStateOf<ByteArray?>(null) }
     var profilePicName by remember { mutableStateOf<String?>(null) }
+    var profilePicUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+
+    // Estado para el ModalBottomSheet
+    var showSheet by remember { mutableStateOf(false) }
+
+    var tempCameraUri by rememberSaveable { mutableStateOf<Uri?>(null) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
+            profilePicUri = it
+
+            // ② y seguimos leyendo bytes y nombre como antes
             coroutineScope.launch {
-                // Leer bytes
                 context.contentResolver.openInputStream(it)?.use { stream ->
                     profilePicBytes = stream.readBytes()
                 }
-                // Obtener nombre de archivo
                 context.contentResolver.query(it, null, null, null, null)?.use { cursor ->
-                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                    if (cursor.moveToFirst() && nameIndex >= 0) {
-                        profilePicName = cursor.getString(nameIndex)
+                    val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (cursor.moveToFirst() && idx >= 0) {
+                        profilePicName = cursor.getString(idx)
                     }
+                }
+            }
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            tempCameraUri?.let { uri ->
+                // 4) actualizamos el estado local
+                profilePicUri = uri
+
+                // 5) leemos bytes y nombre como haces en galería
+                coroutineScope.launch {
+                    // bytes
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        profilePicBytes = stream.readBytes()
+                    }
+                    // nombre (aquí, como es un file provider, extraemos del path)
+                    val name = uri.lastPathSegment
+                        ?.substringAfterLast('/')
+                        ?: "IMG_${System.currentTimeMillis()}.jpg"
+                    profilePicName = name
                 }
             }
         }
@@ -211,9 +246,46 @@ fun RegisterScreen(
             Spacer(Modifier.height(16.dp))
 
             // 🔹 Botón para seleccionar imagen
-            Button(onClick = { imagePickerLauncher.launch("image/*") }) {
-                Text(text = profilePicName ?: "Seleccionar foto de perfil")
+            EditableUserProfileImage(
+                photoName = profilePicName,
+                photoUri  = profilePicUri,
+                onChangePhotoClick = { showSheet = true },
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            if (showSheet) {
+                ProfilePhotoSheet(
+                    showSheet      = true,
+                    onDismiss      = { showSheet = false },
+                    onDelete       = {
+                        profilePicName = null
+                        profilePicUri  = null
+                        profilePicBytes= null
+                        showSheet      = false
+                    },
+                    onCamera       = {
+                        showSheet = false
+                        // 1) crear archivo temporal
+                        val file = File(
+                            context.cacheDir,
+                            "IMG_${System.currentTimeMillis()}.jpg"
+                        )
+                        val uri = FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.provider",
+                            file
+                        )
+                        tempCameraUri = uri
+                        // 2) lanzar cámara
+                        cameraLauncher.launch(uri)
+                    },
+                    onGallery      = {
+                        showSheet = false
+                        imagePickerLauncher.launch("image/*")
+                    }
+                )
             }
+
             Spacer(Modifier.height(8.dp))
 
             // Nombre / Apellidos / Email / Teléfono / Contraseña

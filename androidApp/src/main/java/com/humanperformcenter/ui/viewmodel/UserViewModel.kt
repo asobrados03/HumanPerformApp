@@ -1,6 +1,5 @@
 package com.humanperformcenter.ui.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -89,6 +88,7 @@ class UserViewModel(
             dateOfBirthText = dateOfBirthText,
             selectedSexBackend = candidate.sex,
             phone = candidate.phone,
+            postAddress = candidate.postAddress,
             dni = candidate.dni.toString()
         )
 
@@ -101,6 +101,7 @@ class UserViewModel(
                     EditValidationResult.Field.DATE_OF_BIRTH -> UpdateState.Field.DATE_OF_BIRTH
                     EditValidationResult.Field.SEX -> UpdateState.Field.SEX
                     EditValidationResult.Field.PHONE -> UpdateState.Field.PHONE
+                    EditValidationResult.Field.POST_ADDRESS -> UpdateState.Field.POST_ADDRESS
                     EditValidationResult.Field.DNI -> UpdateState.Field.DNI
                 }
             }

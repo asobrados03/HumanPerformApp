@@ -22,6 +22,7 @@ object UserValidator {
         dateOfBirthText: String,
         selectedSexBackend: String?,
         phone: String,
+        postAddress: String,
         dni: String
     ): EditValidationResult {
         val errors = mutableMapOf<EditValidationResult.Field, String>()
@@ -63,6 +64,10 @@ object UserValidator {
             errors[EditValidationResult.Field.PHONE] = "El teléfono es obligatorio"
         } else if (phone.any { !it.isDigit() } || phone.length < 9) {
             errors[EditValidationResult.Field.PHONE] = "Teléfono inválido"
+        }
+
+        if (postAddress.isBlank()) {
+            errors[EditValidationResult.Field.POST_ADDRESS] = "La dirección postal es obligatoria"
         }
 
         // 5) Validar DNI (si se ha ingresado algo)

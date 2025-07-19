@@ -93,11 +93,17 @@ object AuthRepositoryImpl : AuthRepository {
             }
 
             // 3) Procesa la respuesta
-            if (response.status == HttpStatusCode.Created) {
-                Result.success(response.body())
-            } else {
-                val err = response.body<ErrorResponse>()
-                Result.failure(Exception(err.error))
+            when (response.status) {
+                HttpStatusCode.Created -> {
+                    Result.success(response.body())
+                }
+                HttpStatusCode.InternalServerError -> {
+                    Result.failure(Exception("Ha habido un error interno. Vuelva a intentarlo."))
+                }
+                else -> {
+                    val err = response.body<ErrorResponse>()
+                    Result.failure(Exception(err.error))
+                }
             }
         } catch (e: Exception) {
             Result.failure(Exception("Error al registrar: ${e.message}"))

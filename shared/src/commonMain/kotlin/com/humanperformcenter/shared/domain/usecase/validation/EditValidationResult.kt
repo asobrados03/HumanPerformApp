@@ -12,6 +12,7 @@ sealed class EditValidationResult {
         DATE_OF_BIRTH,
         SEX,
         PHONE,
+        POST_ADDRESS,
         DNI
     }
 }

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Man
 import androidx.compose.material.icons.filled.Person
@@ -115,8 +116,6 @@ fun EditProfileScreen(
                 ?.savedStateHandle
                 ?.set("new_profile_uri", it.toString())
 
-            // ① actualizamos URI local en el VM
-            //userViewModel.setProfilePicUri(it)
             profilePicUri = it
 
             // ② y seguimos leyendo bytes y nombre como antes
@@ -245,6 +244,9 @@ fun EditProfileScreen(
             var postcodeText by rememberSaveable { mutableStateOf(user.postcode?.toString() ?: "") }
             val postcodeInt: Int? = postcodeText.toIntOrNull()
 
+            var postAddress by rememberSaveable { mutableStateOf(user.postAddress) }
+            var postAddressError by remember { mutableStateOf("") }
+
             var dni by rememberSaveable { mutableStateOf(user.dni ?: "") }
 
             val scrollState = rememberScrollState()
@@ -271,6 +273,7 @@ fun EditProfileScreen(
                     fullNameError = fieldErrors[Field.FULL_NAME] ?: ""
                     dateOfBirthError = fieldErrors[Field.DATE_OF_BIRTH] ?: ""
                     sexError = fieldErrors[Field.SEX] ?: ""
+                    postAddressError = fieldErrors[Field.POST_ADDRESS] ?: ""
                     phoneError = fieldErrors[Field.PHONE] ?: ""
                 }
             }
@@ -481,6 +484,29 @@ fun EditProfileScreen(
                     )
                 }
 
+                OutlinedTextField(
+                    value = postAddress,
+                    onValueChange = {
+                        postAddress = it
+                        if (postAddress.isNotEmpty()) postAddress = ""
+                    },
+                    label = { Text("Dirección Postal") },
+                    leadingIcon = { Icon(Icons.Default.LocationOn, null) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .widthIn(max = 600.dp)
+                )
+                if (postAddressError.isNotEmpty()) {
+                    Text(
+                        text = postAddressError,
+                        color = Color.Red,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp)
+                    )
+                }
+
                 // --- Código Postal (opcional) ---
                 OutlinedTextField(
                     value = postcodeText,
@@ -490,7 +516,7 @@ fun EditProfileScreen(
                         }
                     },
                     label = { Text("Código Postal") },
-                    leadingIcon = { Icon(Icons.Default.LocationOn, null) },
+                    leadingIcon = { Icon(Icons.Default.LocationCity, null) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
@@ -531,6 +557,7 @@ fun EditProfileScreen(
                             sex = nuevoSexo,
                             phone = phone.trim(),
                             postcode = postcodeInt,
+                            postAddress = postAddress,
                             dni = dni.ifBlank { null },
                             profilePictureName = profilePicName
                         )

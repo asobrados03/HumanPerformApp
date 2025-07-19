@@ -94,6 +94,11 @@ fun MyProfileScreen(
                             )
                         }
 
+                        ProfileInfoItem(
+                            label = "Dirección postal",
+                            value = user.postAddress
+                        )
+
                         user.postcode?.let { postcode ->
                             ProfileInfoItem(
                                 label = "Código postal",

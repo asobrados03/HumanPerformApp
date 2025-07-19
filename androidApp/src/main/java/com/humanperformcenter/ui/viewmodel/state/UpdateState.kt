@@ -19,6 +19,7 @@ sealed class UpdateState {
         DATE_OF_BIRTH,
         SEX,
         PHONE,
+        POST_ADDRESS,
         DNI
     }
 }
