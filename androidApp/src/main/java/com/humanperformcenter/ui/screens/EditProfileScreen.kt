@@ -111,11 +111,6 @@ fun EditProfileScreen(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            navController
-                .previousBackStackEntry
-                ?.savedStateHandle
-                ?.set("new_profile_uri", it.toString())
-
             profilePicUri = it
 
             // ② y seguimos leyendo bytes y nombre como antes
@@ -138,12 +133,6 @@ fun EditProfileScreen(
     ) { success: Boolean ->
         if (success) {
             tempCameraUri?.let { uri ->
-                // 3) mismo patrón: guardamos en el SavedStateHandle
-                navController
-                    .previousBackStackEntry
-                    ?.savedStateHandle
-                    ?.set("new_profile_uri", uri.toString())
-
                 // 4) actualizamos el estado local
                 profilePicUri = uri
 
@@ -488,7 +477,7 @@ fun EditProfileScreen(
                     value = postAddress,
                     onValueChange = {
                         postAddress = it
-                        if (postAddress.isNotEmpty()) postAddress = ""
+                        if (postAddressError.isNotEmpty()) postAddressError = ""
                     },
                     label = { Text("Dirección Postal") },
                     leadingIcon = { Icon(Icons.Default.LocationOn, null) },
@@ -561,6 +550,12 @@ fun EditProfileScreen(
                             dni = dni.ifBlank { null },
                             profilePictureName = profilePicName
                         )
+
+                        // Guardamos en el SavedStateHandle
+                        navController
+                            .previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("new_profile_uri", profilePicUri.toString())
 
                         // Limpiar errores previos y delegar en el ViewModel
                         onSave(updated, profilePicBytes)

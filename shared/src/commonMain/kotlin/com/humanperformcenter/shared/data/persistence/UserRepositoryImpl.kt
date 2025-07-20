@@ -23,9 +23,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.contentType
-import io.ktor.utils.io.InternalAPI
 import kotlinx.serialization.json.Json
 
 object UserRepositoryImpl: UserRepository {

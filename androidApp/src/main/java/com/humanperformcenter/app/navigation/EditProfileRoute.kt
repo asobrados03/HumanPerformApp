@@ -45,7 +45,7 @@ fun EditProfileRoute(navController: NavHostController) {
                 onSave = { updatedUser, profilePicBytes ->
                     userViewModel.updateUser(updatedUser, profilePicBytes)
                 },
-                onDeleteProfilePic = {userViewModel.deleteProfilePic(userState!!)},
+                onDeleteProfilePic = { userViewModel.deleteProfilePic(userState!!) },
                 navController = navController
             )
         }
