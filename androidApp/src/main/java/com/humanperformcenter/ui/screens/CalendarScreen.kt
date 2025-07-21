@@ -88,7 +88,6 @@ import kotlin.collections.get
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun CalendarScreen(
@@ -322,10 +321,14 @@ fun CalendarScreen(
                             else -> Color.Transparent
                         }
 
+                        val onBackground = MaterialTheme.colorScheme.onBackground
+                        val onPrimary    = MaterialTheme.colorScheme.onPrimary
+
                         val textColor = when {
-                            isSelected || isReserved -> Color.White
-                            else -> Color.Black
+                            isSelected || isReserved -> onPrimary
+                            else                      -> onBackground
                         }
+
                         val isPast = date < today
 
                         val puedeSeleccionarFecha = !isSunday && !isPast && !isHoliday && (
@@ -979,7 +982,6 @@ fun CalendarScreen(
     }
 }
 
-
 private fun Month.length(isLeapYear: Boolean): Int = when (this) {
     Month.JANUARY, Month.MARCH, Month.MAY, Month.JULY,
     Month.AUGUST, Month.OCTOBER, Month.DECEMBER -> 31
@@ -1019,6 +1021,3 @@ private fun seSuperoLimiteReserva(
         reservasServicio.size >= totalPermitido
     }
 }
-
-
-
