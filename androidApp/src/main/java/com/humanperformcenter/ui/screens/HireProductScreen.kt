@@ -239,10 +239,11 @@ fun HireProductScreen(
                                     val request = PaymentRequest(
                                         customer_id = userId,
                                         product_id = selectedProductId,
-                                        email = email,
-                                        billing_street = userStreet,
-                                        billing_postal = userPostal
+                                        email = email.trim(),                    // ⚠️ Limpia espacios
+                                        billing_street = userStreet.trim(),      // ⚠️ Limpia espacios
+                                        billing_postal = userPostal.trim()       // ⚠️ Limpia espacios
                                     )
+
 
                                     paymentViewModel.generarUrlDePago(request)
                                 } else {
