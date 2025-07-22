@@ -14,6 +14,7 @@ import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
 import com.humanperformcenter.ui.viewmodel.state.CoachState
 import com.humanperformcenter.ui.viewmodel.state.DeleteProfilePicState
 import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
+import com.humanperformcenter.ui.viewmodel.state.MarkFavoriteState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -54,8 +55,10 @@ class UserViewModel(
     val deleteState: StateFlow<DeleteUserState> = _deleteState.asStateFlow()
 
     private val _coachesState = MutableStateFlow<CoachState>(CoachState.Idle)
-    // Estado público inmutable
     val coachesState: StateFlow<CoachState> = _coachesState.asStateFlow()
+
+    private val _markFavoriteState = MutableStateFlow<MarkFavoriteState>(MarkFavoriteState.Idle)
+    val markFavoriteState: StateFlow<MarkFavoriteState> = _markFavoriteState.asStateFlow()
 
     private val _deleteProfilePicState = MutableStateFlow<DeleteProfilePicState>(DeleteProfilePicState.Idle)
     val deleteProfilePicState: StateFlow<DeleteProfilePicState> = _deleteProfilePicState.asStateFlow()
@@ -200,10 +203,22 @@ class UserViewModel(
         _deleteProfilePicState.value = DeleteProfilePicState.Idle
     }
 
-    fun markFavorite(id: Int) {
+    fun markFavorite(coachId: Int, serviceName: String?, userId: Int?) {
+        _markFavoriteState.value = MarkFavoriteState.Loading
         viewModelScope.launch {
-            SecureStorage.saveFavoriteCoach(id)
+            userUseCase.markFavorite(coachId, serviceName, userId).onSuccess { message ->
+                SecureStorage.saveFavoriteCoach(coachId)
+                _markFavoriteState.value = MarkFavoriteState.Success(message)
+            }.onFailure { throwable ->
+                _markFavoriteState.value = MarkFavoriteState.Error(
+                    throwable.message.orEmpty().ifEmpty { "Error desconocido al marcar como favorito" }
+                )
+            }
         }
+    }
+
+    fun clearMarkFavoriteState() {
+        _markFavoriteState.value = MarkFavoriteState.Idle
     }
 
     fun fetchUserBookings(userId: Int) {

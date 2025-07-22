@@ -11,6 +11,7 @@ interface UserRepository {
     suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User>
     suspend fun deleteUser(email: String): Result<Unit>
     suspend fun getCoaches(): Result<List<Professional>>
+    suspend fun markFavorite(coachId: Int, serviceName: String?, userId: Int?): Result<String>
     suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit>
     suspend fun getUserAllowedServices(customerId: Int) : List<ServiceAvailable>
     suspend fun getUserBookings(customerId: Int): List<UserBooking>

@@ -1,5 +1,7 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.humanperformcenter.shared.data.model.AssignPreferredCoachRequest
+import com.humanperformcenter.shared.data.model.AssignPreferredCoachResponse
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.EstadisticasUsuario
@@ -11,11 +13,14 @@ import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.UserRepository
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.delete
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -113,6 +118,40 @@ object UserRepositoryImpl: UserRepository {
             }
         } catch (e: Exception) {
             // Si hay timeout, red de falla, JSON malformado, etc.
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun markFavorite(
+        coachId: Int,
+        serviceName: String?,
+        userId: Int?
+    ): Result<String> {
+        return try {
+            val response: HttpResponse = ApiClient.apiClient.post(
+                "${ApiClient.baseUrl}/mobile/preferred-coach") {
+
+                val customerId = userId ?: 0
+
+                contentType(ContentType.Application.Json)
+                setBody(
+                    AssignPreferredCoachRequest(
+                        serviceName = serviceName.toString(),
+                        customerId = customerId,
+                        coachId = coachId
+                    )
+                )
+            }
+            val bodyResponse: AssignPreferredCoachResponse = response.body()
+
+            Result.success(bodyResponse.message)
+        } catch (e: ClientRequestException) {
+            // 4xx
+            Result.failure(RuntimeException("Error de cliente: ${e.response.status}"))
+        } catch (e: ServerResponseException) {
+            // 5xx
+            Result.failure(RuntimeException("Error de servidor: ${e.response.status}"))
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }

@@ -24,6 +24,12 @@ class UserUseCase(private val userRepository: UserRepository) {
         return@withContext userRepository.getCoaches()
     }
 
+    suspend fun markFavorite(
+        coachId: Int, serviceName: String?, userId: Int?
+    ): Result<String> = withContext(Dispatchers.IO) {
+            return@withContext userRepository.markFavorite(coachId, serviceName, userId)
+        }
+
     suspend fun deleteProfilePic(req: DeleteProfilePicRequest) = withContext(Dispatchers.IO) {
         return@withContext userRepository.deleteProfilePic(req)
     }

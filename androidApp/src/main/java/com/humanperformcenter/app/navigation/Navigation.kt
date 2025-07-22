@@ -55,7 +55,6 @@ import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
 import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModel
 import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModelFactory
-import com.humanperformcenter.ui.viewmodel.PaymentViewModelFactory
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModelFactory
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
@@ -343,6 +342,11 @@ fun Navigation(
                 val coachState by userViewModel.coachesState.collectAsState()
                 val favoriteId by userViewModel.favoriteCoachId.collectAsState()
 
+                val userState by userViewModel.userData.collectAsState()
+                val userId = userState?.id
+
+                val markFavoriteState by userViewModel.markFavoriteState.collectAsState()
+
                 LaunchedEffect(Unit) {
                     userViewModel.getCoaches()
                 }
@@ -357,8 +361,10 @@ fun Navigation(
                             coaches = (coachState as CoachState.Success).coaches,
                             selectedCoachId = favoriteId,
                             onSelect = { prof ->
-                                userViewModel.markFavorite(prof.id)
+                                userViewModel.markFavorite(prof.id, prof.service, userId)
                             },
+                            markFavoriteState = markFavoriteState,
+                            userViewModel = userViewModel,
                             navController = navController
                         )
                     }
