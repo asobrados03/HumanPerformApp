@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,7 +7,6 @@ plugins {
     alias(libs.plugins.kotlinxSerialization)
     id("com.google.devtools.ksp") version "2.2.0-2.0.2"
 }
-
 
 android {
     namespace = "com.humanperformcenter"
@@ -37,9 +38,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         compose = true
     }
@@ -52,6 +50,12 @@ android {
         }
     }
     buildToolsVersion = "35.0.0"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.fromTarget("17")
+    }
 }
 
 dependencies {
@@ -84,6 +88,8 @@ dependencies {
     implementation(libs.datastore.preferences)
     implementation(libs.datastore)
 
+    implementation(libs.play.services.wallet)
+
     testImplementation(libs.junit.jupiter)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.material)
@@ -96,5 +102,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation("com.google.android.gms:play-services-wallet:19.4.0")
 }
