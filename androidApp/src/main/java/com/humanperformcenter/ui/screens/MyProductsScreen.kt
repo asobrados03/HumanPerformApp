@@ -28,6 +28,10 @@ import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun MyProductsScreen(
@@ -89,6 +93,8 @@ fun MyProductsScreen(
         }
     }
     if (mostrarDialogoProducto && productoSeleccionado != null) {
+        val context = LocalContext.current
+
         AlertDialog(
             onDismissRequest = {
                 mostrarDialogoProducto = false
@@ -99,16 +105,37 @@ fun MyProductsScreen(
             confirmButton = {
                 Column {
                     TextButton(onClick = {
-                        // Acción de VER DETALLES
                         viewModel.productoSeleccionado = productoSeleccionado
                         navController.navigate(ProductDetail(productoSeleccionado!!.id))
                     }) {
                         Text("Ver detalles")
                     }
 
+                    // ✅ NUEVO BOTÓN: PAGAR AHORA
                     TextButton(onClick = {
-                        // Acción de DESCONTRATAR
-                        viewModel.unassignProductFromUser(productoSeleccionado!!.id, userId) // ← debes implementarlo
+                        viewModel.getPaymentUrl(
+                            productoId = productoSeleccionado!!.id,
+                            userId = userId,
+                            onSuccess = { url ->
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "No se pudo abrir el navegador", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            onError = {
+                                Toast.makeText(context, "Error al obtener URL de pago", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                        mostrarDialogoProducto = false
+                        productoSeleccionado = null
+                    }) {
+                        Text("Pagar ahora", color = Color.Green)
+                    }
+
+                    TextButton(onClick = {
+                        viewModel.unassignProductFromUser(productoSeleccionado!!.id, userId)
                         mostrarDialogoProducto = false
                         productoSeleccionado = null
                     }) {
