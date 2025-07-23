@@ -237,11 +237,11 @@ fun HireProductScreen(
                             ) { success ->
                                 if (success) {
                                     val request = PaymentRequest(
-                                        customer_id = userId,
-                                        product_id = selectedProductId,
+                                        customerId = userId,
+                                        productId = selectedProductId,
                                         email = email.trim(),                    // ⚠️ Limpia espacios
-                                        billing_street = userStreet.trim(),      // ⚠️ Limpia espacios
-                                        billing_postal = userPostal.trim()       // ⚠️ Limpia espacios
+                                        billingStreet = userStreet.trim(),      // ⚠️ Limpia espacios
+                                        billingPostal = userPostal.trim()       // ⚠️ Limpia espacios
                                     )
 
 

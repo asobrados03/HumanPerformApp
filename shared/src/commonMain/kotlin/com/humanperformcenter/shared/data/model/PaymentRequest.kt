@@ -1,12 +1,17 @@
 package com.humanperformcenter.shared.data.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class PaymentRequest(
-    val customer_id: Int,
-    val product_id: Int,
+    @SerialName("customer_id")
+    val customerId: Int,
+    @SerialName("product_id")
+    val productId: Int,
     val email: String,
-    val billing_street: String,
-    val billing_postal: String
+    @SerialName("billing_street")
+    val billingStreet: String,
+    @SerialName("billing_postal")
+    val billingPostal: String
 )

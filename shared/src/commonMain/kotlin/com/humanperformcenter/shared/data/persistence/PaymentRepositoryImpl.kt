@@ -9,7 +9,6 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.json.Json
 
-
 object PaymentRepositoryImpl: PaymentRepository {
     override suspend fun generatePaymentUrl(request: PaymentRequest): String {
         val client = ApiClient.apiClient
@@ -22,4 +21,3 @@ object PaymentRepositoryImpl: PaymentRepository {
         return Json.decodeFromString<PaymentUrlResponse>(body).paymentUrl
     }
 }
-
