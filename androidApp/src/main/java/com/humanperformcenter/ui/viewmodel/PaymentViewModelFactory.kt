@@ -3,7 +3,6 @@ package com.humanperformcenter.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
-import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
 
 class PaymentViewModelFactory(
     private val useCase: PaymentUseCase

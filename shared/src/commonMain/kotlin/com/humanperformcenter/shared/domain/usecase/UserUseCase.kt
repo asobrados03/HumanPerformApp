@@ -1,7 +1,7 @@
 package com.humanperformcenter.shared.domain.usecase
 
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
-import com.humanperformcenter.shared.data.model.EstadisticasUsuario
+import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.User
@@ -46,7 +46,7 @@ class UserUseCase(private val userRepository: UserRepository) {
         return@withContext userRepository.cancelUserBooking(bookingId)
     }
 
-    suspend fun getUserStats(customerId: Int): EstadisticasUsuario = withContext(Dispatchers.IO) {
+    suspend fun getUserStats(customerId: Int): UserStatistics = withContext(Dispatchers.IO) {
         return@withContext userRepository.getUserStats(customerId)
     }
 }

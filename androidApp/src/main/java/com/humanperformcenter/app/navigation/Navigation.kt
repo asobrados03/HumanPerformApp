@@ -26,7 +26,7 @@ import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.data.persistence.PaymentRepositoryImpl
 import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
-import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.components.FullScreenTextLoading
 import com.humanperformcenter.ui.screens.CalendarScreen
@@ -53,8 +53,8 @@ import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
-import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModel
-import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModelFactory
+import com.humanperformcenter.ui.viewmodel.UserStatsViewModel
+import com.humanperformcenter.ui.viewmodel.UserStatsViewModelFactory
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModelFactory
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
@@ -398,13 +398,13 @@ fun Navigation(
                 )
             }
             composable<Stats> {
-                val statsViewModel: EstadisticasUsuarioViewModel = viewModel(
-                    factory = EstadisticasUsuarioViewModelFactory(AppModule.userUseCase)
+                val statsViewModel: UserStatsViewModel = viewModel(
+                    factory = UserStatsViewModelFactory(AppModule.userUseCase)
                 )
                 val userId by sessionViewModel.userId.collectAsState()
 
                 LaunchedEffect(userId) {
-                    statsViewModel.cargarEstadisticas(userId!!)
+                    statsViewModel.loadStatistics(userId!!)
                 }
 
                 UserStatsScreen(
@@ -417,7 +417,7 @@ fun Navigation(
                             restoreState = true
                         }
                     },
-                    onRetry = { statsViewModel.cargarEstadisticas(userId ?: 0) }
+                    onRetry = { statsViewModel.loadStatistics(userId ?: 0) }
                 )
             }
             composable<ProductDetail> { backStackEntry ->

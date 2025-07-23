@@ -3,7 +3,7 @@ package com.humanperformcenter.shared.data.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class EstadisticasUsuario(
+data class UserStatistics(
     val entrenamientosMesPasado: Int = 0,
     val entrenadorMasUsado: String = "",
     val isLoading: Boolean = true,

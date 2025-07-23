@@ -1,7 +1,7 @@
 package com.humanperformcenter.shared.domain.repository
 
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
-import com.humanperformcenter.shared.data.model.EstadisticasUsuario
+import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.User
@@ -16,5 +16,5 @@ interface UserRepository {
     suspend fun getUserAllowedServices(customerId: Int) : List<ServiceAvailable>
     suspend fun getUserBookings(customerId: Int): List<UserBooking>
     suspend fun cancelUserBooking(bookingId: Int): Result<Unit>
-    suspend fun getUserStats(customerId: Int): EstadisticasUsuario
+    suspend fun getUserStats(customerId: Int): UserStatistics
 }

@@ -42,7 +42,7 @@ import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.app.navigation.StartPayment
-import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -245,7 +245,7 @@ fun HireProductScreen(
                                     )
 
 
-                                    paymentViewModel.generarUrlDePago(request)
+                                    paymentViewModel.generatePaymentURL(request)
                                 } else {
                                     Toast.makeText(context, "No se pudo asignar el producto", Toast.LENGTH_SHORT).show()
                                 }

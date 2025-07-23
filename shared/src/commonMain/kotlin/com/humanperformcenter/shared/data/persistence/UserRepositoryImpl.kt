@@ -4,7 +4,7 @@ import com.humanperformcenter.shared.data.model.AssignPreferredCoachRequest
 import com.humanperformcenter.shared.data.model.AssignPreferredCoachResponse
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.ErrorResponse
-import com.humanperformcenter.shared.data.model.EstadisticasUsuario
+import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.User
@@ -212,7 +212,7 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun getUserStats(customerId: Int): EstadisticasUsuario {
+    override suspend fun getUserStats(customerId: Int): UserStatistics {
         val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-stats") {
             url {
                 parameters.append("user_id", customerId.toString())

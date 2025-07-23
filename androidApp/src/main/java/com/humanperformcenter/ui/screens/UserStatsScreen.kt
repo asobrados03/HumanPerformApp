@@ -33,14 +33,14 @@ import com.humanperformcenter.shared.data.model.BlogEntry
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
-import com.humanperformcenter.ui.viewmodel.EstadisticasUsuarioViewModel
+import com.humanperformcenter.ui.viewmodel.UserStatsViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserStatsScreen(
     navController: NavHostController,
-    statsViewModel: EstadisticasUsuarioViewModel,
+    statsViewModel: UserStatsViewModel,
     userId : Int,
     onEntryClick: (BlogEntry) -> Unit,
     onRetry: () -> Unit

@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,7 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.PaymentSuccess
-import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.components.PaymentWebView
 
 @Composable
@@ -31,7 +31,6 @@ fun PaymentScreen(viewModel: PaymentViewModel, navController: NavHostController)
     LaunchedEffect(paymentUrl) {
         println("🔗 URL de pago recibida en pantalla: $paymentUrl")
     }
-
 
     when {
         paymentUrl == null && error == null -> {
@@ -69,12 +68,12 @@ fun PaymentScreen(viewModel: PaymentViewModel, navController: NavHostController)
                         url = paymentUrl!!,
                         onPaymentSuccess = {
                             Toast.makeText(context, "Pago exitoso", Toast.LENGTH_LONG).show()
-                            viewModel.limpiarEstado()
+                            viewModel.clearState()
                             navController.navigate(PaymentSuccess)
                         },
                         onPaymentCancelled = {
                             Toast.makeText(context, "Pago cancelado", Toast.LENGTH_LONG).show()
-                            viewModel.limpiarEstado()
+                            viewModel.clearState()
                             navController.popBackStack()
                         }
                     )
@@ -86,7 +85,7 @@ fun PaymentScreen(viewModel: PaymentViewModel, navController: NavHostController)
         error != null -> {
             Column {
                 Text("Error: $error", color = Color.Red)
-                Button(onClick = { viewModel.limpiarEstado() }) {
+                Button(onClick = { viewModel.clearState() }) {
                     Text("Reintentar")
                 }
             }
