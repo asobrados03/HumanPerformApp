@@ -71,10 +71,11 @@ object UserValidator {
         }
 
         // 5) Validar DNI (si se ha ingresado algo)
-        //    El formato español: 7 u 8 dígitos seguidos de una letra. La letra debe coincidir con el checksum.
-        if (dni.isNotBlank()) {
-            if (!isValidSpanishDNI(dni.uppercase())) {
-                errors[EditValidationResult.Field.DNI] = "DNI inválido"
+        if (!dni.endsWith(".")){
+            if (dni.isNotBlank()) {
+                if (!isValidSpanishDNIAndNIE(dni.uppercase())) {
+                    errors[EditValidationResult.Field.DNI] = "DNI o NIE inválido"
+                }
             }
         }
 
@@ -218,10 +219,13 @@ object UserValidator {
         }
 
         // 8) DNI
-        if (dni.isBlank()) {
-            errors[RegisterField.DNI] = "El DNI es obligatorio"
-        } else if (!isValidSpanishDNI(dni.uppercase())) {
-            errors[RegisterField.DNI] = "DNI inválido"
+        // Permitir DNIs que terminan en punto para pruebas internas
+        if (!dni.endsWith(".")){
+            if (dni.isBlank()) {
+                errors[RegisterField.DNI] = "El DNI es obligatorio"
+            } else if (!isValidSpanishDNIAndNIE(dni.uppercase())) {
+                errors[RegisterField.DNI] = "DNI inválido"
+            }
         }
 
         return if (errors.isEmpty()) {
@@ -235,20 +239,25 @@ object UserValidator {
      * Comprueba si la cadena cumple el formato DNI español (“NNNNNNNNL” o “NNNNNNNL”),
      * y si la letra final coincide con el checksum oficial.
      */
-    private fun isValidSpanishDNI(dni: String): Boolean {
-        // Regex: 7 u 8 dígitos, seguidos de 1 letra (A–Z)
-        val regex = Regex("""^(\d{7,8})([A-Z])$""")
-        val match = regex.matchEntire(dni) ?: return false
+    private fun isValidSpanishDNIAndNIE(input: String): Boolean {
+        val upper = input.uppercase()
 
-        val numberPart = match.groupValues[1]   // "12345678"
-        val letterPart = match.groupValues[2][0]// 'Z'
+        // Extrae letra final
+        val letter = upper.lastOrNull() ?: return false
+        val body = upper.dropLast(1)
 
-        // Tabla de letras para DNI: índice = (número mod 23)
-        val tabla = "TRWAGMYFPDXBNJZSQVHLCKE"
-        val num = numberPart.toLongOrNull() ?: return false
-        val idx = (num % 23).toInt()
-        val expectedLetter = tabla[idx]
+        // Reemplaza letra inicial del NIE por número correspondiente
+        val numericPart = when {
+            body.matches(Regex("\\d{7,8}")) -> body // DNI
+            body.matches(Regex("X\\d{7}")) -> body.replaceFirst("X", "0")
+            body.matches(Regex("Y\\d{7}")) -> body.replaceFirst("Y", "1")
+            body.matches(Regex("Z\\d{7}")) -> body.replaceFirst("Z", "2")
+            else -> return false
+        }
 
-        return letterPart == expectedLetter
+        val num = numericPart.toLongOrNull() ?: return false
+        val expectedLetter = "TRWAGMYFPDXBNJZSQVHLCKE"[ (num % 23).toInt() ]
+
+        return letter == expectedLetter
     }
 }
