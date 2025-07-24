@@ -10,6 +10,7 @@ import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.humanperformcenter.shared.data.network.PaymentApi
 
 class ServiceProductViewModel(
     private val useCase: ServiceProductUseCase
@@ -100,4 +101,29 @@ class ServiceProductViewModel(
             onResult(success)
         }
     }
+
+
+    fun getPaymentUrl(
+        productoId: Int,
+        userId: Int,
+        onSuccess: (String) -> Unit,
+        onError: () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val response = PaymentApi.initiatePayment(
+                    customerId = userId,
+                    productId = productoId,
+                    billingStreet = "Calle de la prueba",
+                    billingPostal = "40002",
+                    email = "human2@mail.com"
+                )
+                onSuccess(response.paymentUrl)
+            } catch (e: Exception) {
+                println("❌ Error al obtener URL de pago: ${e.localizedMessage}")
+                onError()
+            }
+        }
+    }
+
 }
