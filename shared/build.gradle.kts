@@ -95,6 +95,7 @@ kotlin {
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.androidx.security.crypto)
                 implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.play.services.wallet)
             }
         }
 
