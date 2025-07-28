@@ -1,6 +1,5 @@
 package com.humanperformcenter.ui.screens
 
-import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.lifecycle.MutableLiveData
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -51,7 +51,6 @@ import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.components.UserProfileImage
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import kotlinx.coroutines.flow.filterNotNull
-import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

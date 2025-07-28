@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <!--<domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="false">163.172.71.195</domain>
+    </domain-config>-->
+    <domain-config>
+        <domain includeSubdomains="true">apihuman.fransdata.com</domain>
+
+        <pin-set expiration="2025-01-01"
+            tools:ignore="MissingBackupPin,PinSetExpiry">
+            <!-- Este hash debe ser el SHA-256 del SPKI de tu certificado, en Base64 -->
+            <pin digest="SHA-256">LyoE66UYM19q88joGMnwQJZTdACEtwYusa+o40o+xHw=</pin>
+        </pin-set>
+
+        <!-- Define que confíe en los anchors del sistema -->
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
     </domain-config>
 </network-security-config>

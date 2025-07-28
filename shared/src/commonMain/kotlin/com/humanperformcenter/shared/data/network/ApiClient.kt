@@ -4,7 +4,6 @@ import com.humanperformcenter.shared.data.model.RefreshResponse
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
@@ -25,14 +24,14 @@ object ApiClient {
     val logoutEvents = MutableSharedFlow<Unit>(replay = 0)
 
     // 1) Cliente puro para refresh
-    val authClient = HttpClient(CIO) {
+    val authClient = HttpClient {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
     }
 
     // 2) Cliente principal sin lógica de refresh en Auth
-    val apiClient = HttpClient(CIO) {
+    val apiClient = HttpClient {
         install(LogoutPlugin) {
             sink = logoutEvents
         }
