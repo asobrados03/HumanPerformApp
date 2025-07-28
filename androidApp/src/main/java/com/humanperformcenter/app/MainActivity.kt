@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import com.humanperformcenter.app.navigation.Navigation
 import com.humanperformcenter.data.SessionDatabase
 import com.humanperformcenter.data.SessionRepository
+import com.humanperformcenter.shared.data.persistence.GooglePayRepository
 import com.humanperformcenter.shared.domain.storage.DataStoreProvider
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.ui.theme.HumanPerformAppTheme
@@ -21,6 +22,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         SecureStorage.init(DataStoreProvider.get(applicationContext))
+
+        // Esto prepara GooglePayRepository.paymentsClient
+        GooglePayRepository.init(this)
 
         enableEdgeToEdge()
         setContent {

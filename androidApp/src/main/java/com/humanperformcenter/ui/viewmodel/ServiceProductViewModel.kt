@@ -1,6 +1,5 @@
 package com.humanperformcenter.ui.viewmodel
 
-import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.data.model.ProductDetailResponse
@@ -10,7 +9,6 @@ import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import com.humanperformcenter.shared.data.network.PaymentApi
 
 class ServiceProductViewModel(
     private val useCase: ServiceProductUseCase
@@ -111,14 +109,14 @@ class ServiceProductViewModel(
     ) {
         viewModelScope.launch {
             try {
-                val response = PaymentApi.initiatePayment(
+                /*val response = PaymentApi.initiatePayment(
                     customerId = userId,
                     productId = productoId,
                     billingStreet = "Calle de la prueba",
                     billingPostal = "40002",
                     email = "human2@mail.com"
                 )
-                onSuccess(response.paymentUrl)
+                onSuccess(response.paymentUrl)*/
             } catch (e: Exception) {
                 println("❌ Error al obtener URL de pago: ${e.localizedMessage}")
                 onError()

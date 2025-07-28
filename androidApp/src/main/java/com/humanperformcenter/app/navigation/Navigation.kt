@@ -24,9 +24,6 @@ import androidx.navigation.toRoute
 import com.humanperformcenter.app.SetStatusBarColor
 import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.network.ApiClient
-import com.humanperformcenter.shared.data.persistence.PaymentRepositoryImpl
-import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
-import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.components.FullScreenTextLoading
 import com.humanperformcenter.ui.screens.CalendarScreen
@@ -53,6 +50,8 @@ import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
+import com.humanperformcenter.ui.viewmodel.PaymentViewModel
+import com.humanperformcenter.ui.viewmodel.PaymentViewModelFactory
 import com.humanperformcenter.ui.viewmodel.UserStatsViewModel
 import com.humanperformcenter.ui.viewmodel.UserStatsViewModelFactory
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
@@ -79,7 +78,9 @@ fun Navigation(
         .isLoggedInFlow
         .collectAsState(initial = false)
 
-    val paymentViewModel = remember { PaymentViewModel(PaymentUseCase(PaymentRepositoryImpl)) }
+    val paymentViewModel: PaymentViewModel = viewModel(
+        factory = PaymentViewModelFactory(AppModule.googlePayUseCase)
+    )
 
     LaunchedEffect(Unit) {
         ApiClient.logoutEvents.collect {
@@ -173,14 +174,15 @@ fun Navigation(
                 val userIdState = sessionViewModel.userId.collectAsState()
                 val userId = userIdState.value
 
-                val userViewModel: UserViewModel = viewModel(factory = UserViewModelFactory(AppModule.userUseCase))
+                val userViewModel: UserViewModel = viewModel(
+                    factory = UserViewModelFactory(AppModule.userUseCase)
+                )
                 val user by userViewModel.userData.collectAsState()
                 val email = user?.email ?: ""
-                val userStreet = user?.postAddress ?: ""
-                val userPostal = user?.postcode ?: ""
 
-                val viewModel: ServiceProductViewModel =
-                    viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase))
+                val viewModel: ServiceProductViewModel = viewModel(
+                    factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
+                )
 
                 serviceId?.let {
                     if (userId != null && email.isNotBlank()) {
@@ -189,9 +191,6 @@ fun Navigation(
                             navController = navController,
                             viewModel = viewModel,
                             userId = userId,
-                            userEmail = email,
-                            userStreet = userStreet,
-                            userPostal = userPostal.toString(),
                             paymentViewModel = paymentViewModel
                         )
                     }

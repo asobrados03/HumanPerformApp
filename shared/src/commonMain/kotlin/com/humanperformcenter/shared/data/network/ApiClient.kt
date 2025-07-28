@@ -9,8 +9,6 @@ import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
 import io.ktor.http.HttpStatusCode
@@ -20,7 +18,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 
 object ApiClient {
-    private const val BASE = "http://163.172.71.195:8085/api"
+    private const val BASE = "https://apihuman.fransdata.com/api"
     private val storage = SecureStorage
 
     // flujo que emitirá cuando toque cerrar sesión
