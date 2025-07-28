@@ -41,14 +41,13 @@ import com.humanperformcenter.ui.viewmodel.UserStatsViewModel
 fun UserStatsScreen(
     navController: NavHostController,
     statsViewModel: UserStatsViewModel,
-    userId : Int,
-    onEntryClick: (BlogEntry) -> Unit,
     onRetry: () -> Unit
 ) {
     val uiState by statsViewModel.uiState.collectAsState()
 
     val entrenamientosMesPasado = uiState.entrenamientosMesPasado
-    val entrenadorMasUsado = uiState.entrenadorMasUsado
+    val entrenadorMasUsado= uiState.entrenadorMasUsado
+    val reservasPendientes = uiState.reservasPendientes
     val isLoading = uiState.isLoading
     val error = uiState.error
 
@@ -118,9 +117,17 @@ fun UserStatsScreen(
                             AppCard(modifier = Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(16.dp)) {
                                     Text("🏋️ Entrenador más usado", fontWeight = FontWeight.Bold)
-                                    Text(entrenadorMasUsado)
+                                    Text(entrenadorMasUsado ?: "No hay datos disponibles")
                                 }
                             }
+
+                            AppCard(modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(16.dp)) {
+                                    Text("⏳ Reservas pendientes", fontWeight = FontWeight.Bold)
+                                    Text("$reservasPendientes sesiones pendientes")
+                                }
+                            }
+
                         }
                     }
                 }

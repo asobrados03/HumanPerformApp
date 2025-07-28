@@ -409,13 +409,6 @@ fun Navigation(
                 UserStatsScreen(
                     navController = navController,
                     statsViewModel = statsViewModel,
-                    userId = userId?: 0,
-                    onEntryClick = { blogEntry ->
-                        navController.navigate(StatsDetail(blogEntry.blogId)) {
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
                     onRetry = { statsViewModel.loadStatistics(userId ?: 0) }
                 )
             }

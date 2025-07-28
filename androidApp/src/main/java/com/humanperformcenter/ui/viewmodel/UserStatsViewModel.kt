@@ -24,6 +24,7 @@ class UserStatsViewModel(
                 _uiState.value = UserStatistics(
                     entrenamientosMesPasado = stats.entrenamientosMesPasado,
                     entrenadorMasUsado = stats.entrenadorMasUsado,
+                    reservasPendientes = stats.reservasPendientes,
                     isLoading = false,
                     error = null
                 )
