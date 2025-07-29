@@ -35,7 +35,7 @@ import com.humanperformcenter.ui.screens.FavoritesScreen
 import com.humanperformcenter.ui.screens.HireProductScreen
 import com.humanperformcenter.ui.screens.LoginScreen
 import com.humanperformcenter.ui.screens.MyProfileScreen
-import com.humanperformcenter.ui.screens.NewProductScreen
+import com.humanperformcenter.ui.screens.ServicesScreen
 import com.humanperformcenter.ui.screens.PasswordResetInfoScreen
 import com.humanperformcenter.ui.screens.PaymentScreen
 import com.humanperformcenter.ui.screens.PaymentSuccessScreen
@@ -158,7 +158,7 @@ fun Navigation(
                 PasswordResetInfoScreen(navController = navController)
             }
             composable<NewProduct> {
-                NewProductScreen(
+                ServicesScreen(
                     navController = navController,
                     sessionViewModel = sessionViewModel,
                     userViewModel = viewModel(

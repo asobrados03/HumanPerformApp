@@ -10,6 +10,9 @@ data class ServiceItem(
     val description: String? = null,
     val price: Double? = null,
     val image: String? = null,
+    @SerialName("type_of_product")
+    val tipo_producto: String? = null,  // "recurrent", "multi_sessions", etc.
+    val session: Int? = null,
 
     @SerialName("service_ids")
     val serviceIds: List<Int> = emptyList(),

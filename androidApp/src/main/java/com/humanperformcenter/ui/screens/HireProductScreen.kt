@@ -10,9 +10,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -24,7 +29,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -88,15 +95,52 @@ fun HireProductScreen(
     var cuponTexto by remember { mutableStateOf("") }
     var mostrarSeleccionPago by remember { mutableStateOf(false) }
 
+    var selectedFilter by remember { mutableStateOf(ProductTypeFilter.RECURRENT) }
+    var showFilterDialog by remember { mutableStateOf(true) }
+
+
+    var expanded by remember {mutableStateOf(false)}
+    var selectedSessionCount by remember { mutableIntStateOf(0) } // 0 = sin filtro
+    val sesionesDisponibles = productos.mapNotNull { it.session }.distinct().sorted()
+    val productosFiltrados by remember(productos, selectedFilter, selectedSessionCount) {
+        derivedStateOf {
+            productos.filter { producto ->
+                val tipoOk = when (selectedFilter) {
+                    ProductTypeFilter.RECURRENT -> producto.tipo_producto == "recurrent"
+                    ProductTypeFilter.NON_RECURRENT -> producto.tipo_producto != "recurrent"
+                }
+                val sesionesOk = if (selectedSessionCount == 0) true
+                else producto.session == selectedSessionCount
+
+                tipoOk && sesionesOk
+            }
+        }
+    }
+
     LaunchedEffect(serviceId) {
         viewModel.loadServiceProducts(serviceId)
         viewModel.loadUserProducts(userId)
+        productos.forEach {
+            println("Producto: ${it.name}, tipo: ${it.tipo_producto}")
+        }
     }
 
     Scaffold(
         topBar = {
-            LogoAppBar(showBackArrow = true) {
-                navController.popBackStack()
+            Column {
+                LogoAppBar(showBackArrow = true) {
+                    navController.popBackStack()
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = { showFilterDialog = true }) {
+                        Text("Filtrar")
+                    }
+                }
             }
         }
     ) { padding ->
@@ -104,14 +148,16 @@ fun HireProductScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .padding(top = 8.dp)
+                .padding(bottom = 16.dp)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (productos.isEmpty()) {
+            if (productosFiltrados.isEmpty()) {
                 item {
                     Text("No hay productos disponibles para este servicio.")
                 }
-            } else items(productos) { producto ->
+            } else items(productosFiltrados) { producto ->
                 val contratado = idsContratados.contains(producto.id)
                 AppCard(onClick = {
                     if (!contratado) {
@@ -127,7 +173,7 @@ fun HireProductScreen(
                     ) {
                         producto.image?.let {
                             AsyncImage(
-                                model = "http://163.172.71.195:8085/product_images/$it",
+                                model = "http://apihuman.fransdata.com/product_images/$it",
                                 contentDescription = producto.name,
                                 modifier = Modifier
                                     .size(69.dp)
@@ -154,7 +200,6 @@ fun HireProductScreen(
             }
         }
     }
-
     // --- Bottom Sheet ---
     if (mostrarCuponSheet && productoIdSeleccionado != null) {
         ModalBottomSheet(
@@ -235,6 +280,85 @@ fun HireProductScreen(
             }
         }
     }
+    if (showFilterDialog) {
+        AlertDialog(
+            onDismissRequest = { showFilterDialog = false },
+            title = { Text("Selecciona filtros") },
+            text = {
+                Column {
+                    // --- Filtro tipo de producto ---
+                    Text("Tipo de producto", style = MaterialTheme.typography.titleSmall)
+                    ProductTypeFilter.values().forEach { filter ->
+                        Button(
+                            onClick = {
+                                selectedFilter = filter
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (selectedFilter == filter)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if (selectedFilter == filter)
+                                    MaterialTheme.colorScheme.onPrimary
+                                else
+                                    MaterialTheme.colorScheme.onSurface
+                            )
+                        ) {
+                            Text(filter.label)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // --- Filtro por sesiones ---
+                    Text("Filtrar por sesiones", style = MaterialTheme.typography.titleSmall)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Sesiones: ${if (selectedSessionCount == 0) "Todas" else selectedSessionCount}")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(onClick = { expanded = true }) {
+                            Text("Cambiar")
+                        }
+                    }
+
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Todas") },
+                            onClick = {
+                                selectedSessionCount = 0
+                                expanded = false
+                            }
+                        )
+                        sesionesDisponibles.forEach { sesion ->
+                            DropdownMenuItem(
+                                text = { Text("$sesion sesiones") },
+                                onClick = {
+                                    selectedSessionCount = sesion
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+}
+
+enum class ProductTypeFilter(val label: String) {
+    RECURRENT("Recurrente"),
+    NON_RECURRENT("No recurrente")
 }
 
 // --- Helpers ---

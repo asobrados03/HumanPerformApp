@@ -45,6 +45,8 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
         val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/service-products") {
             parameter("service_id", serviceId)
         }
+        val raw = response.bodyAsText()
+        println("🔵 JSON response de productos: $raw")
         return response.body()
     }
 

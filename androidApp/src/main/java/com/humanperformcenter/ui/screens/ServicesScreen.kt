@@ -29,7 +29,7 @@ import androidx.compose.material3.Tab
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewProductScreen(
+fun ServicesScreen(
     navController: NavHostController,
     sessionViewModel: SessionViewModel,
     userViewModel: UserViewModel,
@@ -110,7 +110,7 @@ fun HireView(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(servicios) { servicio ->
-            val imageUrl = servicio.image?.let { "http://163.172.71.195:8085/service_images/$it" }
+            val imageUrl = servicio.image?.let { "http://apihuman.fransdata.com/service_images/$it" }
             val contratado = productosContratados.any { producto ->
                 producto.serviceIds.contains(servicio.id)
             }
