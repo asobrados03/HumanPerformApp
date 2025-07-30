@@ -8,20 +8,21 @@ import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
 import io.ktor.client.call.body
+import io.ktor.client.request.accept
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
 
 object ServiceProductRepositoryImpl: ServiceProductRepository {
     override suspend fun getAllServices(): List<ServiceAvailable> {
@@ -51,10 +52,21 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
     }
 
     override suspend fun getUserProducts(customerId: Int): List<ServiceItem> {
-        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-products") {
+        // 1. Hacemos el GET y pedimos JSON
+        val response: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-products") {
             parameter("user_id", customerId)
+            accept(ContentType.Application.Json)
         }
-        return response.body()
+
+        return if (response.status.isSuccess()) {
+            // 2xx → parseamos a List<ServiceItem>
+            response.body()
+        } else {
+            // 4xx / 5xx → leemos el cuerpo crudo (HTML o JSON de error)
+            val errorBody = response.bodyAsText()
+            println("ServiceProductRepo Error ${response.status}: $errorBody")
+            emptyList()
+        }
     }
 
     override suspend fun assignProductToUser(
@@ -129,9 +141,9 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
                 contentType(ContentType.Application.Json)
                 setBody(
                     CouponApplyRequest(
-                        coupon_code = code,
-                        user_id = userId,
-                        product_id = productId
+                        couponCode = code,
+                        userId = userId,
+                        productId = productId
                     )
                 )
             }

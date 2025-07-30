@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.domain.usecase
 
+import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.data.model.Professional
@@ -27,8 +28,8 @@ class UserUseCase(private val userRepository: UserRepository) {
     suspend fun markFavorite(
         coachId: Int, serviceName: String?, userId: Int?
     ): Result<String> = withContext(Dispatchers.IO) {
-            return@withContext userRepository.markFavorite(coachId, serviceName, userId)
-        }
+        return@withContext userRepository.markFavorite(coachId, serviceName, userId)
+    }
 
     suspend fun deleteProfilePic(req: DeleteProfilePicRequest) = withContext(Dispatchers.IO) {
         return@withContext userRepository.deleteProfilePic(req)
@@ -48,5 +49,26 @@ class UserUseCase(private val userRepository: UserRepository) {
 
     suspend fun getUserStats(customerId: Int): UserStatistics = withContext(Dispatchers.IO) {
         return@withContext userRepository.getUserStats(customerId)
+    }
+
+    /**
+     * Añade un código de cupón al perfil del usuario.
+     * El repo devuelve Result<Unit> indicando éxito o fallo.
+     */
+    suspend fun addCouponToUser(
+        userId: Int,
+        couponCode: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext userRepository.addCouponToUser(userId, couponCode)
+    }
+
+    /**
+     * Recupera el cupón activo del usuario, o null si no tiene.
+     */
+    suspend fun getUserCoupon(
+        userId: Int
+    ): Result<Coupon?> = withContext(Dispatchers.IO) {
+        // covertir Int? a Int
+        return@withContext userRepository.getUserCoupon(userId)
     }
 }

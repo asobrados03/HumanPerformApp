@@ -26,6 +26,7 @@ import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.components.FullScreenTextLoading
+import com.humanperformcenter.ui.screens.AddCouponScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
 import com.humanperformcenter.ui.screens.ChangePasswordScreen
 import com.humanperformcenter.ui.screens.ChatScreen
@@ -223,8 +224,30 @@ fun Navigation(
                                     MenuOption.PAGO -> navController.navigate(Payment)
                                     MenuOption.VER_PAGO -> navController.navigate(ViewPayment)
                                     MenuOption.CONFIGURACION -> navController.navigate(Configuration)
+                                    MenuOption.ANADIR_CUPON   -> navController.navigate(AddCoupon)
                                 }
                             }
+                        )
+                    }
+                }
+            }
+            composable<AddCoupon>{
+                val userViewModel: UserViewModel = viewModel(
+                    factory = UserViewModelFactory(AppModule.userUseCase)
+                )
+                val userState by userViewModel.userData.collectAsState(initial = null)
+
+                when (val user = userState) {
+                    null -> {
+                        // Mientras no tenemos usuario, muestra loading
+                        FullScreenLoading()
+                    }
+                    else -> {
+                        // Solo cuando user != null, pasamos su id real (Int) a la pantalla
+                        AddCouponScreen(
+                            navController  = navController,
+                            userId         = user.id,
+                            userViewModel  = userViewModel
                         )
                     }
                 }

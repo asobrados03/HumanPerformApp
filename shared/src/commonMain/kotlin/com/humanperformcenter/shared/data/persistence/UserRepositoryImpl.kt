@@ -2,6 +2,7 @@ package com.humanperformcenter.shared.data.persistence
 
 import com.humanperformcenter.shared.data.model.AssignPreferredCoachRequest
 import com.humanperformcenter.shared.data.model.AssignPreferredCoachResponse
+import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.UserStatistics
@@ -24,6 +25,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
@@ -221,4 +223,41 @@ object UserRepositoryImpl: UserRepository {
         return response.body()
     }
 
+    override suspend fun addCouponToUser(
+        userId: Int,
+        couponCode: String
+    ): Result<Unit> {
+        return try{
+            val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("coupon_code" to couponCode))
+            }
+
+            if (response.status == HttpStatusCode.NoContent) {
+                Result.success(Unit)
+            } else {
+                Result.failure(
+                    Exception(
+                        "Error al añadir el cupon de descuento: ${response.body<ErrorResponse>().error}")
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getUserCoupon(userId: Int): Result<Coupon?> = runCatching {
+        // Asumimos que el endpoint devuelve 204 si no hay cupón,
+        // o JSON { … } si existe uno.
+        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/$userId/coupon")
+
+        return@runCatching when (response.status) {
+            HttpStatusCode.NoContent -> null
+            HttpStatusCode.OK -> response.body<Coupon>()
+            else -> {
+                val txt = response.bodyAsText()
+                throw RuntimeException("GET  → ${response.status}: $txt")
+            }
+        }
+    }
 }

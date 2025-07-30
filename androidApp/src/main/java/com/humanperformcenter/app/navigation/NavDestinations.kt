@@ -18,6 +18,7 @@ data class StatsDetail(val id: Int)
 data class ProductDetail(val productId: Int)
 
 @Serializable object User
+@Serializable object AddCoupon
 @Serializable object Configuration
 @Serializable object ChangePassword
 @Serializable object EditProfile
