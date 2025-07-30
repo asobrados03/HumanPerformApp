@@ -179,7 +179,7 @@ fun HireProductScreen(
                             onDismissRequest = { tipoExpanded = false },
                             modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                         ) {
-                            ProductTypeFilter.values().forEach { filter ->
+                            ProductTypeFilter.entries.forEach { filter ->
                                 DropdownMenuItem(
                                     text = { Text(filter.label) },
                                     onClick = {
