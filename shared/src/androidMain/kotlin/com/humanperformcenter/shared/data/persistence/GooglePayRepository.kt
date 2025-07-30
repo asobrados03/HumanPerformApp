@@ -92,7 +92,7 @@ object GooglePayRepository : PaymentRepository {
         }
         // Asume que tu backend te devuelve { "url": "https://..." }
         val json = response.body<Map<String, String>>()
-        return json["paymentUrl"] ?: throw Exception("No se recibió URL de pago")
+        return json["url"] ?: throw Exception("No se recibió URL de pago")
     }
 
     /** 4) Debe llamarse desde onActivityResult (o ActivityResultCallback) */
