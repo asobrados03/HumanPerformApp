@@ -301,7 +301,7 @@ fun HireProductScreen(
                 Column {
                     // --- Filtro tipo de producto ---
                     Text("Tipo de producto", style = MaterialTheme.typography.titleSmall)
-                    ProductTypeFilter.values().forEach { filter ->
+                    ProductTypeFilter.entries.forEach { filter ->
                         Button(
                             onClick = {
                                 selectedFilter = filter

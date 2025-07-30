@@ -19,7 +19,7 @@ import coil.compose.AsyncImage
 
 @Composable
 fun UserProfileImage(photoName: String? = null, photoUri: Uri? = null) {
-    val baseUrl = "http://163.172.71.195:8085/profile_pic/"
+    val baseUrl = "http://163.172.71.195:8085/api/profile_pic/"
     when {
         // ① si hay URI local, la mostramos
         photoUri != null -> AsyncImage(

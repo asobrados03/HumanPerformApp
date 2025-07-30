@@ -178,7 +178,8 @@ fun UserScreen(
                         MenuOption.CHAT           to "Chat",
                         MenuOption.DOCUMENTO      to "Documento",
                         MenuOption.PAGO           to "Método de pago",
-                        MenuOption.VER_PAGO       to "Ver método de pago"
+                        MenuOption.VER_PAGO       to "Ver método de pago",
+                        MenuOption.ANADIR_CUPON   to "Añadir cupón"
                     )
 
                     items(items) { (option, title) ->

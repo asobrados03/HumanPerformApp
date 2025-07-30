@@ -12,6 +12,7 @@ import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
 import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
 import com.humanperformcenter.ui.viewmodel.state.CoachState
+import com.humanperformcenter.ui.viewmodel.state.CouponUiState
 import com.humanperformcenter.ui.viewmodel.state.DeleteProfilePicState
 import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
 import com.humanperformcenter.ui.viewmodel.state.MarkFavoriteState
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class UserViewModel(
@@ -33,6 +35,9 @@ class UserViewModel(
 
     private val _userBookings = MutableStateFlow<List<UserBooking>>(emptyList())
     val userBookings: StateFlow<List<UserBooking>> get() = _userBookings
+
+    private val _couponUiState = MutableStateFlow(CouponUiState())
+    val couponUiState: StateFlow<CouponUiState> = _couponUiState.asStateFlow()
 
     // 2) Flag de carga
     private val _isLoading = MutableStateFlow(true)
@@ -219,6 +224,43 @@ class UserViewModel(
 
     fun clearMarkFavoriteState() {
         _markFavoriteState.value = MarkFavoriteState.Idle
+    }
+
+    fun loadUserCoupon(userId: Int) = viewModelScope.launch {
+        userUseCase.getUserCoupon(userId)
+            .onSuccess { coupon ->
+                _couponUiState.update { it.copy(currentCoupon = coupon) }
+            }
+            .onFailure { ex ->
+                _couponUiState.update { it.copy(error = ex.message) }
+            }
+    }
+
+    fun onCouponCodeChanged(code: String) {
+        _couponUiState.update { it.copy(code = code, error = null) }
+    }
+
+    fun addCouponToUser(userId: Int, code: String) = viewModelScope.launch {
+        _couponUiState.update { it.copy(isLoading = true, error = null) }
+
+        userUseCase.addCouponToUser(userId, code)
+            .onSuccess {
+                // Una vez añadido, recargamos y desempaquetamos el Result<Coupon?>:
+                val updatedCoupon = userUseCase
+                    .getUserCoupon(userId)
+                    .getOrNull()    // extrae el Coupon? o null si hubo error
+
+                _couponUiState.update { st ->
+                    st.copy(
+                        isLoading     = false,
+                        currentCoupon = updatedCoupon,
+                        code          = ""
+                    )
+                }
+            }
+            .onFailure { ex ->
+                _couponUiState.update { it.copy(isLoading = false, error = ex.message) }
+            }
     }
 
     fun fetchUserBookings(userId: Int) {
