@@ -16,10 +16,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.humanperformcenter.shared.data.network.ApiClient
 
 @Composable
 fun UserProfileImage(photoName: String? = null, photoUri: Uri? = null) {
-    val baseUrl = "http://163.172.71.195:8085/api/profile_pic/"
+    val baseUrl = "${ApiClient.baseUrl}/api/profile_pic/"
     when {
         // ① si hay URI local, la mostramos
         photoUri != null -> AsyncImage(
