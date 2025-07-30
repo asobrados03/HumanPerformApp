@@ -44,6 +44,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.google.pay.button.ButtonType
 import com.google.pay.button.PayButton
+import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
@@ -52,6 +53,8 @@ import com.humanperformcenter.ui.viewmodel.state.PaymentState
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
+import com.humanperformcenter.app.navigation.StartPayment
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -173,7 +176,7 @@ fun HireProductScreen(
                     ) {
                         producto.image?.let {
                             AsyncImage(
-                                model = "http://apihuman.fransdata.com/product_images/$it",
+                                model = "https://apihuman.fransdata.com/api/product_images/$it",
                                 contentDescription = producto.name,
                                 modifier = Modifier
                                     .size(69.dp)
@@ -259,7 +262,7 @@ fun HireProductScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                     Button(onClick = {
-                        viewModel.assignProductToUser(
+                        /*viewModel.assignProductToUser(
                             userId, productoIdSeleccionado!!, "cash",
                             cuponTexto.takeIf { it.isNotBlank() }
                         ) { success ->
@@ -272,7 +275,17 @@ fun HireProductScreen(
                         mostrarCuponSheet = false
                         mostrarSeleccionPago = false
                         productoIdSeleccionado = null
-                        cuponTexto = ""
+                        cuponTexto = ""*/
+                        paymentViewModel.generatePaymentURL(
+                            PaymentRequest(
+                                customerId = 2540,
+                                productId = 17,
+                                email = "human2@mail.com",
+                                billingStreet = "Calle Ficticia 1",
+                                billingPostal = "28001"
+                            )
+                        )
+                        navController.navigate(StartPayment)
                     }, Modifier.fillMaxWidth()) {
                         Text("Pagar en efectivo")
                     }

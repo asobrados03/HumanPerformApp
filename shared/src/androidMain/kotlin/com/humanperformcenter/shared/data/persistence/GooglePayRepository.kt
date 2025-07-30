@@ -86,13 +86,13 @@ object GooglePayRepository : PaymentRepository {
 
     /** 3) (Opcional) Genera una URL de pago en tu backend */
     override suspend fun generatePaymentUrl(request: PaymentRequest): String {
-        val response: HttpResponse = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/generate-url") {
+        val response: HttpResponse = ApiClient.apiClient.post("${ApiClient.baseUrl}/payments/initiateç") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }
         // Asume que tu backend te devuelve { "url": "https://..." }
         val json = response.body<Map<String, String>>()
-        return json["url"] ?: throw Exception("No se recibió URL de pago")
+        return json["paymentUrl"] ?: throw Exception("No se recibió URL de pago")
     }
 
     /** 4) Debe llamarse desde onActivityResult (o ActivityResultCallback) */

@@ -110,7 +110,7 @@ fun HireView(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(servicios) { servicio ->
-            val imageUrl = servicio.image?.let { "http://apihuman.fransdata.com/service_images/$it" }
+            val imageUrl = servicio.image?.let { "https://apihuman.fransdata.com/api/service_images/$it" }
             val contratado = productosContratados.any { producto ->
                 producto.serviceIds.contains(servicio.id)
             }

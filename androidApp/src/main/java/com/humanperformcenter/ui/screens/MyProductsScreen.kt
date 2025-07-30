@@ -58,7 +58,7 @@ fun MyProductsScreen(
             }
         } else {
             items(productosUnicos) { producto ->
-                val imageUrl = producto.image?.let { "http://163.172.71.195:8085/product_images/$it" }
+                val imageUrl = producto.image?.let { "https://apihuman.fransdata.com/api/product_images/$it" }
 
                 AppCard(onClick = {
                     productoSeleccionado = producto
