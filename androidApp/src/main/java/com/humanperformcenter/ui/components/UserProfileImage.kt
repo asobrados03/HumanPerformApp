@@ -20,7 +20,7 @@ import com.humanperformcenter.shared.data.network.ApiClient
 
 @Composable
 fun UserProfileImage(photoName: String? = null, photoUri: Uri? = null) {
-    val baseUrl = "${ApiClient.baseUrl}/api/profile_pic/"
+    val baseUrl = "${ApiClient.baseUrl}/profile_pic/"
     when {
         // ① si hay URI local, la mostramos
         photoUri != null -> AsyncImage(
