@@ -1,7 +1,10 @@
 package com.humanperformcenter.ui.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,12 +16,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -37,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -98,8 +106,7 @@ fun HireProductScreen(
     var cuponTexto by remember { mutableStateOf("") }
     var mostrarSeleccionPago by remember { mutableStateOf(false) }
 
-    var selectedFilter by remember { mutableStateOf(ProductTypeFilter.RECURRENT) }
-    var showFilterDialog by remember { mutableStateOf(true) }
+    var selectedFilter by remember { mutableStateOf(ProductTypeFilter.ALL) }
 
 
     var expanded by remember {mutableStateOf(false)}
@@ -111,6 +118,7 @@ fun HireProductScreen(
                 val tipoOk = when (selectedFilter) {
                     ProductTypeFilter.RECURRENT -> producto.tipo_producto == "recurrent"
                     ProductTypeFilter.NON_RECURRENT -> producto.tipo_producto != "recurrent"
+                    ProductTypeFilter.ALL -> true
                 }
                 val sesionesOk = if (selectedSessionCount == 0) true
                 else producto.session == selectedSessionCount
@@ -138,10 +146,99 @@ fun HireProductScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    TextButton(onClick = { showFilterDialog = true }) {
-                        Text("Filtrar")
+                    // Dropdown de tipo de producto
+                    var tipoExpanded by remember { mutableStateOf(false) }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable { tipoExpanded = true }
+                            .padding(horizontal = 12.dp, vertical = 12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = selectedFilter.label,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = null
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = tipoExpanded,
+                            onDismissRequest = { tipoExpanded = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                        ) {
+                            ProductTypeFilter.values().forEach { filter ->
+                                DropdownMenuItem(
+                                    text = { Text(filter.label) },
+                                    onClick = {
+                                        selectedFilter = filter
+                                        tipoExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // Dropdown de sesiones
+                    var sesionesExpanded by remember { mutableStateOf(false) }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable { sesionesExpanded = true }
+                            .padding(horizontal = 12.dp, vertical = 12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = if (selectedSessionCount == 0) "Todas las sesiones" else "$selectedSessionCount sesiones",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = null
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = sesionesExpanded,
+                            onDismissRequest = { sesionesExpanded = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Todas") },
+                                onClick = {
+                                    selectedSessionCount = 0
+                                    sesionesExpanded = false
+                                }
+                            )
+                            sesionesDisponibles.forEach { sesion ->
+                                DropdownMenuItem(
+                                    text = { Text("$sesion sesiones") },
+                                    onClick = {
+                                        selectedSessionCount = sesion
+                                        sesionesExpanded = false
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -262,7 +359,7 @@ fun HireProductScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                     Button(onClick = {
-                        /*viewModel.assignProductToUser(
+                        viewModel.assignProductToUser(
                             userId, productoIdSeleccionado!!, "cash",
                             cuponTexto.takeIf { it.isNotBlank() }
                         ) { success ->
@@ -275,8 +372,8 @@ fun HireProductScreen(
                         mostrarCuponSheet = false
                         mostrarSeleccionPago = false
                         productoIdSeleccionado = null
-                        cuponTexto = ""*/
-                        paymentViewModel.generatePaymentURL(
+                        cuponTexto = ""
+                        /*paymentViewModel.generatePaymentURL(
                             PaymentRequest(
                                 customerId = 2540,
                                 productId = 17,
@@ -285,7 +382,7 @@ fun HireProductScreen(
                                 billingPostal = "28001"
                             )
                         )
-                        navController.navigate(StartPayment)
+                        navController.navigate(StartPayment)*/
                     }, Modifier.fillMaxWidth()) {
                         Text("Pagar en efectivo")
                     }
@@ -293,85 +390,12 @@ fun HireProductScreen(
             }
         }
     }
-    if (showFilterDialog) {
-        AlertDialog(
-            onDismissRequest = { showFilterDialog = false },
-            title = { Text("Selecciona filtros") },
-            text = {
-                Column {
-                    // --- Filtro tipo de producto ---
-                    Text("Tipo de producto", style = MaterialTheme.typography.titleSmall)
-                    ProductTypeFilter.values().forEach { filter ->
-                        Button(
-                            onClick = {
-                                selectedFilter = filter
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (selectedFilter == filter)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = if (selectedFilter == filter)
-                                    MaterialTheme.colorScheme.onPrimary
-                                else
-                                    MaterialTheme.colorScheme.onSurface
-                            )
-                        ) {
-                            Text(filter.label)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // --- Filtro por sesiones ---
-                    Text("Filtrar por sesiones", style = MaterialTheme.typography.titleSmall)
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Sesiones: ${if (selectedSessionCount == 0) "Todas" else selectedSessionCount}")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(onClick = { expanded = true }) {
-                            Text("Cambiar")
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Todas") },
-                            onClick = {
-                                selectedSessionCount = 0
-                                expanded = false
-                            }
-                        )
-                        sesionesDisponibles.forEach { sesion ->
-                            DropdownMenuItem(
-                                text = { Text("$sesion sesiones") },
-                                onClick = {
-                                    selectedSessionCount = sesion
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {}
-        )
-    }
-
 }
 
 enum class ProductTypeFilter(val label: String) {
     RECURRENT("Recurrente"),
-    NON_RECURRENT("No recurrente")
+    NON_RECURRENT("No recurrente"),
+    ALL("Todos")
 }
 
 // --- Helpers ---

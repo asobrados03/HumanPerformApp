@@ -503,6 +503,7 @@ fun CalendarScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 booking.coach_profile_pic?.let { imageUrl ->
+                                    println("🔵 URL de imagen del coach: $imageUrl")
                                     AsyncImage(
                                         model = imageUrl,
                                         contentDescription = "Coach image",
