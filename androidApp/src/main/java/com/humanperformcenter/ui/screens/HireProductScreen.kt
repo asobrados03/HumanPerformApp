@@ -373,7 +373,8 @@ fun HireProductScreen(
                         mostrarSeleccionPago = false
                         productoIdSeleccionado = null
                         cuponTexto = ""
-                        /*paymentViewModel.generatePaymentURL(
+                        /*
+                        paymentViewModel.generatePaymentURL(
                             PaymentRequest(
                                 customerId = 2540,
                                 productId = 17,
@@ -382,7 +383,8 @@ fun HireProductScreen(
                                 billingPostal = "28001"
                             )
                         )
-                        navController.navigate(StartPayment)*/
+                        navController.navigate(StartPayment)
+                        */
                     }, Modifier.fillMaxWidth()) {
                         Text("Pagar en efectivo")
                     }

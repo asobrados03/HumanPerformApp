@@ -81,6 +81,7 @@ import com.humanperformcenter.ui.viewmodel.UserViewModel
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
@@ -503,7 +504,6 @@ fun CalendarScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 booking.coach_profile_pic?.let { imageUrl ->
-                                    println("🔵 URL de imagen del coach: $imageUrl")
                                     AsyncImage(
                                         model = imageUrl,
                                         contentDescription = "Coach image",
@@ -718,33 +718,43 @@ fun CalendarScreen(
                                         else -> Color(0xFFD32F2F) // rojo
                                     }
 
-                                    val horaFormateada = hora.substring(0,5) // Asegúrate de que la hora tenga el formato correcto
+                                    val horaFormateada = hora.substring(0, 5)
+
+                                    // ⚠️ Validación de hora pasada si selectedDate es hoy
+                                    val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                                    val esHoy = selectedDate == now.date
+                                    val horaActual = now.time
+                                    val horaSeleccion = LocalTime.parse(horaFormateada)
+                                    val esHoraPasada = esHoy && horaSeleccion <= horaActual
 
                                     Box(
                                         modifier = Modifier
                                             .width(70.dp)
                                             .height(40.dp)
-                                            .border(1.dp, bgColor, RoundedCornerShape(12.dp))
-                                            .clickable {
+                                            .border(1.dp, if (esHoraPasada) Color.LightGray else bgColor, RoundedCornerShape(12.dp))
+                                            .background(if (esHoraPasada) Color(0xFFEEEEEE) else Color.White, shape = RoundedCornerShape(12.dp))
+                                            .clickable(enabled = !esHoraPasada) {
                                                 val serviceId = servicioSeleccionadoId ?: return@clickable
-                                                if (user != null && seSuperoLimiteReserva(serviceId, selectedDate!!, weeklyLimits, unlimitedSessions, userBookings)) {
+                                                if (user != null &&
+                                                    seSuperoLimiteReserva(serviceId, selectedDate!!, weeklyLimits, unlimitedSessions, userBookings)
+                                                ) {
                                                     soloPuedeCambiar = true
-                                                    daySessionViewModel.obtenerEntrenadoresPorHora(hora)
-                                                    horaSeleccionada = hora
-                                                    mostrarSelectorCoach = true
                                                 } else {
                                                     soloPuedeCambiar = false
-                                                    daySessionViewModel.obtenerEntrenadoresPorHora(hora)
-                                                    horaSeleccionada = hora
-                                                    mostrarSelectorCoach = true
                                                 }
-
+                                                daySessionViewModel.obtenerEntrenadoresPorHora(hora)
+                                                horaSeleccionada = hora
+                                                mostrarSelectorCoach = true
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(horaFormateada, color = bgColor)
+                                        Text(
+                                            text = horaFormateada,
+                                            color = if (esHoraPasada) Color.Gray else bgColor
+                                        )
                                     }
                                 }
+
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                         }
