@@ -359,6 +359,7 @@ fun HireProductScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                     Button(onClick = {
+                        /*
                         viewModel.assignProductToUser(
                             userId, productoIdSeleccionado!!, "cash",
                             cuponTexto.takeIf { it.isNotBlank() }
@@ -373,7 +374,7 @@ fun HireProductScreen(
                         mostrarSeleccionPago = false
                         productoIdSeleccionado = null
                         cuponTexto = ""
-                        /*
+                        */
                         paymentViewModel.generatePaymentURL(
                             PaymentRequest(
                                 customerId = 2540,
@@ -384,7 +385,7 @@ fun HireProductScreen(
                             )
                         )
                         navController.navigate(StartPayment)
-                        */
+
                     }, Modifier.fillMaxWidth()) {
                         Text("Pagar en efectivo")
                     }
