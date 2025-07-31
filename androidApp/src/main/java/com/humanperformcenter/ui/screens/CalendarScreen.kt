@@ -721,7 +721,7 @@ fun CalendarScreen(
                                     val horaFormateada = hora.substring(0, 5)
 
                                     // ⚠️ Validación de hora pasada si selectedDate es hoy
-                                    val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                                    val now = Clock.System.now().toLocalDateTime(TimeZone.of("Europe/Madrid"))
                                     val esHoy = selectedDate == now.date
                                     val horaActual = now.time
                                     val horaSeleccion = LocalTime.parse(horaFormateada)
