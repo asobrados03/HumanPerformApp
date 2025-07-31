@@ -13,15 +13,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,7 +49,6 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.google.pay.button.ButtonType
 import com.google.pay.button.PayButton
-import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
@@ -61,8 +57,6 @@ import com.humanperformcenter.ui.viewmodel.state.PaymentState
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
-import com.humanperformcenter.app.navigation.StartPayment
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,7 +87,6 @@ fun HireProductScreen(
         }
     }
 
-
     // --- Screen State ---
     val productosMap by viewModel.serviceProducts.collectAsState()
     val productos = productosMap[serviceId] ?: emptyList()
@@ -108,8 +101,6 @@ fun HireProductScreen(
 
     var selectedFilter by remember { mutableStateOf(ProductTypeFilter.ALL) }
 
-
-    var expanded by remember {mutableStateOf(false)}
     var selectedSessionCount by remember { mutableIntStateOf(0) } // 0 = sin filtro
     val sesionesDisponibles = productos.mapNotNull { it.session }.distinct().sorted()
     val productosFiltrados by remember(productos, selectedFilter, selectedSessionCount) {

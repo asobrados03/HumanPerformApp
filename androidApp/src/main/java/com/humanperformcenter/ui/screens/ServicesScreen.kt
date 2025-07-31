@@ -26,6 +26,7 @@ import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
+import com.humanperformcenter.app.navigation.HireProduct
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,7 +116,7 @@ fun HireView(
                 producto.serviceIds.contains(servicio.id)
             }
             AppCard(onClick = {
-                navController.navigate("servicio/${servicio.id}")
+                navController.navigate(HireProduct(servicio.id))
             }) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

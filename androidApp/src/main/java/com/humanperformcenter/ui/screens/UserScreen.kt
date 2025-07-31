@@ -175,7 +175,6 @@ fun UserScreen(
                     val items = listOf(
                         MenuOption.CONFIGURACION to "Configuración",
                         MenuOption.FAVORITOS      to "Mis favoritos",
-                        MenuOption.CHAT           to "Chat",
                         MenuOption.DOCUMENTO      to "Documento",
                         MenuOption.PAGO           to "Método de pago",
                         MenuOption.VER_PAGO       to "Ver método de pago",

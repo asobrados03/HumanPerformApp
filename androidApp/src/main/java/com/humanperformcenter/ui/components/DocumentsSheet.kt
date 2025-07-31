@@ -7,9 +7,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,12 +27,12 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfilePhotoSheet(
+fun DocumentsSheet(
     showSheet: Boolean,
     onDismiss: () -> Unit,
-    onDelete: () -> Unit,
     onCamera: () -> Unit,
-    onGallery: () -> Unit
+    onGallery: () -> Unit,
+    onFiles: () -> Unit
 ) {
     if (!showSheet) return
 
@@ -43,7 +44,7 @@ fun ProfilePhotoSheet(
                 .fillMaxWidth()
                 .padding(top = 8.dp, bottom = 24.dp)
         ) {
-            // 2) Header: X | Título | Papelera
+            // 2) Header: X | Título
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -53,22 +54,18 @@ fun ProfilePhotoSheet(
                 IconButton(onClick = onDismiss) {
                     Icon(Icons.Default.Close, contentDescription = "Cerrar")
                 }
-                Spacer(Modifier.weight(1f))
                 Text(
-                    "Foto del perfil",
+                    "Documentos",
                     style = MaterialTheme.typography.titleMedium,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(2f)
+                    modifier = Modifier.weight(1f) // Ocupa el espacio disponible
                 )
-                Spacer(Modifier.weight(1f))
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Eliminar foto")
-                }
+                Spacer(Modifier.width(48.dp)) // Mismo ancho que el IconButton para balancear
             }
 
             Spacer(Modifier.height(24.dp))
 
-            // 3) Botones en fila: Cámara, Galería
+            // 3) Botones en fila: Cámara, Galería, Archivos
             Row(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth()
@@ -82,6 +79,11 @@ fun ProfilePhotoSheet(
                     icon = Icons.Default.PhotoLibrary,
                     label = "Galería",
                     onClick = onGallery
+                )
+                ActionItem(
+                    icon = Icons.Default.Folder,
+                    label = "Archivos",
+                    onClick = onFiles
                 )
             }
         }

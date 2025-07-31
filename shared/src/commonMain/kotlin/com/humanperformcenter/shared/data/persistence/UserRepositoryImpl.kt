@@ -8,6 +8,7 @@ import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
+import com.humanperformcenter.shared.data.model.UploadDocumentRequest
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.UserBooking
 import com.humanperformcenter.shared.data.network.ApiClient
@@ -258,6 +259,31 @@ object UserRepositoryImpl: UserRepository {
                 val txt = response.bodyAsText()
                 throw RuntimeException("GET  → ${response.status}: $txt")
             }
+        }
+    }
+
+    override suspend fun uploadDocument(
+        name: String,
+        data: ByteArray
+    ): Result<String> {
+        return try {
+            val resp = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/document") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    UploadDocumentRequest(
+                        name = name,
+                        data = data
+                    )
+                )
+            }
+
+            if (resp.status == HttpStatusCode.OK) {
+                Result.success(resp.body())
+            } else {
+                Result.failure(Exception("Error al subir el archivo: código HTTP ${resp.status.value}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

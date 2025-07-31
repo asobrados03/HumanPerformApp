@@ -5,7 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
-import com.humanperformcenter.app.navigation.NewProduct
+import com.humanperformcenter.app.navigation.Service
 import com.humanperformcenter.app.navigation.Splash
 import com.humanperformcenter.app.navigation.Welcome
 import com.humanperformcenter.ui.components.FullScreenLoading
@@ -28,7 +28,7 @@ fun SplashScreen(
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn != null) {
             navController.navigate(
-                if (isLoggedIn == true) NewProduct else Welcome
+                if (isLoggedIn == true) Service else Welcome
             ) {
                 popUpTo(Splash) { inclusive = true }
             }
