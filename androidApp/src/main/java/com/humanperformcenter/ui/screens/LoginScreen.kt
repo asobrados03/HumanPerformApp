@@ -38,9 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.EnterEmail
-import com.humanperformcenter.app.navigation.Login
-import com.humanperformcenter.app.navigation.PasswordResetInfo
-import com.humanperformcenter.app.navigation.Register
 import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.AuthViewModel

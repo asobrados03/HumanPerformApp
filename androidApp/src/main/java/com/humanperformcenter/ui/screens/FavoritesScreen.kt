@@ -1,5 +1,6 @@
 package com.humanperformcenter.ui.screens
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,6 +42,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.humanperformcenter.shared.data.model.Professional
+import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.state.MarkFavoriteState
@@ -56,6 +59,8 @@ fun FavoritesScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+
+    val baseUrl = "${ApiClient.baseUrl}/profile_pic/"
 
     LaunchedEffect(markFavoriteState) {
         when(val state = markFavoriteState) {
@@ -125,13 +130,11 @@ fun FavoritesScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(12.dp)
                     ) {
-                        if (!prof.photoUrl.isNullOrEmpty()) {
+                        if (!prof.photoName.isNullOrEmpty()) {
                             AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(prof.photoUrl)
-                                    .crossfade(true)
-                                    .build(),
+                                model = "$baseUrl${prof.photoName}",
                                 contentDescription = prof.name,
+                                contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)

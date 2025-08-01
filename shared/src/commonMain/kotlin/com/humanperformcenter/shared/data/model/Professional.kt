@@ -8,6 +8,6 @@ data class Professional(
     val id: Int,
     val name: String,
     @SerialName("profile_photo")
-    val photoUrl: String? = null,
+    val photoName: String? = null,
     val service: String? = null
 )
