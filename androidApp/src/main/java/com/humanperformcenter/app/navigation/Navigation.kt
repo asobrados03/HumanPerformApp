@@ -29,7 +29,6 @@ import com.humanperformcenter.ui.components.FullScreenTextLoading
 import com.humanperformcenter.ui.screens.AddCouponScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
 import com.humanperformcenter.ui.screens.ChangePasswordScreen
-import com.humanperformcenter.ui.screens.ChatScreen
 import com.humanperformcenter.ui.screens.DocumentScreen
 import com.humanperformcenter.ui.screens.EnterEmailScreen
 import com.humanperformcenter.ui.screens.FavoritesScreen
@@ -125,7 +124,7 @@ fun Navigation(
             composable<Login> {
                 LoginScreen(
                     onLoginSuccess = {
-                        navController.navigate(NewProduct) {
+                        navController.navigate(Service) {
                             popUpTo(Login) { inclusive = true }
                         }
                     },
@@ -158,7 +157,7 @@ fun Navigation(
             composable<PasswordResetInfo> {
                 PasswordResetInfoScreen(navController = navController)
             }
-            composable<NewProduct> {
+            composable<Service> {
                 ServicesScreen(
                     navController = navController,
                     sessionViewModel = sessionViewModel,
@@ -170,31 +169,22 @@ fun Navigation(
                     )
                 )
             }
-            composable("servicio/{serviceId}") { backStackEntry ->
-                val serviceId = backStackEntry.arguments?.getString("serviceId")?.toIntOrNull()
-                val userIdState = sessionViewModel.userId.collectAsState()
-                val userId = userIdState.value
+            composable<HireProduct> { backStackEntry ->
+                // Reconstruimos el objeto ServicioRoute
+                val route = backStackEntry.toRoute<HireProduct>()
+                val userId by sessionViewModel.userId.collectAsState()
 
-                val userViewModel: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(AppModule.userUseCase)
-                )
-                val user by userViewModel.userData.collectAsState()
-                val email = user?.email ?: ""
-
-                val viewModel: ServiceProductViewModel = viewModel(
-                    factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
-                )
-
-                serviceId?.let {
-                    if (userId != null && email.isNotBlank()) {
-                        HireProductScreen(
-                            serviceId = it,
-                            navController = navController,
-                            viewModel = viewModel,
-                            userId = userId,
-                            paymentViewModel = paymentViewModel
-                        )
-                    }
+                // Sólo mostramos si tenemos usuario
+                if (userId != null) {
+                    HireProductScreen(
+                        serviceId     = route.serviceId,
+                        navController = navController,
+                        viewModel     = viewModel(
+                            factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
+                        ),
+                        userId        = userId!!,
+                        paymentViewModel = paymentViewModel
+                    )
                 }
             }
             composable<User> { backStackEntry ->
@@ -219,7 +209,6 @@ fun Navigation(
                             onMenuClick = { option ->
                                 when (option) {
                                     MenuOption.FAVORITOS -> navController.navigate(Favorites)
-                                    MenuOption.CHAT -> navController.navigate(Chat)
                                     MenuOption.DOCUMENTO -> navController.navigate(Document)
                                     MenuOption.PAGO -> navController.navigate(Payment)
                                     MenuOption.VER_PAGO -> navController.navigate(ViewPayment)
@@ -308,11 +297,15 @@ fun Navigation(
                     }
                 }
             }
-            composable<Chat> {
-                ChatScreen(navController = navController)
-            }
             composable<Document> {
-                DocumentScreen(navController = navController)
+                val userViewModel: UserViewModel = viewModel(
+                    factory = UserViewModelFactory(AppModule.userUseCase)
+                )
+
+                DocumentScreen(
+                    navController = navController,
+                    userViewModel = userViewModel
+                )
             }
             composable<ViewPayment> {
                 ViewPaymentScreen(navController = navController)
@@ -438,7 +431,7 @@ fun Navigation(
             composable<ProductDetail> { backStackEntry ->
                 val productDetail = backStackEntry.toRoute<ProductDetail>()
                 val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry(NewProduct)
+                    navController.getBackStackEntry(Service)
                 }
 
                 val viewModel: ServiceProductViewModel = viewModel(

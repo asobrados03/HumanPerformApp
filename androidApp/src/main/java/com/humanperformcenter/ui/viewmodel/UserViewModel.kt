@@ -17,6 +17,7 @@ import com.humanperformcenter.ui.viewmodel.state.DeleteProfilePicState
 import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
 import com.humanperformcenter.ui.viewmodel.state.MarkFavoriteState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
+import com.humanperformcenter.ui.viewmodel.state.UploadState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +39,9 @@ class UserViewModel(
 
     private val _couponUiState = MutableStateFlow(CouponUiState())
     val couponUiState: StateFlow<CouponUiState> = _couponUiState.asStateFlow()
+
+    private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
+    val uploadState: StateFlow<UploadState> = _uploadState
 
     // 2) Flag de carga
     private val _isLoading = MutableStateFlow(true)
@@ -261,6 +265,25 @@ class UserViewModel(
             .onFailure { ex ->
                 _couponUiState.update { it.copy(isLoading = false, error = ex.message) }
             }
+    }
+
+    fun uploadDocument(name: String, data: ByteArray) {
+        _uploadState.value = UploadState.Loading
+        viewModelScope.launch {
+            userUseCase.uploadDocument(name, data)
+                .onSuccess { message ->
+                    _uploadState.value = UploadState.Success(message)
+                }
+                .onFailure { throwable ->
+                    _uploadState.value = UploadState.Error(
+                        throwable.message.orEmpty().ifEmpty { "Error desconocido al subir documento" }
+                    )
+                }
+        }
+    }
+
+    fun resetUploadState() {
+        _uploadState.value = UploadState.Idle
     }
 
     fun fetchUserBookings(userId: Int) {

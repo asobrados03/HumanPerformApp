@@ -19,13 +19,13 @@ import com.humanperformcenter.R
 import com.humanperformcenter.app.navigation.Calendar
 import com.humanperformcenter.app.navigation.NavItem
 import com.humanperformcenter.app.navigation.Stats
-import com.humanperformcenter.app.navigation.NewProduct
+import com.humanperformcenter.app.navigation.Service
 import com.humanperformcenter.app.navigation.User
 
 @Composable
 fun NavigationBar(navController: NavController) {
     val items = listOf(
-        NavItem(NewProduct, "Producto",  R.drawable.exercise),
+        NavItem(Service, "Producto",  R.drawable.exercise),
         NavItem(Calendar,   "Calendario", R.drawable.calendar),
         NavItem(Stats,      "Estadísticas",R.drawable.stats),
         NavItem(User,       "Usuario",    R.drawable.person)

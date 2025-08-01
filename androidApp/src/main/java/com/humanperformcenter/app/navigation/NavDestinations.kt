@@ -8,12 +8,11 @@ import kotlinx.serialization.Serializable
 @Serializable object Splash
 @Serializable object EnterEmail
 @Serializable object PasswordResetInfo
-@Serializable object NewProduct
+@Serializable object Service
+@Serializable data class HireProduct(val serviceId: Int)
 @Serializable object Calendar
 @Serializable object Stats
 
-@Serializable
-data class StatsDetail(val id: Int)
 @Serializable
 data class ProductDetail(val productId: Int)
 
@@ -24,7 +23,6 @@ data class ProductDetail(val productId: Int)
 @Serializable object EditProfile
 @Serializable object MyProfile
 @Serializable object Favorites
-@Serializable object Chat
 @Serializable object Document
 @Serializable object Payment
 @Serializable object ViewPayment

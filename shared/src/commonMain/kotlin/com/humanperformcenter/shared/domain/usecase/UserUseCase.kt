@@ -71,4 +71,10 @@ class UserUseCase(private val userRepository: UserRepository) {
         // covertir Int? a Int
         return@withContext userRepository.getUserCoupon(userId)
     }
+
+    suspend fun uploadDocument(
+        name: String, data: ByteArray
+    ): Result<String> = withContext(Dispatchers.IO) {
+        return@withContext userRepository.uploadDocument(name, data)
+    }
 }
