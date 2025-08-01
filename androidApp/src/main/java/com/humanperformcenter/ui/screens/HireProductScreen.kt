@@ -364,6 +364,7 @@ fun HireProductScreen(
                         mostrarSeleccionPago = false
                         productoIdSeleccionado = null
                         cuponTexto = ""
+
                         /*
                         paymentViewModel.generatePaymentURL(
                             PaymentRequest(

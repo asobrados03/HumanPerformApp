@@ -30,6 +30,9 @@ class DaySessionViewModel(
     private val _unlimitedSessions = MutableStateFlow<Map<Int, Int>>(emptyMap())
     val unlimitedSessions: StateFlow<Map<Int, Int>> get() = _unlimitedSessions
 
+    private val _serviceToPrimary = MutableStateFlow<Map<Int, Int>>(emptyMap())
+    val serviceToPrimary: StateFlow<Map<Int, Int>> get() = _serviceToPrimary
+
 
     fun fetchAvailableSessions(serviceId: Int, date: LocalDate) {
         val weekStart = date.toString()
@@ -169,6 +172,7 @@ class DaySessionViewModel(
                 val response = useCase.getUserWeeklyLimit(userId)
                 _weeklyLimits.value = response.weekly_limit
                 _unlimitedSessions.value = response.unlimited_sessions
+                _serviceToPrimary.value = response.service_to_primary
             } catch (e: Exception) {
                 println("Error al cargar límites semanales: ${e.message}")
             }
