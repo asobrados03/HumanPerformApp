@@ -9,8 +9,8 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.json.Json
 
-object PaymentRepositoryImpl/*: PaymentRepository*/ {
-    /*override*/ suspend fun generatePaymentUrl(request: PaymentRequest): String {
+object PaymentRepositoryImpl: PaymentRepository{
+    override suspend fun generatePaymentUrl(request: PaymentRequest): String {
         val client = ApiClient.apiClient
 
         val response: HttpResponse = client.post("${ApiClient.baseUrl}/payments/initiate") {
@@ -19,5 +19,13 @@ object PaymentRepositoryImpl/*: PaymentRepository*/ {
         }
         val body = response.bodyAsText()
         return Json.decodeFromString<PaymentUrlResponse>(body).paymentUrl
+    }
+
+    override suspend fun requestGooglePay(requestJson: String): String {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun sendTokenToBackend(token: String): Boolean {
+        TODO("Not yet implemented")
     }
 }
