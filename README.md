@@ -2,9 +2,9 @@
 
 App Movil para Human Perform
 
-# Arquitectura de la aplicación móvil
+## Arquitectura de la aplicación móvil
 
-## Patrones y tecnologías
+### Patrones y tecnologías
 
 Se ha aplicado Clean Architecture junto con Hexagonal Architecture, usando Kotlin Multiplatform para compartir la lógica de negocio en `commonMain` entre Android e iOS.
 
