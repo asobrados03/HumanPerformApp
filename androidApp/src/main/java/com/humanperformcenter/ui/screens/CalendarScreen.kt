@@ -144,6 +144,7 @@ fun CalendarScreen(
     val userBookings = userViewModel.userBookings.collectAsState().value
     val weeklyLimits = daySessionViewModel.weeklyLimits.collectAsState().value
     val unlimitedSessions = daySessionViewModel.unlimitedSessions.collectAsState().value
+    val sesionesCompartidas = daySessionViewModel.sharedSessions.collectAsState().value
     val serviceToPrimary = daySessionViewModel.serviceToPrimary.collectAsState().value
 
     Scaffold(
@@ -736,7 +737,7 @@ fun CalendarScreen(
                                             .clickable(enabled = !esHoraPasada) {
                                                 val serviceId = servicioSeleccionadoId ?: return@clickable
                                                 if (user != null &&
-                                                    seSuperoLimiteReserva(serviceId, selectedDate!!, weeklyLimits, unlimitedSessions, userBookings, serviceToPrimary)
+                                                    daySessionViewModel.seSuperoLimiteReserva(serviceId, selectedDate!!, weeklyLimits, unlimitedSessions, sesionesCompartidas, userBookings, serviceToPrimary)
                                                 ) {
                                                     soloPuedeCambiar = true
                                                 } else {
@@ -1001,43 +1002,3 @@ private fun Month.length(isLeapYear: Boolean): Int = when (this) {
 
     Month.FEBRUARY -> if (isLeapYear) 29 else 28
 }
-
-private fun seSuperoLimiteReserva(
-    serviceId: Int?,
-    selectedDate: LocalDate,
-    weeklyLimits: Map<Int, Int>,
-    unlimitedSessions: Map<Int, Int>,
-    bookings: List<com.humanperformcenter.shared.data.model.UserBooking>,
-    serviceToPrimary: Map<Int, Int> // pásalo desde el response
-): Boolean {
-    if (serviceId == null) return false
-
-    // Normaliza el serviceId objetivo al primario:
-    val primaryTarget = serviceId
-
-    val semanaInicio = selectedDate.minus(selectedDate.dayOfWeek.ordinal, DateTimeUnit.DAY)
-    val semanaFin = semanaInicio.plus(6, DateTimeUnit.DAY)
-
-    // Mapea cada booking al primary_service_id
-    val bookingsByPrimary = bookings.map { b ->
-        val primary = serviceToPrimary[b.service_id] ?: b.service_id
-        b.copy(service_id = primary) // o crea un par (primary, b)
-    }
-
-    val reservasServicio = bookingsByPrimary.filter { it.service_id == primaryTarget }
-
-    val esRecurrente = weeklyLimits.containsKey(primaryTarget)
-    val limiteSemanal = weeklyLimits[primaryTarget] ?: Int.MAX_VALUE
-    val totalPermitido = unlimitedSessions[primaryTarget] ?: Int.MAX_VALUE
-
-    return if (esRecurrente) {
-        val estaSemana = reservasServicio.count {
-            val fecha = runCatching { LocalDate.parse(it.date.substring(0, 10)) }.getOrNull()
-            fecha != null && fecha in semanaInicio..semanaFin
-        }
-        estaSemana >= limiteSemanal
-    } else {
-        reservasServicio.size >= totalPermitido
-    }
-}
-

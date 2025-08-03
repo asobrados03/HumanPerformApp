@@ -5,12 +5,16 @@ import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.data.model.ReserveRequest
 import com.humanperformcenter.shared.data.model.ReserveUpdateRequest
 import com.humanperformcenter.shared.data.model.DaySession
+import com.humanperformcenter.shared.data.model.SharedPool
 import com.humanperformcenter.shared.data.persistence.DaySessionRepositoryImpl
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 class DaySessionViewModel(
     private val useCase: DaySessionUseCase // inyectalo aquí
@@ -29,6 +33,9 @@ class DaySessionViewModel(
 
     private val _unlimitedSessions = MutableStateFlow<Map<Int, Int>>(emptyMap())
     val unlimitedSessions: StateFlow<Map<Int, Int>> get() = _unlimitedSessions
+
+    private val _sharedSessions = MutableStateFlow<List<SharedPool>>(emptyList())
+    val sharedSessions: StateFlow<List<SharedPool>> get() = _sharedSessions
 
     private val _serviceToPrimary = MutableStateFlow<Map<Int, Int>>(emptyMap())
     val serviceToPrimary: StateFlow<Map<Int, Int>> get() = _serviceToPrimary
@@ -172,10 +179,65 @@ class DaySessionViewModel(
                 val response = useCase.getUserWeeklyLimit(userId)
                 _weeklyLimits.value = response.weekly_limit
                 _unlimitedSessions.value = response.unlimited_sessions
+                _sharedSessions.value = response.unlimited_shared
                 _serviceToPrimary.value = response.service_to_primary
             } catch (e: Exception) {
                 println("Error al cargar límites semanales: ${e.message}")
             }
+        }
+    }
+
+    fun seSuperoLimiteReserva(
+        serviceId: Int?,
+        selectedDate: LocalDate,
+        weeklyLimits: Map<Int, Int>,
+        unlimitedSessions: Map<Int, Int>,
+        sharedSessions: List<SharedPool>,
+        bookings: List<com.humanperformcenter.shared.data.model.UserBooking>,
+        serviceToPrimary: Map<Int, Int>
+    ): Boolean {
+        if (serviceId == null) return false
+
+        val primaryTarget = serviceToPrimary[serviceId] ?: serviceId
+
+        val semanaInicio = selectedDate.minus(selectedDate.dayOfWeek.ordinal, DateTimeUnit.DAY)
+        val semanaFin = semanaInicio.plus(6, DateTimeUnit.DAY)
+
+        val bookingsByPrimary = bookings.map { b ->
+            val primary = serviceToPrimary[b.service_id] ?: b.service_id
+            b.copy(service_id = primary)
+        }
+
+        val reservasServicio = bookingsByPrimary.filter { it.service_id == primaryTarget }
+
+        val esRecurrente = weeklyLimits.containsKey(primaryTarget)
+        val limiteSemanal = weeklyLimits[primaryTarget] ?: Int.MAX_VALUE
+        val totalPermitido = unlimitedSessions[primaryTarget] ?: 0
+
+        return if (esRecurrente) {
+            val estaSemana = reservasServicio.count {
+                val fecha = runCatching { LocalDate.parse(it.date.substring(0, 10)) }.getOrNull()
+                fecha != null && fecha in semanaInicio..semanaFin
+            }
+            estaSemana >= limiteSemanal
+        } else {
+            val usadasTotalesServicio = reservasServicio.size
+            val dedicadoRestante = (totalPermitido - usadasTotalesServicio).coerceAtLeast(0)
+
+            val poolsQueAplican = sharedSessions.filter { pool -> primaryTarget in pool.services }
+
+            val restanteCompartidoSum = poolsQueAplican.sumOf { pool ->
+                val usadasEnPool = bookingsByPrimary.count { b -> b.service_id in pool.services }
+                (pool.sessions - usadasEnPool).coerceAtLeast(0)
+            }
+
+            println("Pools para $primaryTarget: ${sharedSessions.filter { primaryTarget in it.services }}")
+            println("Bookings primario: ${reservasServicio.size}")
+
+
+            val disponibleTotal = dedicadoRestante + restanteCompartidoSum
+
+            disponibleTotal <= 0
         }
     }
 }
