@@ -46,7 +46,7 @@ import com.humanperformcenter.ui.viewmodel.state.MarkFavoriteState
 import kotlinx.coroutines.launch
 
 @Composable
-fun FavoritesScreen(
+fun FavoriteScreen(
     coaches: List<Professional>,
     preferredCoachId: Int?,
     onSelect: (Professional) -> Unit,

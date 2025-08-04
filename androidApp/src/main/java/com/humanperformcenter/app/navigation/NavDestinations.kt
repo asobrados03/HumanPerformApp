@@ -22,7 +22,7 @@ data class ProductDetail(val productId: Int)
 @Serializable object ChangePassword
 @Serializable object EditProfile
 @Serializable object MyProfile
-@Serializable object Favorites
+@Serializable object FavoriteCoach
 @Serializable object Document
 @Serializable object Payment
 @Serializable object ViewPayment

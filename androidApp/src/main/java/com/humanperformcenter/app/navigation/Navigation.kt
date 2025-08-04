@@ -202,7 +202,7 @@ fun Navigation(
                             onViewProfile = { navController.navigate(MyProfile) },
                             onMenuClick = { option ->
                                 when (option) {
-                                    MenuOption.FAVORITOS -> navController.navigate(Favorites)
+                                    MenuOption.FAVORITOS -> navController.navigate(FavoriteCoach)
                                     MenuOption.DOCUMENTO -> navController.navigate(Document)
                                     MenuOption.PAGO -> navController.navigate(Payment)
                                     MenuOption.VER_PAGO -> navController.navigate(ViewPayment)
@@ -344,12 +344,12 @@ fun Navigation(
                     }
                 }
             }
-            composable<Favorites> {
+            composable<FavoriteCoach> {
                 val userViewModel: UserViewModel = viewModel(
                     factory = UserViewModelFactory(AppModule.userUseCase)
                 )
 
-                FavoritesRoute(
+                FavoriteRoute(
                     userViewModel = userViewModel,
                     navController = navController
                 )

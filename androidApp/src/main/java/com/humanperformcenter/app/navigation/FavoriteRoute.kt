@@ -12,13 +12,13 @@ import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.components.FullScreenTextLoading
-import com.humanperformcenter.ui.screens.FavoritesScreen
+import com.humanperformcenter.ui.screens.FavoriteScreen
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.state.CoachState
 import com.humanperformcenter.ui.viewmodel.state.GetPreferredCoachState
 
 @Composable
-fun FavoritesRoute(
+fun FavoriteRoute(
     userViewModel: UserViewModel,
     navController: NavHostController
 ) {
@@ -69,7 +69,7 @@ fun FavoritesRoute(
                     is GetPreferredCoachState.Success -> {
                         // Ya tengo el favorito: lo paso a la pantalla
                         val favoriteId = (getPreferredCoachState as GetPreferredCoachState.Success).coachId
-                        FavoritesScreen(
+                        FavoriteScreen(
                             coaches = coaches,
                             preferredCoachId = favoriteId,
                             onSelect = { prof ->
@@ -84,7 +84,7 @@ fun FavoritesRoute(
                     else -> {
                         // Estado Idle (aún no he recuperado el favorito) o Error (tras snackbar)
                         // Pinto igualmente la pantalla, sin ninguno seleccionado
-                        FavoritesScreen(
+                        FavoriteScreen(
                             coaches = coaches,
                             preferredCoachId = -1,
                             onSelect = { prof ->
