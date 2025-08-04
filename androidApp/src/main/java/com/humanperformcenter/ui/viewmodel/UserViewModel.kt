@@ -15,15 +15,14 @@ import com.humanperformcenter.ui.viewmodel.state.CoachState
 import com.humanperformcenter.ui.viewmodel.state.CouponUiState
 import com.humanperformcenter.ui.viewmodel.state.DeleteProfilePicState
 import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
+import com.humanperformcenter.ui.viewmodel.state.GetPreferredCoachState
 import com.humanperformcenter.ui.viewmodel.state.MarkFavoriteState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import com.humanperformcenter.ui.viewmodel.state.UploadState
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -61,19 +60,19 @@ class UserViewModel(
     val updateState: LiveData<UpdateState> = _updateState
 
     private val _deleteState = MutableStateFlow<DeleteUserState>(DeleteUserState.Idle)
-    val deleteState: StateFlow<DeleteUserState> = _deleteState.asStateFlow()
+    val deleteState: StateFlow<DeleteUserState> = _deleteState
 
     private val _coachesState = MutableStateFlow<CoachState>(CoachState.Idle)
-    val coachesState: StateFlow<CoachState> = _coachesState.asStateFlow()
+    val coachesState: StateFlow<CoachState> = _coachesState
 
     private val _markFavoriteState = MutableStateFlow<MarkFavoriteState>(MarkFavoriteState.Idle)
-    val markFavoriteState: StateFlow<MarkFavoriteState> = _markFavoriteState.asStateFlow()
+    val markFavoriteState: StateFlow<MarkFavoriteState> = _markFavoriteState
 
     private val _deleteProfilePicState = MutableStateFlow<DeleteProfilePicState>(DeleteProfilePicState.Idle)
-    val deleteProfilePicState: StateFlow<DeleteProfilePicState> = _deleteProfilePicState.asStateFlow()
+    val deleteProfilePicState: StateFlow<DeleteProfilePicState> = _deleteProfilePicState
 
-    val favoriteCoachId: StateFlow<Int?> = SecureStorage.favoriteCoachFlow()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    private val _getPreferredCoachState = MutableStateFlow<GetPreferredCoachState>(GetPreferredCoachState.Idle)
+    val getPreferredCoachState: StateFlow<GetPreferredCoachState> = _getPreferredCoachState
 
     /**
      * Recibe un User “candidato” (con campos fullName, dateOfBirth = "yyyy-MM-dd",
@@ -216,7 +215,6 @@ class UserViewModel(
         _markFavoriteState.value = MarkFavoriteState.Loading
         viewModelScope.launch {
             userUseCase.markFavorite(coachId, serviceName, userId).onSuccess { message ->
-                SecureStorage.saveFavoriteCoach(coachId)
                 _markFavoriteState.value = MarkFavoriteState.Success(message)
             }.onFailure { throwable ->
                 _markFavoriteState.value = MarkFavoriteState.Error(
@@ -228,6 +226,37 @@ class UserViewModel(
 
     fun clearMarkFavoriteState() {
         _markFavoriteState.value = MarkFavoriteState.Idle
+    }
+
+    fun getPreferredCoach(userId: Int?) {
+        if (userId == null) return
+        _getPreferredCoachState.value = GetPreferredCoachState.Loading
+        viewModelScope.launch {
+            try {
+                // Asume que getPreferredCoach devuelve un objeto con coachId
+                userUseCase.getPreferredCoach(
+                    customerId = userId
+                ).onSuccess { preferred ->
+                    // Si éxito, emitimos el coachId
+                    _getPreferredCoachState.value =
+                        GetPreferredCoachState.Success(preferred.coachId)
+                }
+                .onFailure { throwable ->
+                    // Si falla, emitimos el mensaje de error
+                    _getPreferredCoachState.value =
+                        GetPreferredCoachState.Error(
+                            throwable.localizedMessage ?: "Error al obtener favorito"
+                        )
+                }
+            } catch (e: Throwable) {
+                _getPreferredCoachState.value =
+                    GetPreferredCoachState.Error(e.localizedMessage ?: "Error al obtener favorito")
+            }
+        }
+    }
+
+    fun clearGetPreferredCoachState() {
+        _getPreferredCoachState.value = GetPreferredCoachState.Idle
     }
 
     fun loadUserCoupon(userId: Int) = viewModelScope.launch {

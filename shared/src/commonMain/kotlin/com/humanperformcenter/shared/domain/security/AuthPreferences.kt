@@ -16,7 +16,6 @@ object AuthPreferences {
     private val KEY_ACCESS  = stringPreferencesKey("access_token_enc")
     private val KEY_REFRESH = stringPreferencesKey("refresh_token_enc")
     private val KEY_USER_JSON = stringPreferencesKey("key_user_json")
-    private val KEY_FAV_COACH = stringPreferencesKey("favorite_coach_enc")
 
     /** Guarda ambos tokens cifrados y codificados en Base64 */
     suspend fun saveTokens(
@@ -113,38 +112,6 @@ object AuthPreferences {
                     val jsonBytes   = Crypto.decrypt(cipherBytes)
                     val json        = jsonBytes.decodeToString()
                     Json.decodeFromString<User>(json)
-                }
-            }
-            .catch { e ->
-                if (e is CryptoException.DecryptionFailed) {
-                    prefs.edit { it.clear() }
-                    emit(null)
-                } else {
-                    throw e
-                }
-            }
-
-    suspend fun saveFavoriteCoach(
-        prefs: DataStore<Preferences>,
-        coachId: Int
-    ) {
-        prefs.edit { m ->
-            // 1) Int -> String -> ByteArray
-            val raw = coachId.toString().encodeToByteArray()
-            // 2) Cifrar
-            val enc = Crypto.encrypt(raw)
-            // 3) Base64 String
-            m[KEY_FAV_COACH] = Base64.encode(enc)
-        }
-    }
-
-    fun favoriteCoachFlow(prefs: DataStore<Preferences>): Flow<Int?> =
-        safePrefsFlow(prefs)
-            .map { m ->
-                m[KEY_FAV_COACH]?.let { b64 ->
-                    Base64.decode(b64).let { cipherBytes ->
-                        Crypto.decrypt(cipherBytes)
-                    }.decodeToString().toIntOrNull()
                 }
             }
             .catch { e ->

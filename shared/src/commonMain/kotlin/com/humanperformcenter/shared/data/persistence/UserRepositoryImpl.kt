@@ -5,6 +5,7 @@ import com.humanperformcenter.shared.data.model.AssignPreferredCoachResponse
 import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.ErrorResponse
+import com.humanperformcenter.shared.data.model.GetPreferredCoachResponse
 import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
@@ -132,7 +133,8 @@ object UserRepositoryImpl: UserRepository {
     ): Result<String> {
         return try {
             val response: HttpResponse = ApiClient.apiClient.post(
-                "${ApiClient.baseUrl}/mobile/preferred-coach") {
+                "${ApiClient.baseUrl}/mobile/user/preferred-coach"
+            ) {
 
                 val customerId = userId ?: 0
 
@@ -155,6 +157,36 @@ object UserRepositoryImpl: UserRepository {
             // 5xx
             Result.failure(RuntimeException("Error de servidor: ${e.response.status}"))
         } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse> {
+        return try {
+            // Llamada al endpoint, pasando el customerId como query parameter
+            val response: HttpResponse = ApiClient.apiClient.get(
+                "${ApiClient.baseUrl}/mobile/user/preferred-coach"
+            ) {
+                contentType(ContentType.Application.Json)
+                parameter("customer_id", customerId)
+            }
+
+            if (response.status == HttpStatusCode.OK) {
+                val body: GetPreferredCoachResponse = response.body()
+                return Result.success(body)
+            } else {
+                // parsea el mensaje de error o lanza uno genérico
+                val errorResponse = response.body<ErrorResponse>()
+                return Result.failure(RuntimeException(errorResponse.error))
+            }
+        } catch (e: ClientRequestException) {
+            // 4xx
+            Result.failure(RuntimeException("Error de cliente: ${e.response.status}"))
+        } catch (e: ServerResponseException) {
+            // 5xx
+            Result.failure(RuntimeException("Error de servidor: ${e.response.status}"))
+        } catch (e: Exception) {
+            // Otros errores (timeout, parseo, etc.)
             Result.failure(e)
         }
     }

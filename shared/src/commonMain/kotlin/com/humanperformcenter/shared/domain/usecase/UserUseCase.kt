@@ -2,6 +2,7 @@ package com.humanperformcenter.shared.domain.usecase
 
 import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
+import com.humanperformcenter.shared.data.model.GetPreferredCoachResponse
 import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
@@ -76,5 +77,9 @@ class UserUseCase(private val userRepository: UserRepository) {
         name: String, data: ByteArray
     ): Result<String> = withContext(Dispatchers.IO) {
         return@withContext userRepository.uploadDocument(name, data)
+    }
+
+    suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse> = withContext(Dispatchers.IO) {
+        return@withContext userRepository.getPreferredCoach(customerId)
     }
 }

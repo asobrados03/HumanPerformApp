@@ -48,10 +48,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun FavoritesScreen(
     coaches: List<Professional>,
-    selectedCoachId: Int?,
+    preferredCoachId: Int?,
     onSelect: (Professional) -> Unit,
     markFavoriteState: MarkFavoriteState,
     userViewModel: UserViewModel,
+    userId: Int?,
     navController: NavHostController
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -69,6 +70,7 @@ fun FavoritesScreen(
                     )
                 }
                 userViewModel.clearMarkFavoriteState()
+                userViewModel.getPreferredCoach(userId!!)
             }
 
             is MarkFavoriteState.Success -> {
@@ -79,6 +81,7 @@ fun FavoritesScreen(
                     )
                 }
                 userViewModel.clearMarkFavoriteState()
+                userViewModel.getPreferredCoach(userId!!)
             } else -> Unit
         }
     }
@@ -109,7 +112,7 @@ fun FavoritesScreen(
                 )
             }
             items(coaches) { prof ->
-                val isSelected = prof.id == selectedCoachId
+                val isSelected = prof.id == preferredCoachId
 
                 Card(
                     colors = CardDefaults.cardColors(

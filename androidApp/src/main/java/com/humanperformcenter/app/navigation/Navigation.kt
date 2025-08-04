@@ -1,10 +1,8 @@
 package com.humanperformcenter.app.navigation
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -15,7 +13,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -25,22 +22,20 @@ import com.humanperformcenter.app.SetStatusBarColor
 import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.FullScreenLoading
-import com.humanperformcenter.ui.components.FullScreenTextLoading
 import com.humanperformcenter.ui.screens.AddCouponScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
 import com.humanperformcenter.ui.screens.ChangePasswordScreen
 import com.humanperformcenter.ui.screens.DocumentScreen
 import com.humanperformcenter.ui.screens.EnterEmailScreen
-import com.humanperformcenter.ui.screens.FavoritesScreen
 import com.humanperformcenter.ui.screens.HireProductScreen
 import com.humanperformcenter.ui.screens.LoginScreen
 import com.humanperformcenter.ui.screens.MyProfileScreen
-import com.humanperformcenter.ui.screens.ServicesScreen
 import com.humanperformcenter.ui.screens.PasswordResetInfoScreen
 import com.humanperformcenter.ui.screens.PaymentScreen
 import com.humanperformcenter.ui.screens.PaymentSuccessScreen
 import com.humanperformcenter.ui.screens.ProductDetailScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
+import com.humanperformcenter.ui.screens.ServicesScreen
 import com.humanperformcenter.ui.screens.SplashScreen
 import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.UserStatsScreen
@@ -52,15 +47,14 @@ import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.viewmodel.PaymentViewModelFactory
-import com.humanperformcenter.ui.viewmodel.UserStatsViewModel
-import com.humanperformcenter.ui.viewmodel.UserStatsViewModelFactory
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModelFactory
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.UserStatsViewModel
+import com.humanperformcenter.ui.viewmodel.UserStatsViewModelFactory
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
 import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
-import com.humanperformcenter.ui.viewmodel.state.CoachState
 import com.humanperformcenter.ui.viewmodel.state.ResetPasswordState
 
 @Composable
@@ -354,46 +348,11 @@ fun Navigation(
                 val userViewModel: UserViewModel = viewModel(
                     factory = UserViewModelFactory(AppModule.userUseCase)
                 )
-                val coachState by userViewModel.coachesState.collectAsState()
-                val favoriteId by userViewModel.favoriteCoachId.collectAsState()
 
-                val userState by userViewModel.userData.collectAsState()
-                val userId = userState?.id
-
-                val markFavoriteState by userViewModel.markFavoriteState.collectAsState()
-
-                LaunchedEffect(Unit) {
-                    userViewModel.getCoaches()
-                }
-
-                when (coachState) {
-                    is CoachState.Loading -> {
-                        FullScreenTextLoading("Cargando entrenadores...", PaddingValues(16.dp))
-                    }
-
-                    is CoachState.Success -> {
-                        FavoritesScreen(
-                            coaches = (coachState as CoachState.Success).coaches,
-                            selectedCoachId = favoriteId,
-                            onSelect = { prof ->
-                                userViewModel.markFavorite(prof.id, prof.service, userId)
-                            },
-                            markFavoriteState = markFavoriteState,
-                            userViewModel = userViewModel,
-                            navController = navController
-                        )
-                    }
-
-                    is CoachState.Error -> {
-                        // Muestra un mensaje de error
-                        val message = (coachState as CoachState.Error).message
-                        Text("Error: $message")
-                    }
-
-                    CoachState.Idle -> {
-                        FullScreenLoading()
-                    }
-                }
+                FavoritesRoute(
+                    userViewModel = userViewModel,
+                    navController = navController
+                )
             }
 
             composable<Calendar> {

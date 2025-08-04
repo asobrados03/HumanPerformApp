@@ -41,12 +41,6 @@ object SecureStorage {
 
     fun userFlow(): Flow<User?> = AuthPreferences.userFlow(prefs)
 
-    suspend fun saveFavoriteCoach(id: Int) {
-        AuthPreferences.saveFavoriteCoach(prefs, id)
-    }
-
-    fun favoriteCoachFlow(): Flow<Int?> = AuthPreferences.favoriteCoachFlow(prefs)
-
     /** Borra tokens (logout) */
     suspend fun clear() {
         AuthPreferences.clear(prefs)
