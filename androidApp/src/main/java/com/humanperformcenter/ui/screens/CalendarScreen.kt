@@ -146,6 +146,7 @@ fun CalendarScreen(
     val unlimitedSessions = daySessionViewModel.unlimitedSessions.collectAsState().value
     val sesionesCompartidas = daySessionViewModel.sharedSessions.collectAsState().value
     val serviceToPrimary = daySessionViewModel.serviceToPrimary.collectAsState().value
+    val validFromByPrimary = daySessionViewModel.validFromByPrimary.collectAsState().value
 
     Scaffold(
         topBar = {
