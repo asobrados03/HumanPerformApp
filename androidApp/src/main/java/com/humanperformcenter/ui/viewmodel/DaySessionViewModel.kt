@@ -40,6 +40,9 @@ class DaySessionViewModel(
     private val _serviceToPrimary = MutableStateFlow<Map<Int, Int>>(emptyMap())
     val serviceToPrimary: StateFlow<Map<Int, Int>> get() = _serviceToPrimary
 
+    private val _validFromByPrimary = MutableStateFlow<Map<Int, String>>(emptyMap())
+    val validFromByPrimary: StateFlow<Map<Int, String>> get() = _validFromByPrimary
+
 
     fun fetchAvailableSessions(serviceId: Int, date: LocalDate) {
         val weekStart = date.toString()
@@ -181,11 +184,16 @@ class DaySessionViewModel(
                 _unlimitedSessions.value = response.unlimited_sessions
                 _sharedSessions.value = response.unlimited_shared
                 _serviceToPrimary.value = response.service_to_primary
+                _validFromByPrimary.value = response.valid_from_by_primary
             } catch (e: Exception) {
                 println("Error al cargar límites semanales: ${e.message}")
             }
         }
     }
+
+    // Utilidad segura para parsear YYYY-MM-DD desde ISO-8601
+    private fun parseDateOrNull(iso: String?): LocalDate? =
+        iso?.let { runCatching { LocalDate.parse(it.substring(0, 10)) }.getOrNull() }
 
     fun seSuperoLimiteReserva(
         serviceId: Int?,
@@ -194,7 +202,8 @@ class DaySessionViewModel(
         unlimitedSessions: Map<Int, Int>,
         sharedSessions: List<SharedPool>,
         bookings: List<com.humanperformcenter.shared.data.model.UserBooking>,
-        serviceToPrimary: Map<Int, Int>
+        serviceToPrimary: Map<Int, Int>,
+        validFromByPrimary: Map<Int, String> = emptyMap() // NUEVO parámetro (con default)
     ): Boolean {
         if (serviceId == null) return false
 
@@ -203,42 +212,64 @@ class DaySessionViewModel(
         val semanaInicio = selectedDate.minus(selectedDate.dayOfWeek.ordinal, DateTimeUnit.DAY)
         val semanaFin = semanaInicio.plus(6, DateTimeUnit.DAY)
 
-        val bookingsByPrimary = bookings.map { b ->
-            val primary = serviceToPrimary[b.service_id] ?: b.service_id
-            b.copy(service_id = primary)
-        }
+        // Normaliza y filtra activas
+        val bookingsByPrimary = bookings
+            .map { b ->
+                val primary = serviceToPrimary[b.service_id] ?: b.service_id
+                b.copy(service_id = primary)
+            }
 
         val reservasServicio = bookingsByPrimary.filter { it.service_id == primaryTarget }
 
         val esRecurrente = weeklyLimits.containsKey(primaryTarget)
         val limiteSemanal = weeklyLimits[primaryTarget] ?: Int.MAX_VALUE
-        val totalPermitido = unlimitedSessions[primaryTarget] ?: 0
 
-        return if (esRecurrente) {
+        // --- Caso semanal (recurrente) ---
+        if (esRecurrente) {
             val estaSemana = reservasServicio.count {
                 val fecha = runCatching { LocalDate.parse(it.date.substring(0, 10)) }.getOrNull()
                 fecha != null && fecha in semanaInicio..semanaFin
             }
-            estaSemana >= limiteSemanal
-        } else {
-            val usadasTotalesServicio = reservasServicio.size
-            val dedicadoRestante = (totalPermitido - usadasTotalesServicio).coerceAtLeast(0)
+            return estaSemana >= limiteSemanal
+        }
 
-            val poolsQueAplican = sharedSessions.filter { pool -> primaryTarget in pool.services }
+        // --- Caso bonos / ilimitadas ---
+        val poolsQueAplican = sharedSessions.filter { primaryTarget in it.services }
 
-            val restanteCompartidoSum = poolsQueAplican.sumOf { pool ->
-                val usadasEnPool = bookingsByPrimary.count { b -> b.service_id in pool.services }
+        // 1) Consumo dedicado (solo si existe explícitamente), filtrando por valid_from del primario
+        val validFromPrimaryDate = parseDateOrNull(validFromByPrimary[primaryTarget])
+        val usadasTotalesServicio = reservasServicio.count { b ->
+            val f = runCatching { LocalDate.parse(b.date.substring(0, 10)) }.getOrNull()
+            f != null && (validFromPrimaryDate == null || f >= validFromPrimaryDate)
+        }
+        val dedicadoPermitido = unlimitedSessions[primaryTarget] // puede ser null si no hay bono dedicado
+        val dedicadoRestante = if (dedicadoPermitido != null)
+            (dedicadoPermitido - usadasTotalesServicio).coerceAtLeast(0)
+        else 0
+
+        // 2) Consumo en pools compartidos (si hay), filtrando por ventana válida del pool
+        val restanteCompartidoSum = if (poolsQueAplican.isNotEmpty()) {
+            poolsQueAplican.sumOf { pool ->
+                val vf = parseDateOrNull(pool.valid_from)
+                val vt = parseDateOrNull(pool.valid_to)
+                val usadasEnPool = bookingsByPrimary.count { b ->
+                    val f = runCatching { LocalDate.parse(b.date.substring(0, 10)) }.getOrNull()
+                    f != null &&
+                            (vf == null || f >= vf) &&
+                            (vt == null || f <= vt) &&
+                            b.service_id in pool.services
+                }
                 (pool.sessions - usadasEnPool).coerceAtLeast(0)
             }
+        } else 0
 
-            println("Pools para $primaryTarget: ${sharedSessions.filter { primaryTarget in it.services }}")
-            println("Bookings primario: ${reservasServicio.size}")
-
-
-            val disponibleTotal = dedicadoRestante + restanteCompartidoSum
-
-            disponibleTotal <= 0
+        // Si no hay ni dedicado ni pools que apliquen, sin límite → no bloquear
+        if (dedicadoPermitido == null && poolsQueAplican.isEmpty()) {
+            return false
         }
+
+        val disponibleTotal = (dedicadoRestante + restanteCompartidoSum).coerceAtLeast(0)
+        return disponibleTotal <= 0
     }
 }
 
