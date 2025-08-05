@@ -20,7 +20,9 @@ fun scheduleSessionNotification(context: Context, booking: UserBooking) {
         val sessionDateTime = LocalDateTime.of(datePart, timePart)
 
         val now = LocalDateTime.now()
-        val notifyTime = sessionDateTime.minusHours(1)
+        val notifyTime = sessionDateTime
+            .minusHours(4)
+            .minusMinutes(45)
 
         if (notifyTime.isAfter(now)) {
             val delay = Duration.between(now, notifyTime).toMillis()

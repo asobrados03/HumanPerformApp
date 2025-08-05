@@ -562,7 +562,7 @@ fun CalendarScreen(
                                             onClick = {
                                                 menuExpandedMap[booking.id] = false
                                                 booking.id.let { reservaId ->
-                                                    userViewModel.cancelUserBooking(reservaId)
+                                                    userViewModel.cancelUserBooking(reservaId, context)
                                                     userId?.let { userViewModel.fetchUserBookings(it) }
                                                 }
                                             }

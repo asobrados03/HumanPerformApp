@@ -1,9 +1,11 @@
 package com.humanperformcenter.ui.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkManager
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.UserBooking
@@ -321,15 +323,20 @@ class UserViewModel(
         }
     }
 
-    fun cancelUserBooking(bookingId: Int) {
+    fun cancelUserBooking(bookingId: Int, context: Context) {
         viewModelScope.launch {
             userUseCase.cancelUserBooking(bookingId).fold(
                 onSuccess = {
-                    println("Reserva cancelada exitosamente")
+                    println("✅ Reserva cancelada")
+
+                    // ⛔ Cancelar notificación programada
+                    WorkManager.getInstance(context)
+                        .cancelAllWorkByTag("session_$bookingId")
+
                     fetchUserBookings(_userData.value?.id ?: 0)
                 },
                 onFailure = { throwable ->
-                    println("Error al cancelar la reserva: ${throwable.message}")
+                    println("❌ Error al cancelar reserva: ${throwable.message}")
                 }
             )
         }
