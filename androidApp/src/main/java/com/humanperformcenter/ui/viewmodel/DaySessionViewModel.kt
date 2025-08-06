@@ -366,11 +366,6 @@ class DaySessionViewModel(
         _cuestionarioActivo.value = false
     }
 
-    private fun yaSeHaRespondido(bookingId: Int): Boolean {
-        return sesionesOmitidas.contains(bookingId) ||
-               _respuestas.all { it != null } && bookingId == bookingIdPendiente
-    }
-
     private fun enviarRespuestas() {
         val bookingId = bookingIdPendiente ?: return
         viewModelScope.launch {
@@ -393,12 +388,5 @@ class DaySessionViewModel(
             }
         }
     }
-
-    fun reiniciarFormulario() {
-        _preguntaActual.value = 0
-        _respuestas.clear()
-        repeat(5) { _respuestas.add(null) }
-    }
-
 }
 

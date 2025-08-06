@@ -144,6 +144,9 @@ fun CalendarScreen(
     val user = userViewModel.userData.collectAsState().value
     val userBookings = userViewModel.userBookings.collectAsState().value
 
+    var showHoraOcupadaDialog by remember { mutableStateOf(false) }
+
+
     val context = LocalContext.current
     LaunchedEffect(userBookings) {
         userBookings.forEach { booking ->
@@ -745,7 +748,23 @@ fun CalendarScreen(
                                             .border(1.dp, if (esHoraPasada) Color.LightGray else bgColor, RoundedCornerShape(12.dp))
                                             .background(if (esHoraPasada) Color(0xFFEEEEEE) else Color.White, shape = RoundedCornerShape(12.dp))
                                             .clickable(enabled = !esHoraPasada) {
+
                                                 val serviceId = servicioSeleccionadoId ?: return@clickable
+
+                                                val yaTieneReservaMismaHora = userBookings.any { booking ->
+                                                    val fechaReserva = try {
+                                                        LocalDate.parse(booking.date.substring(0, 10))
+                                                    } catch (_: Exception) { null }
+
+                                                    val horaReserva = booking.hour.substring(0, 5)
+                                                    fechaReserva == selectedDate && horaReserva == horaFormateada
+                                                }
+
+                                                if (yaTieneReservaMismaHora) {
+                                                    showHoraOcupadaDialog = true
+                                                    return@clickable
+                                                }
+
                                                 if (user != null &&
                                                     daySessionViewModel.seSuperoLimiteReserva(serviceId, selectedDate!!, weeklyLimits, unlimitedSessions, sesionesCompartidas, userBookings, serviceToPrimary)
                                                 ) {
@@ -753,6 +772,7 @@ fun CalendarScreen(
                                                 } else {
                                                     soloPuedeCambiar = false
                                                 }
+
                                                 daySessionViewModel.obtenerEntrenadoresPorHora(hora)
                                                 horaSeleccionada = hora
                                                 mostrarSelectorCoach = true
@@ -1001,6 +1021,18 @@ fun CalendarScreen(
                 )
             }
         }
+    }
+    if (showHoraOcupadaDialog) {
+        AlertDialog(
+            onDismissRequest = { showHoraOcupadaDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showHoraOcupadaDialog = false }) {
+                    Text("Entendido")
+                }
+            },
+            title = { Text("Reserva existente") },
+            text = { Text("Ya tienes una reserva ese día a esa hora. No puedes reservar ni modificar otra en esa franja.") }
+        )
     }
 }
 
