@@ -78,6 +78,7 @@ import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.worker.scheduleSessionNotification
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
@@ -142,6 +143,14 @@ fun CalendarScreen(
 
     val user = userViewModel.userData.collectAsState().value
     val userBookings = userViewModel.userBookings.collectAsState().value
+
+    val context = LocalContext.current
+    LaunchedEffect(userBookings) {
+        userBookings.forEach { booking ->
+            scheduleSessionNotification(context, booking)
+        }
+    }
+
     val weeklyLimits = daySessionViewModel.weeklyLimits.collectAsState().value
     val unlimitedSessions = daySessionViewModel.unlimitedSessions.collectAsState().value
     val sesionesCompartidas = daySessionViewModel.sharedSessions.collectAsState().value
@@ -553,7 +562,7 @@ fun CalendarScreen(
                                             onClick = {
                                                 menuExpandedMap[booking.id] = false
                                                 booking.id.let { reservaId ->
-                                                    userViewModel.cancelUserBooking(reservaId)
+                                                    userViewModel.cancelUserBooking(reservaId, context)
                                                     userId?.let { userViewModel.fetchUserBookings(it) }
                                                 }
                                             }

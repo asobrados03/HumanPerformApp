@@ -301,38 +301,6 @@ fun HireProductScreen(
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
             Column(Modifier.padding(16.dp)) {
-                if (!mostrarSeleccionPago) {
-                    Text("¿Tienes un cupón?", style = MaterialTheme.typography.titleMedium)
-                    OutlinedTextField(
-                        value = cuponTexto,
-                        onValueChange = { cuponTexto = it },
-                        label = { Text("Código de cupón") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Button(onClick = {
-                        viewModel.aplicarCupon(
-                            codigo = cuponTexto.trim(),
-                            userId, productoIdSeleccionado!!
-                        ) { success ->
-                            if (success) {
-                                Toast.makeText(context, "Cupón aplicado", Toast.LENGTH_SHORT).show()
-                                mostrarSeleccionPago = true
-                            } else {
-                                Toast.makeText(context, "Cupón no válido", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }, Modifier.fillMaxWidth()) {
-                        Text("Aplicar cupón")
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = {
-                        Toast.makeText(context, "Sin cupón", Toast.LENGTH_SHORT).show()
-                        mostrarSeleccionPago = true
-                    }, Modifier.fillMaxWidth()) {
-                        Text("Omitir cupón y continuar")
-                    }
-                } else {
                     Text("Selecciona método de pago", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(16.dp))
                     // — Google Pay Button —
@@ -384,7 +352,6 @@ fun HireProductScreen(
             }
         }
     }
-}
 
 enum class ProductTypeFilter(val label: String) {
     RECURRENT("Recurrente"),
