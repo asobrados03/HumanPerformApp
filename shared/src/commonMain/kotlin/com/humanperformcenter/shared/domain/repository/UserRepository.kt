@@ -21,6 +21,7 @@ interface UserRepository {
     suspend fun cancelUserBooking(bookingId: Int): Result<Unit>
     suspend fun getUserStats(customerId: Int): UserStatistics
     suspend fun addCouponToUser(userId: Int, couponCode: String): Result<Unit>
-    suspend fun getUserCoupon(userId: Int): Result<Coupon?>
+    //suspend fun getUserCoupon(userId: Int): Result<Coupon?>
+    suspend fun getUserCoupons(userId: Int): Result<List<Coupon>>
     suspend fun uploadDocument(name: String, data: ByteArray): Result<String>
 }

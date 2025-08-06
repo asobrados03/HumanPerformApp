@@ -262,9 +262,9 @@ class UserViewModel(
     }
 
     fun loadUserCoupon(userId: Int) = viewModelScope.launch {
-        userUseCase.getUserCoupon(userId)
-            .onSuccess { coupon ->
-                _couponUiState.update { it.copy(currentCoupon = coupon) }
+        userUseCase.getUserCoupons(userId)
+            .onSuccess { coupons ->
+                _couponUiState.update { it.copy(currentCoupons = coupons) }
             }
             .onFailure { ex ->
                 _couponUiState.update { it.copy(error = ex.message) }
@@ -280,16 +280,12 @@ class UserViewModel(
 
         userUseCase.addCouponToUser(userId, code)
             .onSuccess {
-                // Una vez añadido, recargamos y desempaquetamos el Result<Coupon?>:
-                val updatedCoupon = userUseCase
-                    .getUserCoupon(userId)
-                    .getOrNull()    // extrae el Coupon? o null si hubo error
-
-                _couponUiState.update { st ->
-                    st.copy(
-                        isLoading     = false,
-                        currentCoupon = updatedCoupon,
-                        code          = ""
+                val updatedCoupons = userUseCase.getUserCoupons(userId).getOrElse { emptyList() }
+                _couponUiState.update {
+                    it.copy(
+                        isLoading = false,
+                        currentCoupons = updatedCoupons,
+                        code = ""
                     )
                 }
             }

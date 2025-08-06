@@ -279,7 +279,7 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun getUserCoupon(userId: Int): Result<Coupon?> = runCatching {
+    /*override suspend fun getUserCoupon(userId: Int): Result<Coupon?> = runCatching {
         // Asumimos que el endpoint devuelve 204 si no hay cupón,
         // o JSON { … } si existe uno.
         val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/$userId/coupon")
@@ -291,6 +291,20 @@ object UserRepositoryImpl: UserRepository {
                 val txt = response.bodyAsText()
                 throw RuntimeException("GET  → ${response.status}: $txt")
             }
+        }
+    }*/
+    override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> {
+        return try {
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
+                url {
+                    parameters.append("user_id", userId.toString())
+                }
+            }
+
+            val coupons: List<Coupon> = response.body()
+            Result.success(coupons)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

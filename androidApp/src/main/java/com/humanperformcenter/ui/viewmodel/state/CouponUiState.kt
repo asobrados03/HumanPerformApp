@@ -6,5 +6,5 @@ data class CouponUiState(
     val code: String?       = "",
     val isLoading: Boolean  = false,
     val error: String?      = null,
-    val currentCoupon: Coupon? = null
+    val currentCoupons: List<Coupon> = emptyList()
 )

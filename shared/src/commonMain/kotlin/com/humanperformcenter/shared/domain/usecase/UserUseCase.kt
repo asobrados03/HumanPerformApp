@@ -66,11 +66,14 @@ class UserUseCase(private val userRepository: UserRepository) {
     /**
      * Recupera el cupón activo del usuario, o null si no tiene.
      */
-    suspend fun getUserCoupon(
+    /*suspend fun getUserCoupon(
         userId: Int
     ): Result<Coupon?> = withContext(Dispatchers.IO) {
         // covertir Int? a Int
         return@withContext userRepository.getUserCoupon(userId)
+    }*/
+    suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> = withContext(Dispatchers.IO) {
+        return@withContext userRepository.getUserCoupons(userId)
     }
 
     suspend fun uploadDocument(

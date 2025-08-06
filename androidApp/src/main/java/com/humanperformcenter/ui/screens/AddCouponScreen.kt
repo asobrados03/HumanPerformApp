@@ -88,17 +88,19 @@ fun AddCouponScreen(
 
             uiState.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
-            uiState.currentCoupon?.let { coupon ->
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(12.dp)) {
-                        Text("Cupón activo: ${coupon.code}", style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            "Descuento: ${coupon.discount}${if (coupon.isPercentage) "%" else "€"}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+            if (uiState.currentCoupons.isNotEmpty()) {
+                Text("Cupones activos:", style = MaterialTheme.typography.titleSmall)
+
+                uiState.currentCoupons.forEach { coupon ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text("Código: ${coupon.code}", style = MaterialTheme.typography.bodyMedium)
+                            Text("Descuento: ${coupon.discount}${if (coupon.isPercentage) "%" else "€"}")
+                        }
                     }
                 }
             }
+
         }
     }
 }
