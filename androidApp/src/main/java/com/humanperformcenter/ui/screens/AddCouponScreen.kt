@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material3.Button
@@ -66,41 +68,48 @@ fun AddCouponScreen(
                 textAlign = TextAlign.Center
             )
 
-            uiState.code?.let {
-                OutlinedTextField(
-                    value       = it,
-                    onValueChange = userViewModel::onCouponCodeChanged,
-                    label       = { Text("Código de cupón") },
-                    singleLine  = true,
-                    leadingIcon = { Icon(Icons.Default.LocalOffer, contentDescription = null) },
-                    modifier    = Modifier.fillMaxWidth()
-                )
-            }
+            OutlinedTextField(
+                value = uiState.code ?: "",
+                onValueChange = userViewModel::onCouponCodeChanged,
+                label = { Text("Código de cupón") },
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Default.LocalOffer, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Button(
                 onClick = { userViewModel.addCouponToUser(userId, uiState.code?.trim() ?: "") },
-                enabled  = !uiState.isLoading,
+                enabled = !uiState.isLoading,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (uiState.isLoading) CircularProgressIndicator(Modifier.size(20.dp))
                 else Text("Validar y guardar")
             }
 
-            uiState.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            uiState.error?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
 
+            // 🔽 Scroll solo para los cupones
             if (uiState.currentCoupons.isNotEmpty()) {
                 Text("Cupones activos:", style = MaterialTheme.typography.titleSmall)
 
-                uiState.currentCoupons.forEach { coupon ->
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(12.dp)) {
-                            Text("Código: ${coupon.code}", style = MaterialTheme.typography.bodyMedium)
-                            Text("Descuento: ${coupon.discount}${if (coupon.isPercentage) "%" else "€"}")
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f), // ← 🔥 Hace que la lista use el espacio restante
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(uiState.currentCoupons) { coupon ->
+                        Card(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text("Código: ${coupon.code}", style = MaterialTheme.typography.bodyMedium)
+                                Text("Descuento: ${coupon.discount}${if (coupon.isPercentage) "%" else "€"}")
+                            }
                         }
                     }
                 }
             }
-
         }
     }
 }
