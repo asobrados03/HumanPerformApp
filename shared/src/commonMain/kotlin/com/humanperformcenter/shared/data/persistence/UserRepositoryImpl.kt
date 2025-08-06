@@ -6,17 +6,20 @@ import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.GetPreferredCoachResponse
-import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
-import com.humanperformcenter.shared.data.model.UploadDocumentRequest
+import com.humanperformcenter.shared.data.model.UploadResponse
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.UserBooking
+import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.UserRepository
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import io.ktor.client.call.body
+import io.ktor.client.network.sockets.ConnectTimeoutException
+import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.delete
 import io.ktor.client.request.forms.MultiPartFormDataContent
@@ -297,25 +300,83 @@ object UserRepositoryImpl: UserRepository {
     override suspend fun uploadDocument(
         name: String,
         data: ByteArray
-    ): Result<String> {
-        return try {
-            val resp = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/document") {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    UploadDocumentRequest(
-                        name = name,
-                        data = data
-                    )
-                )
+    ): Result<String> = runCatching {
+        // 1) Detectar mime type de forma más robusta
+        val contentType = when (name.substringAfterLast('.', "").lowercase()) {
+            "png" -> "image/png"
+            "jpg", "jpeg" -> "image/jpeg"
+            "gif" -> "image/gif"
+            "pdf" -> "application/pdf"
+            "doc" -> "application/msword"
+            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "txt" -> "text/plain"
+            else -> "application/octet-stream"
+        }
+
+        // 2) Crear el formData siguiendo el patrón que funciona en register
+        val parts = formData {
+            append("file", data, Headers.build {
+                append(HttpHeaders.ContentType, contentType)
+                append(HttpHeaders.ContentDisposition, "filename=\"$name\"")
+            })
+        }
+
+        try {
+            // 3) Realizar la petición POST con el mismo patrón que funciona
+            val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/user/document") {
+                setBody(MultiPartFormDataContent(parts))
             }
 
-            if (resp.status == HttpStatusCode.OK) {
-                Result.success(resp.body())
-            } else {
-                Result.failure(Exception("Error al subir el archivo: código HTTP ${resp.status.value}"))
+            when (response.status) {
+                HttpStatusCode.OK -> {
+                    val uploadResponse = response.body<UploadResponse>()
+                    uploadResponse.message
+                }
+                HttpStatusCode.BadRequest -> {
+                    val errorBody = try {
+                        response.body<ErrorResponse>()
+                    } catch (_: Exception) {
+                        ErrorResponse("Solicitud inválida: ${response.bodyAsText()}")
+                    }
+                    throw Exception("Error en la solicitud: ${errorBody.error}")
+                }
+                HttpStatusCode.Unauthorized -> {
+                    throw Exception("No autorizado. Verifica tu token de autenticación")
+                }
+                HttpStatusCode.Forbidden -> {
+                    throw Exception("Acceso denegado al recurso")
+                }
+                HttpStatusCode.RequestHeaderFieldTooLarge -> {
+                    throw Exception("El archivo es demasiado grande")
+                }
+                HttpStatusCode.UnsupportedMediaType -> {
+                    throw Exception("Tipo de archivo no soportado: $contentType")
+                }
+                HttpStatusCode.InternalServerError -> {
+                    throw Exception("Error interno del servidor. Intenta nuevamente")
+                }
+                else -> {
+                    val errorBody = try {
+                        response.body<ErrorResponse>()
+                    } catch (_: Exception) {
+                        ErrorResponse("Error HTTP ${response.status.value}: ${response.bodyAsText()}")
+                    }
+                    throw Exception("Error al subir archivo: HTTP ${response.status.value} → ${errorBody.error}")
+                }
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            when (e) {
+                is HttpRequestTimeoutException -> {
+                    throw Exception("Timeout al subir el archivo. Verifica tu conexión e intenta con un archivo más pequeño")
+                }
+                is ConnectTimeoutException -> {
+                    throw Exception("No se pudo conectar al servidor. Verifica tu conexión de internet")
+                }
+                is SocketTimeoutException -> {
+                    throw Exception("Timeout de conexión. El archivo puede ser demasiado grande")
+                }
+                else -> throw e
+            }
         }
     }
 }

@@ -169,10 +169,12 @@ fun DocumentScreen(
             is UploadState.Success -> {
                 snackbarHostState.showSnackbar("Archivo subido correctamente")
                 userViewModel.resetUploadState()
+                navController.popBackStack()
             }
             is UploadState.Error -> {
                 snackbarHostState.showSnackbar("Error al subir: ${(uiState as UploadState.Error).message}")
                 userViewModel.resetUploadState()
+                navController.popBackStack()
             }
             else -> { /* Loading o Idle: nada que hacer */ }
         }
