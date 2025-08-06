@@ -160,6 +160,9 @@ fun Navigation(
                     ),
                     serviceProductViewModel = viewModel(
                         factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
+                    ),
+                    daySessionViewModel = viewModel(
+                        factory = DaySessionViewModelFactory(AppModule.daySessionUseCase)
                     )
                 )
             }

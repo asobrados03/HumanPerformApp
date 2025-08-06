@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.humanperformcenter.shared.data.model.BookingQuestionnaireRequest
 import com.humanperformcenter.shared.data.model.ReserveRequest
 import com.humanperformcenter.shared.data.model.ReserveResponse
 import com.humanperformcenter.shared.data.model.ReserveUpdateRequest
@@ -109,5 +110,34 @@ object DaySessionRepositoryImpl : DaySessionRepository {
         }
         return response.body()
     }
+
+    override suspend fun enviarCuestionarioReserva(bookingForm: BookingQuestionnaireRequest): Boolean {
+        val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/booking-questionnaire") {
+            contentType(io.ktor.http.ContentType.Application.Json)
+            setBody(bookingForm)
+        }
+
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw IllegalStateException("Error al enviar cuestionario: ${response.status} - $errorBody")
+        }
+
+        return true
+    }
+
+    override suspend fun cuestionarioEnviado(bookingId: Int): Boolean {
+        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/booking-questionnaire/$bookingId")
+
+        if (response.status.value == 404) {
+            return false
+        }
+
+        if (!response.status.isSuccess()) {
+            throw IllegalStateException("Error al consultar cuestionario: ${response.status} - ${response.bodyAsText()}")
+        }
+
+        return response.body<Boolean>()
+    }
+
 
 }

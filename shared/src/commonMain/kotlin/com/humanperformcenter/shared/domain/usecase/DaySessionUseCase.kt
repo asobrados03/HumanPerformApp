@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.domain.usecase
 
+import com.humanperformcenter.shared.data.model.BookingQuestionnaireRequest
 import com.humanperformcenter.shared.data.model.ReserveRequest
 import com.humanperformcenter.shared.data.model.ReserveResponse
 import com.humanperformcenter.shared.data.model.ReserveUpdateRequest
@@ -37,5 +38,11 @@ class DaySessionUseCase(private val repository: DaySessionRepository) {
     }
     suspend fun getHolidays(): List<String> = withContext(Dispatchers.IO) {
         return@withContext repository.getHolidays()
+    }
+    suspend fun enviarCuestionarioReserva(bookingForm: BookingQuestionnaireRequest): Boolean = withContext(Dispatchers.IO) {
+        return@withContext repository.enviarCuestionarioReserva(bookingForm)
+    }
+    suspend fun cuestionarioEnviado(bookingId: Int): Boolean = withContext(Dispatchers.IO) {
+        return@withContext repository.cuestionarioEnviado(bookingId)
     }
 }

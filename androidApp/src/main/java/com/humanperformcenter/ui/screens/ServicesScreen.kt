@@ -26,7 +26,10 @@ import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.DialogProperties
 import com.humanperformcenter.app.navigation.HireProduct
+import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +37,8 @@ fun ServicesScreen(
     navController: NavHostController,
     sessionViewModel: SessionViewModel,
     userViewModel: UserViewModel,
-    serviceProductViewModel: ServiceProductViewModel
+    serviceProductViewModel: ServiceProductViewModel,
+    daySessionViewModel: DaySessionViewModel
 ) {
     val user by userViewModel.userData.collectAsState()
     val allServices by serviceProductViewModel.allServices.collectAsState()
@@ -48,6 +52,7 @@ fun ServicesScreen(
             allServices.forEach { service ->
                 serviceProductViewModel.loadServiceProducts(service.id)
             }
+            userViewModel.fetchUserBookings(it.id)
         }
     }
 
@@ -66,6 +71,7 @@ fun ServicesScreen(
         },
         bottomBar = { NavigationBar(navController = navController) },
         modifier = Modifier.fillMaxSize()
+
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             val tabs = listOf("Mis productos", "Contratar")
@@ -84,6 +90,8 @@ fun ServicesScreen(
                 0 -> MyProductsScreen(
                     viewModel = serviceProductViewModel,
                     navController = navController,
+                    userViewModel = userViewModel,
+                    daySessionViewModel = daySessionViewModel,
                     userId = user?.id ?: 0
                 )
                 1 -> HireView(
@@ -93,6 +101,65 @@ fun ServicesScreen(
                 )
             }
         }
+        // ⬇️ Mostrar cuestionario si está activo
+        val cuestionarioActivo by daySessionViewModel.cuestionarioActivo.collectAsState()
+        val preguntaActual by daySessionViewModel.preguntaActual.collectAsState()
+        val contexto = LocalContext.current
+
+        val preguntas = listOf(
+            "¿Cómo calificarías tu sueño anoche?",
+            "¿Qué nivel de energía sientes ahora mismo?",
+            "¿Tienes dolor muscular o rigidez por entrenamientos anteriores?",
+            "¿Cómo está tu nivel de estrés hoy?",
+            "¿Cómo describirías tu estado de ánimo hoy?"
+        )
+
+        val opciones = listOf(
+            listOf("😴 Muy malo", "😕 Malo", "😐 Regular", "🙂 Bueno", "😄 Excelente"),
+            listOf("🔋 Muy cansado/a", "⚡ Cansado/a", "😐 Normal", "💪 Con energía", "🚀 A tope"),
+            listOf("❌ No, me siento bien", "⚠️ Sí, ligera molestia", "🛑 Sí, dolor significativo"),
+            listOf("😌 Muy bajo", "🙂 Bajo", "😐 Medio", "😬 Alto", "😵 Muy alto"),
+            listOf("😞 Muy bajo", "😕 Bajo", "😐 Normal", "🙂 Bueno" ,"😄 Muy bueno")
+        )
+
+        val opcionesTexto = listOf(
+            listOf("Muy malo", "Malo", "Regular", "Bueno", "Excelente"),
+            listOf("Muy cansado/a", "Cansado/a", "Normal", "Con energía", "A tope"),
+            listOf("No, me siento bien", "Sí, ligera molestia", "Sí, dolor significativo"),
+            listOf("Muy bajo", "Bajo", "Medio", "Alto", "Muy alto"),
+            listOf("Muy bajo", "Bajo", "Normal", "Bueno" ,"Muy bueno")
+        )
+
+        if (cuestionarioActivo && preguntaActual in preguntas.indices) {
+            AlertDialog(
+                onDismissRequest = {},
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { daySessionViewModel.omitirFormulario() }) {
+                        Text("Omitir")
+                    }
+                },
+                title = { Text("Cuestionario") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(text = preguntas[preguntaActual], fontWeight = FontWeight.Bold)
+                        opciones[preguntaActual].forEachIndexed { index, opcion ->
+                            Button(
+                                onClick = { daySessionViewModel.responderPregunta(opcionesTexto[preguntaActual][index]) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(opcion)
+                            }
+                        }
+                    }
+                },
+                properties = DialogProperties(
+                    dismissOnClickOutside = false,
+                    dismissOnBackPress = false
+                )
+            )
+        }
+
     }
 }
 

@@ -14,6 +14,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,20 +32,30 @@ import coil.compose.AsyncImage
 import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.ui.components.AppCard
+import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.ui.viewmodel.UserViewModel
 
 @Composable
 fun MyProductsScreen(
     viewModel: ServiceProductViewModel,
     navController: NavHostController,
+    userViewModel: UserViewModel,
+    daySessionViewModel: DaySessionViewModel,
     userId: Int
 ) {
     val productos by viewModel.userProducts.collectAsState()
-    println("MisProductosView: ${productos.size} productos contratados")
     val productosUnicos = productos.distinctBy { it.id }
-    println("MisProductosView: ${productosUnicos.size} productos únicos")
     var productoSeleccionado by remember { mutableStateOf<ServiceItem?>(null) }
     var mostrarDialogoProducto by remember { mutableStateOf(false) }
+    val userBookings by userViewModel.userBookings.collectAsState()
+
+    LaunchedEffect(userBookings) {
+        if (userBookings.isNotEmpty()) {
+            daySessionViewModel.cargarFormularioSiProcede(userBookings)
+        }
+    }
+
 
     LazyColumn(
         modifier = Modifier

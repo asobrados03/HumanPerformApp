@@ -1,27 +1,32 @@
 package com.humanperformcenter.ui.viewmodel
 
+
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.humanperformcenter.shared.data.model.BookingQuestionnaireRequest
 import com.humanperformcenter.shared.data.model.ReserveRequest
 import com.humanperformcenter.shared.data.model.ReserveUpdateRequest
 import com.humanperformcenter.shared.data.model.DaySession
 import com.humanperformcenter.shared.data.model.SharedPool
-import com.humanperformcenter.shared.data.persistence.DaySessionRepositoryImpl
+import com.humanperformcenter.shared.data.model.UserBooking
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlin.time.ExperimentalTime
+
 
 class DaySessionViewModel(
     private val useCase: DaySessionUseCase // inyectalo aquí
 ) : ViewModel() {
-
-    private val repository = DaySessionRepositoryImpl
-
     private val _sessions = MutableStateFlow<List<DaySession>>(emptyList())
     val sessions: StateFlow<List<DaySession>> get() = _sessions
 
@@ -43,6 +48,22 @@ class DaySessionViewModel(
     private val _validFromByPrimary = MutableStateFlow<Map<Int, String>>(emptyMap())
     val validFromByPrimary: StateFlow<Map<Int, String>> get() = _validFromByPrimary
 
+    private val _cuestionarioActivo = MutableStateFlow(false)
+    val cuestionarioActivo: StateFlow<Boolean> = _cuestionarioActivo
+
+    private val _preguntaActual = MutableStateFlow(0)
+    val preguntaActual: StateFlow<Int> = _preguntaActual
+
+    private val _respuestas = mutableStateListOf<String?>()
+    val respuestas: List<String?> = _respuestas
+
+    private val sesionesOmitidas = mutableListOf<Int>()
+
+    private var bookingIdPendiente: Int? = null
+
+    init {
+        repeat(5) { _respuestas.add(null) }
+    }
 
     fun fetchAvailableSessions(serviceId: Int, date: LocalDate) {
         val weekStart = date.toString()
@@ -125,7 +146,7 @@ class DaySessionViewModel(
         bookingId: Int,
         newCoachId: Int,
         newServiceId: Int,
-        newStartDate: String, // "2025-07-03"
+        newStartDate: String,
         hour: String
     ) {
         viewModelScope.launch {
@@ -191,7 +212,6 @@ class DaySessionViewModel(
         }
     }
 
-    // Utilidad segura para parsear YYYY-MM-DD desde ISO-8601
     private fun parseDateOrNull(iso: String?): LocalDate? =
         iso?.let { runCatching { LocalDate.parse(it.substring(0, 10)) }.getOrNull() }
 
@@ -212,7 +232,6 @@ class DaySessionViewModel(
         val semanaInicio = selectedDate.minus(selectedDate.dayOfWeek.ordinal, DateTimeUnit.DAY)
         val semanaFin = semanaInicio.plus(6, DateTimeUnit.DAY)
 
-        // Normaliza y filtra activas
         val bookingsByPrimary = bookings
             .map { b ->
                 val primary = serviceToPrimary[b.service_id] ?: b.service_id
@@ -224,7 +243,6 @@ class DaySessionViewModel(
         val esRecurrente = weeklyLimits.containsKey(primaryTarget)
         val limiteSemanal = weeklyLimits[primaryTarget] ?: Int.MAX_VALUE
 
-        // --- Caso semanal (recurrente) ---
         if (esRecurrente) {
             val estaSemana = reservasServicio.count {
                 val fecha = runCatching { LocalDate.parse(it.date.substring(0, 10)) }.getOrNull()
@@ -233,10 +251,8 @@ class DaySessionViewModel(
             return estaSemana >= limiteSemanal
         }
 
-        // --- Caso bonos / ilimitadas ---
         val poolsQueAplican = sharedSessions.filter { primaryTarget in it.services }
 
-        // 1) Consumo dedicado (solo si existe explícitamente), filtrando por valid_from del primario
         val validFromPrimaryDate = parseDateOrNull(validFromByPrimary[primaryTarget])
         val usadasTotalesServicio = reservasServicio.count { b ->
             val f = runCatching { LocalDate.parse(b.date.substring(0, 10)) }.getOrNull()
@@ -247,7 +263,6 @@ class DaySessionViewModel(
             (dedicadoPermitido - usadasTotalesServicio).coerceAtLeast(0)
         else 0
 
-        // 2) Consumo en pools compartidos (si hay), filtrando por ventana válida del pool
         val restanteCompartidoSum = if (poolsQueAplican.isNotEmpty()) {
             poolsQueAplican.sumOf { pool ->
                 val vf = parseDateOrNull(pool.valid_from)
@@ -263,7 +278,6 @@ class DaySessionViewModel(
             }
         } else 0
 
-        // Si no hay ni dedicado ni pools que apliquen, sin límite → no bloquear
         if (dedicadoPermitido == null && poolsQueAplican.isEmpty()) {
             return false
         }
@@ -271,5 +285,120 @@ class DaySessionViewModel(
         val disponibleTotal = (dedicadoRestante + restanteCompartidoSum).coerceAtLeast(0)
         return disponibleTotal <= 0
     }
+
+    @OptIn(ExperimentalTime::class)
+    suspend fun cargarFormularioSiProcede(proximasSesiones: List<UserBooking>) {
+        val zona = TimeZone.currentSystemDefault()
+
+        // Obtener la fecha y hora actuales desde java.time (Android)
+        val nowJava = java.time.LocalDateTime.now()
+        val ahora = LocalDateTime(
+            year = nowJava.year,
+            month = nowJava.monthValue,
+            day = nowJava.dayOfMonth,
+            hour = nowJava.hour,
+            minute = nowJava.minute,
+            second = nowJava.second,
+            nanosecond = 0
+        )
+
+        val nowInstant = ahora.toInstant(zona)
+
+        val sesionesFuturas = proximasSesiones.filter { sesion ->
+            try {
+                val horaFormateada = if (sesion.hour.length == 5) "${sesion.hour}:00" else sesion.hour
+                val fechaSolo = sesion.date.take(10)
+                val sesionDateTime = LocalDateTime.parse("${fechaSolo}T$horaFormateada")
+                val sesionInstant = sesionDateTime.toInstant(zona)
+                sesionInstant > nowInstant
+            } catch (e: Exception) {
+                println("❌ Error filtrando sesión: ${e.message}")
+                false
+            }
+        }
+
+        val sesionProxima = sesionesFuturas.firstOrNull { sesion ->
+            try {
+
+                val horaFormateada = if (sesion.hour.length == 5) "${sesion.hour}:00" else sesion.hour
+                val fechaSolo = sesion.date.take(10) // "2025-06-03"
+                val sesionDateTime = LocalDateTime.parse("${fechaSolo}T$horaFormateada")
+                val sesionInstant = sesionDateTime.toInstant(zona)
+
+                val diferencia = sesionInstant - nowInstant
+
+
+
+                val enMargen = diferencia.inWholeMinutes in 0..60
+                if (enMargen) println("✅ Sesión próxima en menos de una hora")
+                enMargen
+            } catch (e: Exception) {
+                println("❌ Error al procesar sesión: ${e.message}")
+                false
+            }
+        }
+
+        if (sesionProxima != null) {
+            val yaRespondido = useCase.cuestionarioEnviado(sesionProxima.id)
+
+            if (!yaRespondido) {
+                bookingIdPendiente = sesionProxima.id
+                _cuestionarioActivo.value = true
+            } else {
+                println("⛔ Ya se respondió, no se mostrará el formulario.")
+            }
+        } else {
+            println("🔕 No hay sesiones en la próxima hora.")
+        }
+    }
+
+    fun responderPregunta(respuesta: String) {
+        _respuestas[_preguntaActual.value] = respuesta
+        if (_preguntaActual.value < 4) {
+            _preguntaActual.value += 1
+        } else {
+            enviarRespuestas()
+        }
+    }
+
+    fun omitirFormulario() {
+        bookingIdPendiente?.let { sesionesOmitidas.add(it) }
+        _cuestionarioActivo.value = false
+    }
+
+    private fun yaSeHaRespondido(bookingId: Int): Boolean {
+        return sesionesOmitidas.contains(bookingId) ||
+               _respuestas.all { it != null } && bookingId == bookingIdPendiente
+    }
+
+    private fun enviarRespuestas() {
+        val bookingId = bookingIdPendiente ?: return
+        viewModelScope.launch {
+            try {
+                val enviado = useCase.enviarCuestionarioReserva(
+                    BookingQuestionnaireRequest(
+                        booking_id = bookingId,
+                        sleep_quality = respuestas[0]!!,
+                        energy_level = respuestas[1]!!,
+                        muscle_pain = respuestas[2]!!,
+                        stress_level = respuestas[3]!!,
+                        mood = respuestas[4]!!
+                    )
+                )
+                if (enviado) {
+                    _cuestionarioActivo.value = false
+                }
+            } catch (e: Exception) {
+                println("❌ Error al enviar cuestionario: ${e.message}")
+            }
+        }
+    }
+
+    fun reiniciarFormulario() {
+        _preguntaActual.value = 0
+        _respuestas.clear()
+        repeat(5) { _respuestas.add(null) }
+    }
+
 }
 
