@@ -2,6 +2,7 @@ package com.humanperformcenter.shared.domain.repository
 
 import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
+import com.humanperformcenter.shared.data.model.EwalletTransaction
 import com.humanperformcenter.shared.data.model.GetPreferredCoachResponse
 import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.data.model.Professional
@@ -24,4 +25,6 @@ interface UserRepository {
     //suspend fun getUserCoupon(userId: Int): Result<Coupon?>
     suspend fun getUserCoupons(userId: Int): Result<List<Coupon>>
     suspend fun uploadDocument(name: String, data: ByteArray): Result<String>
+    suspend fun getEwalletBalance(userId: Int): Result<Double?>
+    suspend fun getEwalletTransactions(userId: Int): List<EwalletTransaction>
 }

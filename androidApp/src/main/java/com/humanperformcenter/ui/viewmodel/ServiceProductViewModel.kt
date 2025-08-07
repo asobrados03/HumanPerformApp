@@ -62,10 +62,10 @@ class ServiceProductViewModel(
         productId: Int,
         paymentMethod: String,
         couponCode: String? = null,
-        onResult: (Boolean) -> Unit = {}
+        onResult: (Boolean, String?) -> Unit = { _, _ -> }
     ) {
         viewModelScope.launch {
-            val success = useCase.assignProductToUser(
+            val (success, error) = useCase.assignProductToUser(
                 userId = userId,
                 productId = productId,
                 paymentMethod = paymentMethod,
@@ -77,7 +77,7 @@ class ServiceProductViewModel(
             } else {
                 println("❌ Error al asignar producto")
             }
-            onResult(success)
+            onResult(success, error)
         }
     }
 

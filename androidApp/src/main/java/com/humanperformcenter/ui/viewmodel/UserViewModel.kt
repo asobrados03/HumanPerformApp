@@ -7,8 +7,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkManager
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
+import com.humanperformcenter.shared.data.model.EwalletTransaction
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.UserBooking
+import com.humanperformcenter.shared.data.persistence.UserRepositoryImpl.getEwalletBalance
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
@@ -75,6 +77,12 @@ class UserViewModel(
 
     private val _getPreferredCoachState = MutableStateFlow<GetPreferredCoachState>(GetPreferredCoachState.Idle)
     val getPreferredCoachState: StateFlow<GetPreferredCoachState> = _getPreferredCoachState
+
+    private val _balance = MutableStateFlow<Double?>(null)
+    val balance: StateFlow<Double?> = _balance
+
+    private val _ewalletTransactions = MutableStateFlow<List<EwalletTransaction>>(emptyList())
+    val ewalletTransactions: StateFlow<List<EwalletTransaction>> = _ewalletTransactions
 
     /**
      * Recibe un User “candidato” (con campos fullName, dateOfBirth = "yyyy-MM-dd",
@@ -335,6 +343,28 @@ class UserViewModel(
                     println("❌ Error al cancelar reserva: ${throwable.message}")
                 }
             )
+        }
+    }
+
+    fun loadBalance(userId: Int) {
+        viewModelScope.launch {
+            val result = userUseCase.getEwalletBalance(userId)
+            _balance.value = result.getOrElse {
+                println("❌ Error al cargar el balance: ${it.message}")
+                null
+            }
+        }
+    }
+
+    fun loadEwalletTransactions(userId: Int) {
+        viewModelScope.launch {
+            try {
+                val transactions = userUseCase.getEwalletTransactions(userId)
+                _ewalletTransactions.value = transactions
+            } catch (e: Exception) {
+                println("❌ Error al cargar transacciones de e-wallet: ${e.message}")
+                _ewalletTransactions.value = emptyList()
+            }
         }
     }
 }

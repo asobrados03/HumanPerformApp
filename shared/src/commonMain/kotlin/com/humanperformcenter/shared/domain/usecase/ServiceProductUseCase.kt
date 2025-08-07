@@ -23,8 +23,8 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
         productId: Int,
         paymentMethod: String,
         couponCode: String? = null,
-    ): Boolean = withContext(Dispatchers.IO) {
-        serviceProductRepository.assignProductToUser(userId, productId, paymentMethod, couponCode)
+    ): Pair<Boolean, String?> = withContext(Dispatchers.IO) {
+        return@withContext serviceProductRepository.assignProductToUser(userId, productId, paymentMethod, couponCode)
     }
 
     suspend fun unassignProductFromUser(userId: Int, productId: Int): Boolean = withContext(Dispatchers.IO) {

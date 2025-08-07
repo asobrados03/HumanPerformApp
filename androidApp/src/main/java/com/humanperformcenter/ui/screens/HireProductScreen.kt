@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -98,7 +99,8 @@ fun HireProductScreen(
     var mostrarCuponSheet by remember { mutableStateOf(false) }
     var productoIdSeleccionado by remember { mutableStateOf<Int?>(null) }
     var cuponTexto by remember { mutableStateOf("") }
-    var mostrarSeleccionPago by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
 
     var selectedFilter by remember { mutableStateOf(ProductTypeFilter.ALL) }
 
@@ -298,11 +300,24 @@ fun HireProductScreen(
             }
         }
     }
+    if (errorMessage != null) {
+        AlertDialog(
+            onDismissRequest = { errorMessage = null },
+            title = { Text("Error") },
+            text = { Text(errorMessage ?: "") },
+            confirmButton = {
+                TextButton(onClick = { errorMessage = null }) {
+                    Text("Aceptar")
+                }
+            }
+        )
+    }
+
     // --- Bottom Sheet ---
     if (mostrarCuponSheet && productoIdSeleccionado != null) {
         ModalBottomSheet(
             onDismissRequest = {
-                mostrarCuponSheet = false; mostrarSeleccionPago = false
+                mostrarCuponSheet = false;
                 productoIdSeleccionado = null; cuponTexto = ""
             },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -328,12 +343,12 @@ fun HireProductScreen(
                         viewModel.assignProductToUser(
                             userId, productoIdSeleccionado!!, "cash",
                             cuponTexto.takeIf { it.isNotBlank() }
-                        ) { success ->
-                            Toast.makeText(
-                                context,
-                                if (success) "Producto asignado" else "Error al asignar",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                        ) { success, error->
+                            if (success) {
+                                Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
+                            } else {
+                                errorMessage = error ?: "Error al asignar producto"
+                            }
                         }
                         mostrarCuponSheet = false
                         productoIdSeleccionado = null

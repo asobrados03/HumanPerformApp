@@ -2,6 +2,7 @@ package com.humanperformcenter.shared.domain.usecase
 
 import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
+import com.humanperformcenter.shared.data.model.EwalletTransaction
 import com.humanperformcenter.shared.data.model.GetPreferredCoachResponse
 import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.data.model.Professional
@@ -84,5 +85,13 @@ class UserUseCase(private val userRepository: UserRepository) {
 
     suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse> = withContext(Dispatchers.IO) {
         return@withContext userRepository.getPreferredCoach(customerId)
+    }
+
+    suspend fun getEwalletBalance(userId: Int): Result<Double?> = withContext(Dispatchers.IO) {
+        return@withContext userRepository.getEwalletBalance(userId)
+    }
+
+    suspend fun getEwalletTransactions(userId: Int): List<EwalletTransaction> = withContext(Dispatchers.IO) {
+        return@withContext userRepository.getEwalletTransactions(userId)
     }
 }

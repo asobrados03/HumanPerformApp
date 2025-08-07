@@ -5,6 +5,7 @@ import com.humanperformcenter.shared.data.model.AssignPreferredCoachResponse
 import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.ErrorResponse
+import com.humanperformcenter.shared.data.model.EwalletTransaction
 import com.humanperformcenter.shared.data.model.GetPreferredCoachResponse
 import com.humanperformcenter.shared.data.model.Professional
 import com.humanperformcenter.shared.data.model.ServiceAvailable
@@ -37,6 +38,11 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 object UserRepositoryImpl: UserRepository {
 
@@ -393,4 +399,45 @@ object UserRepositoryImpl: UserRepository {
             }
         }
     }
+
+    override suspend fun getEwalletBalance(userId: Int): Result<Double?> {
+        return try {
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/e-wallet-balance") {
+                url {
+                    parameters.append("user_id", userId.toString())
+                }
+            }
+
+            val body = response.bodyAsText()
+            val json = Json.parseToJsonElement(body).jsonObject
+            val balance = json["balance"]?.jsonPrimitive?.doubleOrNull
+            Result.success(balance)
+        } catch (e: Exception) {
+            println("❌ Error al obtener saldo: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getEwalletTransactions(userId: Int): List<EwalletTransaction> {
+        return try {
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/transactions") {
+                url {
+                    parameters.append("user_id", userId.toString())
+                }
+            }
+
+            val body = response.bodyAsText()
+            val json = Json.parseToJsonElement(body).jsonObject
+            val txArray = json["transactions"]?.jsonArray ?: return emptyList()
+
+            txArray.map {
+                Json.decodeFromJsonElement<EwalletTransaction>(it)
+            }
+        } catch (e: Exception) {
+            println("❌ Error al cargar transacciones: ${e.message}")
+            emptyList()
+        }
+    }
+
+
 }

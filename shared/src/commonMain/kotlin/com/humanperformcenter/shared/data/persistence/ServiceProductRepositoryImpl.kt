@@ -73,13 +73,13 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
         userId: Int,
         productId: Int,
         paymentMethod: String,
-        couponCode: String?,
-    ): Boolean {
+        couponCode: String?
+    ): Pair<Boolean, String?> {
         val request = AssignProductRequest(
             user_id = userId,
             product_id = productId,
             payment_method = paymentMethod,
-            coupon_code = couponCode,
+            coupon_code = couponCode
         )
 
         return try {
@@ -92,10 +92,14 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
             println("📦 Asignación producto → $body")
 
             val json = Json.parseToJsonElement(body).jsonObject
-            json["success"]?.jsonPrimitive?.booleanOrNull == true
+
+            if (json["success"]?.jsonPrimitive?.booleanOrNull == true) {
+                true to null
+            } else {
+                false to (json["error"]?.jsonPrimitive?.content ?: "Error desconocido")
+            }
         } catch (e: Exception) {
-            println("❌ Error al asignar producto: ${e.message}")
-            false
+            false to "Error de conexión: ${e.message}"
         }
     }
 

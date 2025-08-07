@@ -75,6 +75,9 @@ fun Navigation(
     val paymentViewModel: PaymentViewModel = viewModel(
         factory = PaymentViewModelFactory(AppModule.googlePayUseCase)
     )
+    val userV: UserViewModel = viewModel(
+        factory = UserViewModelFactory(AppModule.userUseCase)
+    )
 
     LaunchedEffect(Unit) {
         ApiClient.logoutEvents.collect {
@@ -305,7 +308,7 @@ fun Navigation(
                 )
             }
             composable<ViewPayment> {
-                ViewPaymentScreen(navController = navController)
+                ViewPaymentScreen(navController = navController, viewModel = userV, userId = sessionViewModel.userId.collectAsState().value ?: 0)
             }
             composable<StartPayment> {
                 PaymentScreen(viewModel = paymentViewModel, navController = navController)
