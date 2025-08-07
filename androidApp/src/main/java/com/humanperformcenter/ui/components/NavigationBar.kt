@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.humanperformcenter.R
 import com.humanperformcenter.app.navigation.Calendar
@@ -24,17 +25,19 @@ import com.humanperformcenter.app.navigation.User
 
 @Composable
 fun NavigationBar(navController: NavController) {
+    // Defino mis items con la KClass de cada destino:
     val items = listOf(
-        NavItem(Service, "Producto",  R.drawable.exercise),
-        NavItem(Calendar,   "Calendario", R.drawable.calendar),
-        NavItem(Stats,      "Estadísticas",R.drawable.stats),
-        NavItem(User,       "Usuario",    R.drawable.person)
+        NavItem(Service::class, "Producto", R.drawable.exercise),
+        NavItem(Calendar::class, "Calendario",   R.drawable.calendar),
+        NavItem(Stats::class,    "Estadísticas", R.drawable.stats),
+        NavItem(User::class,     "Usuario",      R.drawable.person)
     )
 
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor   = MaterialTheme.colorScheme.primary
     ) {
+        // Obtengo la ruta actual (p. ej. "com.humanperformcenter.app.navigation.User")
         val currentRoute = navController
             .currentBackStackEntryAsState()
             .value
@@ -42,15 +45,15 @@ fun NavigationBar(navController: NavController) {
             ?.route
 
         items.forEach { item ->
-            // En lugar de convertir a string, comparamos con el objeto serializado
-            val routeString = item.route::class.qualifiedName
+            // Extraigo el nombre de la ruta de la KClass
+            val routeName = item.route.qualifiedName!!
 
             NavigationBarItem(
                 icon = {
                     Icon(
-                        painter           = painterResource(id = item.icon),
+                        painter            = painterResource(id = item.icon),
                         contentDescription = item.title,
-                        modifier          = Modifier.size(32.dp)
+                        modifier           = Modifier.size(32.dp)
                     )
                 },
                 label = {
@@ -61,16 +64,20 @@ fun NavigationBar(navController: NavController) {
                         modifier  = Modifier.padding(top = 4.dp)
                     )
                 },
-                // Verificamos si la ruta actual coincide con el tipo de clase
-                selected = currentRoute?.contains(routeString ?: "") == true,
+                selected = (currentRoute == routeName),
                 onClick  = {
-                    // Navegamos usando el objeto de ruta directamente, no el string
-                    navController.navigate(item.route) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
+                    // Evito navegar si ya estoy en esa misma ruta:
+                    if (currentRoute != routeName) {
+                        navController.navigate(routeName) {
+                            // Vuelve al destino raíz del NavHost (ideal para bottom nav)
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            // No apile rutas duplicadas, reutiliza si existe
+                            launchSingleTop = true
+                            // Restaura estado (scroll, formulario, etc.) si ya estaba en backStack
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState    = true
                     }
                 },
                 alwaysShowLabel = true,
