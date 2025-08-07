@@ -2,6 +2,8 @@ package com.humanperformcenter.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.humanperformcenter.di.AppModule.userUseCase
+import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.ServiceItem
@@ -25,6 +27,9 @@ class ServiceProductViewModel(
 
     private val _productDetails = MutableStateFlow<ProductDetailResponse?>(null)
     val productDetails: StateFlow<ProductDetailResponse?> get() = _productDetails
+
+    private val _userCoupons = MutableStateFlow<List<Coupon>>(emptyList())
+    val userCoupons: StateFlow<List<Coupon>> = _userCoupons
 
     var productoSeleccionado: ServiceItem? = null
 
@@ -121,6 +126,13 @@ class ServiceProductViewModel(
                 println("❌ Error al obtener URL de pago: ${e.localizedMessage}")
                 onError()
             }
+        }
+    }
+
+    fun loadUserCoupons(userId: Int) {
+        viewModelScope.launch {
+            val result = userUseCase.getUserCoupons(userId)
+            result.onSuccess { _userCoupons.value = it }
         }
     }
 

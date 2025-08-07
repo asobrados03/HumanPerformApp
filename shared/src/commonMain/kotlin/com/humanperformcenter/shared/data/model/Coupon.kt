@@ -9,5 +9,6 @@ data class Coupon(
     val code: String,
     val discount: Double,
     val isPercentage: Boolean,
-    val expiryDate: LocalDate
+    val expiryDate: LocalDate,
+    val productIds: List<Int>
 )

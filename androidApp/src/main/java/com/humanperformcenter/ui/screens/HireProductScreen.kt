@@ -49,6 +49,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.google.pay.button.ButtonType
 import com.google.pay.button.PayButton
+import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
@@ -122,6 +123,7 @@ fun HireProductScreen(
     LaunchedEffect(serviceId) {
         viewModel.loadServiceProducts(serviceId)
         viewModel.loadUserProducts(userId)
+        viewModel.loadUserCoupons(userId)
         productos.forEach {
             println("Producto: ${it.name}, tipo: ${it.tipo_producto}")
         }
@@ -281,8 +283,13 @@ fun HireProductScreen(
                                 )
                             }
                         }
+                        val precioFinal = calcularPrecioConDescuento(
+                            producto.id,
+                            producto.price ?: 0.0,
+                            viewModel.userCoupons.collectAsState().value
+                        )
                         Text(
-                            "${producto.price?.toInt() ?: 0}€",
+                            "${precioFinal.toInt()}€",
                             fontWeight = if (contratado) FontWeight.Normal else FontWeight.Bold,
                             color = if (contratado) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
                         )
@@ -407,4 +414,13 @@ private fun buildPaymentRequestJson(precio: Double): String {
         // No pedimos dirección de envío
         put("shippingAddressRequired", false)
     }.toString()
+}
+
+private fun calcularPrecioConDescuento(productoId: Int, precioOriginal: Double, cupones: List<Coupon>): Double {
+    val descuentos = cupones.filter { cupon -> cupon.productIds.isEmpty() || cupon.productIds.contains(productoId) }.map { cupon ->
+        if (cupon.isPercentage) precioOriginal * cupon.discount / 100
+        else cupon.discount
+    }
+    val mayorDescuento = descuentos.maxOrNull() ?: 0.0
+    return (precioOriginal - mayorDescuento).coerceAtLeast(0.0)
 }
