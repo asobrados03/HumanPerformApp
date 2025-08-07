@@ -347,12 +347,18 @@ fun CalendarScreen(
 
                         val isPast = date < today
 
+                        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                        val currentHour = now.hour
+
+                        val isAfterMiddayOn15 = today.day == 15 && currentHour >= 12
+                        val isAfter15 = today.day > 15 || isAfterMiddayOn15
+
+                        val esMesActual = date.year == today.year && date.month == currentMonth
+                        val esMesSiguiente = date.year == anioMesSiguiente && date.month == mesSiguiente
+
                         val puedeSeleccionarFecha = !isSunday && !isPast && !isHoliday && (
-                                (today.day < 17 && date.year == today.year && date.month == currentMonth) ||
-                                        (today.day >= 17 && (
-                                                (date.year == today.year && date.month == currentMonth) ||
-                                                        (date.year == anioMesSiguiente && date.month == mesSiguiente)
-                                                ))
+                                (today.day < 15 && esMesActual) ||
+                                        (isAfter15 && (esMesActual || esMesSiguiente))
                                 )
 
                         Box(
