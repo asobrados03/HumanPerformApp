@@ -75,8 +75,13 @@ fun Navigation(
     val paymentViewModel: PaymentViewModel = viewModel(
         factory = PaymentViewModelFactory(AppModule.googlePayUseCase)
     )
-    val userV: UserViewModel = viewModel(
+
+    val userViewModel: UserViewModel = viewModel(
         factory = UserViewModelFactory(AppModule.userUseCase)
+    )
+
+    val authViewModel: AuthViewModel = viewModel(
+        factory = AuthViewModelFactory(AppModule.authUseCase)
     )
 
     LaunchedEffect(Unit) {
@@ -132,9 +137,6 @@ fun Navigation(
                 )
             }
             composable<EnterEmail> {
-                val authViewModel: AuthViewModel = viewModel(
-                    factory = AuthViewModelFactory(AppModule.authUseCase)
-                )
                 val resetPasswordState by authViewModel.isResettingPassword.observeAsState(
                     ResetPasswordState.Idle
                 )
@@ -188,9 +190,6 @@ fun Navigation(
                 }
             }
             composable<User> { backStackEntry ->
-                val userViewModel: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(AppModule.userUseCase)
-                )
                 val loading by userViewModel.isLoading.collectAsState()
 
                 when {
@@ -221,9 +220,6 @@ fun Navigation(
                 }
             }
             composable<AddCoupon>{
-                val userViewModel: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(AppModule.userUseCase)
-                )
                 val userState by userViewModel.userData.collectAsState(initial = null)
 
                 when (val user = userState) {
@@ -242,27 +238,16 @@ fun Navigation(
                 }
             }
             composable<Configuration> {
-                val userViewModel: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(AppModule.userUseCase)
-                )
-
                 ConfigurationRoute(
                     navController = navController,
                     userViewModel = userViewModel
                 )
             }
             composable<ChangePassword> {
-                val authViewModel: AuthViewModel = viewModel(
-                    factory = AuthViewModelFactory(AppModule.authUseCase)
-                )
-
                 val changePasswordState by authViewModel.isChangingPassword.observeAsState(
                     ChangePasswordState.Idle
                 )
 
-                val userViewModel: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(AppModule.userUseCase)
-                )
                 val loading by userViewModel.isLoading.collectAsState()
                 val user by userViewModel.userData.collectAsState()
 
@@ -298,17 +283,17 @@ fun Navigation(
                 }
             }
             composable<Document> {
-                val userViewModel: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(AppModule.userUseCase)
-                )
-
                 DocumentScreen(
                     navController = navController,
                     userViewModel = userViewModel
                 )
             }
             composable<ElectronicWallet> {
-                ElectronicWalletScreen(navController = navController, viewModel = userV, userId = sessionViewModel.userId.collectAsState().value ?: 0)
+                ElectronicWalletScreen(
+                    navController = navController,
+                    userViewModel = userViewModel,
+                    userId = sessionViewModel.userId.collectAsState().value ?: 0
+                )
             }
             composable<StartPayment> {
                 PaymentScreen(viewModel = paymentViewModel, navController = navController)
@@ -320,9 +305,6 @@ fun Navigation(
                 EditProfileRoute(navController = navController)
             }
             composable<MyProfile> {
-                val userViewModel: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(AppModule.userUseCase)
-                )
                 val loading by userViewModel.isLoading.collectAsState()
                 val userState by userViewModel.userData.collectAsState()
 
@@ -351,10 +333,6 @@ fun Navigation(
                 }
             }
             composable<FavoriteCoach> {
-                val userViewModel: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(AppModule.userUseCase)
-                )
-
                 FavoriteRoute(
                     userViewModel = userViewModel,
                     navController = navController
@@ -362,9 +340,6 @@ fun Navigation(
             }
 
             composable<Calendar> {
-                val userViewModel: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(AppModule.userUseCase)
-                )
                 val daySessionViewModel: DaySessionViewModel = viewModel(
                     factory = DaySessionViewModelFactory(AppModule.daySessionUseCase)
                 )
@@ -414,7 +389,6 @@ fun Navigation(
                     )
                 }
             }
-
         }
     }
 }

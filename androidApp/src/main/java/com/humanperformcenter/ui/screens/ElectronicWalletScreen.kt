@@ -30,17 +30,17 @@ import com.humanperformcenter.ui.viewmodel.UserViewModel
 @Composable
 fun ElectronicWalletScreen(
     navController: NavHostController,
-    viewModel: UserViewModel,
+    userViewModel: UserViewModel,
     userId: Int
 ) {
-    val balance by viewModel.balance.collectAsState()
-    val ewalletTransactions by viewModel.ewalletTransactions.collectAsState()
+    val balance by userViewModel.balance.collectAsState()
+    val ewalletTransactions by userViewModel.ewalletTransactions.collectAsState()
 
     var mostrarDetalles by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        viewModel.loadBalance(userId)
-        viewModel.loadEwalletTransactions(userId)
+        userViewModel.loadBalance(userId)
+        userViewModel.loadEwalletTransactions(userId)
     }
 
     Scaffold(
