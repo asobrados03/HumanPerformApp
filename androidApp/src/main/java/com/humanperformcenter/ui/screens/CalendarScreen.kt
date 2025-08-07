@@ -361,12 +361,15 @@ fun CalendarScreen(
                                         (isAfter15 && (esMesActual || esMesSiguiente))
                                 )
 
+                        // Aplica opacidad solo al fondo:
+                        val boxBg = bgColor.copy(alpha = if (puedeSeleccionarFecha) 1f else 0.4f)
+
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
                                 .padding(4.dp)
                                 .clip(CircleShape)
-                                .background(bgColor)
+                                .background(boxBg)
                                 .alpha(if (!puedeSeleccionarFecha) 0.4f else 1f)
                                 .border(
                                     width = if (isToday) 2.dp else 0.dp,
@@ -392,7 +395,10 @@ fun CalendarScreen(
                         ) {
                             Text(
                                 text = date.day.toString(),
-                                color = textColor,
+                                color = if (puedeSeleccionarFecha)
+                                    textColor
+                                else
+                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp
                             )
@@ -771,13 +777,15 @@ fun CalendarScreen(
                                                     return@clickable
                                                 }
 
-                                                if (user != null &&
-                                                    daySessionViewModel.seSuperoLimiteReserva(serviceId, selectedDate!!, weeklyLimits, unlimitedSessions, sesionesCompartidas, userBookings, serviceToPrimary)
-                                                ) {
-                                                    soloPuedeCambiar = true
-                                                } else {
-                                                    soloPuedeCambiar = false
-                                                }
+                                                soloPuedeCambiar = user != null &&
+                                                    daySessionViewModel
+                                                        .seSuperoLimiteReserva(
+                                                            serviceId,
+                                                            selectedDate!!,
+                                                            weeklyLimits, unlimitedSessions,
+                                                            sesionesCompartidas,
+                                                            userBookings, serviceToPrimary
+                                                        )
 
                                                 daySessionViewModel.obtenerEntrenadoresPorHora(hora)
                                                 horaSeleccionada = hora

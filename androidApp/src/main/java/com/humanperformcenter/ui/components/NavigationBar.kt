@@ -53,7 +53,7 @@ fun NavigationBar(navController: NavController) {
                     Icon(
                         painter            = painterResource(id = item.icon),
                         contentDescription = item.title,
-                        modifier           = Modifier.size(32.dp)
+                        modifier           = Modifier.size(26.dp)
                     )
                 },
                 label = {
