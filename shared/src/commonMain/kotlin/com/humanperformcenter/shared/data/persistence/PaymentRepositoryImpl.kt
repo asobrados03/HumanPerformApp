@@ -4,6 +4,7 @@ import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.shared.domain.repository.PaymentRepository
 import com.humanperformcenter.shared.data.model.PaymentUrlResponse
 import com.humanperformcenter.shared.data.network.ApiClient
+import io.ktor.client.call.body
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -11,14 +12,16 @@ import kotlinx.serialization.json.Json
 
 object PaymentRepositoryImpl: PaymentRepository{
     override suspend fun generatePaymentUrl(request: PaymentRequest): String {
-        val client = ApiClient.apiClient
-
-        val response: HttpResponse = client.post("${ApiClient.baseUrl}/payments/initiate") {
+        val response: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/payments/hpp-url") {
+            parameter("amount", request.amount)
+            parameter("currency", request.currency)
             contentType(ContentType.Application.Json)
-            setBody(request)
         }
-        val body = response.bodyAsText()
-        return Json.decodeFromString<PaymentUrlResponse>(body).paymentUrl
+        if (!response.status.isSuccess()) {
+            throw IllegalStateException("Error al generar la URL de pago: ${response.status}")
+        }
+
+        return response.bodyAsText()
     }
 
     override suspend fun requestGooglePay(requestJson: String): String {

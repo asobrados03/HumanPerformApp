@@ -7,7 +7,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 
 class PaymentUseCase(private val paymentRepository: PaymentRepository) {
-    suspend operator fun invoke(request: PaymentRequest): String = withContext(Dispatchers.IO) {
+    suspend fun generatePaymentUrl(request: PaymentRequest): String = withContext(Dispatchers.IO) {
         return@withContext paymentRepository.generatePaymentUrl(request)
     }
     suspend fun requestGooglePay(requestJson: String): String = withContext(Dispatchers.IO) {

@@ -28,70 +28,40 @@ fun PaymentScreen(viewModel: PaymentViewModel, navController: NavHostController)
     val error by viewModel.error.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(paymentUrl) {
-        println("🔗 URL de pago recibida en pantalla: $paymentUrl")
-    }
-
     when {
         paymentUrl == null && error == null -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
 
-        /*paymentUrl != null -> {
+        paymentUrl != null -> {
             PaymentWebView(
                 url = paymentUrl!!,
                 onPaymentSuccess = {
-                    Toast.makeText(context, "Pago exitoso", Toast.LENGTH_LONG).show()
-                    viewModel.limpiarEstado()
+                    Toast.makeText(context, "Pago exitoso", Toast.LENGTH_SHORT).show()
+                    viewModel.clearState()
                     navController.navigate(PaymentSuccess)
                 },
                 onPaymentCancelled = {
-                    Toast.makeText(context, "Pago cancelado", Toast.LENGTH_LONG).show()
-                    viewModel.limpiarEstado()
-                }
+                    Toast.makeText(context, "Pago cancelado", Toast.LENGTH_SHORT).show()
+                    viewModel.clearState()
+                    navController.popBackStack()
+                },
+                modifier = Modifier.fillMaxSize().padding(top = 16.dp)
             )
-        }*/
-        paymentUrl != null -> {
-            Column(modifier = Modifier.padding(8.dp)) {
-                Text(
-                    text = "🔗 URL de pago:\n$paymentUrl",
-                    color = Color.Red,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                Box(
-                    modifier = Modifier.weight(1f) // El WebView ocupa el resto de la pantalla
-                ) {
-                    PaymentWebView(
-                        url = paymentUrl!!,
-                        onPaymentSuccess = {
-                            Toast.makeText(context, "Pago exitoso", Toast.LENGTH_LONG).show()
-                            viewModel.clearState()
-                            navController.navigate(PaymentSuccess)
-                        },
-                        onPaymentCancelled = {
-                            Toast.makeText(context, "Pago cancelado", Toast.LENGTH_LONG).show()
-                            viewModel.clearState()
-                            navController.popBackStack()
-                        }
-                    )
-                }
-            }
         }
 
-
         error != null -> {
-            Column {
+            Column(Modifier.padding(16.dp)) {
                 Text("Error: $error", color = Color.Red)
                 Button(onClick = { viewModel.clearState() }) {
                     Text("Reintentar")
                 }
             }
         }
-
     }
 }
+
 
 

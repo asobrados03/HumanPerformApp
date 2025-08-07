@@ -5,13 +5,15 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PaymentRequest(
-    @SerialName("customer_id")
-    val customerId: Int,
-    @SerialName("product_id")
-    val productId: Int,
-    val email: String,
-    @SerialName("billing_street")
-    val billingStreet: String,
-    @SerialName("billing_postal")
-    val billingPostal: String
+    val amount: Int,
+    val currency: String
+    /*
+    val firstName: String = "Cesar",
+    val lastName: String = "Tester",
+    val email: String = "cesar@example.com",
+    val street: String = "Calle Ficticia 123",
+    val postalCode: String = "28001",
+    val city: String = "Madrid",
+    val countryCode: String = "724"
+     */
 )

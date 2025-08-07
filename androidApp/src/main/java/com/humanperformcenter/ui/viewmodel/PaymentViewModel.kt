@@ -6,6 +6,7 @@ import com.humanperformcenter.di.AppModule.googlePayUseCase
 import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.shared.data.persistence.GooglePayRepository
 import com.humanperformcenter.shared.domain.usecase.GooglePayUseCase
+import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
 import com.humanperformcenter.ui.viewmodel.state.PaymentState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class PaymentViewModel(
+    private val paymentUseCase: PaymentUseCase,
     private val googlePayUseCase: GooglePayUseCase
 ): ViewModel() {
     private val _paymentUrl = MutableStateFlow<String?>(null)
@@ -28,7 +30,7 @@ class PaymentViewModel(
         println("🔧 Generando URL de pago...")
         viewModelScope.launch {
             try {
-                val url = GooglePayRepository.generatePaymentUrl(request)
+                val url = paymentUseCase.generatePaymentUrl(request)
                 _paymentUrl.value = url
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al generar el pago"
