@@ -10,7 +10,6 @@ import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.EwalletTransaction
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.UserBooking
-import com.humanperformcenter.shared.data.persistence.UserRepositoryImpl.getEwalletBalance
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
@@ -347,6 +346,7 @@ class UserViewModel(
     }
 
     fun loadBalance(userId: Int) {
+        if(userId == -1) _balance.value = 0.0
         viewModelScope.launch {
             val result = userUseCase.getEwalletBalance(userId)
             _balance.value = result.getOrElse {

@@ -28,7 +28,7 @@ import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 
 @Composable
-fun ViewPaymentScreen(
+fun ElectronicWalletScreen(
     navController: NavHostController,
     viewModel: UserViewModel,
     userId: Int

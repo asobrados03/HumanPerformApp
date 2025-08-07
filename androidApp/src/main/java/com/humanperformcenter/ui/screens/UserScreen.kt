@@ -29,6 +29,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -81,6 +82,12 @@ fun UserScreen(
     }
 
     val user by userViewModel.userData.filterNotNull().collectAsState(initial = null)
+
+    LaunchedEffect(Unit) {
+        userViewModel.loadBalance(user?.id ?: -1)
+    }
+
+    val balance by userViewModel.balance.collectAsState(initial = 0.0)
 
     Scaffold(
         topBar = {
@@ -140,7 +147,7 @@ fun UserScreen(
                                     elevation = cardElevation(defaultElevation = 4.dp)
                                 ) {
                                     Text(
-                                        text = "Saldo: € ${"%.2f".format(0.0)}",
+                                        text = "Saldo: $balance €",
                                         Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                                         fontWeight = FontWeight.SemiBold
                                     )
@@ -177,7 +184,7 @@ fun UserScreen(
                         MenuOption.FAVORITOS      to "Mis favoritos",
                         MenuOption.DOCUMENTO      to "Documento",
                         MenuOption.PAGO           to "Método de pago",
-                        MenuOption.VER_PAGO       to "Monedero Virtual",
+                        MenuOption.MONEDERO_VIRTUAL to "Monedero Virtual",
                         MenuOption.ANADIR_CUPON   to "Añadir cupón"
                     )
 

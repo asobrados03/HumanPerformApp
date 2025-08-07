@@ -39,7 +39,7 @@ import com.humanperformcenter.ui.screens.ServicesScreen
 import com.humanperformcenter.ui.screens.SplashScreen
 import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.UserStatsScreen
-import com.humanperformcenter.ui.screens.ViewPaymentScreen
+import com.humanperformcenter.ui.screens.ElectronicWalletScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
@@ -211,7 +211,7 @@ fun Navigation(
                                     MenuOption.FAVORITOS -> navController.navigate(FavoriteCoach)
                                     MenuOption.DOCUMENTO -> navController.navigate(Document)
                                     MenuOption.PAGO -> navController.navigate(Payment)
-                                    MenuOption.VER_PAGO -> navController.navigate(ViewPayment)
+                                    MenuOption.MONEDERO_VIRTUAL -> navController.navigate(ElectronicWallet)
                                     MenuOption.CONFIGURACION -> navController.navigate(Configuration)
                                     MenuOption.ANADIR_CUPON   -> navController.navigate(AddCoupon)
                                 }
@@ -307,8 +307,8 @@ fun Navigation(
                     userViewModel = userViewModel
                 )
             }
-            composable<ViewPayment> {
-                ViewPaymentScreen(navController = navController, viewModel = userV, userId = sessionViewModel.userId.collectAsState().value ?: 0)
+            composable<ElectronicWallet> {
+                ElectronicWalletScreen(navController = navController, viewModel = userV, userId = sessionViewModel.userId.collectAsState().value ?: 0)
             }
             composable<StartPayment> {
                 PaymentScreen(viewModel = paymentViewModel, navController = navController)

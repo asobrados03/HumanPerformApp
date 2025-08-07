@@ -25,6 +25,6 @@ data class ProductDetail(val productId: Int)
 @Serializable object FavoriteCoach
 @Serializable object Document
 @Serializable object Payment
-@Serializable object ViewPayment
+@Serializable object ElectronicWallet
 @Serializable object StartPayment
 @Serializable object PaymentSuccess
