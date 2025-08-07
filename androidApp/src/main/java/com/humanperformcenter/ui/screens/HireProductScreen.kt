@@ -336,7 +336,6 @@ fun HireProductScreen(
                             ).show()
                         }
                         mostrarCuponSheet = false
-                        mostrarSeleccionPago = false
                         productoIdSeleccionado = null
                         cuponTexto = ""
 
@@ -353,7 +352,7 @@ fun HireProductScreen(
                         navController.navigate(StartPayment)
                         */
                     }, Modifier.fillMaxWidth()) {
-                        Text("Pagar en efectivo")
+                        Text("Pagar con monedero virtual")
                     }
                 }
             }
