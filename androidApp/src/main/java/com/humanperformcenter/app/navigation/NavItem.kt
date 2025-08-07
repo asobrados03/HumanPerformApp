@@ -1,7 +1,9 @@
 package com.humanperformcenter.app.navigation
 
+import kotlin.reflect.KClass
+
 data class NavItem(
-    val route: Any,
+    val route: KClass<*>,
     val title: String,
-    val icon: Int // se guarda como un ID de recurso (R.drawable)
+    val icon: Int
 )
