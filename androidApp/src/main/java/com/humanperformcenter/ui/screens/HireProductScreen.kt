@@ -1,5 +1,6 @@
 package com.humanperformcenter.ui.screens
 
+import android.provider.ContactsContract
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,14 +45,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.google.pay.button.ButtonType
 import com.google.pay.button.PayButton
+import com.humanperformcenter.app.navigation.StartPayment
 import com.humanperformcenter.shared.data.model.Coupon
+import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
@@ -67,11 +73,15 @@ fun HireProductScreen(
     navController: NavHostController,
     viewModel: ServiceProductViewModel,
     userId: Int,
-    paymentViewModel: PaymentViewModel
+    paymentViewModel: PaymentViewModel,
+    userEmail: String
 ) {
     val context = LocalContext.current
 
     val paymentState by paymentViewModel.paymentState.collectAsState()
+
+    var showMonederoConfirmation by remember { mutableStateOf(false) }
+
 
     // 2) Observamos el estado para toasts y navegación
     LaunchedEffect(paymentState) {
@@ -334,45 +344,85 @@ fun HireProductScreen(
                             val requestJson = buildPaymentRequestJson(
                                 precio = productos.first { it.id==productoIdSeleccionado }.price!!
                             )
-                            // Directamente llamamos al ViewModel con el JSON
                             paymentViewModel.payWithGooglePay(requestJson)
                         }
                     )
-                    Spacer(Modifier.height(12.dp))
-                    Button(onClick = {
+                    Spacer(Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        val selectedProduct = productos.first { it.id == productoIdSeleccionado }
+                        val paymentRequest = PaymentRequest(amount = 10, currency = "EUR")
+                        paymentViewModel.generatePaymentURL(paymentRequest)
+                        navController.navigate(StartPayment)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1E88E5), // azul tarjeta
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Pagar con tarjeta 💳", fontSize = 16.sp)
+                }
+                Spacer(Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        showMonederoConfirmation = true
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1E88E5),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Pagar con monedero virtual 👛", fontSize = 16.sp)
+                }
+            }
+        }
+    }
+    if (showMonederoConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showMonederoConfirmation = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showMonederoConfirmation = false
+
                         viewModel.assignProductToUser(
-                            userId, productoIdSeleccionado!!, "cash",
+                            userId,
+                            productoIdSeleccionado!!,
+                            "cash",
                             cuponTexto.takeIf { it.isNotBlank() }
-                        ) { success, error->
+                        ) { success, error ->
                             if (success) {
                                 Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
                             } else {
                                 errorMessage = error ?: "Error al asignar producto"
                             }
                         }
+
                         mostrarCuponSheet = false
                         productoIdSeleccionado = null
                         cuponTexto = ""
-
-                        /*
-                        paymentViewModel.generatePaymentURL(
-                            PaymentRequest(
-                                customerId = 2540,
-                                productId = 17,
-                                email = "human2@mail.com",
-                                billingStreet = "Calle Ficticia 1",
-                                billingPostal = "28001"
-                            )
-                        )
-                        navController.navigate(StartPayment)
-                        */
-                    }, Modifier.fillMaxWidth()) {
-                        Text("Pagar con monedero virtual")
                     }
+                ) {
+                    Text("Confirmar")
                 }
-            }
-        }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMonederoConfirmation = false }) {
+                    Text("Cancelar")
+                }
+            },
+            title = { Text("Confirmar pago con monedero") },
+            text = { Text("¿Estás seguro de que deseas pagar este producto usando tu saldo virtual?") }
+        )
     }
+
+}
+
+
 
 enum class ProductTypeFilter(val label: String) {
     RECURRENT("Recurrente"),

@@ -73,7 +73,7 @@ fun Navigation(
         .collectAsState(initial = false)
 
     val paymentViewModel: PaymentViewModel = viewModel(
-        factory = PaymentViewModelFactory(AppModule.googlePayUseCase)
+        factory = PaymentViewModelFactory(AppModule.googlePayUseCase, AppModule.paymentUseCase)
     )
 
     val userViewModel: UserViewModel = viewModel(
@@ -175,6 +175,7 @@ fun Navigation(
                 // Reconstruimos el objeto ServicioRoute
                 val route = backStackEntry.toRoute<HireProduct>()
                 val userId by sessionViewModel.userId.collectAsState()
+                val userEmail by sessionViewModel.userEmail.collectAsState()
 
                 // Sólo mostramos si tenemos usuario
                 if (userId != null) {
@@ -185,7 +186,8 @@ fun Navigation(
                             factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
                         ),
                         userId        = userId!!,
-                        paymentViewModel = paymentViewModel
+                        paymentViewModel = paymentViewModel,
+                        userEmail     = userEmail ?: ""
                     )
                 }
             }

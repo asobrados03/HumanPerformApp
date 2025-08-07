@@ -125,8 +125,8 @@ object DaySessionRepositoryImpl : DaySessionRepository {
         return true
     }
 
-    override suspend fun cuestionarioEnviado(bookingId: Int): Boolean {
-        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/booking-questionnaire/$bookingId")
+    override suspend fun cuestionarioEnviado(booking_id: Int): Boolean {
+        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/booking-questionnaire/$booking_id")
 
         if (response.status.value == 404) {
             return false

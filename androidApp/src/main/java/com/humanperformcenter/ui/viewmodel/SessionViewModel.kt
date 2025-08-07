@@ -35,9 +35,13 @@ class SessionViewModel(
     private val _userId = MutableStateFlow<Int?>(null)
     val userId: StateFlow<Int?> get() = _userId
 
-    fun setUserCredentials(token: String, id: Int) {
+    private val _userEmail = MutableStateFlow<String?>(null)
+    val userEmail: StateFlow<String?> get() = _userEmail
+
+    fun setUserCredentials(token: String, id: Int, email: String) {
         _accessToken.value = token
         _userId.value = id
+        _userEmail.value = email
     }
 
     fun insertSession(session: Session) {
