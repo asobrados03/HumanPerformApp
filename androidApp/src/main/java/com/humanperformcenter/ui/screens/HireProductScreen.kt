@@ -41,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +62,7 @@ import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.state.PaymentState
 import org.json.JSONArray
 import org.json.JSONObject
@@ -72,32 +74,18 @@ fun HireProductScreen(
     serviceId: Int,
     navController: NavHostController,
     viewModel: ServiceProductViewModel,
-    userId: Int,
     paymentViewModel: PaymentViewModel,
-    userEmail: String
+    sesionViewModel: SessionViewModel
 ) {
     val context = LocalContext.current
 
-    val paymentState by paymentViewModel.paymentState.collectAsState()
-
     var showMonederoConfirmation by remember { mutableStateOf(false) }
 
-
-    // 2) Observamos el estado para toasts y navegación
-    LaunchedEffect(paymentState) {
-        when (paymentState) {
-            PaymentState.Loading -> Toast.makeText(context,"Iniciando…",Toast.LENGTH_SHORT).show()
-            is PaymentState.Success -> {
-                Toast.makeText(context,"Pago OK",Toast.LENGTH_SHORT).show()
-                navController.navigate("startPayment")
-            }
-            is PaymentState.Error -> {
-                val msg = (paymentState as PaymentState.Error).message
-                Toast.makeText(context,"Error: $msg",Toast.LENGTH_LONG).show()
-            }
-            else -> {}
-        }
-    }
+    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
+    val paymentResult by (savedStateHandle
+        ?.getStateFlow("payment_result", null as Boolean?)
+        ?: kotlinx.coroutines.flow.MutableStateFlow<Boolean?>(null)
+            ).collectAsState(initial = null)
 
     // --- Screen State ---
     val productosMap by viewModel.serviceProducts.collectAsState()
@@ -107,7 +95,7 @@ fun HireProductScreen(
     val idsContratados = productosContratados.map { it.id }.toSet()
 
     var mostrarCuponSheet by remember { mutableStateOf(false) }
-    var productoIdSeleccionado by remember { mutableStateOf<Int?>(null) }
+    var productoIdSeleccionado by rememberSaveable  { mutableStateOf<Int?>(null) }
     var cuponTexto by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -129,6 +117,36 @@ fun HireProductScreen(
 
                 tipoOk && sesionesOk
             }
+        }
+    }
+
+    val userId = sesionViewModel.userId.collectAsState().value ?: 0
+    val userEmail = sesionViewModel.userEmail.collectAsState().value ?: ""
+    val userName = sesionViewModel.userName.collectAsState().value ?: ""
+    val userStreet = sesionViewModel.userStreet.collectAsState().value ?: ""
+    val userPostalCode = sesionViewModel.userPostalCode.collectAsState().value ?: 0
+
+    LaunchedEffect(paymentResult) {
+        println("Hola, paymentResult: $paymentResult")
+        if (paymentResult == true && productoIdSeleccionado != null) {
+            println("Asignando producto con ID: $productoIdSeleccionado, al usuario con ID: $userId")
+            viewModel.assignProductToUser(
+                userId,
+                productoIdSeleccionado!!,
+                "card",
+                cuponTexto.takeIf { it.isNotBlank() }
+            ) { success, error ->
+                if (success) {
+                    Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
+                } else {
+                    errorMessage = error ?: "Error al asignar producto"
+                }
+            }
+            savedStateHandle?.set("payment_result", null)
+            mostrarCuponSheet = false
+        } else if (paymentResult == false) {
+            Toast.makeText(context, "Pago cancelado o fallido", Toast.LENGTH_SHORT).show()
+            savedStateHandle?.set("payment_result", null)
         }
     }
 
@@ -323,47 +341,82 @@ fun HireProductScreen(
         )
     }
 
-    // --- Bottom Sheet ---
     if (mostrarCuponSheet && productoIdSeleccionado != null) {
+        val userCoupons by viewModel.userCoupons.collectAsState() // ✅ lo sacamos fuera
+
         ModalBottomSheet(
             onDismissRequest = {
-                mostrarCuponSheet = false;
-                productoIdSeleccionado = null; cuponTexto = ""
+                mostrarCuponSheet = false
+                productoIdSeleccionado = null
+                cuponTexto = ""
             },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
             Column(Modifier.padding(16.dp)) {
-                    Text("Selecciona método de pago", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(16.dp))
-                    // — Google Pay Button —
-                    PayButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        type = ButtonType.Pay,
-                        allowedPaymentMethods = allowedPaymentMethodsJson,
-                        onClick = {
-                            val requestJson = buildPaymentRequestJson(
-                                precio = productos.first { it.id==productoIdSeleccionado }.price!!
-                            )
-                            paymentViewModel.payWithGooglePay(requestJson)
-                        }
-                    )
-                    Spacer(Modifier.height(8.dp))
+                Text("Selecciona método de pago", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(16.dp))
+
+                PayButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    type = ButtonType.Pay,
+                    allowedPaymentMethods = allowedPaymentMethodsJson,
+                    onClick = {
+                        val selectedProduct = productos.first { it.id == productoIdSeleccionado }
+                        val precio = calcularPrecioConDescuento(
+                            selectedProduct.id,
+                            selectedProduct.price ?: 0.0,
+                            userCoupons
+                        )
+
+                        val requestJson = buildPaymentRequestJson(precio)
+                        paymentViewModel.payWithGooglePay(requestJson)
+                    }
+                )
+
+                Spacer(Modifier.height(8.dp))
 
                 Button(
                     onClick = {
                         val selectedProduct = productos.first { it.id == productoIdSeleccionado }
-                        val paymentRequest = PaymentRequest(amount = 10, currency = "EUR")
+                        val precioFinal = calcularPrecioConDescuento(
+                            selectedProduct.id,
+                            selectedProduct.price ?: 0.0,
+                            userCoupons
+                        )
+                        val amountInCents = (precioFinal * 100).toInt()
+                        println(amountInCents)
+                        val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
+                        val lastName = userName.split(" ").drop(1).joinToString(" ")
+
+                        val paymentRequest = PaymentRequest(
+                            amount = amountInCents,
+                            currency = "EUR",
+                            firstName,
+                            lastName,
+                            userEmail,
+                            userStreet,
+                            userPostalCode,
+                            "Segovia"
+                        )
+
+                        navController.currentBackStackEntry?.savedStateHandle?.apply {
+                            set("selected_product_id", selectedProduct.id)
+                            set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                        }
+
                         paymentViewModel.generatePaymentURL(paymentRequest)
                         navController.navigate(StartPayment)
+                        productoIdSeleccionado = selectedProduct.id
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF1E88E5), // azul tarjeta
+                        containerColor = Color(0xFF1E88E5),
                         contentColor = Color.White
                     )
                 ) {
                     Text("Pagar con tarjeta 💳", fontSize = 16.sp)
                 }
+
                 Spacer(Modifier.height(8.dp))
 
                 Button(
@@ -381,6 +434,7 @@ fun HireProductScreen(
             }
         }
     }
+
     if (showMonederoConfirmation) {
         AlertDialog(
             onDismissRequest = { showMonederoConfirmation = false },

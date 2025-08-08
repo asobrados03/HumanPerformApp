@@ -40,12 +40,16 @@ fun PaymentScreen(viewModel: PaymentViewModel, navController: NavHostController)
                 url = paymentUrl!!,
                 onPaymentSuccess = {
                     Toast.makeText(context, "Pago exitoso", Toast.LENGTH_SHORT).show()
-                    viewModel.clearState()
-                    navController.navigate(PaymentSuccess)
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("payment_result", true)
+                    navController.popBackStack()
                 },
                 onPaymentCancelled = {
                     Toast.makeText(context, "Pago cancelado", Toast.LENGTH_SHORT).show()
-                    viewModel.clearState()
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("payment_result", false)
                     navController.popBackStack()
                 },
                 modifier = Modifier.fillMaxSize().padding(top = 16.dp)

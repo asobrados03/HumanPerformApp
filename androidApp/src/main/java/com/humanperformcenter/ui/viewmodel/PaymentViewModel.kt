@@ -17,6 +17,7 @@ class PaymentViewModel(
     private val paymentUseCase: PaymentUseCase,
     private val googlePayUseCase: GooglePayUseCase
 ): ViewModel() {
+
     private val _paymentUrl = MutableStateFlow<String?>(null)
     val paymentUrl: StateFlow<String?> = _paymentUrl.asStateFlow()
 

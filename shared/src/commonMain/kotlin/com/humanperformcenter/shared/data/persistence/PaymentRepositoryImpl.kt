@@ -15,6 +15,12 @@ object PaymentRepositoryImpl: PaymentRepository{
         val response: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/payments/hpp-url") {
             parameter("amount", request.amount)
             parameter("currency", request.currency)
+            parameter("firstName", request.firstName)
+            parameter("lastName", request.lastName)
+            parameter("email", request.email)
+            parameter("street", request.street)
+            parameter("city", request.city ?: "")
+            parameter("postalCode", request.postalCode ?: 0)
             contentType(ContentType.Application.Json)
         }
         if (!response.status.isSuccess()) {

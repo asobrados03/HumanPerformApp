@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.room.parser.SQLiteParser
 import com.humanperformcenter.data.Session
 import com.humanperformcenter.data.SessionRepository
 import com.humanperformcenter.di.AppModule.userUseCase
@@ -38,10 +39,22 @@ class SessionViewModel(
     private val _userEmail = MutableStateFlow<String?>(null)
     val userEmail: StateFlow<String?> get() = _userEmail
 
-    fun setUserCredentials(token: String, id: Int, email: String) {
+    private val _userName = MutableStateFlow<String?>(null)
+    val userName: StateFlow<String?> get() = _userName
+
+    private val _userStreet = MutableStateFlow<String?>(null)
+    val userStreet: StateFlow<String?> get() = _userStreet
+
+    private val _userPostalCode = MutableStateFlow<Int?>(null)
+    val userPostalCode: StateFlow<Int?> get() = _userPostalCode
+
+    fun setUserCredentials(token: String, id: Int, email: String, nombre: String, calle: String, codigoPostal: Int?) {
         _accessToken.value = token
         _userId.value = id
         _userEmail.value = email
+        _userName.value = nombre
+        _userStreet.value = calle
+        _userPostalCode.value = codigoPostal
     }
 
     fun insertSession(session: Session) {

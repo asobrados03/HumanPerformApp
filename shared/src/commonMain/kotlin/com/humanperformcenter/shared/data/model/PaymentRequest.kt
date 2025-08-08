@@ -6,14 +6,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PaymentRequest(
     val amount: Int,
-    val currency: String
-    /*
-    val firstName: String = "Cesar",
-    val lastName: String = "Tester",
-    val email: String = "cesar@example.com",
-    val street: String = "Calle Ficticia 123",
-    val postalCode: String = "28001",
-    val city: String = "Madrid",
-    val countryCode: String = "724"
-     */
+    val currency: String,
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val email: String? = null,
+    val street: String? = null,
+    val postalCode: Int? = 0,
+    val city: String? = ""
 )
