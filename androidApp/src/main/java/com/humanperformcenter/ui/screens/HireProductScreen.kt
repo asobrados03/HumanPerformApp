@@ -341,54 +341,82 @@ fun HireProductScreen(
         )
     }
 
-    // --- Bottom Sheet ---
     if (mostrarCuponSheet && productoIdSeleccionado != null) {
+        val userCoupons by viewModel.userCoupons.collectAsState() // ✅ lo sacamos fuera
+
         ModalBottomSheet(
             onDismissRequest = {
-                mostrarCuponSheet = false;
-                productoIdSeleccionado = null; cuponTexto = ""
+                mostrarCuponSheet = false
+                productoIdSeleccionado = null
+                cuponTexto = ""
             },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
             Column(Modifier.padding(16.dp)) {
-                    Text("Selecciona método de pago", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(16.dp))
-                    // — Google Pay Button —
-                    PayButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        type = ButtonType.Pay,
-                        allowedPaymentMethods = allowedPaymentMethodsJson,
-                        onClick = {
-                            val requestJson = buildPaymentRequestJson(
-                                precio = productos.first { it.id==productoIdSeleccionado }.price!!
-                            )
-                            paymentViewModel.payWithGooglePay(requestJson)
-                        }
-                    )
-                    Spacer(Modifier.height(8.dp))
+                Text("Selecciona método de pago", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(16.dp))
+
+                PayButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    type = ButtonType.Pay,
+                    allowedPaymentMethods = allowedPaymentMethodsJson,
+                    onClick = {
+                        val selectedProduct = productos.first { it.id == productoIdSeleccionado }
+                        val precio = calcularPrecioConDescuento(
+                            selectedProduct.id,
+                            selectedProduct.price ?: 0.0,
+                            userCoupons
+                        )
+
+                        val requestJson = buildPaymentRequestJson(precio)
+                        paymentViewModel.payWithGooglePay(requestJson)
+                    }
+                )
+
+                Spacer(Modifier.height(8.dp))
 
                 Button(
                     onClick = {
                         val selectedProduct = productos.first { it.id == productoIdSeleccionado }
+                        val precioFinal = calcularPrecioConDescuento(
+                            selectedProduct.id,
+                            selectedProduct.price ?: 0.0,
+                            userCoupons
+                        )
+                        val amountInCents = (precioFinal * 100).toInt()
+                        println(amountInCents)
                         val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
                         val lastName = userName.split(" ").drop(1).joinToString(" ")
-                        val paymentRequest = PaymentRequest(amount = 1, currency = "EUR", firstName, lastName, userEmail, userStreet,userPostalCode, "Segovia")
 
-                        val ssh = navController.currentBackStackEntry?.savedStateHandle
-                        ssh?.set("selected_product_id", selectedProduct.id)
-                        ssh?.set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                        val paymentRequest = PaymentRequest(
+                            amount = amountInCents,
+                            currency = "EUR",
+                            firstName,
+                            lastName,
+                            userEmail,
+                            userStreet,
+                            userPostalCode,
+                            "Segovia"
+                        )
+
+                        navController.currentBackStackEntry?.savedStateHandle?.apply {
+                            set("selected_product_id", selectedProduct.id)
+                            set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                        }
+
                         paymentViewModel.generatePaymentURL(paymentRequest)
                         navController.navigate(StartPayment)
                         productoIdSeleccionado = selectedProduct.id
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF1E88E5), // azul tarjeta
+                        containerColor = Color(0xFF1E88E5),
                         contentColor = Color.White
                     )
                 ) {
                     Text("Pagar con tarjeta 💳", fontSize = 16.sp)
                 }
+
                 Spacer(Modifier.height(8.dp))
 
                 Button(
@@ -406,6 +434,7 @@ fun HireProductScreen(
             }
         }
     }
+
     if (showMonederoConfirmation) {
         AlertDialog(
             onDismissRequest = { showMonederoConfirmation = false },
