@@ -45,7 +45,7 @@ fun ServicesScreen(
 
     LaunchedEffect(user) {
         user?.let {
-            sessionViewModel.setUserCredentials(token = "", id = it.id, it.email)
+            sessionViewModel.setUserCredentials(token = "", id = it.id, it.email, it.fullName, it.postAddress, it.postcode)
             sessionViewModel.cargarServiciosPermitidos(it.id)
             serviceProductViewModel.loadAllServices()
             serviceProductViewModel.loadUserProducts(it.id)

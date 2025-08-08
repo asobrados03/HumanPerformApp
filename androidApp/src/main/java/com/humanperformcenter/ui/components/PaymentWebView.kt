@@ -28,21 +28,60 @@ fun PaymentWebView(
                 isFocusable = true
                 isFocusableInTouchMode = true
                 requestFocus()
+                var handled = false
+
 
                 webViewClient = object : WebViewClient() {
+
+                    // Por si en el futuro usas redirecciones/params:
                     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                         val targetUrl = request?.url.toString()
                         if (targetUrl.contains("/payments/hpp-response")) {
-                            if (targetUrl.contains("RESULT=00")) {
+                            // Mantén este fallback por si algún día mandas RESULT en la URL
+                            if (!handled && targetUrl.contains("RESULT=00")) {
+                                handled = true
                                 onPaymentSuccess()
-                            } else {
+                                return true
+                            } else if (!handled) {
+                                handled = true
                                 onPaymentCancelled()
+                                return true
                             }
-                            return true
                         }
                         return false
                     }
+
+                    override fun onPageFinished(view: WebView?, finishedUrl: String?) {
+                        super.onPageFinished(view, finishedUrl)
+                        view?.evaluateJavascript(
+                            "(function(){return document.body?document.body.innerText:''})()"
+                        ) { bodyTextRaw ->
+                            if (handled) return@evaluateJavascript
+                            val bodyText = bodyTextRaw
+                                ?.removePrefix("\"")
+                                ?.removeSuffix("\"")
+                                ?.replace("\\n", "\n")
+                                ?: ""
+
+                            when {
+                                bodyText.contains("Pago aprobado", ignoreCase = true) ||
+                                        bodyText.contains("aprobado", ignoreCase = true) ||
+                                        bodyText.contains("✅") -> {
+                                    handled = true
+                                    onPaymentSuccess()
+                                }
+                                bodyText.contains("Pago fallido", ignoreCase = true) ||
+                                        bodyText.contains("cancelado", ignoreCase = true) ||
+                                        bodyText.contains("problem connecting back", ignoreCase = true) ||
+                                        bodyText.contains("❌") -> {
+                                    handled = true
+                                    onPaymentCancelled()
+                                }
+                            }
+                        }
+                    }
                 }
+
                 loadDataWithBaseURL(null, url, "text/html", "utf-8", null)
             }
         },

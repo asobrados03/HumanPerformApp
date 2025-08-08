@@ -185,9 +185,8 @@ fun Navigation(
                         viewModel     = viewModel(
                             factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
                         ),
-                        userId        = userId!!,
                         paymentViewModel = paymentViewModel,
-                        userEmail     = userEmail ?: ""
+                        sesionViewModel = sessionViewModel
                     )
                 }
             }
