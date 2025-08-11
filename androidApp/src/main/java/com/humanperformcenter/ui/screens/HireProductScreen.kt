@@ -55,6 +55,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.google.pay.button.ButtonType
 import com.google.pay.button.PayButton
+import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.app.navigation.StartPayment
 import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.PaymentRequest
@@ -127,28 +128,35 @@ fun HireProductScreen(
     val userPostalCode = sesionViewModel.userPostalCode.collectAsState().value ?: 0
 
     LaunchedEffect(paymentResult) {
-        println("Hola, paymentResult: $paymentResult")
         if (paymentResult == true && productoIdSeleccionado != null) {
-            println("Asignando producto con ID: $productoIdSeleccionado, al usuario con ID: $userId")
+            val selectedId = productoIdSeleccionado ?: return@LaunchedEffect
+
             viewModel.assignProductToUser(
-                userId,
-                productoIdSeleccionado!!,
-                "card",
+                userId = userId,
+                productId = selectedId,
+                paymentMethod = "card",
                 cuponTexto.takeIf { it.isNotBlank() }
             ) { success, error ->
                 if (success) {
                     Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
+                    navController.navigate(ProductDetail(productId = selectedId))
+                    viewModel.loadUserProducts(userId)
+                    mostrarCuponSheet = false
+                    cuponTexto = ""
+                    productoIdSeleccionado = null
                 } else {
                     errorMessage = error ?: "Error al asignar producto"
                 }
             }
+
             savedStateHandle?.set("payment_result", null)
-            mostrarCuponSheet = false
+
         } else if (paymentResult == false) {
             Toast.makeText(context, "Pago cancelado o fallido", Toast.LENGTH_SHORT).show()
             savedStateHandle?.set("payment_result", null)
         }
     }
+
 
     LaunchedEffect(serviceId) {
         viewModel.loadServiceProducts(serviceId)
@@ -443,36 +451,42 @@ fun HireProductScreen(
                     onClick = {
                         showMonederoConfirmation = false
 
+                        val selectedId = productoIdSeleccionado
+                        if (selectedId == null) {
+                            errorMessage = "No se ha seleccionado ningún producto."
+                            return@TextButton
+                        }
+
+                        // NO uses productoIdSeleccionado!! aquí
                         viewModel.assignProductToUser(
-                            userId,
-                            productoIdSeleccionado!!,
-                            "cash",
+                            userId = userId,
+                            productId = selectedId,
+                            paymentMethod = "cash",
                             cuponTexto.takeIf { it.isNotBlank() }
                         ) { success, error ->
                             if (success) {
                                 Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
+                                // Usa selectedId también al navegar
+                                navController.navigate(ProductDetail(productId = selectedId))
+                                viewModel.loadUserProducts(userId)
+
+                                // limpia al final
+                                mostrarCuponSheet = false
+                                productoIdSeleccionado = null
+                                cuponTexto = ""
                             } else {
                                 errorMessage = error ?: "Error al asignar producto"
                             }
                         }
-
-                        mostrarCuponSheet = false
-                        productoIdSeleccionado = null
-                        cuponTexto = ""
                     }
-                ) {
-                    Text("Confirmar")
-                }
+                ) { Text("Confirmar") }
             },
-            dismissButton = {
-                TextButton(onClick = { showMonederoConfirmation = false }) {
-                    Text("Cancelar")
-                }
-            },
+            dismissButton = { TextButton(onClick = { showMonederoConfirmation = false }) { Text("Cancelar") } },
             title = { Text("Confirmar pago con monedero") },
             text = { Text("¿Estás seguro de que deseas pagar este producto usando tu saldo virtual?") }
         )
     }
+
 
 }
 
