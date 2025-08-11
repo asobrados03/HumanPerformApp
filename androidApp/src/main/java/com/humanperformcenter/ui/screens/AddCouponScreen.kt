@@ -87,17 +87,19 @@ fun AddCouponScreen(
             }
 
             uiState.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
+                println("Error al añadir cupón: $it")
             }
 
             // 🔽 Scroll solo para los cupones
-            if (uiState.currentCoupons.isNotEmpty()) {
+            if (uiState.currentCoupons.isEmpty()) {
+                Text("No hay cupones", style = MaterialTheme.typography.bodyMedium)
+            } else {
                 Text("Cupones activos:", style = MaterialTheme.typography.titleSmall)
 
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f), // ← 🔥 Hace que la lista use el espacio restante
+                        .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.currentCoupons) { coupon ->

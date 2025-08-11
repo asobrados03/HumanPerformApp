@@ -314,39 +314,32 @@ fun CalendarScreen(
             ) {
                 items(calendarDays) { date ->
                     if (date == null) {
-                        Box(modifier = Modifier
-                            .size(40.dp)
-                            .padding(4.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .padding(4.dp)
                         )
                     } else {
                         val isToday = date == today
                         val isSunday = date.dayOfWeek.ordinal == 6
+
+                        // Festivos desde VM
                         val holidays = daySessionViewModel.holidays.collectAsState().value
                         val isHoliday = holidays.contains(date)
+
                         val isSelected = selectedDate == date
                         val isReserved = reservedDates.contains(date)
+
+                        // Reservas del día y color por servicio
                         val reservasEseDia = bookings.filter { LocalDate.parse(it.date.substring(0, 10)) == date }
                         val colorReserva = reservasEseDia
                             .firstOrNull()?.service_id
-                            ?.let { coloresPorServicio[it] } ?: Color(0xFF6B426C)
-
-                        val bgColor = when {
-                            isSelected -> MaterialTheme.colorScheme.primary
-                            reservasEseDia.isNotEmpty() -> colorReserva
-                            isSunday || isHoliday -> Color.LightGray
-                            else -> Color.Transparent
-                        }
-
-                        val onBackground = MaterialTheme.colorScheme.onBackground
-                        val onPrimary    = MaterialTheme.colorScheme.onPrimary
-
-                        val textColor = when {
-                            isSelected || isReserved -> onPrimary
-                            else                      -> onBackground
-                        }
+                            ?.let { coloresPorServicio[it] }
+                            ?: MaterialTheme.colorScheme.tertiary
 
                         val isPast = date < today
 
+                        // Ventanas de selección (tu lógica original)
                         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
                         val currentHour = now.hour
 
@@ -361,8 +354,46 @@ fun CalendarScreen(
                                         (isAfter15 && (esMesActual || esMesSiguiente))
                                 )
 
-                        // Aplica opacidad solo al fondo:
+                        // ====== Estilos claro/oscuro ======
+                        val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
+                        // Fondo del día
+                        val bgColor = when {
+                            isSelected -> MaterialTheme.colorScheme.primary
+                            reservasEseDia.isNotEmpty() -> colorReserva
+                            isDark -> { // MODO OSCURO: mantenemos como estaba
+                                when {
+                                    isSunday || isHoliday -> MaterialTheme.colorScheme.surfaceVariant
+                                    else -> Color.Transparent
+                                }
+                            }
+                            else -> { // MODO CLARO: swap pasados ↔ festivos y disponibles con caja blanca
+                                when {
+                                    isPast -> MaterialTheme.colorScheme.surfaceVariant      // pasados: chip gris
+                                    isSunday || isHoliday -> Color.Transparent              // festivos: sin relleno
+                                    else -> MaterialTheme.colorScheme.surface               // disponibles: caja blanca
+                                }
+                            }
+                        }
+
+                        // Color del texto
+                        val textColor = when {
+                            isSelected || isReserved -> MaterialTheme.colorScheme.onPrimary
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
+
+                        // Borde: hoy siempre marcado; en claro, si caja blanca, borde sutil
+                        val showOutline = !isDark && bgColor == MaterialTheme.colorScheme.surface
+                        val borderWidth = if (isToday) 2.dp else if (showOutline) 1.dp else 0.dp
+                        val borderColor = when {
+                            isToday -> MaterialTheme.colorScheme.secondary
+                            showOutline -> MaterialTheme.colorScheme.outline
+                            else -> Color.Transparent
+                        }
+
+                        // Opacidad si no se puede seleccionar
                         val boxBg = bgColor.copy(alpha = if (puedeSeleccionarFecha) 1f else 0.4f)
+                        val overallAlpha = if (!puedeSeleccionarFecha) 0.4f else 1f
 
                         Box(
                             modifier = Modifier
@@ -370,12 +401,8 @@ fun CalendarScreen(
                                 .padding(4.dp)
                                 .clip(CircleShape)
                                 .background(boxBg)
-                                .alpha(if (!puedeSeleccionarFecha) 0.4f else 1f)
-                                .border(
-                                    width = if (isToday) 2.dp else 0.dp,
-                                    color = if (isToday) Color.Black else Color.Transparent,
-                                    shape = CircleShape
-                                )
+                                .alpha(overallAlpha)
+                                .border(borderWidth, borderColor, CircleShape)
                                 .clickable(enabled = puedeSeleccionarFecha) {
                                     if (isReserved) {
                                         pendingSelectedDate = date
@@ -393,12 +420,15 @@ fun CalendarScreen(
                                 },
                             contentAlignment = Alignment.Center
                         ) {
+                            // Texto: si el día no es seleccionable, baja un poco la opacidad
+                            val dayTextColor = if (puedeSeleccionarFecha)
+                                textColor
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+
                             Text(
                                 text = date.day.toString(),
-                                color = if (puedeSeleccionarFecha)
-                                    textColor
-                                else
-                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                                color = dayTextColor,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp
                             )
