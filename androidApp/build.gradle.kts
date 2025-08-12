@@ -84,7 +84,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(project(":shared"))
     implementation(libs.core.ktx)
-
+    implementation("com.stripe:stripe-android:21.22.2") // o la última
     implementation(libs.datastore.preferences)
     implementation(libs.datastore)
 

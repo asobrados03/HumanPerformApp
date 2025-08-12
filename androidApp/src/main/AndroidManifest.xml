@@ -20,7 +20,13 @@
 
         <meta-data
             android:name="com.google.android.gms.wallet.api.enabled"
-            android:value="true" />
+            android:value="true"
+            />
+
+        <meta-data
+            android:name="com.stripe.publishable_key"
+            android:value="@string/stripe_publishable_key" />
+
 
         <provider
             android:name="androidx.core.content.FileProvider"

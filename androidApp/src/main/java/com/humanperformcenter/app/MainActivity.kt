@@ -3,8 +3,10 @@ package com.humanperformcenter.app
 import android.media.MediaPlayer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.R
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.humanperformcenter.app.navigation.Navigation
@@ -13,11 +15,22 @@ import com.humanperformcenter.data.SessionRepository
 import com.humanperformcenter.shared.data.persistence.GooglePayRepository
 import com.humanperformcenter.shared.domain.storage.DataStoreProvider
 import com.humanperformcenter.shared.domain.storage.SecureStorage
+import com.humanperformcenter.shared.domain.usecase.StripeUseCase
+import com.humanperformcenter.ui.screens.PaymentScreen
 import com.humanperformcenter.ui.theme.HumanPerformAppTheme
+import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModelFactory
+import com.stripe.android.PaymentConfiguration
+import com.stripe.android.paymentsheet.PaymentSheet
+import com.stripe.android.paymentsheet.PaymentSheet.Builder
+import com.stripe.android.paymentsheet.PaymentSheetResult
 
 class MainActivity : ComponentActivity() {
+    private lateinit var paymentSheet: PaymentSheet
+    val viewModel: PaymentViewModel by viewModels()
+    private var onPaymentSheetResult: (PaymentSheetResult) -> Unit = {}
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -25,6 +38,14 @@ class MainActivity : ComponentActivity() {
 
         // Esto prepara GooglePayRepository.paymentsClient
         GooglePayRepository.init(this)
+        PaymentConfiguration.init(
+            applicationContext,
+            "pk_test_51Ki0ZIBrFtqPM4kirIXy3Sb9VQ4XXCz4MJuHTTRYFrrPyIkppkGdlErMqbmM6w3vuybjUw4N75g7ACMlNXzGuxaY00Mmh1jBQ2"
+        )
+
+        paymentSheet = Builder { result ->
+            viewModel.onPaymentSheetResult(result)
+        }.build(this)
 
         enableEdgeToEdge()
         setContent {
@@ -40,6 +61,11 @@ class MainActivity : ComponentActivity() {
                 Navigation(
                     navController = navController,
                     sessionViewModel = sessionViewModel,
+                    paymentSheet = paymentSheet,
+                    registerPaymentSheetResult = { handler ->
+                        // la UI nos pasa su handler y lo enganchamos
+                        onPaymentSheetResult = handler
+                    },
                     // Sonido de borrado
                     onPlaySound = { soundRes ->
                         val mediaPlayer = MediaPlayer.create(this, soundRes)

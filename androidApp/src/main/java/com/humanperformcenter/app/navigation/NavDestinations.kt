@@ -28,3 +28,4 @@ data class ProductDetail(val productId: Int)
 @Serializable object ElectronicWallet
 @Serializable object StartPayment
 @Serializable object PaymentSuccess
+@Serializable object StripeCheckout

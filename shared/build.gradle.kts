@@ -5,7 +5,6 @@ plugins {
 }
 
 kotlin {
-
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
@@ -61,6 +60,7 @@ kotlin {
     // common to share sources between related targets.
     // See: https://kotlinlang.org/docs/multiplatform-hierarchy.html
     sourceSets {
+
         commonMain {
             dependencies {
                 implementation(libs.kotlin.stdlib)
@@ -75,7 +75,6 @@ kotlin {
                 implementation(libs.ktor.client.logging)
 
                 implementation(libs.logging)
-
                 api(libs.datastore.preferences)
                 api(libs.datastore)
             }

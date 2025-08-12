@@ -4,4 +4,5 @@
     <string name="add_transaction">Añadir transaccion</string>
     <string name="update_budget">Actualizar presupuesto</string>
     <string name="add_budget">Añadir presupuesto</string>
+    <string name="stripe_publishable_key">pk_test_51Ki0ZIBrFtqPM4kirIXy3Sb9VQ4XXCz4MJuHTTRYFrrPyIkppkGdlErMqbmM6w3vuybjUw4N75g7ACMlNXzGuxaY00Mmh1jBQ2</string>
 </resources>

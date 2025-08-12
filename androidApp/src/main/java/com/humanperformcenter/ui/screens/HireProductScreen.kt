@@ -57,14 +57,17 @@ import com.google.pay.button.ButtonType
 import com.google.pay.button.PayButton
 import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.app.navigation.StartPayment
+import com.humanperformcenter.app.navigation.StripeCheckout
 import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.viewmodel.BillingPrefill
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.state.PaymentState
+import com.stripe.android.Stripe
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
@@ -426,6 +429,50 @@ fun HireProductScreen(
                 }
 
                 Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = {
+                        val selectedProduct = productos.first { it.id == productoIdSeleccionado }
+                        /*val precioFinal = calcularPrecioConDescuento(
+                            selectedProduct.id,
+                            selectedProduct.price ?: 0.0,
+                            userCoupons
+                        )
+                        val amountInCents = (precioFinal * 100).toInt()*/
+
+                        // Guarda lo que necesites en savedStateHandle
+                        navController.currentBackStackEntry?.savedStateHandle?.apply {
+                            set("selected_product_id", selectedProduct.id)
+                            set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                        }
+
+                        // Lanza preparación PaymentSheet
+                        paymentViewModel.startStripeCheckout(
+                            amountInCents = 51,
+                            currency = "EUR",
+                            userId = userId,
+                            productId = selectedProduct.id,
+                            couponCode = cuponTexto.takeIf { it.isNotBlank() },
+                            billing = BillingPrefill(
+                                name = userName,
+                                email = userEmail,
+                                addressLine1 = userStreet,
+                                postalCode = userPostalCode?.toString(),
+                                city = "Segovia"
+                            )
+                        )
+                        // Navega a una pantalla contenedora que observe el estado y presente la hoja
+                        navController.navigate(StripeCheckout)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1E88E5),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Pagar con tarjeta Stripe💳", fontSize = 16.sp)
+                }
+                Spacer(Modifier.height(8.dp))
+
 
                 Button(
                     onClick = {

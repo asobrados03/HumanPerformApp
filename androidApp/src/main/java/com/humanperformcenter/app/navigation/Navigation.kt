@@ -40,6 +40,7 @@ import com.humanperformcenter.ui.screens.SplashScreen
 import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.UserStatsScreen
 import com.humanperformcenter.ui.screens.ElectronicWalletScreen
+import com.humanperformcenter.ui.screens.StripeCheckoutScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
@@ -56,11 +57,15 @@ import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
 import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
 import com.humanperformcenter.ui.viewmodel.state.ResetPasswordState
+import com.stripe.android.paymentsheet.PaymentSheet
+import com.stripe.android.paymentsheet.PaymentSheetResult
 
 @Composable
 fun Navigation(
     sessionViewModel: SessionViewModel,
     navController: NavHostController,
+    paymentSheet: PaymentSheet,
+    registerPaymentSheetResult: ((PaymentSheetResult) -> Unit) -> Unit,
     onPlaySound: (Int) -> Unit
 ) {
     SetStatusBarColor(
@@ -73,7 +78,7 @@ fun Navigation(
         .collectAsState(initial = false)
 
     val paymentViewModel: PaymentViewModel = viewModel(
-        factory = PaymentViewModelFactory(AppModule.googlePayUseCase, AppModule.paymentUseCase)
+        factory = PaymentViewModelFactory(AppModule.googlePayUseCase, AppModule.paymentUseCase, AppModule.stripeUseCase)
     )
 
     val userViewModel: UserViewModel = viewModel(
@@ -302,6 +307,12 @@ fun Navigation(
             composable<PaymentSuccess> {
                 PaymentSuccessScreen(navController = navController)
             }
+            composable<StripeCheckout> {
+                StripeCheckoutScreen(navController, paymentViewModel,
+                    viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)) ,
+                    userId = sessionViewModel.userId.collectAsState().value ?: 0 ,paymentSheet,registerPaymentSheetResult)
+            }
+
             composable<EditProfile> {
                 EditProfileRoute(navController = navController)
             }
