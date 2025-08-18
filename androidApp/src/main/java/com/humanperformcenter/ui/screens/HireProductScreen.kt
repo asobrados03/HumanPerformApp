@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -106,6 +107,8 @@ fun HireProductScreen(
 
     var selectedFilter by remember { mutableStateOf(ProductTypeFilter.ALL) }
 
+    var guardarTarjeta by rememberSaveable { mutableStateOf(false) }
+
     var selectedSessionCount by remember { mutableIntStateOf(0) } // 0 = sin filtro
     val sesionesDisponibles = productos.mapNotNull { it.session }.distinct().sorted()
     val productosFiltrados by remember(productos, selectedFilter, selectedSessionCount) {
@@ -129,6 +132,7 @@ fun HireProductScreen(
     val userName = sesionViewModel.userName.collectAsState().value ?: ""
     val userStreet = sesionViewModel.userStreet.collectAsState().value ?: ""
     val userPostalCode = sesionViewModel.userPostalCode.collectAsState().value ?: 0
+    val userCoupons by viewModel.userCoupons.collectAsState()
 
     LaunchedEffect(paymentResult) {
         if (paymentResult == true && productoIdSeleccionado != null) {
@@ -353,7 +357,6 @@ fun HireProductScreen(
     }
 
     if (mostrarCuponSheet && productoIdSeleccionado != null) {
-        val userCoupons by viewModel.userCoupons.collectAsState() // ✅ lo sacamos fuera
 
         ModalBottomSheet(
             onDismissRequest = {
@@ -386,47 +389,47 @@ fun HireProductScreen(
 
                 Spacer(Modifier.height(8.dp))
 
-                Button(
-                    onClick = {
-                        val selectedProduct = productos.first { it.id == productoIdSeleccionado }
-                        val precioFinal = calcularPrecioConDescuento(
-                            selectedProduct.id,
-                            selectedProduct.price ?: 0.0,
-                            userCoupons
-                        )
-                        val amountInCents = (precioFinal * 100).toInt()
-                        println(amountInCents)
-                        val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
-                        val lastName = userName.split(" ").drop(1).joinToString(" ")
+                Button(onClick = {
+                    guardarTarjeta = true
+                    val selectedProduct = productos.first { it.id == productoIdSeleccionado }
+                    val precioFinal = calcularPrecioConDescuento(
+                        selectedProduct.id,
+                        selectedProduct.price ?: 0.0,
+                        userCoupons
+                    )
+                    val amountInCents = (precioFinal * 100).toInt()
+                    val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
+                    val lastName = userName.split(" ").drop(1).joinToString(" ")
+                    val paymentRequest = PaymentRequest(
+                        amount = 1,
+                        currency = "EUR",
+                        firstName,
+                        lastName,
+                        email = userEmail,
+                        street = userStreet,
+                        postalCode = userPostalCode,
+                        city = "Segovia",
+                        card_storage = guardarTarjeta,
+                        payer_ref = if (guardarTarjeta) "user_$userId" else null
+                    )
 
-                        val paymentRequest = PaymentRequest(
-                            amount = amountInCents,
-                            currency = "EUR",
-                            firstName,
-                            lastName,
-                            userEmail,
-                            userStreet,
-                            userPostalCode,
-                            "Segovia"
-                        )
+                    navController.currentBackStackEntry?.savedStateHandle?.apply {
+                        set("selected_product_id", selectedProduct.id)
+                        set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                    }
 
-                        navController.currentBackStackEntry?.savedStateHandle?.apply {
-                            set("selected_product_id", selectedProduct.id)
-                            set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
-                        }
-
-                        paymentViewModel.generatePaymentURL(paymentRequest)
-                        navController.navigate(StartPayment)
-                        productoIdSeleccionado = selectedProduct.id
-                    },
-                    modifier = Modifier.fillMaxWidth(),
+                    paymentViewModel.generatePaymentURL(paymentRequest)
+                    navController.navigate(StartPayment)
+                    productoIdSeleccionado = selectedProduct.id
+                } , modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF1E88E5),
                         contentColor = Color.White
                     )
-                ) {
+                ){
                     Text("Pagar con tarjeta 💳", fontSize = 16.sp)
                 }
+
 
                 Spacer(Modifier.height(8.dp))
                 Button(
@@ -533,8 +536,6 @@ fun HireProductScreen(
             text = { Text("¿Estás seguro de que deseas pagar este producto usando tu saldo virtual?") }
         )
     }
-
-
 }
 
 
