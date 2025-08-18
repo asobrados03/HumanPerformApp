@@ -49,6 +49,7 @@ fun MyProductsScreen(
     var productoSeleccionado by remember { mutableStateOf<ServiceItem?>(null) }
     var mostrarDialogoProducto by remember { mutableStateOf(false) }
     val userBookings by userViewModel.userBookings.collectAsState()
+    var mostrarConfirmacionBaja by remember { mutableStateOf(false) }
 
     LaunchedEffect(userBookings) {
         if (userBookings.isNotEmpty()) {
@@ -122,42 +123,42 @@ fun MyProductsScreen(
                         Text("Ver detalles")
                     }
 
-                    // ✅ NUEVO BOTÓN: PAGAR AHORA
-                    TextButton(onClick = {
-                        viewModel.getPaymentUrl(
-                            productoId = productoSeleccionado!!.id,
-                            userId = userId,
-                            onSuccess = { url ->
-                                try {
-                                    val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                                    context.startActivity(intent)
-                                } catch (_: Exception) {
-                                    Toast.makeText(context, "No se pudo abrir el navegador", Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                            onError = {
-                                Toast.makeText(context, "Error al obtener URL de pago", Toast.LENGTH_SHORT).show()
-                            }
-                        )
-                        mostrarDialogoProducto = false
-                        productoSeleccionado = null
-                    }) {
-                        Text("Pagar ahora", color = Color.Green)
-                    }
-
-                    TextButton(onClick = {
-                        viewModel.unassignProductFromUser(productoSeleccionado!!.id, userId)
-                        mostrarDialogoProducto = false
-                        productoSeleccionado = null
-                    }) {
+                    TextButton(
+                        onClick = { mostrarConfirmacionBaja = true }
+                    ) {
                         Text("Darse de baja", color = Color.Red)
                     }
+
                 }
             },
             dismissButton = {
                 TextButton(onClick = {
                     mostrarDialogoProducto = false
                     productoSeleccionado = null
+                }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+    if (mostrarConfirmacionBaja) {
+        AlertDialog(
+            onDismissRequest = { mostrarConfirmacionBaja = false },
+            title = { Text("Confirmar baja") },
+            text = { Text("¿Estás seguro de que quieres darte de baja de este producto?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.unassignProductFromUser(productoSeleccionado!!.id, userId)
+                    mostrarDialogoProducto = false
+                    productoSeleccionado = null
+                    mostrarConfirmacionBaja = false
+                }) {
+                    Text("Sí, darse de baja", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    mostrarConfirmacionBaja = false
                 }) {
                     Text("Cancelar")
                 }

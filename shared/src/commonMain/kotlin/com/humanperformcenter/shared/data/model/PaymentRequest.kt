@@ -12,5 +12,7 @@ data class PaymentRequest(
     val email: String? = null,
     val street: String? = null,
     val postalCode: Int? = 0,
-    val city: String? = ""
+    val city: String? = "",
+    val card_storage: Boolean? = false,
+    val payer_ref: String? = null
 )
