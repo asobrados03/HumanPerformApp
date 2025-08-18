@@ -89,6 +89,14 @@ object GooglePayRepository : PaymentRepository {
         return response.status.isSuccess()
     }
 
+    override suspend fun getPaymentMethod(user_id: Int): String? {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun rebillPayment(rebillRequest: RebillRequest): Boolean {
+        TODO("Not yet implemented")
+    }
+
     /** 3) (Opcional) Genera una URL de pago en tu backend */
     override suspend fun generatePaymentUrl(request: PaymentRequest): String {
         val response: HttpResponse = ApiClient.apiClient.post("${ApiClient.baseUrl}/payments/initiate") {
