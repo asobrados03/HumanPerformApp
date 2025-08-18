@@ -92,6 +92,8 @@ dependencies {
     implementation(libs.compose.pay.button)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
 
     testImplementation(libs.junit.jupiter)
     ksp(libs.androidx.room.compiler)

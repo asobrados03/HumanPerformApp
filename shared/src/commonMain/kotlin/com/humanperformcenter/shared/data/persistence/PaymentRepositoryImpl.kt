@@ -34,7 +34,7 @@ object PaymentRepositoryImpl: PaymentRepository{
         TODO("Not yet implemented")
     }
 
-    override suspend fun sendTokenToBackend(token: String): Boolean {
+    override suspend fun sendTokenToBackend(token: String, amount: Int, currency: String): Boolean {
         TODO("Not yet implemented")
     }
 }
