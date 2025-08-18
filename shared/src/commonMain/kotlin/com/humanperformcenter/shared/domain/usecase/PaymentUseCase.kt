@@ -14,8 +14,8 @@ class PaymentUseCase(private val paymentRepository: PaymentRepository) {
     suspend fun requestGooglePay(requestJson: String): String = withContext(Dispatchers.IO) {
         return@withContext paymentRepository.requestGooglePay(requestJson)
     }
-    suspend fun sendTokenToBackend(token: String): Boolean = withContext(Dispatchers.IO) {
-        return@withContext paymentRepository.sendTokenToBackend(token)
+    suspend fun sendTokenToBackend(token: String, amount: Int, currency: String): Boolean = withContext(Dispatchers.IO) {
+        return@withContext paymentRepository.sendTokenToBackend(token, amount, currency)
     }
     suspend fun getPaymentMethod(user_id: Int): String? = withContext(Dispatchers.IO) {
         return@withContext paymentRepository.getPaymentMethod(user_id)

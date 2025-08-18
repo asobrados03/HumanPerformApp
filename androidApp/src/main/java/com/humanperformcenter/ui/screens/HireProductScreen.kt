@@ -379,9 +379,9 @@ fun HireProductScreen(
                             selectedProduct.price ?: 0.0,
                             userCoupons
                         )
-
                         val requestJson = buildPaymentRequestJson(precio)
-                        paymentViewModel.payWithGooglePay(requestJson)
+                        val amountInCents = (precio * 100).toInt()
+                        paymentViewModel.payWithGooglePay(requestJson, amountInCents, "EUR")
                     }
                 )
 
@@ -630,7 +630,7 @@ private val allowedPaymentMethodsJson = """
     "type":"PAYMENT_GATEWAY",
     "parameters":{
       "gateway":"globalpayments",
-      "gatewayMerchantId":"TU_MERCHANT_ID"
+      "gatewayMerchantId":"367660321"
     }
   }
 }]
@@ -651,8 +651,8 @@ private fun buildPaymentRequestJson(precio: Double): String {
         put("countryCode", "ES")
     }
     val merchantInfo = JSONObject().apply {
-        put("merchantName", "MiApp")
-        put("merchantId", "TU_GOOGLE_PAY_MERCHANT_ID") // Opcional si ya lo tienes en Google Console
+        put("merchantName", "MiApp Test")
+        put("merchantId", "Google Pay Sandbox Test") // Opcional si ya lo tienes en Google Console
     }
     return JSONObject().apply {
         put("apiVersion", 2)

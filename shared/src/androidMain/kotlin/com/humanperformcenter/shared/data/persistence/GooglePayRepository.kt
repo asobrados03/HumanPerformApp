@@ -77,10 +77,14 @@ object GooglePayRepository : PaymentRepository {
         }
 
     /** 2) Envía el token al backend (Addon Payments) */
-    override suspend fun sendTokenToBackend(token: String): Boolean {
+    override suspend fun sendTokenToBackend(token: String, amount: Int, currency: String): Boolean {
         val response: HttpResponse = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/pago") {
             contentType(ContentType.Application.Json)
-            setBody(mapOf("token" to token))
+            setBody(mapOf(
+                "token" to token,
+                "amount" to amount,      // en céntimos
+                "currency" to currency   // "EUR"
+            ))
         }
         return response.status.isSuccess()
     }
