@@ -1,8 +1,10 @@
 package com.humanperformcenter.shared.data.persistence
 
 import com.humanperformcenter.shared.data.model.PaymentRequest
+import com.humanperformcenter.shared.data.model.RebillRequest
 import com.humanperformcenter.shared.domain.repository.PaymentRepository
 import com.humanperformcenter.shared.data.network.ApiClient
+import io.ktor.client.call.body
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -29,6 +31,31 @@ object PaymentRepositoryImpl: PaymentRepository{
         return response.bodyAsText()
     }
 
+    override suspend fun getPaymentMethod(user_id: Int): String? {
+        val response: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/user/saved-payment-method") {
+            parameter("user_id", user_id)
+            contentType(ContentType.Application.Json)
+        }
+
+        if (!response.status.isSuccess()) {
+            return null
+        }
+        val token = response.body<String>().trim()
+        return token.ifBlank { null }
+    }
+
+    override suspend fun rebillPayment(
+        rebillRequest: RebillRequest
+    ): Boolean {
+        val response: HttpResponse = ApiClient.apiClient.post("${ApiClient.baseUrl}/payments/rebill") {
+            contentType(ContentType.Application.Json)
+            setBody(rebillRequest)
+        }
+        if (!response.status.isSuccess()) {
+            throw IllegalStateException("Error al procesar el rebill: ${response.status}")
+        }
+        return response.body()
+    }
     override suspend fun requestGooglePay(requestJson: String): String {
         TODO("Not yet implemented")
     }

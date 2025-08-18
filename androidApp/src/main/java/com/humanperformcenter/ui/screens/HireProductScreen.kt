@@ -1,6 +1,5 @@
 package com.humanperformcenter.ui.screens
 
-import android.provider.ContactsContract
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,14 +21,12 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,14 +58,13 @@ import com.humanperformcenter.app.navigation.StartPayment
 import com.humanperformcenter.app.navigation.StripeCheckout
 import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.PaymentRequest
+import com.humanperformcenter.shared.data.model.RebillRequest
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.BillingPrefill
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
-import com.humanperformcenter.ui.viewmodel.state.PaymentState
-import com.stripe.android.Stripe
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
@@ -126,6 +122,8 @@ fun HireProductScreen(
             }
         }
     }
+
+    var showAlertMethod: Boolean by remember { mutableStateOf(false) }
 
     val userId = sesionViewModel.userId.collectAsState().value ?: 0
     val userEmail = sesionViewModel.userEmail.collectAsState().value ?: ""
@@ -391,36 +389,43 @@ fun HireProductScreen(
 
                 Button(onClick = {
                     guardarTarjeta = true
-                    val selectedProduct = productos.first { it.id == productoIdSeleccionado }
-                    val precioFinal = calcularPrecioConDescuento(
-                        selectedProduct.id,
-                        selectedProduct.price ?: 0.0,
-                        userCoupons
-                    )
-                    val amountInCents = (precioFinal * 100).toInt()
-                    val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
-                    val lastName = userName.split(" ").drop(1).joinToString(" ")
-                    val paymentRequest = PaymentRequest(
-                        amount = 1,
-                        currency = "EUR",
-                        firstName,
-                        lastName,
-                        email = userEmail,
-                        street = userStreet,
-                        postalCode = userPostalCode,
-                        city = "Segovia",
-                        card_storage = guardarTarjeta,
-                        payer_ref = if (guardarTarjeta) "user_$userId" else null
-                    )
 
-                    navController.currentBackStackEntry?.savedStateHandle?.apply {
-                        set("selected_product_id", selectedProduct.id)
-                        set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                    val response = paymentViewModel.getPaymentMethod(userId)
+
+                    if (response != null) {
+                        showAlertMethod = true // Muestra diálogo con dos botones
+                    } else {
+                        showAlertMethod = false
+
+                        val selectedProduct = productos.first { it.id == productoIdSeleccionado }
+                        val precioFinal = calcularPrecioConDescuento(
+                            selectedProduct.id,
+                            selectedProduct.price ?: 0.0,
+                            userCoupons
+                        )
+                        val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
+                        val lastName = userName.split(" ").drop(1).joinToString(" ")
+                        val paymentRequest = PaymentRequest(
+                            amount = 1,
+                            currency = "EUR",
+                            firstName,
+                            lastName,
+                            email = userEmail,
+                            street = userStreet,
+                            postalCode = userPostalCode,
+                            city = "Segovia",
+                            card_storage = guardarTarjeta,
+                            payer_ref = if (guardarTarjeta) "user_$userId" else null
+                        )
+
+                        navController.currentBackStackEntry?.savedStateHandle?.apply {
+                            set("selected_product_id", selectedProduct.id)
+                            set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                        }
+                        paymentViewModel.generatePaymentURL(paymentRequest)
+                        navController.navigate(StartPayment)
+                        productoIdSeleccionado = selectedProduct.id
                     }
-
-                    paymentViewModel.generatePaymentURL(paymentRequest)
-                    navController.navigate(StartPayment)
-                    productoIdSeleccionado = selectedProduct.id
                 } , modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF1E88E5),
@@ -429,9 +434,7 @@ fun HireProductScreen(
                 ){
                     Text("Pagar con tarjeta 💳", fontSize = 16.sp)
                 }
-
-
-                Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = {
                         val selectedProduct = productos.first { it.id == productoIdSeleccionado }
@@ -536,6 +539,74 @@ fun HireProductScreen(
             text = { Text("¿Estás seguro de que deseas pagar este producto usando tu saldo virtual?") }
         )
     }
+    if (showAlertMethod) {
+        val selectedProduct = productos.first { it.id == productoIdSeleccionado }
+        val precioFinal = calcularPrecioConDescuento(
+            selectedProduct.id,
+            selectedProduct.price ?: 0.0,
+            userCoupons
+        )
+        val amountInCents = (precioFinal * 100).toInt()
+        AlertDialog(
+            onDismissRequest = { showAlertMethod = false },
+            title = { Text("Método de pago") },
+            text = { Text("Tienes una tarjeta guardada. ¿Deseas usarla?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAlertMethod = false
+
+                    val rebillRequest = RebillRequest(
+                        amount = 1,
+                        currency = "EUR",
+                        user_id = userId
+                    )
+                    paymentViewModel.rebillWithSavedCard(
+                        rebillRequest,
+                        onSuccess = {
+                            Toast.makeText(context, "Pago realizado con éxito", Toast.LENGTH_LONG).show()
+                        },
+                        onError = { errorMsg ->
+                            Toast.makeText(context, "Error: $errorMsg", Toast.LENGTH_LONG).show()
+                            println( "Error al procesar el pago: $errorMsg")
+                        }
+                    )
+                }) {
+                    Text("Usar tarjeta guardada")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showAlertMethod = false // Muestra botón de pago normal
+                    val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
+                    val lastName = userName.split(" ").drop(1).joinToString(" ")
+                    val paymentRequest = PaymentRequest(
+                        amount = 1,
+                        currency = "EUR",
+                        firstName,
+                        lastName,
+                        email = userEmail,
+                        street = userStreet,
+                        postalCode = userPostalCode,
+                        city = "Segovia",
+                        card_storage = guardarTarjeta,
+                        payer_ref = if (guardarTarjeta) "user_$userId" else null
+                    )
+
+                    navController.currentBackStackEntry?.savedStateHandle?.apply {
+                        set("selected_product_id", selectedProduct.id)
+                        set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                    }
+                    paymentViewModel.generatePaymentURL(paymentRequest)
+                    navController.navigate(StartPayment)
+                    productoIdSeleccionado = selectedProduct.id
+                }) {
+                    Text("Pagar con otra")
+                }
+            }
+        )
+    }
+
+
 }
 
 

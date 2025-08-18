@@ -3,6 +3,7 @@ package com.humanperformcenter.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.data.model.PaymentRequest
+import com.humanperformcenter.shared.data.model.RebillRequest
 import com.humanperformcenter.shared.data.model.Stripe.CreatePaymentIntentRequest
 import com.humanperformcenter.shared.domain.usecase.GooglePayUseCase
 import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
@@ -15,11 +16,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
+
 class PaymentViewModel(
     private val paymentUseCase: PaymentUseCase,
     private val googlePayUseCase: GooglePayUseCase,
     private val stripeUseCase: StripeUseCase // NEW
-
 ): ViewModel() {
 
     private val _paymentUrl = MutableStateFlow<String?>(null)
@@ -30,6 +31,9 @@ class PaymentViewModel(
 
     private val _paymentState = MutableStateFlow<PaymentState>(PaymentState.Idle)
     val paymentState: StateFlow<PaymentState> = _paymentState
+
+    private val _paymentMethod = MutableStateFlow<String?>(null)
+    val paymentMethod: StateFlow<String?> = _paymentMethod.asStateFlow()
 
     fun generatePaymentURL(request: PaymentRequest) {
         println("🔧 Generando URL de pago...")
@@ -150,6 +154,32 @@ class PaymentViewModel(
             }
         }
     }
+
+    fun getPaymentMethod(user_id: Int){
+        viewModelScope.launch {
+            try {
+                val method = paymentUseCase.getPaymentMethod(user_id)
+                _paymentMethod.value = method
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Error al obtener el método de pago"
+            }
+        }
+    }
+    fun rebillWithSavedCard(rebillRequest: RebillRequest, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val success = paymentUseCase.rebillPayment(rebillRequest)
+                if (success) {
+                    onSuccess()
+                } else {
+                    onError("Error al procesar el pago")
+                }
+            } catch (e: Exception) {
+                onError("Excepción en rebill: ${e.message}")
+            }
+        }
+    }
+
 }
 
 data class BillingPrefill(

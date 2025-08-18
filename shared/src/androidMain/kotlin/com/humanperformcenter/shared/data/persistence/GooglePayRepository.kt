@@ -9,6 +9,7 @@ import com.google.android.gms.wallet.PaymentDataRequest
 import com.google.android.gms.wallet.Wallet
 import com.google.android.gms.wallet.WalletConstants
 import com.humanperformcenter.shared.data.model.PaymentRequest
+import com.humanperformcenter.shared.data.model.RebillRequest
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.PaymentRepository
 import io.ktor.client.call.body
@@ -82,6 +83,14 @@ object GooglePayRepository : PaymentRepository {
             setBody(mapOf("token" to token))
         }
         return response.status.isSuccess()
+    }
+
+    override suspend fun getPaymentMethod(user_id: Int): String {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun rebillPayment(rebillRequest: RebillRequest): Boolean {
+        TODO("Not yet implemented")
     }
 
     /** 3) (Opcional) Genera una URL de pago en tu backend */

@@ -1,6 +1,7 @@
 package com.humanperformcenter.shared.domain.usecase
 
 import com.humanperformcenter.shared.data.model.PaymentRequest
+import com.humanperformcenter.shared.data.model.RebillRequest
 import com.humanperformcenter.shared.domain.repository.PaymentRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -16,4 +17,11 @@ class PaymentUseCase(private val paymentRepository: PaymentRepository) {
     suspend fun sendTokenToBackend(token: String): Boolean = withContext(Dispatchers.IO) {
         return@withContext paymentRepository.sendTokenToBackend(token)
     }
+    suspend fun getPaymentMethod(user_id: Int): String? = withContext(Dispatchers.IO) {
+        return@withContext paymentRepository.getPaymentMethod(user_id)
+    }
+    suspend fun rebillPayment(rebillRequest: RebillRequest): Boolean = withContext(Dispatchers.IO) {
+        return@withContext paymentRepository.rebillPayment(rebillRequest)
+    }
+
 }
