@@ -1,9 +1,9 @@
 package com.humanperformcenter.app
 
+import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.R
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -15,8 +15,6 @@ import com.humanperformcenter.data.SessionRepository
 import com.humanperformcenter.shared.data.persistence.GooglePayRepository
 import com.humanperformcenter.shared.domain.storage.DataStoreProvider
 import com.humanperformcenter.shared.domain.storage.SecureStorage
-import com.humanperformcenter.shared.domain.usecase.StripeUseCase
-import com.humanperformcenter.ui.screens.PaymentScreen
 import com.humanperformcenter.ui.theme.HumanPerformAppTheme
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
@@ -75,5 +73,9 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        GooglePayRepository.handleGooglePayResult(requestCode, resultCode, data)
     }
 }

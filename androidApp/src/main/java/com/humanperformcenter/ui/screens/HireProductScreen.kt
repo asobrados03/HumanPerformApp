@@ -65,6 +65,7 @@ import com.humanperformcenter.ui.viewmodel.BillingPrefill
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.state.PaymentState
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
@@ -79,6 +80,7 @@ fun HireProductScreen(
     sesionViewModel: SessionViewModel
 ) {
     val context = LocalContext.current
+    val gpayState by paymentViewModel.paymentState.collectAsState()
 
     var showMonederoConfirmation by remember { mutableStateOf(false) }
 
@@ -169,6 +171,40 @@ fun HireProductScreen(
         viewModel.loadUserCoupons(userId)
         productos.forEach {
             println("Producto: ${it.name}, tipo: ${it.tipo_producto}")
+        }
+    }
+
+    LaunchedEffect(gpayState) {
+        when (val s = gpayState) {
+            is PaymentState.Loading -> {
+                // puedes mostrar un loading overlay con algún estado local si quieres
+                println("Cargando estado de pago...")
+            }
+            is PaymentState.Success -> {
+                // Igual que haces tras payment_result == true, asigna y navega
+                val selectedId = productoIdSeleccionado ?: return@LaunchedEffect
+                viewModel.assignProductToUser(
+                    userId = userId,
+                    productId = selectedId,
+                    paymentMethod = "card",
+                    cuponTexto.takeIf { it.isNotBlank() }
+                ) { success, error ->
+                    if (success) {
+                        Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
+                        navController.navigate(ProductDetail(productId = selectedId))
+                        viewModel.loadUserProducts(userId)
+                        mostrarCuponSheet = false
+                        cuponTexto = ""
+                        productoIdSeleccionado = null
+                    } else {
+                        errorMessage = error ?: "Error al asignar producto"
+                    }
+                }
+            }
+            is PaymentState.Error -> {
+                Toast.makeText(context, "Pago cancelado o fallido: ${s.message}", Toast.LENGTH_LONG).show()
+            }
+            PaymentState.Idle -> Unit
         }
     }
 
