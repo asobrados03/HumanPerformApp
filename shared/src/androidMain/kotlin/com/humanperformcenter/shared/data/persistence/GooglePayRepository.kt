@@ -48,7 +48,7 @@ object GooglePayRepository : PaymentRepository {
     }
 
     /** 1) Lanza Google Pay y devuelve el token */
-    override suspend fun requestGooglePay(requestJson: String): String =
+    /*override suspend fun requestGooglePay(requestJson: String): String =
         suspendCancellableCoroutine { continuation ->
             cont = continuation
             val paymentRequest = PaymentDataRequest.fromJson(requestJson)
@@ -74,6 +74,17 @@ object GooglePayRepository : PaymentRepository {
 
             task.addOnSuccessListener(successListener)
             task.addOnFailureListener(failureListener)
+        }*/
+    override suspend fun requestGooglePay(requestJson: String): String =
+        suspendCancellableCoroutine { continuation ->
+            cont = continuation
+            val paymentRequest = PaymentDataRequest.fromJson(requestJson)
+            val task = paymentsClient.loadPaymentData(paymentRequest)
+
+            // 👇 Esto muestra la UI del BuyFlow (evita el error 6)
+            AutoResolveHelper.resolveTask(task, activity, REQUEST_CODE)
+
+            continuation.invokeOnCancellation { cont = null }
         }
 
     /** 2) Envía el token al backend (Addon Payments) */
