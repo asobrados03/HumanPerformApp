@@ -22,6 +22,7 @@ object PaymentRepositoryImpl: PaymentRepository{
             parameter("postalCode", request.postalCode ?: 0)
             parameter("card_storage", request.card_storage ?: false)
             parameter("payer_ref", request.payer_ref ?: "")
+            parameter("select_stored_cards", request.show_stored ?: false)
             contentType(ContentType.Application.Json)
         }
         if (!response.status.isSuccess()) {
