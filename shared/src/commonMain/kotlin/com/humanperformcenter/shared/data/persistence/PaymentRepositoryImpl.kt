@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.humanperformcenter.shared.data.model.PaymentMethod
 import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.shared.data.model.RebillRequest
 import com.humanperformcenter.shared.domain.repository.PaymentRepository
@@ -32,9 +33,15 @@ object PaymentRepositoryImpl: PaymentRepository{
         return response.bodyAsText()
     }
 
-    override suspend fun getPaymentMethod(user_id: Int): String? {
+    override suspend fun getPaymentMethods(userId: Int): List<PaymentMethod> =
+        ApiClient.apiClient.get("${ApiClient.baseUrl}/payments/methods") {
+            parameter("user_id", userId)
+            accept(ContentType.Application.Json)
+        }.body()
+
+    override suspend fun getPaymentMethod(userId: Int): String? {
         val response: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/user/saved-payment-method") {
-            parameter("user_id", user_id)
+            parameter("user_id", userId)
             contentType(ContentType.Application.Json)
         }
 

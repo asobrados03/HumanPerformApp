@@ -1,6 +1,6 @@
 package com.humanperformcenter.shared.domain.repository
 
-import com.humanperformcenter.shared.data.model.Stripe.*
+import com.humanperformcenter.shared.data.model.stripe.*
 
 
 interface StripeRepository {

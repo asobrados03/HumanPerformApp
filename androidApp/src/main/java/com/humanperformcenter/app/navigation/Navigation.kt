@@ -41,6 +41,7 @@ import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.UserStatsScreen
 import com.humanperformcenter.ui.screens.ElectronicWalletScreen
 import com.humanperformcenter.ui.screens.StripeCheckoutScreen
+import com.humanperformcenter.ui.screens.ViewPaymentMethodScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
@@ -215,7 +216,7 @@ fun Navigation(
                                 when (option) {
                                     MenuOption.FAVORITOS -> navController.navigate(FavoriteCoach)
                                     MenuOption.DOCUMENTO -> navController.navigate(Document)
-                                    MenuOption.PAGO -> navController.navigate(Payment)
+                                    MenuOption.VER_PAGO -> navController.navigate(ViewPaymentMethod)
                                     MenuOption.MONEDERO_VIRTUAL -> navController.navigate(ElectronicWallet)
                                     MenuOption.CONFIGURACION -> navController.navigate(Configuration)
                                     MenuOption.ANADIR_CUPON   -> navController.navigate(AddCoupon)
@@ -224,6 +225,17 @@ fun Navigation(
                         )
                     }
                 }
+            }
+            composable<ViewPaymentMethod>{
+                val userData by userViewModel.userData.collectAsState()
+
+                val userId = userData?.id ?: -1
+
+                ViewPaymentMethodScreen(
+                    navController = navController,
+                    paymentViewModel = paymentViewModel,
+                    userId = userId
+                )
             }
             composable<AddCoupon>{
                 val userState by userViewModel.userData.collectAsState(initial = null)

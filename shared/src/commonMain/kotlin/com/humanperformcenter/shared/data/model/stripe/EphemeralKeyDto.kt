@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.model.Stripe
+package com.humanperformcenter.shared.data.model.stripe
 
 import kotlinx.serialization.Serializable
 

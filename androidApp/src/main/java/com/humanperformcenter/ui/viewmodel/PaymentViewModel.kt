@@ -4,11 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.shared.data.model.RebillRequest
-import com.humanperformcenter.shared.data.model.Stripe.CreatePaymentIntentRequest
+import com.humanperformcenter.shared.data.model.stripe.CreatePaymentIntentRequest
 import com.humanperformcenter.shared.domain.usecase.GooglePayUseCase
 import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
 import com.humanperformcenter.shared.domain.usecase.StripeUseCase
 import com.humanperformcenter.ui.viewmodel.state.PaymentState
+import com.humanperformcenter.ui.viewmodel.state.PaymentMethodsUiState
 import com.stripe.android.Stripe.Companion.API_VERSION
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +36,12 @@ class PaymentViewModel(
     private val _paymentMethod = MutableStateFlow<String?>(null)
     val paymentMethod: StateFlow<String?> = _paymentMethod.asStateFlow()
 
+    private val _viewPaymentMethodsUiState = MutableStateFlow<PaymentMethodsUiState>(PaymentMethodsUiState.Empty)
+
+    // StateFlow público de solo lectura para observar desde Compose
+    val viewPaymentMethodsUiState: StateFlow<PaymentMethodsUiState> = _viewPaymentMethodsUiState.asStateFlow()
+
+
     fun generatePaymentURL(request: PaymentRequest) {
         println("🔧 Generando URL de pago...")
         viewModelScope.launch {
@@ -60,8 +67,6 @@ class PaymentViewModel(
             )
         }
     }
-
-
 
     fun clearState() {
         _paymentUrl.value = null
@@ -152,16 +157,17 @@ class PaymentViewModel(
         }
     }
 
-    fun getPaymentMethod(user_id: Int){
+    fun getPaymentMethod(userId: Int){
         viewModelScope.launch {
             try {
-                val method = paymentUseCase.getPaymentMethod(user_id)
+                val method = paymentUseCase.getPaymentMethod(userId)
                 _paymentMethod.value = method
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al obtener el método de pago"
             }
         }
     }
+
     fun rebillWithSavedCard(rebillRequest: RebillRequest, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             try {
@@ -175,6 +181,33 @@ class PaymentViewModel(
                 onError("Excepción en rebill: ${e.message}")
             }
         }
+    }
+
+    fun getPaymentMethods(userId: Int) {
+        viewModelScope.launch {
+            _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Loading
+
+            try {
+                val methods = paymentUseCase.getPaymentMethods(userId)
+                _viewPaymentMethodsUiState.value = if (methods.isEmpty()) {
+                    PaymentMethodsUiState.Empty
+                } else {
+                    PaymentMethodsUiState.Success(methods)
+                }
+            } catch (e: Exception) {
+                _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error(
+                    e.message ?: "Error al obtener métodos de pago"
+                )
+            }
+        }
+    }
+
+    fun retry(userId: Int) {
+        getPaymentMethods(userId)
+    }
+
+    fun clearViewPaymentMethodsState() {
+        _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Empty
     }
 
 }

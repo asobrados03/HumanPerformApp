@@ -9,6 +9,7 @@ import com.google.android.gms.wallet.PaymentDataRequest
 import com.google.android.gms.wallet.Wallet
 import com.google.android.gms.wallet.WalletConstants
 import com.humanperformcenter.shared.data.model.GooglePayChargeRequest
+import com.humanperformcenter.shared.data.model.PaymentMethod
 import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.shared.data.model.RebillRequest
 import com.humanperformcenter.shared.data.network.ApiClient
@@ -97,11 +98,15 @@ object GooglePayRepository : PaymentRepository {
         return resp.status.isSuccess()
     }
 
-    override suspend fun getPaymentMethod(user_id: Int): String? {
+    override suspend fun getPaymentMethod(userId: Int): String? {
         TODO("Not yet implemented")
     }
 
     override suspend fun rebillPayment(rebillRequest: RebillRequest): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getPaymentMethods(userId: Int): List<PaymentMethod> {
         TODO("Not yet implemented")
     }
 

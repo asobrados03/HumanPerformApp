@@ -183,7 +183,7 @@ fun UserScreen(
                         MenuOption.CONFIGURACION to "Configuración",
                         MenuOption.FAVORITOS      to "Mis favoritos",
                         MenuOption.DOCUMENTO      to "Documento",
-                        MenuOption.PAGO           to "Método de pago",
+                        MenuOption.VER_PAGO           to "Ver metodos de pago",
                         MenuOption.MONEDERO_VIRTUAL to "Monedero Virtual",
                         MenuOption.ANADIR_CUPON   to "Añadir cupón"
                     )

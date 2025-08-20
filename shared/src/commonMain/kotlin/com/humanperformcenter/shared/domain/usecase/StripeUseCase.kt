@@ -1,7 +1,6 @@
 package com.humanperformcenter.shared.domain.usecase
 
-import com.humanperformcenter.shared.data.model.PaymentRequest
-import com.humanperformcenter.shared.data.model.Stripe.*
+import com.humanperformcenter.shared.data.model.stripe.*
 import com.humanperformcenter.shared.domain.repository.StripeRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
