@@ -51,10 +51,10 @@ class PaymentViewModel(
      * Lanza el flujo de Google Pay a partir del JSON de PaymentDataRequest,
      * y luego envía el token al backend dentro del use case.
      */
-    fun payWithGooglePay(requestJson: String, amountInCents: Int, currency: String = "EUR") {
+    fun payWithGooglePay(requestJson: String, amount: Int, currency: String) {
         viewModelScope.launch {
             _paymentState.value = PaymentState.Loading
-            googlePayUseCase(requestJson, amountInCents, currency).fold(
+            googlePayUseCase(requestJson, amount, currency).fold(
                 onSuccess = { token -> _paymentState.value = PaymentState.Success(token) },
                 onFailure = { e -> _paymentState.value = PaymentState.Error(e.localizedMessage ?: "Error") }
             )
