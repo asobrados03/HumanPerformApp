@@ -8,6 +8,7 @@ import com.google.android.gms.wallet.PaymentData
 import com.google.android.gms.wallet.PaymentDataRequest
 import com.google.android.gms.wallet.Wallet
 import com.google.android.gms.wallet.WalletConstants
+import com.humanperformcenter.shared.data.model.GooglePayChargeRequest
 import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.shared.data.model.RebillRequest
 import com.humanperformcenter.shared.data.network.ApiClient
@@ -89,15 +90,11 @@ object GooglePayRepository : PaymentRepository {
 
     /** 2) Envía el token al backend (Addon Payments) */
     override suspend fun sendTokenToBackend(token: String, amount: Int, currency: String): Boolean {
-        val response: HttpResponse = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/pago") {
+        val resp = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/pago") {
             contentType(ContentType.Application.Json)
-            setBody(mapOf(
-                "token" to token,
-                "amount" to amount,      // en céntimos
-                "currency" to currency   // "EUR"
-            ))
+            setBody(GooglePayChargeRequest(token, amount, currency))
         }
-        return response.status.isSuccess()
+        return resp.status.isSuccess()
     }
 
     override suspend fun getPaymentMethod(user_id: Int): String? {
