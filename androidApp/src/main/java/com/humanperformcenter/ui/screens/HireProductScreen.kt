@@ -417,8 +417,8 @@ fun HireProductScreen(
                             userCoupons
                         )
                         val amountCents = (precio * 100).toInt()
-                        val requestJson = buildPaymentRequestJson(precio)
-                        paymentViewModel.payWithGooglePay(requestJson, amountCents, "EUR")
+                        val requestJson = buildPaymentRequestJson(1.00/*precio*/)
+                        paymentViewModel.payWithGooglePay(requestJson, /*amountCents*/1, "EUR")
                     }
                 )
 
