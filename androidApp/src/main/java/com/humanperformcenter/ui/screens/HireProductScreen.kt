@@ -126,6 +126,7 @@ fun HireProductScreen(
     }
 
     var showAlertMethod: Boolean by remember { mutableStateOf(false) }
+    var mostrarTarjetasHpp by rememberSaveable { mutableStateOf(false) } // por defecto, mostrar en HPP
 
     val userId = sesionViewModel.userId.collectAsState().value ?: 0
     val userEmail = sesionViewModel.userEmail.collectAsState().value ?: ""
@@ -428,40 +429,7 @@ fun HireProductScreen(
 
                     val response = paymentViewModel.getPaymentMethod(userId)
 
-                    if (response != null) {
-                        showAlertMethod = true // Muestra diálogo con dos botones
-                    } else {
-                        showAlertMethod = false
-
-                        val selectedProduct = productos.first { it.id == productoIdSeleccionado }
-                        val precioFinal = calcularPrecioConDescuento(
-                            selectedProduct.id,
-                            selectedProduct.price ?: 0.0,
-                            userCoupons
-                        )
-                        val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
-                        val lastName = userName.split(" ").drop(1).joinToString(" ")
-                        val paymentRequest = PaymentRequest(
-                            amount = 1,
-                            currency = "EUR",
-                            firstName,
-                            lastName,
-                            email = userEmail,
-                            street = userStreet,
-                            postalCode = userPostalCode,
-                            city = "Segovia",
-                            card_storage = guardarTarjeta,
-                            payer_ref = if (guardarTarjeta) "user_$userId" else null
-                        )
-
-                        navController.currentBackStackEntry?.savedStateHandle?.apply {
-                            set("selected_product_id", selectedProduct.id)
-                            set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
-                        }
-                        paymentViewModel.generatePaymentURL(paymentRequest)
-                        navController.navigate(StartPayment)
-                        productoIdSeleccionado = selectedProduct.id
-                    }
+                    showAlertMethod = true
                 } , modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF1E88E5),
@@ -590,29 +558,8 @@ fun HireProductScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showAlertMethod = false
-
-                    val rebillRequest = RebillRequest(
-                        amount = 1,
-                        currency = "EUR",
-                        user_id = userId
-                    )
-                    paymentViewModel.rebillWithSavedCard(
-                        rebillRequest,
-                        onSuccess = {
-                            Toast.makeText(context, "Pago realizado con éxito", Toast.LENGTH_LONG).show()
-                        },
-                        onError = { errorMsg ->
-                            Toast.makeText(context, "Error: $errorMsg", Toast.LENGTH_LONG).show()
-                            println( "Error al procesar el pago: $errorMsg")
-                        }
-                    )
-                }) {
-                    Text("Usar tarjeta guardada")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showAlertMethod = false // Muestra botón de pago normal
+                    guardarTarjeta = false
+                    mostrarTarjetasHpp = true
                     val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
                     val lastName = userName.split(" ").drop(1).joinToString(" ")
                     val paymentRequest = PaymentRequest(
@@ -625,7 +572,41 @@ fun HireProductScreen(
                         postalCode = userPostalCode,
                         city = "Segovia",
                         card_storage = guardarTarjeta,
-                        payer_ref = if (guardarTarjeta) "user_$userId" else null
+                        payer_ref = "user_$userId",
+                        show_stored = mostrarTarjetasHpp
+                    )
+
+                    navController.currentBackStackEntry?.savedStateHandle?.apply {
+                        set("selected_product_id", selectedProduct.id)
+                        set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                    }
+                    paymentViewModel.generatePaymentURL(paymentRequest)
+                    navController.navigate(StartPayment)
+                    productoIdSeleccionado = selectedProduct.id
+
+                }) {
+                    Text("Usar tarjeta guardada")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showAlertMethod = false // Muestra botón de pago normal
+                    guardarTarjeta = true
+                    mostrarTarjetasHpp = false // No usar HPP
+                    val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
+                    val lastName = userName.split(" ").drop(1).joinToString(" ")
+                    val paymentRequest = PaymentRequest(
+                        amount = 1,
+                        currency = "EUR",
+                        firstName,
+                        lastName,
+                        email = userEmail,
+                        street = userStreet,
+                        postalCode = userPostalCode,
+                        city = "Segovia",
+                        card_storage = guardarTarjeta,
+                        payer_ref = if (guardarTarjeta) "user_$userId" else null,
+                        show_stored = mostrarTarjetasHpp
                     )
 
                     navController.currentBackStackEntry?.savedStateHandle?.apply {
@@ -641,8 +622,6 @@ fun HireProductScreen(
             }
         )
     }
-
-
 }
 
 

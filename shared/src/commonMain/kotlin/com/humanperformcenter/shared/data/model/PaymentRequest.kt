@@ -14,5 +14,6 @@ data class PaymentRequest(
     val postalCode: Int? = 0,
     val city: String? = "",
     val card_storage: Boolean? = false,
-    val payer_ref: String? = null
+    val payer_ref: String? = null,
+    val show_stored : Boolean? = true
 )
