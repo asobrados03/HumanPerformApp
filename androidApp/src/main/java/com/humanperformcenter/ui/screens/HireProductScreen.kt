@@ -424,21 +424,50 @@ fun HireProductScreen(
 
                 Spacer(Modifier.height(8.dp))
 
+                val selectedProduct = productos.first { it.id == productoIdSeleccionado }
+                val precioFinal = calcularPrecioConDescuento(
+                    selectedProduct.id,
+                    selectedProduct.price ?: 0.0,
+                    userCoupons
+                )
+                val amountInCents = (precioFinal * 100).toInt()
+
                 Button(onClick = {
-                    guardarTarjeta = true
+                    guardarTarjeta = false
+                    mostrarTarjetasHpp = true
+                    val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
+                    val lastName = userName.split(" ").drop(1).joinToString(" ")
+                    val paymentRequest = PaymentRequest(
+                        amount = 1,
+                        currency = "EUR",
+                        firstName,
+                        lastName,
+                        email = userEmail,
+                        street = userStreet,
+                        postalCode = userPostalCode,
+                        city = "Segovia",
+                        card_storage = guardarTarjeta,
+                        payer_ref = "user_$userId",
+                        show_stored = mostrarTarjetasHpp
+                    )
 
-                    val response = paymentViewModel.getPaymentMethod(userId)
+                    navController.currentBackStackEntry?.savedStateHandle?.apply {
+                        set("selected_product_id", selectedProduct.id)
+                        set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                    }
+                    paymentViewModel.generatePaymentURL(paymentRequest)
+                    navController.navigate(StartPayment)
+                    productoIdSeleccionado = selectedProduct.id
 
-                    showAlertMethod = true
-                } , modifier = Modifier.fillMaxWidth(),
+                }, modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF1E88E5),
-                        contentColor = Color.White
-                    )
-                ){
+                        contentColor = Color.White)
+                ) {
                     Text("Pagar con tarjeta 💳", fontSize = 16.sp)
                 }
                     Spacer(Modifier.height(8.dp))
+
                 Button(
                     onClick = {
                         val selectedProduct = productos.first { it.id == productoIdSeleccionado }
