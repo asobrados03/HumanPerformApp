@@ -702,7 +702,7 @@ private val allowedPaymentMethodsJson = """
     "type":"PAYMENT_GATEWAY",
     "parameters":{
       "gateway":"globalpayments",
-      "gatewayMerchantId":"BCR2DN7TWDXLFZBW"
+      "gatewayMerchantId":"367660321"
     }
   }
 }]
@@ -724,7 +724,7 @@ private fun buildPaymentRequestJson(precio: Double): String {
     }
     val merchantInfo = JSONObject().apply {
         put("merchantName", "Human Perform Center")
-        put("merchantId", "367660321") // Opcional si ya lo tienes en Google Console
+        put("merchantId", "BCR2DN7TWDXLFZBW") // Opcional si ya lo tienes en Google Console
     }
     return JSONObject().apply {
         put("apiVersion", 2)
