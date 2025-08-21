@@ -157,17 +157,6 @@ class PaymentViewModel(
         }
     }
 
-    fun getPaymentMethod(userId: Int){
-        viewModelScope.launch {
-            try {
-                val method = paymentUseCase.getPaymentMethod(userId)
-                _paymentMethod.value = method
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Error al obtener el método de pago"
-            }
-        }
-    }
-
     fun rebillWithSavedCard(rebillRequest: RebillRequest, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             try {

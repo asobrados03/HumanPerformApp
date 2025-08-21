@@ -525,6 +525,34 @@ fun HireProductScreen(
                 ) {
                     Text("Pagar con monedero virtual 👛", fontSize = 16.sp)
                 }
+
+                Button(
+                    onClick = {
+                        val rebillRequest = RebillRequest(
+                            user_id = userId,
+                            amount = 1,
+                            currency = "EUR",
+                            product_id = productoIdSeleccionado ?: 0,
+                        )
+                        paymentViewModel.rebillWithSavedCard(rebillRequest,
+                            onSuccess = {
+                                Toast.makeText(context, "Rebill exitoso", Toast.LENGTH_SHORT).show()
+                                viewModel.loadUserProducts(userId)
+                                navController.navigate(ProductDetail(productId = productoIdSeleccionado ?: 0))
+                            },
+                            onError = { error ->
+                                Toast.makeText(context, "Error al rebillar: $error", Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1E88E5),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Pago subs", fontSize = 16.sp)
+                }
             }
         }
     }
