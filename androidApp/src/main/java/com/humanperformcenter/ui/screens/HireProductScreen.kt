@@ -723,8 +723,8 @@ private fun buildPaymentRequestJson(precio: Double): String {
         put("countryCode", "ES")
     }
     val merchantInfo = JSONObject().apply {
-        put("merchantName", "MiApp Test")
-        put("merchantId", "Google Pay Sandbox Test") // Opcional si ya lo tienes en Google Console
+        put("merchantName", "Human Perform Center")
+        put("merchantId", "367660321") // Opcional si ya lo tienes en Google Console
     }
     return JSONObject().apply {
         put("apiVersion", 2)

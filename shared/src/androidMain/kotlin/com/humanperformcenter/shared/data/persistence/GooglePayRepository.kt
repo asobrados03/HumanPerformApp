@@ -36,7 +36,7 @@ object GooglePayRepository : PaymentRepository {
         Wallet.getPaymentsClient(
             activity,
             Wallet.WalletOptions.Builder()
-                .setEnvironment(WalletConstants.ENVIRONMENT_TEST)
+                .setEnvironment(WalletConstants.ENVIRONMENT_PRODUCTION)
                 .build()
         )
     }
