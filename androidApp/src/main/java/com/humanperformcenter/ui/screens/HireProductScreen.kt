@@ -702,7 +702,7 @@ private val allowedPaymentMethodsJson = """
     "type":"PAYMENT_GATEWAY",
     "parameters":{
       "gateway":"globalpayments",
-      "gatewayMerchantId":"367660321"
+      "gatewayMerchantId":"BCR2DN7TWDXLFZBW"
     }
   }
 }]
