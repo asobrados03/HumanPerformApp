@@ -13,6 +13,10 @@
 		7555FF83242A565900829871 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555FF82242A565900829871 /* ContentView.swift */; };
 		DB5BD6A72E58A6F30066990E /* shared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB5BD6A62E58A6F30066990E /* shared.framework */; };
 		DB5BD6A82E58A6F30066990E /* shared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DB5BD6A62E58A6F30066990E /* shared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		DB5BD6AA2E58C2560066990E /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5BD6A92E58C2510066990E /* WelcomeView.swift */; };
+		DB5BD6AC2E58C31C0066990E /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5BD6AB2E58C3170066990E /* RootView.swift */; };
+		DB5BD6AE2E58C3CF0066990E /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5BD6AD2E58C3C90066990E /* LoginView.swift */; };
+		DB5BD6B02E58C3DF0066990E /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5BD6AF2E58C3DA0066990E /* RegisterView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,6 +41,10 @@
 		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		DB5BD6A62E58A6F30066990E /* shared.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = shared.framework; path = "../shared/build/xcode-frameworks/Debug/iphonesimulator18.2/shared.framework"; sourceTree = "<group>"; };
+		DB5BD6A92E58C2510066990E /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		DB5BD6AB2E58C3170066990E /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		DB5BD6AD2E58C3C90066990E /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		DB5BD6AF2E58C3DA0066990E /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +87,10 @@
 		7555FF7D242A565900829871 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				DB5BD6AF2E58C3DA0066990E /* RegisterView.swift */,
+				DB5BD6AD2E58C3C90066990E /* LoginView.swift */,
+				DB5BD6AB2E58C3170066990E /* RootView.swift */,
+				DB5BD6A92E58C2510066990E /* WelcomeView.swift */,
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
 				7555FF82242A565900829871 /* ContentView.swift */,
 				7555FF8C242A565B00829871 /* Info.plist */,
@@ -189,7 +201,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB5BD6AC2E58C31C0066990E /* RootView.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
+				DB5BD6AA2E58C2560066990E /* WelcomeView.swift in Sources */,
+				DB5BD6B02E58C3DF0066990E /* RegisterView.swift in Sources */,
+				DB5BD6AE2E58C3CF0066990E /* LoginView.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
