@@ -20,7 +20,6 @@ struct WelcomeView: View {
             }
         }
         .padding(.horizontal, 32)
-        .navigationTitle("Bienvenido")
     }
 }
 
