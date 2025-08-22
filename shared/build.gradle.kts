@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
@@ -34,23 +36,28 @@ kotlin {
     // A step-by-step guide on how to include this library in an XCode
     // project can be found here:
     // https://developer.android.com/kotlin/multiplatform/migrate
-    val xcfName = "sharedKit"
+    val xcfName = "shared"
+
+    val xcf = XCFramework(xcfName)
 
     iosX64 {
         binaries.framework {
             baseName = xcfName
+            xcf.add(this) // 👈 importante
         }
     }
 
     iosArm64 {
         binaries.framework {
             baseName = xcfName
+            xcf.add(this) // 👈 importante
         }
     }
 
     iosSimulatorArm64 {
         binaries.framework {
             baseName = xcfName
+            xcf.add(this) // 👈 importante
         }
     }
 
