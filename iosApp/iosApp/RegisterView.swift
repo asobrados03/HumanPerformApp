@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import UniformTypeIdentifiers
 
 // MARK: - Modelos equivalentes
 
@@ -130,7 +129,6 @@ struct RegisterView: View {
     @State private var showSuccessAlert = false
 
     var body: some View {
-        if #available(iOS 17.0, *) {
             ScrollView {
                 VStack(spacing: 12) {
                     // AppBar minimal
@@ -241,7 +239,7 @@ struct RegisterView: View {
                         TextFieldIcon("Código Postal", text: $postalCode, systemImage: "building.2", keyboard: .numberPad)
                         FieldError(field: .POSTCODE, errors: fieldErrors)
                         
-                        TextFieldIcon("DNI", text: $dni, systemImage: "idbadge")
+TextFieldIcon("DNI", text: $dni, systemImage: "person.text.rectangle")
                         FieldError(field: .DNI, errors: fieldErrors)
                     }
                     
@@ -323,9 +321,6 @@ struct RegisterView: View {
             .alert("Te has registrado exitosamente", isPresented: $showSuccessAlert) {
                 Button("OK", role: .cancel) { }
             }
-        } else {
-            // Fallback on earlier versions
-        }
     }
 
     // MARK: - Actions
@@ -373,7 +368,7 @@ struct RegisterView: View {
         // Usamos PhotosPicker (iOS 16+). Alternativa: PHPickerViewController
         // Presentación inline para simplificar:
         Task {
-            if let result = try? await PhotosPicker.pick(source: .photoLibrary) {
+if let result = try? await ImagePickerHelper.pickFromLibrary() {
                 await MainActor.run {
                     profileImage = result.image
                     profilePicBytes = result.data
@@ -493,25 +488,17 @@ struct CameraView: UIViewControllerRepresentable {
 
 // MARK: - PhotosPicker helpers (galería)
 
-@available(iOS 16.0, *)
-extension PhotosPicker {
-    static func pick(source: PHPickerConfiguration.AssetRepresentationMode) async throws -> (image: UIImage, data: Data, suggestedName: String) {
-        // Presentación modal simplificada no está disponible fuera de un View.
-        // Para mantenerlo simple, creamos un picker independiente que la vista llama vía RegisterView.pickFromGallery()
-        throw CancellationError()
-    }
-}
 
 // Utilidad simple para usar PhotosPicker inline en Task (sin UI custom compleja)
 @MainActor
-enum PhotosPicker {
+enum ImagePickerHelper {
     struct Result {
         var image: UIImage
         var data: Data
         var suggestedName: String
     }
 
-    static func pick(source: UIImagePickerController.SourceType = .photoLibrary) async throws -> Result {
+static func pickFromLibrary() async throws -> Result {
         // Usamos un helper controlador temporal
         return try await withCheckedThrowingContinuation { continuation in
             let picker = UIImagePickerController()
