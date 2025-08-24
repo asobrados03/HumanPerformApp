@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -47,6 +47,11 @@
 		DB5BD6AF2E58C3DA0066990E /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		DB0C66A22E5A3C7900EC3069 /* viewModels */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = viewModels; sourceTree = "<group>"; };
+		DB0C66A62E5A3D3400EC3069 /* data */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = data; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		7555FF78242A565900829871 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -87,6 +92,8 @@
 		7555FF7D242A565900829871 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				DB0C66A62E5A3D3400EC3069 /* data */,
+				DB0C66A22E5A3C7900EC3069 /* viewModels */,
 				DB5BD6AF2E58C3DA0066990E /* RegisterView.swift */,
 				DB5BD6AD2E58C3C90066990E /* LoginView.swift */,
 				DB5BD6AB2E58C3170066990E /* RootView.swift */,
@@ -124,6 +131,10 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				DB0C66A22E5A3C7900EC3069 /* viewModels */,
+				DB0C66A62E5A3D3400EC3069 /* data */,
 			);
 			name = iosApp;
 			productName = iosApp;

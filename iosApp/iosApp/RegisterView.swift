@@ -10,21 +10,6 @@ struct SexOption: Identifiable, Hashable {
     let systemImage: String
 }
 
-struct RegisterRequest {
-    var firstName: String
-    var lastName: String
-    var email: String
-    var phone: String
-    var password: String
-    var sex: String
-    var dateOfBirthText: String
-    var postalCode: String
-    var postalAddress: String
-    var dni: String
-    var profilePicBytes: Data?
-    var profilePicName: String?
-}
-
 enum RegisterField: String, CaseIterable, Hashable {
     case FIRST_NAME, LAST_NAME, EMAIL, PHONE, PASSWORD, DATE_OF_BIRTH, SEX, POSTCODE, POSTAL_ADDRESS, DNI
 }
@@ -35,35 +20,6 @@ enum RegisterState: Equatable {
     case success
     case error(message: String)
     case validationErrors([RegisterField: String])
-}
-
-// MARK: - ViewModel (simulación de AuthViewModel)
-
-final class AuthViewModel: ObservableObject {
-    @Published var registerState: RegisterState = .idle
-
-    func resetStates() {
-        registerState = .idle
-    }
-
-    func register(_ req: RegisterRequest) {
-        // Simula validaciones del backend
-        var errs: [RegisterField:String] = [:]
-        if req.firstName.isEmpty { errs[.FIRST_NAME] = "El nombre es obligatorio" }
-        if req.lastName.isEmpty  { errs[.LAST_NAME]  = "Los apellidos son obligatorios" }
-        if !req.email.contains("@"){ errs[.EMAIL]   = "Correo inválido" }
-        if req.password.count < 6 { errs[.PASSWORD] = "Mínimo 6 caracteres" }
-        if req.sex.isEmpty       { errs[.SEX]       = "Selecciona sexo" }
-        if !errs.isEmpty {
-            registerState = .validationErrors(errs)
-            return
-        }
-        registerState = .loading
-        // Simula llamada de red
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.registerState = .success
-        }
-    }
 }
 
 // MARK: - Helpers
@@ -82,12 +38,9 @@ func filterDateInput(_ s: String) -> String {
 // MARK: - Vista principal
 
 struct RegisterView: View {
-    // Navegación externa
-    var onNavigateToLogin: () -> Void = {}
-
     // VM
     @StateObject private var vm = AuthViewModel()
-
+    
     // Campos
     @State private var firstName = ""
     @State private var lastName  = ""
@@ -110,7 +63,7 @@ struct RegisterView: View {
         SexOption(label: "Masculino", backendValue: "Male",   systemImage: "figure.male"),
         SexOption(label: "Femenino",  backendValue: "Female", systemImage: "figure.female")
     ]
-    @State private var selectedSex: SexOption?
+    @State private var selectedSexBackend = "" // "Male" | "Female" | ""
 
     // Términos
     @Environment(\.openURL) private var openURL
@@ -129,201 +82,248 @@ struct RegisterView: View {
     @State private var showSuccessAlert = false
 
     var body: some View {
-            ScrollView {
-                VStack(spacing: 12) {
-                    // AppBar minimal
-                    HStack {
-                        Image("colored_logo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 36)
-                        Spacer()
-                    }
-                    .padding(.top)
-                    
-                    Text("Registro")
-                        .font(.title)
-                        .bold()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    // Imagen de perfil
-                    VStack(spacing: 8) {
-                        ZStack {
-                            if let img = profileImage {
-                                Image(uiImage: img)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 120, height: 120)
-                                    .clipShape(Circle())
-                            } else {
-                                Circle()
-                                    .fill(Color.secondary.opacity(0.15))
-                                    .frame(width: 120, height: 120)
-                                    .overlay(Image(systemName: "person.fill")
-                                        .font(.system(size: 44)).foregroundColor(.secondary))
-                            }
-                        }
-                        HStack(spacing: 12) {
-                            Button("Cambiar foto") { showPhotoChooser = true }
-                            if profileImage != nil {
-                                Button("Quitar") {
-                                    profileImage = nil
-                                    profilePicBytes = nil
-                                    profilePicName = nil
-                                }
-                            }
-                        }
-                        .font(.callout)
-                    }
-                    .padding(.bottom, 6)
-                    
-                    // Campos
-                    Group {
-                        TextFieldIcon("Nombre", text: $firstName, systemImage: "person")
-                        FieldError(field: .FIRST_NAME, errors: fieldErrors)
-                        
-                        TextFieldIcon("Apellidos", text: $lastName, systemImage: "person")
-                        FieldError(field: .LAST_NAME, errors: fieldErrors)
-                        
-                        TextFieldIcon("Correo electrónico", text: $email, systemImage: "envelope", keyboard: .emailAddress, textContentType: .emailAddress)
-                        FieldError(field: .EMAIL, errors: fieldErrors)
-                        
-                        TextFieldIcon("Teléfono", text: $phone, systemImage: "phone", keyboard: .phonePad, textContentType: .telephoneNumber)
-                        FieldError(field: .PHONE, errors: fieldErrors)
-                        
-                        SecureFieldIcon(placeholder: "Contraseña", text: $password, isVisible: $passwordVisible)
-                        FieldError(field: .PASSWORD, errors: fieldErrors)
-                        
-                        // Sexo (Picker estilo menú)
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Image(systemName: selectedSex?.systemImage ?? "person.2")
-                                    .foregroundStyle(.secondary)
-                                Picker("Sexo", selection: Binding(
-                                    get: { selectedSex ?? SexOption(label: "", backendValue: "", systemImage: "person") },
-                                    set: { selectedSex = $0.backendValue.isEmpty ? nil : $0 }
-                                )) {
-                                    Text(selectedSex?.label ?? "Sexo")
-                                        .tag(SexOption(label: "", backendValue: "", systemImage: "person"))
-                                    ForEach(sexOptions) { opt in
-                                        Text(opt.label).tag(opt)
-                                    }
-                                }
-                                .pickerStyle(.menu)
-                                Spacer()
-                            }
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 12).strokeBorder(.quaternary))
-                            FieldError(field: .SEX, errors: fieldErrors)
-                        }
-                        
-                        // Fecha de nacimiento (máscara simple dd/MM/yyyy)
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Image(systemName: "calendar")
-                                    .foregroundStyle(.secondary)
-                                TextField("Fecha de nacimiento (dd/mm/yyyy)", text: Binding(
-                                    get: { dobText },
-                                    set: { dobText = filterDateInput($0) }
-                                ))
-                                .keyboardType(.numberPad)
-                            }
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 12).strokeBorder(.quaternary))
-                            FieldError(field: .DATE_OF_BIRTH, errors: fieldErrors)
-                        }
-                        
-                        TextFieldIcon("Dirección Postal", text: $postalAddress, systemImage: "mappin.and.ellipse")
-                        FieldError(field: .POSTAL_ADDRESS, errors: fieldErrors)
-                        
-                        TextFieldIcon("Código Postal", text: $postalCode, systemImage: "building.2", keyboard: .numberPad)
-                        FieldError(field: .POSTCODE, errors: fieldErrors)
-                        
-TextFieldIcon("DNI", text: $dni, systemImage: "person.text.rectangle")
-                        FieldError(field: .DNI, errors: fieldErrors)
-                    }
-                    
-                    // Términos
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 12) {
-                            Toggle(isOn: $acceptTerms) { Text("Acepto") }
-                                .labelsHidden()                         // oculta la etiqueta a la izquierda
-                            Button("términos y condiciones") {
-                                openURL(URL(string: "https://www.humanperformcenter.com/cliente/condiciones")!)
-                            }
-                            .underline()
-                        }
-                        HStack(spacing: 12) {
-                            Toggle(isOn: $acceptPrivacy) { Text("Acepto") }
-                                .labelsHidden()
-                            Button("política de privacidad") {
-                                openURL(URL(string: "https://www.humanperformcenter.com/cliente/politica-privacidad")!)
-                            }
-                            .underline()
-                        }
-                    }
-                    
-                    if let msg = errorMessage {
-                        Text(msg)
-                            .foregroundStyle(.red)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    
-                    // Estados
-                    switch vm.registerState {
-                    case .loading:
-                        ProgressView().padding(.vertical, 8)
-                    default: EmptyView()
-                    }
-                    
-                    // Botón registrar
-                    Button(action: onRegister) {
-                        Text("Registrarse")
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(LinearGradient(colors: [Color(red:0x6D/255, green:0x2A/255, blue:0x6F/255),
-                                                                Color(red:0xEF/255, green:0x0E/255, blue:0x29/255)],
-                                                       startPoint: .leading, endPoint: .trailing))
-                            .foregroundStyle(.white)
-                            .clipShape(Capsule())
-                    }
-                    .disabled(vm.registerState == .loading)
-                    
-                    // Enlace login
-                    Button("¿Ya tienes una cuenta? Inicia sesión", action: onNavigateToLogin)
-                        .padding(.bottom, 24)
-                }
-                .padding(.horizontal, 16)
+        ScrollView {
+            VStack(spacing: 12) {
+                headerSection
+                profileImageSection
+                personalInfoFields
+                contactFields
+                securityFields
+                addressFields
+                termsSection
+                errorSection
+                loadingSection
+                registerButton
+                loginLink
             }
-            .navigationTitle("Registro")
-            .navigationBarTitleDisplayMode(.inline)
-            .onChange(of: vm.registerState) { _, newValue in
-                switch newValue {
-                case .validationErrors(let fe): fieldErrors = fe
-                case .error(let message): errorMessage = message
-                case .success:
-                    vm.resetStates()
-                    clearForm()
-                    showSuccessAlert = true
-                default: break
+            .padding(.horizontal, 16)
+        }
+        .navigationTitle("Registro")
+        .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: vm.registerState, perform: handleStateChange)
+        .confirmationDialog("Foto de perfil", isPresented: $showPhotoChooser, titleVisibility: .visible) {
+            photoDialogButtons
+        }
+        .sheet(isPresented: $showCamera) {
+            CameraView(image: $profileImage, fileName: $profilePicName, fileData: $profilePicBytes)
+        }
+        .alert("Te has registrado exitosamente", isPresented: $showSuccessAlert) {
+            Button("OK", role: .cancel) { }
+        }
+    }
+
+    // MARK: - View Components
+
+    private var headerSection: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Image("colored_logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 36)
+                Spacer()
+            }
+            .padding(.top)
+        }
+    }
+
+    private var profileImageSection: some View {
+        VStack(spacing: 8) {
+            ZStack {
+                if let img = profileImage {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 120, height: 120)
+                        .clipShape(Circle())
+                } else {
+                    Circle()
+                        .fill(Color.secondary.opacity(0.15))
+                        .frame(width: 120, height: 120)
+                        .overlay(Image(systemName: "person.fill")
+                            .font(.system(size: 44)).foregroundColor(.secondary))
                 }
             }
-            // Selector de foto: cámara/galería
-            .confirmationDialog("Foto de perfil", isPresented: $showPhotoChooser, titleVisibility: .visible) {
-                Button("Cámara") { showCamera = true }
-                Button("Galería") { pickFromGallery() }
-                if profileImage != nil { Button("Eliminar", role: .destructive) { removePhoto() } }
-                Button("Cancelar", role: .cancel) { }
+            HStack(spacing: 12) {
+                Button("Cambiar foto") { showPhotoChooser = true }
+                if profileImage != nil {
+                    Button("Quitar") {
+                        profileImage = nil
+                        profilePicBytes = nil
+                        profilePicName = nil
+                    }
+                }
             }
-            .sheet(isPresented: $showCamera) {
-                CameraView(image: $profileImage, fileName: $profilePicName, fileData: $profilePicBytes)
+            .font(.callout)
+        }
+        .padding(.bottom, 6)
+    }
+
+    private var personalInfoFields: some View {
+        VStack(spacing: 12) {
+            TextFieldIcon("Nombre", text: $firstName, systemImage: "person")
+            FieldError(field: .FIRST_NAME, errors: fieldErrors)
+            
+            TextFieldIcon("Apellidos", text: $lastName, systemImage: "person")
+            FieldError(field: .LAST_NAME, errors: fieldErrors)
+        }
+    }
+
+    private var contactFields: some View {
+        VStack(spacing: 12) {
+            TextFieldIcon("Correo electrónico", text: $email, systemImage: "envelope", keyboard: .emailAddress, textContentType: .emailAddress)
+            FieldError(field: .EMAIL, errors: fieldErrors)
+            
+            TextFieldIcon("Teléfono", text: $phone, systemImage: "phone", keyboard: .phonePad, textContentType: .telephoneNumber)
+            FieldError(field: .PHONE, errors: fieldErrors)
+        }
+    }
+
+    private var securityFields: some View {
+        VStack(spacing: 12) {
+            SecureFieldIcon(placeholder: "Contraseña", text: $password, isVisible: $passwordVisible)
+            FieldError(field: .PASSWORD, errors: fieldErrors)
+            
+            // Sexo (Picker estilo menú)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Image(systemName: "person.2").foregroundStyle(.secondary)
+                    Picker("Sexo", selection: $selectedSexBackend) {
+                        Text("Sexo").tag("")
+                        ForEach(sexOptions, id: \.backendValue) { opt in
+                            Text(opt.label).tag(opt.backendValue)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    Spacer()
+                }
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: 12).strokeBorder(.quaternary))
+                FieldError(field: .SEX, errors: fieldErrors)
             }
-            .alert("Te has registrado exitosamente", isPresented: $showSuccessAlert) {
-                Button("OK", role: .cancel) { }
+            
+            // Fecha de nacimiento (máscara simple dd/MM/yyyy)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Image(systemName: "calendar")
+                        .foregroundStyle(.secondary)
+                    TextField("Fecha de nacimiento (dd/mm/yyyy)", text: Binding(
+                        get: { dobText },
+                        set: { dobText = filterDateInput($0) }
+                    ))
+                    .keyboardType(.numberPad)
+                }
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: 12).strokeBorder(.quaternary))
+                FieldError(field: .DATE_OF_BIRTH, errors: fieldErrors)
             }
+        }
+    }
+
+    private var addressFields: some View {
+        VStack(spacing: 12) {
+            TextFieldIcon("Dirección Postal", text: $postalAddress, systemImage: "mappin.and.ellipse")
+            FieldError(field: .POSTAL_ADDRESS, errors: fieldErrors)
+            
+            TextFieldIcon("Código Postal", text: $postalCode, systemImage: "building.2", keyboard: .numberPad)
+            FieldError(field: .POSTCODE, errors: fieldErrors)
+            
+            TextFieldIcon("DNI", text: $dni, systemImage: "person.text.rectangle")
+            FieldError(field: .DNI, errors: fieldErrors)
+        }
+    }
+
+    private var termsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                Toggle(isOn: $acceptTerms) { Text("Acepto") }
+                    .labelsHidden()
+                Text("Acepto")
+                Button("términos y condiciones") {
+                    openURL(URL(string: "https://www.humanperformcenter.com/cliente/condiciones")!)
+                }
+                .underline()
+            }
+            HStack(spacing: 12) {
+                Toggle(isOn: $acceptPrivacy) { Text("Acepto") }
+                    .labelsHidden()
+                Text("Acepto")
+                Button("política de privacidad") {
+                    openURL(URL(string: "https://www.humanperformcenter.com/cliente/politica-privacidad")!)
+                }
+                .underline()
+            }
+        }
+    }
+
+    private var errorSection: some View {
+        Group {
+            if let msg = errorMessage {
+                Text(msg)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private var loadingSection: some View {
+        Group {
+            switch vm.registerState {
+            case .loading:
+                ProgressView().padding(.vertical, 8)
+            default:
+                EmptyView()
+            }
+        }
+    }
+
+    private var registerButton: some View {
+        Button(action: onRegister) {
+            Text("Registrarse")
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(LinearGradient(colors: [Color(red:0x6D/255, green:0x2A/255, blue:0x6F/255),
+                                                    Color(red:0xEF/255, green:0x0E/255, blue:0x29/255)],
+                                           startPoint: .leading, endPoint: .trailing))
+                .foregroundStyle(.white)
+                .clipShape(Capsule())
+        }
+        .disabled(vm.registerState == .loading)
+    }
+
+    private var loginLink: some View {
+        NavigationLink(destination: LoginView()) {
+            Text("¿Ya tienes una cuenta? Inicia sesión")
+        }
+        .padding(.bottom, 24)
+    }
+
+    private var photoDialogButtons: some View {
+        Group {
+            Button("Cámara") { showCamera = true }
+            Button("Galería") { pickFromGallery() }
+            if profileImage != nil {
+                Button("Eliminar", role: .destructive) { removePhoto() }
+            }
+            Button("Cancelar", role: .cancel) { }
+        }
     }
 
     // MARK: - Actions
+
+    private func handleStateChange(_ newState: RegisterState) {
+        switch newState {
+        case .validationErrors(let fe):
+            fieldErrors = fe
+        case .error(let message):
+            errorMessage = message
+        case .success:
+            clearForm()
+            showSuccessAlert = true
+        default:
+            break
+        }
+    }
 
     private func onRegister() {
         // Validaciones locales simples
@@ -332,13 +332,13 @@ TextFieldIcon("DNI", text: $dni, systemImage: "person.text.rectangle")
         errorMessage = nil
         fieldErrors = [:]
 
-        let req = RegisterRequest(
+        let req = RegisterFormData(
             firstName: firstName,
             lastName: lastName,
             email: email,
             phone: phone,
             password: password,
-            sex: selectedSex?.backendValue ?? "",
+            sex: selectedSexBackend,
             dateOfBirthText: dobText,
             postalCode: postalCode,
             postalAddress: postalAddress,
@@ -352,7 +352,7 @@ TextFieldIcon("DNI", text: $dni, systemImage: "person.text.rectangle")
     private func clearForm() {
         firstName = ""; lastName = ""; email = ""; phone = ""
         password = ""; dobText = ""; postalCode = ""; postalAddress = ""; dni = ""
-        selectedSex = nil; acceptTerms = false; acceptPrivacy = false
+        selectedSexBackend = ""; acceptTerms = false; acceptPrivacy = false
         removePhoto()
         errorMessage = nil
         fieldErrors = [:]
@@ -365,10 +365,8 @@ TextFieldIcon("DNI", text: $dni, systemImage: "person.text.rectangle")
     }
 
     private func pickFromGallery() {
-        // Usamos PhotosPicker (iOS 16+). Alternativa: PHPickerViewController
-        // Presentación inline para simplificar:
         Task {
-if let result = try? await ImagePickerHelper.pickFromLibrary() {
+            if let result = try? await ImagePickerHelper.pickFromLibrary() {
                 await MainActor.run {
                     profileImage = result.image
                     profilePicBytes = result.data
@@ -401,7 +399,7 @@ struct TextFieldIcon: View {
             Image(systemName: systemImage).foregroundStyle(.secondary)
             TextField(placeholder, text: $text)
                 .keyboardType(keyboard)
-                .textContentType(textContentType)    // ✅ sin map, sin SwiftUI.TextContentType
+                .textContentType(textContentType)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
         }
@@ -488,8 +486,6 @@ struct CameraView: UIViewControllerRepresentable {
 
 // MARK: - PhotosPicker helpers (galería)
 
-
-// Utilidad simple para usar PhotosPicker inline en Task (sin UI custom compleja)
 @MainActor
 enum ImagePickerHelper {
     struct Result {
@@ -498,8 +494,7 @@ enum ImagePickerHelper {
         var suggestedName: String
     }
 
-static func pickFromLibrary() async throws -> Result {
-        // Usamos un helper controlador temporal
+    static func pickFromLibrary() async throws -> Result {
         return try await withCheckedThrowingContinuation { continuation in
             let picker = UIImagePickerController()
             picker.sourceType = .photoLibrary
@@ -526,7 +521,6 @@ static func pickFromLibrary() async throws -> Result {
                 }
             }
 
-            // Present top-most
             guard let root = UIApplication.shared.connectedScenes
                 .compactMap({ ($0 as? UIWindowScene)?.keyWindow })
                 .first?.rootViewController else {
@@ -535,7 +529,6 @@ static func pickFromLibrary() async throws -> Result {
             let del = Delegate(continuation)
             picker.delegate = del
 
-            // Retain delegate
             objc_setAssociatedObject(picker, "picker_delegate", del, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             root.present(picker, animated: true)
         }
