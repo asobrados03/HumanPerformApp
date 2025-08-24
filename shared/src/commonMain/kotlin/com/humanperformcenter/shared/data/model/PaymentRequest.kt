@@ -15,5 +15,8 @@ data class PaymentRequest(
     val city: String? = "",
     val card_storage: Boolean? = false,
     val payer_ref: String? = null,
-    val show_stored : Boolean? = true
+    val show_stored : Boolean? = true,
+    val subscribe : Boolean? = false,
+    val product_id: Int? = null,
+    val intervalmonths: Int? = null
 )
