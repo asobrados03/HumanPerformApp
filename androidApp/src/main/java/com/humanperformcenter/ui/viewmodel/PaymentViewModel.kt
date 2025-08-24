@@ -61,9 +61,14 @@ class PaymentViewModel(
     fun payWithGooglePay(requestJson: String, amount: Int, currency: String) {
         viewModelScope.launch {
             _paymentState.value = PaymentState.Loading
+            println("🟡 [GPay] VM.payWithGooglePay(amount=$amount, currency=$currency)")
             googlePayUseCase(requestJson, amount, currency).fold(
-                onSuccess = { token -> _paymentState.value = PaymentState.Success(token) },
-                onFailure = { e -> _paymentState.value = PaymentState.Error(e.localizedMessage ?: "Error") }
+                onSuccess = { token -> _paymentState.value = PaymentState.Success(token)
+                    println("🟢 [GPay] VM.onSuccess: token.len=${token.length}")
+                },
+                onFailure = { e -> _paymentState.value = PaymentState.Error(e.localizedMessage ?: "Error" )
+                    println("🔴 [GPay] VM.onFailure: ${e.message}")
+                }
             )
         }
     }

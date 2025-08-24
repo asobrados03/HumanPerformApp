@@ -85,6 +85,8 @@ object GooglePayRepository : PaymentRepository {
 
             // 👇 Esto muestra la UI del BuyFlow (evita el error 6)
             AutoResolveHelper.resolveTask(task, activity, REQUEST_CODE)
+            println("🟡 [GPay] Repo.requestGooglePay → resolveTask()")
+
 
             continuation.invokeOnCancellation { cont = null }
         }
@@ -94,7 +96,11 @@ object GooglePayRepository : PaymentRepository {
         val resp = ApiClient.apiClient.post("${ApiClient.baseUrl}/payments/googlepay") {
             contentType(ContentType.Application.Json)
             setBody(GooglePayChargeRequest(token, amount, currency))
+
         }
+        println("🟡 [GPay] Repo.sendTokenToBackend(token.len=${token.length}, amount=$amount, currency=$currency)")
+        println("🟢 [GPay] Backend response status=${resp.status.value}")
+
         return resp.status.isSuccess()
     }
 

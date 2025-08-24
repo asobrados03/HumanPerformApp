@@ -180,6 +180,8 @@ fun HireProductScreen(
             is PaymentState.Loading -> {
                 // puedes mostrar un loading overlay con algún estado local si quieres
                 println("Cargando estado de pago...")
+                println("🟡 [GPay] paymentState=$gpayState")
+
             }
             is PaymentState.Success -> {
                 // Igual que haces tras payment_result == true, asigna y navega
@@ -418,6 +420,9 @@ fun HireProductScreen(
                         )
                         val amountCents = (precio * 100).toInt()
                         val requestJson = buildPaymentRequestJson(1.00/*precio*/)
+                        println("🟢 [GPay] Click PayButton → productId=${selectedProduct.id}, precio=${"%.2f".format(precio)}, amountCents=$amountCents")
+                        println("🟢 [GPay] merchantId(Google)='BCR2DN7TWDXLFZBW', gateway='globalpayments', gatewayMerchantId(Addon)='367660321'")
+                        println("🟢 [GPay] PaymentDataRequest JSON=$requestJson")
                         paymentViewModel.payWithGooglePay(requestJson, /*amountCents*/100, "EUR")
                     }
                 )
@@ -448,7 +453,10 @@ fun HireProductScreen(
                         city = "Segovia",
                         card_storage = guardarTarjeta,
                         payer_ref = "user_$userId",
-                        show_stored = mostrarTarjetasHpp
+                        show_stored = mostrarTarjetasHpp,
+                        product_id = selectedProduct.id,
+                        intervalmonths = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
+                        subscribe = if (selectedProduct.tipo_producto == "recurrent") true else false
                     )
 
                     navController.currentBackStackEntry?.savedStateHandle?.apply {
@@ -630,7 +638,10 @@ fun HireProductScreen(
                         city = "Segovia",
                         card_storage = guardarTarjeta,
                         payer_ref = "user_$userId",
-                        show_stored = mostrarTarjetasHpp
+                        show_stored = mostrarTarjetasHpp,
+                        product_id = selectedProduct.id,
+                        intervalmonths = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
+                        subscribe = if (selectedProduct.tipo_producto == "recurrent") true else false
                     )
 
                     navController.currentBackStackEntry?.savedStateHandle?.apply {
@@ -663,7 +674,10 @@ fun HireProductScreen(
                         city = "Segovia",
                         card_storage = guardarTarjeta,
                         payer_ref = if (guardarTarjeta) "user_$userId" else null,
-                        show_stored = mostrarTarjetasHpp
+                        show_stored = mostrarTarjetasHpp,
+                        product_id = selectedProduct.id,
+                        intervalmonths = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
+                        subscribe = if (selectedProduct.tipo_producto == "recurrent") true else false
                     )
 
                     navController.currentBackStackEntry?.savedStateHandle?.apply {
