@@ -7,7 +7,10 @@ class AuthViewModel: ObservableObject {
     private let authUseCase = AuthUseCase(authRepository: AuthRepositoryImpl())
 
     func register(_ form: RegisterFormData) {
+        print("🟢 AuthViewModel.register() called")
+        
         // 1) Validación compartida
+        print("🟢 Starting validation...")
         let validationResult = UserValidator().validateRegister(
             firstName: form.firstName,
             lastName: form.lastName,
@@ -20,11 +23,14 @@ class AuthViewModel: ObservableObject {
             address: form.postalAddress,
             dni: form.dni
         )
-
+        
+        print("🟢 Validation result: \(validationResult)")
+        
         if let errorResult = validationResult as? RegisterValidationResult.Error {
+            print("🔴 Validation failed: \(errorResult.fieldErrors)")
             var fieldErrorMap: [RegisterField: String] = [:]
             for (k, v) in errorResult.fieldErrors {
-                let key = "\(k)"                       // nombre del enum en KMM
+                let key = "\(k)"
                 if let f = RegisterField(rawValue: key) {
                     fieldErrorMap[f] = v as String
                 }
@@ -34,17 +40,25 @@ class AuthViewModel: ObservableObject {
             }
             return
         }
-
+        
+        print("🟢 Validation passed, making API call...")
         // 2) Llamada real
         DispatchQueue.main.async { self.registerState = .loading }
-
         let kmmRequest = makeKMMRegisterRequest(from: form)
-        authUseCase.register(data: kmmRequest) { _, error in
+        
+        print("🟢 KMM Request created, calling authUseCase.register...")
+        authUseCase.register(data: kmmRequest) { result, error in
+            print("🟢 API Response received")
+            print("  - result: \(String(describing: result))")
+            print("  - error: \(String(describing: error))")
+            
             if let error = error {
+                print("🔴 API Error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     self.registerState = .error(message: error.localizedDescription)
                 }
             } else {
+                print("🟢 API Success")
                 DispatchQueue.main.async { self.registerState = .success }
             }
         }

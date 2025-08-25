@@ -1,21 +1,22 @@
 import SwiftUI
 
 struct WelcomeView: View {
+    @Binding var path: [Route]
+
     var body: some View {
         VStack(spacing: 20) {
-            // Logo
             Image("colored_logo")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 300, height: 300)
 
-            // Botón Registro → va a RegisterView
-            NavigationLink(destination: RegisterView()) {
+            // Botón Registro → va a RegisterView (vía path)
+            NavigationLink(value: Route.register) {
                 GradientPill(title: "Registro")
             }
 
-            // Botón Acceso → va a LoginView
-            NavigationLink(destination: LoginView()) {
+            // Botón Acceso → va a LoginView (vía path)
+            NavigationLink(value: Route.login) {
                 GradientPill(title: "Acceso")
             }
         }

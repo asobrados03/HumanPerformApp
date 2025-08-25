@@ -10,6 +10,7 @@ struct SexOption: Identifiable, Hashable {
     let systemImage: String
 }
 
+
 enum RegisterField: String, CaseIterable, Hashable {
     case FIRST_NAME, LAST_NAME, EMAIL, PHONE, PASSWORD, DATE_OF_BIRTH, SEX, POSTCODE, POSTAL_ADDRESS, DNI
 }
@@ -35,12 +36,61 @@ func filterDateInput(_ s: String) -> String {
     return out
 }
 
+/// Convierte dd/MM/yyyy a ddMMyyyy para el backend (sin separadores)
+func convertDateForBackend(_ dateText: String) -> String {
+    // Si el formato es dd/MM/yyyy, convertir a ddMMyyyy (solo números)
+    let digitsOnly = dateText.filter { $0.isNumber }
+    
+    // Asegurar que tenga exactamente 8 dígitos
+    if digitsOnly.count == 8 {
+        return digitsOnly
+    }
+    
+    // Si no tiene 8 dígitos, intentar parsear y reformatear
+    let components = dateText.split(separator: "/")
+    if components.count == 3 {
+        let day = String(components[0]).padLeft(toLength: 2, withPad: "0")
+        let month = String(components[1]).padLeft(toLength: 2, withPad: "0")
+        let year = String(components[2])
+        
+        // Verificar que el año tenga 4 dígitos
+        if year.count == 4 {
+            return "\(day)\(month)\(year)"
+        }
+    }
+    
+    return digitsOnly
+}
+
+// Extension para padding
+extension String {
+    func padLeft(toLength: Int, withPad character: Character) -> String {
+        let stringLength = self.count
+        if stringLength < toLength {
+            return String(repeatElement(character, count: toLength - stringLength)) + self
+        } else {
+            return String(self.suffix(toLength))
+        }
+    }
+}
+
 // MARK: - Vista principal
 
 struct RegisterView: View {
+    // Navegación externa
+    var onNavigateToLogin: () -> Void = {}
+    
+    // Environment para dismiss
+    @Environment(\.dismiss) private var dismiss
+
     // VM
     @StateObject private var vm = AuthViewModel()
     
+    // Inicializador por defecto (sin parámetros)
+    init(onNavigateToLogin: @escaping () -> Void = {}) {
+        self.onNavigateToLogin = onNavigateToLogin
+    }
+
     // Campos
     @State private var firstName = ""
     @State private var lastName  = ""
@@ -98,8 +148,18 @@ struct RegisterView: View {
             }
             .padding(.horizontal, 16)
         }
-        .navigationTitle("Registro")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.inline) // importante para centrar el contenido del .principal
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                // Usa el nombre de tu asset en el catálogo de Xcode
+                Image("colored_logo") // p.ej. "app_logo"
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 22) // ajusta a gusto (18–28 suele verse bien)
+                    .accessibilityLabel("Human Perform")
+                    .accessibilityAddTraits(.isHeader)
+            }
+        }
         .onChange(of: vm.registerState, perform: handleStateChange)
         .confirmationDialog("Foto de perfil", isPresented: $showPhotoChooser, titleVisibility: .visible) {
             photoDialogButtons
@@ -108,7 +168,9 @@ struct RegisterView: View {
             CameraView(image: $profileImage, fileName: $profilePicName, fileData: $profilePicBytes)
         }
         .alert("Te has registrado exitosamente", isPresented: $showSuccessAlert) {
-            Button("OK", role: .cancel) { }
+            Button("OK", role: .cancel) {
+                onNavigateToLogin()
+            }
         }
     }
 
@@ -116,14 +178,10 @@ struct RegisterView: View {
 
     private var headerSection: some View {
         VStack(spacing: 12) {
-            HStack {
-                Image("colored_logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 36)
-                Spacer()
-            }
-            .padding(.top)
+            Text("Registro")
+                .font(.title)
+                .bold()
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -134,12 +192,12 @@ struct RegisterView: View {
                     Image(uiImage: img)
                         .resizable()
                         .scaledToFill()
-                        .frame(width: 120, height: 120)
+                        .frame(width: 90, height: 90)
                         .clipShape(Circle())
                 } else {
                     Circle()
                         .fill(Color.secondary.opacity(0.15))
-                        .frame(width: 120, height: 120)
+                        .frame(width: 90, height: 90)
                         .overlay(Image(systemName: "person.fill")
                             .font(.system(size: 44)).foregroundColor(.secondary))
                 }
@@ -238,7 +296,6 @@ struct RegisterView: View {
             HStack(spacing: 12) {
                 Toggle(isOn: $acceptTerms) { Text("Acepto") }
                     .labelsHidden()
-                Text("Acepto")
                 Button("términos y condiciones") {
                     openURL(URL(string: "https://www.humanperformcenter.com/cliente/condiciones")!)
                 }
@@ -247,7 +304,6 @@ struct RegisterView: View {
             HStack(spacing: 12) {
                 Toggle(isOn: $acceptPrivacy) { Text("Acepto") }
                     .labelsHidden()
-                Text("Acepto")
                 Button("política de privacidad") {
                     openURL(URL(string: "https://www.humanperformcenter.com/cliente/politica-privacidad")!)
                 }
@@ -292,10 +348,8 @@ struct RegisterView: View {
     }
 
     private var loginLink: some View {
-        NavigationLink(destination: LoginView()) {
-            Text("¿Ya tienes una cuenta? Inicia sesión")
-        }
-        .padding(.bottom, 24)
+        Button("¿Ya tienes una cuenta? Inicia sesión", action: onNavigateToLogin)
+            .padding(.bottom, 24)
     }
 
     private var photoDialogButtons: some View {
@@ -312,23 +366,42 @@ struct RegisterView: View {
     // MARK: - Actions
 
     private func handleStateChange(_ newState: RegisterState) {
+        print("🟡 RegisterState changed to: \(newState)")
+        
         switch newState {
+        case .idle:
+            print("🟡 State: idle")
+        case .loading:
+            print("🟡 State: loading")
         case .validationErrors(let fe):
+            print("🟡 State: validationErrors - \(fe)")
             fieldErrors = fe
         case .error(let message):
+            print("🟡 State: error - \(message)")
             errorMessage = message
         case .success:
+            print("🟡 State: success")
             clearForm()
             showSuccessAlert = true
-        default:
-            break
         }
     }
 
     private func onRegister() {
+        print("🔵 onRegister() called")
+        
         // Validaciones locales simples
-        guard acceptTerms else { errorMessage = "Debes aceptar los términos y condiciones"; return }
-        guard acceptPrivacy else { errorMessage = "Debes aceptar la política de privacidad"; return }
+        guard acceptTerms else {
+            print("❌ Terms not accepted")
+            errorMessage = "Debes aceptar los términos y condiciones"
+            return
+        }
+        guard acceptPrivacy else {
+            print("❌ Privacy not accepted")
+            errorMessage = "Debes aceptar la política de privacidad"
+            return
+        }
+        
+        print("✅ Validations passed")
         errorMessage = nil
         fieldErrors = [:]
 
@@ -339,14 +412,24 @@ struct RegisterView: View {
             phone: phone,
             password: password,
             sex: selectedSexBackend,
-            dateOfBirthText: dobText,
+            dateOfBirthText: convertDateForBackend(dobText), // Convertir formato
             postalCode: postalCode,
             postalAddress: postalAddress,
             dni: dni,
             profilePicBytes: profilePicBytes,
             profilePicName: profilePicName
         )
+        
+        print("🔵 Calling vm.register with data:")
+        print("  - firstName: \(req.firstName)")
+        print("  - lastName: \(req.lastName)")
+        print("  - email: \(req.email)")
+        print("  - phone: \(req.phone)")
+        print("  - sex: \(req.sex)")
+        print("  - dobText: \(req.dateOfBirthText) (original: \(dobText))")
+        
         vm.register(req)
+        print("🔵 vm.register called")
     }
 
     private func clearForm() {
