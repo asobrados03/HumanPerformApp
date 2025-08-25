@@ -151,13 +151,7 @@ struct RegisterView: View {
         .navigationBarTitleDisplayMode(.inline) // importante para centrar el contenido del .principal
         .toolbar {
             ToolbarItem(placement: .principal) {
-                // Usa el nombre de tu asset en el catálogo de Xcode
-                Image("colored_logo") // p.ej. "app_logo"
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 22) // ajusta a gusto (18–28 suele verse bien)
-                    .accessibilityLabel("Human Perform")
-                    .accessibilityAddTraits(.isHeader)
+                NavBarLogo() // o NavBarLogo(name: "otro_asset", height: 24)
             }
         }
         .onChange(of: vm.registerState, perform: handleStateChange)
