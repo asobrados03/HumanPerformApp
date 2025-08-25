@@ -12,7 +12,7 @@ object SecureStorage {
     private lateinit var prefs: DataStore<Preferences>
 
     /** Inicializa el storage. Llama esto desde Android con tu prefs */
-    fun init(prefs: DataStore<Preferences>) {
+    fun initialize(prefs: DataStore<Preferences>) {
         this.prefs = prefs
     }
 

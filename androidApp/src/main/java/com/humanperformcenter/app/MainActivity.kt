@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        SecureStorage.init(DataStoreProvider.get(applicationContext))
+        SecureStorage.initialize(DataStoreProvider.get(applicationContext))
 
         // Esto prepara GooglePayRepository.paymentsClient
         GooglePayRepository.init(this)
