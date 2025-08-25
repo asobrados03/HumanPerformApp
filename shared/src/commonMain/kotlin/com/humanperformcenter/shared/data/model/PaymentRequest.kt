@@ -18,5 +18,5 @@ data class PaymentRequest(
     val show_stored : Boolean? = true,
     val subscribe : Boolean? = false,
     val product_id: Int? = null,
-    val intervalmonths: Int? = null
+    val interval_months: Int? = null
 )

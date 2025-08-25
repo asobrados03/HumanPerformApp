@@ -24,6 +24,9 @@ object PaymentRepositoryImpl: PaymentRepository{
             parameter("card_storage", request.card_storage ?: false)
             parameter("payer_ref", request.payer_ref ?: "")
             parameter("select_stored_cards", request.show_stored ?: false)
+            parameter("subscribe", request.subscribe ?: false)
+            parameter("product_id", request.product_id ?: 0)
+            parameter("interval_months", request.interval_months ?: 1)
             contentType(ContentType.Application.Json)
         }
         if (!response.status.isSuccess()) {
