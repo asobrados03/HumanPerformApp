@@ -12,6 +12,11 @@
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
 		7555FF83242A565900829871 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555FF82242A565900829871 /* ContentView.swift */; };
 		DB39E4262E5CA2B1002CB3B0 /* ServicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB39E4252E5CA2A8002CB3B0 /* ServicesView.swift */; };
+		DB39E42B2E5CC83B002CB3B0 /* MyProductsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB39E42A2E5CC834002CB3B0 /* MyProductsView.swift */; };
+		DB39E42D2E5CC87B002CB3B0 /* HireServicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB39E42C2E5CC86D002CB3B0 /* HireServicesView.swift */; };
+		DB39E4412E5CD1C6002CB3B0 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB39E4402E5CD1C0002CB3B0 /* CalendarView.swift */; };
+		DB39E4432E5CD244002CB3B0 /* UserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB39E4422E5CD23E002CB3B0 /* UserView.swift */; };
+		DB39E4452E5CD26B002CB3B0 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB39E4442E5CD268002CB3B0 /* StatsView.swift */; };
 		DB5BD6A72E58A6F30066990E /* shared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB5BD6A62E58A6F30066990E /* shared.framework */; };
 		DB5BD6A82E58A6F30066990E /* shared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DB5BD6A62E58A6F30066990E /* shared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		DB5BD6AA2E58C2560066990E /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5BD6A92E58C2510066990E /* WelcomeView.swift */; };
@@ -42,6 +47,11 @@
 		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		DB39E4252E5CA2A8002CB3B0 /* ServicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicesView.swift; sourceTree = "<group>"; };
+		DB39E42A2E5CC834002CB3B0 /* MyProductsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyProductsView.swift; sourceTree = "<group>"; };
+		DB39E42C2E5CC86D002CB3B0 /* HireServicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HireServicesView.swift; sourceTree = "<group>"; };
+		DB39E4402E5CD1C0002CB3B0 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		DB39E4422E5CD23E002CB3B0 /* UserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserView.swift; sourceTree = "<group>"; };
+		DB39E4442E5CD268002CB3B0 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		DB5BD6A62E58A6F30066990E /* shared.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = shared.framework; path = "../shared/build/xcode-frameworks/Debug/iphonesimulator18.2/shared.framework"; sourceTree = "<group>"; };
 		DB5BD6A92E58C2510066990E /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		DB5BD6AB2E58C3170066990E /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -95,6 +105,11 @@
 		7555FF7D242A565900829871 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				DB39E4442E5CD268002CB3B0 /* StatsView.swift */,
+				DB39E4422E5CD23E002CB3B0 /* UserView.swift */,
+				DB39E4402E5CD1C0002CB3B0 /* CalendarView.swift */,
+				DB39E42C2E5CC86D002CB3B0 /* HireServicesView.swift */,
+				DB39E42A2E5CC834002CB3B0 /* MyProductsView.swift */,
 				DB39E4252E5CA2A8002CB3B0 /* ServicesView.swift */,
 				DB39E4212E5C7361002CB3B0 /* components */,
 				DB0C66A62E5A3D3400EC3069 /* data */,
@@ -218,11 +233,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB39E4452E5CD26B002CB3B0 /* StatsView.swift in Sources */,
+				DB39E42B2E5CC83B002CB3B0 /* MyProductsView.swift in Sources */,
 				DB39E4262E5CA2B1002CB3B0 /* ServicesView.swift in Sources */,
+				DB39E42D2E5CC87B002CB3B0 /* HireServicesView.swift in Sources */,
 				DB5BD6AC2E58C31C0066990E /* RootView.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
+				DB39E4412E5CD1C6002CB3B0 /* CalendarView.swift in Sources */,
 				DB5BD6AA2E58C2560066990E /* WelcomeView.swift in Sources */,
 				DB5BD6B02E58C3DF0066990E /* RegisterView.swift in Sources */,
+				DB39E4432E5CD244002CB3B0 /* UserView.swift in Sources */,
 				DB5BD6AE2E58C3CF0066990E /* LoginView.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
 			);
