@@ -455,7 +455,7 @@ fun HireProductScreen(
                         payer_ref = "user_$userId",
                         show_stored = mostrarTarjetasHpp,
                         product_id = selectedProduct.id,
-                        intervalmonths = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
+                        interval_months = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
                         subscribe = if (selectedProduct.tipo_producto == "recurrent") true else false
                     )
 
@@ -640,7 +640,7 @@ fun HireProductScreen(
                         payer_ref = "user_$userId",
                         show_stored = mostrarTarjetasHpp,
                         product_id = selectedProduct.id,
-                        intervalmonths = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
+                        interval_months = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
                         subscribe = if (selectedProduct.tipo_producto == "recurrent") true else false
                     )
 
@@ -676,7 +676,7 @@ fun HireProductScreen(
                         payer_ref = if (guardarTarjeta) "user_$userId" else null,
                         show_stored = mostrarTarjetasHpp,
                         product_id = selectedProduct.id,
-                        intervalmonths = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
+                        interval_months = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
                         subscribe = if (selectedProduct.tipo_producto == "recurrent") true else false
                     )
 
