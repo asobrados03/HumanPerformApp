@@ -10,6 +10,10 @@ import SwiftUI
 
 struct StatsView: View {
     var body: some View {
-        Text("Hola Mundo")
+        VStack(spacing: 16) {
+            Text("Aqui se mostraran las estadisticas")
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
     }
 }

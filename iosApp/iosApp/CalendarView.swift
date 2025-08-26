@@ -9,6 +9,10 @@ import SwiftUI
 
 struct CalendarView: View {
     var body: some View {
-        Text("Hola Mundo")
+        VStack(spacing: 16) {
+            Text("Aqui se mostrara el calendario")
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
     }
 }

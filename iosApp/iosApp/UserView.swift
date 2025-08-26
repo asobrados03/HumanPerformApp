@@ -10,6 +10,10 @@ import SwiftUI
 
 struct UserView: View {
     var body: some View {
-        Text("Hola Mundo")
+        VStack(spacing: 16) {
+            Text("Aqui se mostrara la info del usuario")
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
     }
 }
