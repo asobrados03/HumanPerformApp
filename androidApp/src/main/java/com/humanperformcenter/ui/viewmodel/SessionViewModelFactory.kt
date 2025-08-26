@@ -13,7 +13,7 @@ class SessionViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SessionViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SessionViewModel(repository, prefs) as T
+            return SessionViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

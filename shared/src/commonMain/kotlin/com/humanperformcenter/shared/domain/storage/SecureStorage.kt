@@ -35,6 +35,10 @@ object SecureStorage {
         AuthPreferences.saveTokens(prefs, access, refresh)
     }
 
+    fun accessTokenFlow(): Flow<String> {
+        return AuthPreferences.accessTokenFlow(prefs)
+    }
+
     suspend fun saveUser(user: User) {
         AuthPreferences.saveUser(prefs, user)
     }

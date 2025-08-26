@@ -1,15 +1,12 @@
 package com.humanperformcenter.ui.viewmodel
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.parser.SQLiteParser
 import com.humanperformcenter.data.Session
 import com.humanperformcenter.data.SessionRepository
 import com.humanperformcenter.di.AppModule.userUseCase
 import com.humanperformcenter.shared.data.model.ServiceAvailable
-import com.humanperformcenter.shared.domain.security.AuthPreferences.accessTokenFlow
+import com.humanperformcenter.shared.domain.storage.SecureStorage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,8 +15,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class SessionViewModel(
-    private val repository: SessionRepository,
-    prefs: DataStore<Preferences>
+    private val repository: SessionRepository
 ) : ViewModel() {
 
     val getAllSessions: Flow<List<Session>> = repository.getAllSessions()
@@ -79,7 +75,7 @@ class SessionViewModel(
         }
     }
 
-    val isLoggedInFlow: Flow<Boolean> = accessTokenFlow(prefs)
+    val isLoggedInFlow: Flow<Boolean> = SecureStorage.accessTokenFlow()
         .map { token -> token.isNotBlank() }
         .distinctUntilChanged()
 }
