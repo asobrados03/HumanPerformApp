@@ -45,6 +45,7 @@ object SecureStorage {
         AuthPreferences.saveUser(prefs, user)
     }
 
+    @NativeCoroutines
     fun userFlow(): Flow<User?> = AuthPreferences.userFlow(prefs)
 
     /** Borra tokens (logout) */

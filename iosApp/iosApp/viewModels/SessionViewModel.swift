@@ -50,6 +50,7 @@ class SessionViewModel: ObservableObject {
                     // Si tu SecureStorage se expone como .shared, usa la línea de abajo:
                     for try await token in asyncSequence(for: SecureStorage.shared.accessTokenFlow()) {
                         await MainActor.run {
+                            print("token", token)
                             self.isLoggedIn = !token.isEmpty
                         }
                     }

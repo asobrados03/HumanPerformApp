@@ -27,6 +27,13 @@ struct HireServicesView: View {
             }
             .padding(12)
         }
+        .onAppear {
+            // Cuando la vista aparece, cargamos los datos necesarios
+            viewModel.loadAllServices()
+            if let userId = sessionViewModel.userId {
+                viewModel.loadUserProducts(userId: Int32(userId))
+            }
+        }
     }
 }
 

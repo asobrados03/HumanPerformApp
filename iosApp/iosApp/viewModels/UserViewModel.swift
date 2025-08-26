@@ -8,18 +8,22 @@
 
 import SwiftUI
 import shared
+import KMPNativeCoroutinesAsync
 
 /// ViewModel nativo (Swift) para gestionar el usuario actual en iOS.
 /// No llama a métodos inexistentes de KMM (p.ej. getStoredUser / getUserById).
 final class UserViewModel: ObservableObject {
 
-    // MARK: - Estado público
+    // Estado público
 
     /// Usuario autenticado actualmente (nil si no hay sesión)
     @Published var currentUser: User? = nil
+    @Published var isLoading: Bool = true
+    
+    private var userTask: Task<Void, Never>?
 
     /// ID del usuario autenticado (o -1 si no existe)
-    var currentUserId: Int32 { currentUser?.id ?? -1 }
+    var currentUserId: Int32? { currentUser?.id }
 
     /// ¿Hay sesión activa?
     var isUserAuthenticated: Bool { currentUser != nil }
@@ -34,11 +38,27 @@ final class UserViewModel: ObservableObject {
     private let userUseCase = UserUseCase(userRepository: UserRepositoryImpl())
 
     // MARK: - Init
-
-    init() {
-        // Si quieres hidratar desde almacenamiento seguro,
-        // hazlo explícitamente desde fuera con `setCurrentUser(...)`
-        // o llama a `hydrateFromStoredUser()` si implementas ese método.
+    init(onlyFirst: Bool = false) {
+        userTask?.cancel()
+        userTask = Task {
+            var didEmitOnce = false
+            do {
+                for try await user in asyncSequence(for: SecureStorage.shared.userFlow()) {
+                    if onlyFirst && didEmitOnce { continue }
+                    didEmitOnce = true
+                    await MainActor.run {
+                        self.currentUser = user        // <- ahora sí se pobla
+                        self.isLoading = false
+                    }
+                    if onlyFirst { break }            // emular firstOrNull()
+                }
+            } catch is CancellationError {
+                // ignore
+            } catch {
+                await MainActor.run { self.isLoading = false }
+                print("userFlow error:", error.localizedDescription)
+            }
+        }
     }
 
     // MARK: - Acciones de sesión

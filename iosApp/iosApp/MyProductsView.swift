@@ -33,6 +33,16 @@ struct MyProductsView: View {
             }
             .padding(12)
         }
+        .onAppear {
+            if let id = userViewModel.currentUserId {
+                serviceProductViewModel.loadUserProducts(userId: id)
+            }
+        }
+        .onChange(of: userViewModel.currentUserId) { newId in
+            if let id = newId {
+                serviceProductViewModel.loadUserProducts(userId: id)
+            }
+        }
         .confirmationDialog(
             selectedProduct.map { "Producto: \($0.name)" } ?? "",
             isPresented: $showProductOptions, titleVisibility: .visible
@@ -54,7 +64,7 @@ struct MyProductsView: View {
             Button("Cancelar", role: .cancel) { }
             Button("Sí, darse de baja", role: .destructive) {
                 if let prod = selectedProduct {
-                    serviceProductViewModel.unassignProductFromUser(productId: prod.id, userId: userViewModel.currentUserId)
+                    serviceProductViewModel.unassignProductFromUser(productId: prod.id, userId: userViewModel.currentUserId ?? -1)
                 }
                 selectedProduct = nil
             }

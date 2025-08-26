@@ -25,6 +25,7 @@
 		DB9F31962E5DACCA00BE1BAA /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9F31952E5DACC500BE1BAA /* SplashView.swift */; };
 		DB9F31982E5DAE4700BE1BAA /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9F31972E5DAE3F00BE1BAA /* AppState.swift */; };
 		DB9F31A32E5DB23600BE1BAA /* KMPNativeCoroutinesAsync in Frameworks */ = {isa = PBXBuildFile; productRef = DB9F31A22E5DB23600BE1BAA /* KMPNativeCoroutinesAsync */; };
+		DB9F31BD2E5DEFDE00BE1BAA /* KMPNativeCoroutinesCombine in Frameworks */ = {isa = PBXBuildFile; productRef = DB9F31BC2E5DEFDE00BE1BAA /* KMPNativeCoroutinesCombine */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -74,6 +75,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB9F31BD2E5DEFDE00BE1BAA /* KMPNativeCoroutinesCombine in Frameworks */,
 				DB9F31A32E5DB23600BE1BAA /* KMPNativeCoroutinesAsync in Frameworks */,
 				DB5BD6A72E58A6F30066990E /* shared.framework in Frameworks */,
 			);
@@ -480,6 +482,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DB9F31A12E5DB20000BE1BAA /* XCRemoteSwiftPackageReference "KMP-NativeCoroutines" */;
 			productName = KMPNativeCoroutinesAsync;
+		};
+		DB9F31BC2E5DEFDE00BE1BAA /* KMPNativeCoroutinesCombine */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB9F31A12E5DB20000BE1BAA /* XCRemoteSwiftPackageReference "KMP-NativeCoroutines" */;
+			productName = KMPNativeCoroutinesCombine;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
