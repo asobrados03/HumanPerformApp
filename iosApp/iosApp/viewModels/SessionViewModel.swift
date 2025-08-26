@@ -6,8 +6,10 @@
 //  Copyright © 2025 orgName. All rights reserved.
 //
 
+import Foundation
 import SwiftUI
 import shared
+import KMPNativeCoroutinesAsync
 
 class SessionViewModel: ObservableObject {
     // Datos básicos de sesión del usuario
@@ -22,6 +24,10 @@ class SessionViewModel: ObservableObject {
     //private let sessionRepository = SessionRepository()  // (Si hay implementación compartida)
     // O podríamos usar UserUseCase para ciertas operaciones de sesión (como allowed services):
     private let userUseCase = UserUseCase(userRepository: UserRepositoryImpl())
+    
+    @Published var isLoggedIn: Bool? = nil
+
+    private var observeTask: Task<Void, Never>?
 
     /// Actualiza las credenciales del usuario en la sesión (llamar tras login)
     func setUserCredentials(token: String, id: Int, email: String, name: String, street: String, postalCode: Int?) {
@@ -37,11 +43,26 @@ class SessionViewModel: ObservableObject {
         
     }
 
-    /// Verifica si existe un token válido para considerar al usuario "logged in"
-    var isLoggedIn: Bool {
-        // Está logueado si tenemos un accessToken no vacío (u otra condición según la app)
-        return (accessToken != nil && !(accessToken!.isEmpty))
-    }
+    func startObserving() {
+            observeTask?.cancel()
+            observeTask = Task {
+                do {
+                    // Si tu SecureStorage se expone como .shared, usa la línea de abajo:
+                    for try await token in asyncSequence(for: SecureStorage.shared.accessTokenFlow()) {
+                        await MainActor.run {
+                            self.isLoggedIn = !token.isEmpty
+                        }
+                    }
+                } catch is CancellationError {
+                    // ignorar cancelaciones
+                } catch {
+                    // ante error, considera tratar como "no logueado"
+                    await MainActor.run { self.isLoggedIn = false }
+                }
+            }
+        }
+
+        deinit { observeTask?.cancel() }
 
     /// (Opcional) Carga servicios permitidos para el usuario (similar a Android)
     func loadAllowedServicesForUser() {

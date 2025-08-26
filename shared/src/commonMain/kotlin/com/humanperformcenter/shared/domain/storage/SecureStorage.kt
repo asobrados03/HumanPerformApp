@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.domain.security.AuthPreferences
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
@@ -35,6 +36,7 @@ object SecureStorage {
         AuthPreferences.saveTokens(prefs, access, refresh)
     }
 
+    @NativeCoroutines
     fun accessTokenFlow(): Flow<String> {
         return AuthPreferences.accessTokenFlow(prefs)
     }

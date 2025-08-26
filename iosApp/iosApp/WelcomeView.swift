@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct WelcomeView: View {
-    @Binding var path: [Route]
+    let onLogin: () -> Void
+    let onRegister: () -> Void
 
     var body: some View {
         VStack(spacing: 20) {
@@ -10,13 +11,10 @@ struct WelcomeView: View {
                 .scaledToFit()
                 .frame(width: 300, height: 300)
 
-            // Botón Registro → va a RegisterView (vía path)
-            NavigationLink(value: Route.register) {
+            Button(action: onRegister) {
                 GradientPill(title: "Registro")
             }
-
-            // Botón Acceso → va a LoginView (vía path)
-            NavigationLink(value: Route.login) {
+            Button(action: onLogin) {
                 GradientPill(title: "Acceso")
             }
         }

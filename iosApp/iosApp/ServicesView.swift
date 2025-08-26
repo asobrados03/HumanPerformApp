@@ -8,33 +8,42 @@
 
 import SwiftUI
 
+enum ServicesSection: Int, CaseIterable, Identifiable {
+    case myProducts = 0, hire
+    var id: Int { rawValue }
+    var title: String { self == .myProducts ? "Mis productos" : "Contratar" }
+}
+
 struct ServicesView: View {
-    @State private var selectedSegment = 0
-    let segmentTitles = ["Mis productos", "Contratar"]
-    
+    @SceneStorage("services.selected") private var selectedRaw = ServicesSection.myProducts.rawValue
+    private var selected: Binding<ServicesSection> {
+        Binding(
+            get: { ServicesSection(rawValue: selectedRaw) ?? .myProducts },
+            set: { selectedRaw = $0.rawValue }
+        )
+    }
+
+    // 👇 inyección clara
+    init(initial: ServicesSection = .myProducts) {
+        _selectedRaw = SceneStorage(wrappedValue: initial.rawValue, "services.selected")
+    }
+
     var body: some View {
         VStack {
-            Picker("Seleccione sección", selection: $selectedSegment) {
-                Text("Mis productos").tag(0)
-                Text("Contratar").tag(1)
+            Picker("Seleccione sección", selection: selected) {
+                ForEach(ServicesSection.allCases) { s in
+                    Text(s.title).tag(s)
+                }
             }
-            .pickerStyle(SegmentedPickerStyle())
+            .pickerStyle(.segmented)
             .padding(.horizontal)
-                    
-            if selectedSegment == 0 {
-                MyProductsView()
-            } else {
-                HireServicesView()
+
+            switch selected.wrappedValue {
+            case .myProducts: MyProductsView()
+            case .hire:       HireServicesView()
             }
         }
-        .navigationBarTitleDisplayMode(.inline) // importante para centrar el contenido del .principal
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                NavBarLogo() // o NavBarLogo(name: "otro_asset", height: 24)
-            }
-        }
-        
-        BottomNavBar()
-        
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
     }
 }

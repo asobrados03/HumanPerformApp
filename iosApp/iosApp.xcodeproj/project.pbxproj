@@ -20,9 +20,11 @@
 		DB5BD6A72E58A6F30066990E /* shared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB5BD6A62E58A6F30066990E /* shared.framework */; };
 		DB5BD6A82E58A6F30066990E /* shared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DB5BD6A62E58A6F30066990E /* shared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		DB5BD6AA2E58C2560066990E /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5BD6A92E58C2510066990E /* WelcomeView.swift */; };
-		DB5BD6AC2E58C31C0066990E /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5BD6AB2E58C3170066990E /* RootView.swift */; };
 		DB5BD6AE2E58C3CF0066990E /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5BD6AD2E58C3C90066990E /* LoginView.swift */; };
 		DB5BD6B02E58C3DF0066990E /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5BD6AF2E58C3DA0066990E /* RegisterView.swift */; };
+		DB9F31962E5DACCA00BE1BAA /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9F31952E5DACC500BE1BAA /* SplashView.swift */; };
+		DB9F31982E5DAE4700BE1BAA /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9F31972E5DAE3F00BE1BAA /* AppState.swift */; };
+		DB9F31A32E5DB23600BE1BAA /* KMPNativeCoroutinesAsync in Frameworks */ = {isa = PBXBuildFile; productRef = DB9F31A22E5DB23600BE1BAA /* KMPNativeCoroutinesAsync */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -54,15 +56,17 @@
 		DB39E4442E5CD268002CB3B0 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		DB5BD6A62E58A6F30066990E /* shared.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = shared.framework; path = "../shared/build/xcode-frameworks/Debug/iphonesimulator18.2/shared.framework"; sourceTree = "<group>"; };
 		DB5BD6A92E58C2510066990E /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
-		DB5BD6AB2E58C3170066990E /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		DB5BD6AD2E58C3C90066990E /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		DB5BD6AF2E58C3DA0066990E /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
+		DB9F31952E5DACC500BE1BAA /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
+		DB9F31972E5DAE3F00BE1BAA /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		DB0C66A22E5A3C7900EC3069 /* viewModels */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = viewModels; sourceTree = "<group>"; };
 		DB0C66A62E5A3D3400EC3069 /* data */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = data; sourceTree = "<group>"; };
 		DB39E4212E5C7361002CB3B0 /* components */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = components; sourceTree = "<group>"; };
+		DB9F31992E5DAEA400BE1BAA /* navigation */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = navigation; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +74,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB9F31A32E5DB23600BE1BAA /* KMPNativeCoroutinesAsync in Frameworks */,
 				DB5BD6A72E58A6F30066990E /* shared.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -105,6 +110,9 @@
 		7555FF7D242A565900829871 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				DB9F31992E5DAEA400BE1BAA /* navigation */,
+				DB9F31972E5DAE3F00BE1BAA /* AppState.swift */,
+				DB9F31952E5DACC500BE1BAA /* SplashView.swift */,
 				DB39E4442E5CD268002CB3B0 /* StatsView.swift */,
 				DB39E4422E5CD23E002CB3B0 /* UserView.swift */,
 				DB39E4402E5CD1C0002CB3B0 /* CalendarView.swift */,
@@ -116,7 +124,6 @@
 				DB0C66A22E5A3C7900EC3069 /* viewModels */,
 				DB5BD6AF2E58C3DA0066990E /* RegisterView.swift */,
 				DB5BD6AD2E58C3C90066990E /* LoginView.swift */,
-				DB5BD6AB2E58C3170066990E /* RootView.swift */,
 				DB5BD6A92E58C2510066990E /* WelcomeView.swift */,
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
 				7555FF82242A565900829871 /* ContentView.swift */,
@@ -156,6 +163,7 @@
 				DB0C66A22E5A3C7900EC3069 /* viewModels */,
 				DB0C66A62E5A3D3400EC3069 /* data */,
 				DB39E4212E5C7361002CB3B0 /* components */,
+				DB9F31992E5DAEA400BE1BAA /* navigation */,
 			);
 			name = iosApp;
 			productName = iosApp;
@@ -187,6 +195,9 @@
 				Base,
 			);
 			mainGroup = 7555FF72242A565900829871;
+			packageReferences = (
+				DB9F31A12E5DB20000BE1BAA /* XCRemoteSwiftPackageReference "KMP-NativeCoroutines" */,
+			);
 			productRefGroup = 7555FF7C242A565900829871 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -234,12 +245,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				DB39E4452E5CD26B002CB3B0 /* StatsView.swift in Sources */,
+				DB9F31962E5DACCA00BE1BAA /* SplashView.swift in Sources */,
 				DB39E42B2E5CC83B002CB3B0 /* MyProductsView.swift in Sources */,
 				DB39E4262E5CA2B1002CB3B0 /* ServicesView.swift in Sources */,
 				DB39E42D2E5CC87B002CB3B0 /* HireServicesView.swift in Sources */,
-				DB5BD6AC2E58C31C0066990E /* RootView.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				DB39E4412E5CD1C6002CB3B0 /* CalendarView.swift in Sources */,
+				DB9F31982E5DAE4700BE1BAA /* AppState.swift in Sources */,
 				DB5BD6AA2E58C2560066990E /* WelcomeView.swift in Sources */,
 				DB5BD6B02E58C3DF0066990E /* RegisterView.swift in Sources */,
 				DB39E4432E5CD244002CB3B0 /* UserView.swift in Sources */,
@@ -451,6 +463,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		DB9F31A12E5DB20000BE1BAA /* XCRemoteSwiftPackageReference "KMP-NativeCoroutines" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rickclephas/KMP-NativeCoroutines";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DB9F31A22E5DB23600BE1BAA /* KMPNativeCoroutinesAsync */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB9F31A12E5DB20000BE1BAA /* XCRemoteSwiftPackageReference "KMP-NativeCoroutines" */;
+			productName = KMPNativeCoroutinesAsync;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7555FF73242A565900829871 /* Project object */;
 }

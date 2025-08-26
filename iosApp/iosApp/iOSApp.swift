@@ -8,9 +8,12 @@ struct iOSApp: App {
         SecureStorage.shared.initialize(prefs: prefs)
     }
     
+    @StateObject private var appState = AppState()
+    
     var body: some Scene {
         WindowGroup {
             RootView()
+                .environmentObject(appState)
         }
     }
 }

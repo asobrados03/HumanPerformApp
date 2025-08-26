@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.kotlinxSerialization)
+    id("com.rickclephas.kmp.nativecoroutines") version "1.0.0-ALPHA-43-kotlin-2.2.0-RC"
 }
 
 kotlin {
@@ -80,6 +81,8 @@ kotlin {
                 implementation(libs.ktor.client.auth)
                 implementation(libs.ktor.client.cio)
                 implementation(libs.ktor.client.logging)
+
+                implementation(libs.kmp.nativecoroutines.core)
 
                 implementation(libs.logging)
                 api(libs.datastore.preferences)
