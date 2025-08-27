@@ -73,6 +73,7 @@ struct UserView: View {
                 .foregroundColor(.secondary)
 
             Text("Saldo: \(vm.balance, specifier: "%.2f") €")
+
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(Color.yellow)
