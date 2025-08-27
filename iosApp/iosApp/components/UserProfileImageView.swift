@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 import shared
 
 /// Muestra la foto de perfil del usuario desde el servidor o una imagen local seleccionada.
@@ -14,7 +15,8 @@ struct UserProfileImageView: View {
                     .resizable()
                     .scaledToFill()
             } else if let photoName = photoName,
-                      let url = URL(string: "\(ApiClient.shared.baseUrl)/profile_pic/\(photoName)") {
+                      let encoded = photoName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+                      let url = URL(string: "\(ApiClient.shared.baseUrl)/profile_pic/\(encoded)") {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:

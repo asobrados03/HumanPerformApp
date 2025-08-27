@@ -48,52 +48,46 @@ object UserRepositoryImpl: UserRepository {
 
     /**
      * Envía un PUT a "/user" con el objeto LoginResponse completo (excepto token, que no cambia).
-     * Si el servidor responde 200 OK, devuelve Result.success(updatedUser).
-     * Si responde otro código o lanza excepción, devuelve Result.failure con el error.
+     * Si el servidor responde 200 OK, devuelve el `User` actualizado.
+     * Si responde otro código o ocurre una excepción, se lanza dicho error.
      */
-    override suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User> {
-        return try {
-            // 1) Serializamos el User a JSON
-            val userJson = Json.encodeToString(User.serializer(), user)
+    override suspend fun updateUser(user: User, profilePicBytes: ByteArray?): User {
+        // 1) Serializamos el User a JSON
+        val userJson = Json.encodeToString(User.serializer(), user)
 
-            // 2) Construimos los distintos parts del formulario
-            val formData = formData {
-                // Campo "user" con JSON
-                append(
-                    key = "user",
-                    value = userJson,
-                    headers = Headers.build {
-                        append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                    }
-                )
-
-                // Si hay bytes de imagen, lo añadimos como archivo
-                profilePicBytes?.let { bytes ->
-                    append("profile_pic", bytes, Headers.build {
-                        append(HttpHeaders.ContentType, "image/jpeg")
-                        append(HttpHeaders.ContentDisposition,
-                            "filename=\"${user.profilePictureName}\"")
-                    })
+        // 2) Construimos los distintos parts del formulario
+        val formData = formData {
+            // Campo "user" con JSON
+            append(
+                key = "user",
+                value = userJson,
+                headers = Headers.build {
+                    append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                 }
-            }
+            )
 
-            // 3) Hacemos la petición PUT con multipart/form-data
-            val resp: HttpResponse = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/user") {
-                setBody(MultiPartFormDataContent(formData))
+            // Si hay bytes de imagen, lo añadimos como archivo
+            profilePicBytes?.let { bytes ->
+                append("profile_pic", bytes, Headers.build {
+                    append(HttpHeaders.ContentType, "image/jpeg")
+                    append(HttpHeaders.ContentDisposition,
+                        "filename=\"${user.profilePictureName}\"")
+                })
             }
+        }
 
-            // 4) Procesamos la respuesta
-            if (resp.status == HttpStatusCode.OK) {
-                val updatedUser: User = resp.body()
-                SecureStorage.saveUser(updatedUser)
-                Result.success(updatedUser)
-            } else {
-                Result.failure(
-                    Exception("Error al actualizar usuario: código HTTP ${resp.status.value}")
-                )
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+        // 3) Hacemos la petición PUT con multipart/form-data
+        val resp: HttpResponse = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/user") {
+            setBody(MultiPartFormDataContent(formData))
+        }
+
+        // 4) Procesamos la respuesta
+        if (resp.status == HttpStatusCode.OK) {
+            val updatedUser: User = resp.body()
+            SecureStorage.saveUser(updatedUser)
+            return updatedUser
+        } else {
+            throw Exception("Error al actualizar usuario: código HTTP ${resp.status.value}")
         }
     }
 

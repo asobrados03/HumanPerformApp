@@ -133,7 +133,7 @@ class UserViewModel(
         _updateState.value = UpdateState.Loading
 
         viewModelScope.launch {
-            val result = userUseCase.updateUser(candidate, profilePicBytes)
+            val result = runCatching { userUseCase.updateUser(candidate, profilePicBytes) }
 
             result.onSuccess { newUser ->
                 _updateState.value = UpdateState.Success(newUser)
