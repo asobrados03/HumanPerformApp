@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import shared
 
 /// Opciones del menú de usuario mostradas en esta pantalla.
 private enum UserMenuOption: String, CaseIterable, Identifiable {
@@ -71,7 +72,8 @@ struct UserView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
 
-            Text("Saldo: \(vm.balance, format: .currency(code: \"EUR\"))")
+            Text("Saldo: \(vm.balance, specifier: "%.2f") €")
+
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(Color.yellow)
