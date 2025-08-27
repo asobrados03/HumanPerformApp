@@ -31,59 +31,67 @@ struct UserView: View {
             if vm.isLoading {
                 ProgressView()
             } else if let user = vm.currentUser {
-                List {
-                    VStack(spacing: 12) {
-                        Image(systemName: "person.circle")
-                            .resizable()
-                            .frame(width: 80, height: 80)
-                            .foregroundColor(.gray)
-                        Text(user.fullName)
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                        Text(user.email)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Text(user.phone)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-
-                        Text("Saldo: \(vm.balance, specifier: "%.2f") €")
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.yellow)
-                            .cornerRadius(8)
-                        HStack(spacing: 12) {
-                            NavigationLink("Mi perfil") {
-                                MyProfileView().environmentObject(vm)
+                VStack(spacing: 0) {
+                    header(for: user)
+                    List {
+                        ForEach(UserMenuOption.allCases) { option in
+                            NavigationLink(option.rawValue) {
+                                destinationView(for: option)
                             }
-                            .buttonStyle(.borderedProminent)
-
-                            NavigationLink("Editar perfil") {
-                                EditProfileView().environmentObject(vm)
-                            }
-                            .buttonStyle(.bordered)
-                        }
-
-                    }
-                    .frame(maxWidth: .infinity)
-                    .listRowInsets(EdgeInsets())
-                    .padding(.vertical)
-                    .onAppear { vm.loadBalance(for: user.id) }
-
-
-                    ForEach(UserMenuOption.allCases) { option in
-                        NavigationLink(option.rawValue) {
-                            destinationView(for: option)
                         }
                     }
+                    .listStyle(.plain)
                 }
-                .listStyle(.plain)
+                .onChange(of: vm.currentUser?.id) { id in
+                    if let id = id { vm.loadBalance(for: id) }
+                }
             } else {
                 Text("Sin usuario")
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
+    }
+
+    /// Encabezado con la información principal del usuario y acciones.
+    @ViewBuilder
+    private func header(for user: User) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "person.circle")
+                .resizable()
+                .frame(width: 80, height: 80)
+                .foregroundColor(.gray)
+            Text(user.fullName)
+                .font(.title3)
+                .fontWeight(.semibold)
+            Text(user.email)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            Text(user.phone)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            Text("Saldo: \(vm.balance, format: .currency(code: \"EUR\"))")
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.yellow)
+                .cornerRadius(8)
+
+            HStack(spacing: 12) {
+                NavigationLink("Mi perfil") {
+                    MyProfileView().environmentObject(vm)
+                }
+                .buttonStyle(.borderedProminent)
+
+                NavigationLink("Editar perfil") {
+                    EditProfileView().environmentObject(vm)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical)
+        .onAppear { vm.loadBalance(for: user.id) }
     }
 
     // MARK: - Destinos
