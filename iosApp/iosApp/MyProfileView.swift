@@ -18,14 +18,6 @@ struct MyProfileView: View {
                 ProgressView()
             } else if let user = vm.currentUser {
                 List {
-                    Section {
-                        HStack {
-                            Spacer()
-                            UserProfileImageView(photoName: user.profilePictureName, image: nil)
-                            Spacer()
-                        }
-                    }
-
                     Section(header: Text("Información Personal")) {
                         ProfileRow(label: "Nombre completo", value: user.fullName)
                         ProfileRow(label: "Correo electrónico", value: user.email)

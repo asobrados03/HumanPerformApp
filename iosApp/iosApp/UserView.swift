@@ -58,10 +58,13 @@ struct UserView: View {
     @ViewBuilder
     private func header(for user: User) -> some View {
         VStack(spacing: 12) {
-            Image(systemName: "person.circle")
-                .resizable()
-                .frame(width: 80, height: 80)
-                .foregroundColor(.gray)
+            Section {
+                HStack {
+                    Spacer()
+                    UserProfileImageView(photoName: user.profilePictureName, image: nil)
+                    Spacer()
+                }
+            }
             Text(user.fullName)
                 .font(.title3)
                 .fontWeight(.semibold)

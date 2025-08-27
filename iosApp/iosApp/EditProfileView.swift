@@ -4,6 +4,9 @@ import shared
 /// Permite editar campos del perfil de usuario y la foto.
 struct EditProfileView: View {
     @EnvironmentObject var vm: UserViewModel
+    
+    @Environment(\.dismiss) private var dismiss
+    @State private var pendingDismiss = false
 
     @State private var email: String = ""
     @State private var fullName: String = ""
@@ -81,7 +84,14 @@ struct EditProfileView: View {
                     let idx = sexOptions.firstIndex { $0.1.lowercased() == user.sex.lowercased() }
                     selectedSexIndex = idx ?? -1
                 }
-                .alert(alertMessage, isPresented: $showAlert) { Button("OK", role: .cancel) { } }
+                .alert(alertMessage, isPresented: $showAlert) {
+                    Button("OK", role: .cancel) {
+                        if pendingDismiss {
+                            pendingDismiss = false
+                            dismiss()          // pop tras cerrar la alerta
+                        }
+                    }
+                }
                 .confirmationDialog("Foto del perfil", isPresented: $showDialog, titleVisibility: .visible) {
                     if vm.currentUser?.profilePictureName != nil || image != nil {
                         Button("Eliminar foto", role: .destructive) { deletePhoto(user: user) }
@@ -134,9 +144,17 @@ struct EditProfileView: View {
         )
         let data = image?.jpegData(compressionQuality: 0.8)
         vm.updateUserProfile(updated, profilePicData: data) { success, error in
-            isSaving = false
-            alertMessage = success ? "Perfil actualizado" : (error ?? "Error desconocido")
-            showAlert = true
+            DispatchQueue.main.async {
+                isSaving = false
+                if success {
+                    alertMessage = "Perfil actualizado"
+                    pendingDismiss = true
+                    showAlert = true
+                } else {
+                    alertMessage = error ?? "Error desconocido"
+                    showAlert = true
+                }
+            }
         }
     }
 

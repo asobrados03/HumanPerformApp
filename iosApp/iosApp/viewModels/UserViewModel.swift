@@ -104,7 +104,6 @@ final class UserViewModel: ObservableObject {
         }
     }
 
-
     // MARK: - Actualización de perfil
 
     /// Actualiza el perfil de usuario usando el caso de uso compartido de KMM.
