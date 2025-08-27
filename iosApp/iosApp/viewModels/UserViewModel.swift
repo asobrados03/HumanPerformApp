@@ -121,43 +121,26 @@ final class UserViewModel: ObservableObject {
 
         // IMPORTANTE: la firma de `updateUser` en KMM debe existir.
         // Normalmente KMM expone las suspend functions con un completion (result, error).
-        userUseCase.updateUser(user: updatedUser, profilePicBytes: byteArray) { [weak self] result, error in
+        userUseCase.updateUser(user: updatedUser, profilePicBytes: byteArray) { [weak self] updated, error in
             guard let self = self else {
                 DispatchQueue.main.async { completion(false, "ViewModel deallocated") }
                 return
             }
 
-            // Si vino un error de KMM
             if let error = error {
                 DispatchQueue.main.async { completion(false, error.localizedDescription) }
                 return
             }
 
-            // Algunos generadores KMM exponen `result` como `User?`,
-            // otros como un "Result-like" bridged object.
-            // Intentamos ambas rutas de forma segura.
-
-            if let updated = result as? User {
-                // Caso 1: KMM nos devolvió el User directamente
+            if let updated = updated {
                 DispatchQueue.main.async {
                     self.currentUser = updated
                     completion(true, nil)
                 }
-                return
-            }
-
-            // Caso 2: resultado envuelto → intentar extraer un `User`
-            if let updated = Self.extractUser(from: result) {
+            } else {
                 DispatchQueue.main.async {
-                    self.currentUser = updated
-                    completion(true, nil)
+                    completion(false, "No se recibió usuario actualizado")
                 }
-                return
-            }
-
-            // Si llegamos aquí no pudimos interpretar el resultado
-            DispatchQueue.main.async {
-                completion(false, "Formato de resultado desconocido al actualizar usuario")
             }
         }
     }
@@ -223,21 +206,4 @@ final class UserViewModel: ObservableObject {
         return kba
     }
 
-    /// Intenta extraer un `User` de un resultado bridged de KMM (en caso de envoltorio tipo `Result`)
-    private static func extractUser(from result: Any?) -> User? {
-        guard let result = result else { return nil }
-        // Intento directo
-        if let user = result as? User { return user }
-
-        // Inspección superficial por reflexión
-        let mirror = Mirror(reflecting: result)
-        for child in mirror.children {
-            if let user = child.value as? User { return user }
-            let nested = Mirror(reflecting: child.value)
-            for inner in nested.children {
-                if let user = inner.value as? User { return user }
-            }
-        }
-        return nil
-    }
 }
