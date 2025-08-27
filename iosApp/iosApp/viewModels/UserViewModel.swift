@@ -162,6 +162,37 @@ final class UserViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Eliminación de foto de perfil
+    /// Elimina la foto de perfil del usuario en el servidor.
+    func deleteProfilePic(for user: User, completion: @escaping (Bool, String?) -> Void) {
+        let req = DeleteProfilePicRequest(email: user.email, profilePictureName: user.profilePictureName)
+        userUseCase.deleteProfilePic(req: req) { [weak self] _, error in
+            guard let self = self else {
+                DispatchQueue.main.async { completion(false, "ViewModel deallocated") }
+                return
+            }
+            if let error = error {
+                DispatchQueue.main.async { completion(false, error.localizedDescription) }
+            } else {
+                DispatchQueue.main.async {
+                    self.currentUser = User(
+                        id: user.id,
+                        fullName: user.fullName,
+                        email: user.email,
+                        phone: user.phone,
+                        sex: user.sex,
+                        dateOfBirth: user.dateOfBirth,
+                        postcode: user.postcode,
+                        postAddress: user.postAddress,
+                        dni: user.dni,
+                        profilePictureName: nil
+                    )
+                    completion(true, nil)
+                }
+            }
+        }
+    }
+
     // MARK: - (Opcional) Hidratar desde almacenamiento seguro
     // Si más adelante añades en KMM un método `suspend fun getStoredUser(): User?`,
     // podrás descomentar e implementar este helper.

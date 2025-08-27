@@ -1,35 +1,62 @@
-//
-//  EditProfileView.swift
-//  iosApp
-//
-//  Created by ChatGPT on 2025-08-27.
-//
-
 import SwiftUI
 import shared
 
-/// Permite editar campos básicos del perfil de usuario.
+/// Permite editar campos del perfil de usuario y la foto.
 struct EditProfileView: View {
     @EnvironmentObject var vm: UserViewModel
 
+    @State private var email: String = ""
     @State private var fullName: String = ""
+    @State private var dateOfBirth: String = ""
+    @State private var selectedSexIndex: Int = -1
     @State private var phone: String = ""
     @State private var postAddress: String = ""
     @State private var postcode: String = ""
+    @State private var dni: String = ""
+
+    @State private var image: UIImage? = nil
+    @State private var showPicker = false
+    @State private var pickerSource: UIImagePickerController.SourceType = .photoLibrary
+    @State private var showDialog = false
+
     @State private var isSaving = false
     @State private var showAlert = false
     @State private var alertMessage = ""
+
+    private let sexOptions = [("Masculino","Male"),("Femenino","Female")]
 
     var body: some View {
         Group {
             if let user = vm.currentUser {
                 Form {
+                    Section {
+                        HStack {
+                            Spacer()
+                            EditableUserProfileImageView(photoName: user.profilePictureName, image: image) {
+                                showDialog = true
+                            }
+                            Spacer()
+                        }
+                    }
+
                     Section(header: Text("Datos personales")) {
+                        TextField("Correo", text: $email)
+                            .disabled(true)
                         TextField("Nombre completo", text: $fullName)
+                        TextField("Fecha de nacimiento (dd/MM/yyyy)", text: $dateOfBirth)
+                            .keyboardType(.numbersAndPunctuation)
+                        Picker("Sexo", selection: $selectedSexIndex) {
+                            Text("").tag(-1)
+                            ForEach(sexOptions.indices, id: \.self) { i in
+                                Text(sexOptions[i].0).tag(i)
+                            }
+                        }
                         TextField("Teléfono", text: $phone)
+                            .keyboardType(.phonePad)
                         TextField("Dirección postal", text: $postAddress)
                         TextField("Código postal", text: $postcode)
                             .keyboardType(.numberPad)
+                        TextField("DNI", text: $dni)
                     }
 
                     Section {
@@ -37,23 +64,37 @@ struct EditProfileView: View {
                             if isSaving {
                                 ProgressView()
                             } else {
-                                Text("Guardar")
-                                    .frame(maxWidth: .infinity)
+                                Text("Guardar").frame(maxWidth: .infinity)
                             }
                         }
                     }
                 }
                 .onAppear {
+                    email = user.email
                     fullName = user.fullName
                     phone = user.phone
                     postAddress = user.postAddress
-                    if let pc = user.postcode {
-                            postcode = String(pc.int32Value)   // <- en vez de user.postcode.map { ... }
-                        } else {
-                            postcode = ""
-                        }
+                    if let pc = user.postcode { postcode = String(pc.int32Value) } else { postcode = "" }
+                    dni = user.dni ?? ""
+                    let parts = user.dateOfBirth.split(separator: "-")
+                    if parts.count == 3 { dateOfBirth = "\(parts[2])/\(parts[1])/\(parts[0])" }
+                    let idx = sexOptions.firstIndex { $0.1.lowercased() == user.sex.lowercased() }
+                    selectedSexIndex = idx ?? -1
                 }
                 .alert(alertMessage, isPresented: $showAlert) { Button("OK", role: .cancel) { } }
+                .confirmationDialog("Foto del perfil", isPresented: $showDialog, titleVisibility: .visible) {
+                    if vm.currentUser?.profilePictureName != nil || image != nil {
+                        Button("Eliminar foto", role: .destructive) { deletePhoto(user: user) }
+                    }
+                    Button("Cámara") { pickerSource = .camera; showPicker = true }
+                    Button("Galería") { pickerSource = .photoLibrary; showPicker = true }
+                    Button("Cancelar", role: .cancel) { }
+                }
+                .sheet(isPresented: $showPicker) {
+                    ImagePicker(sourceType: pickerSource) { img in
+                        image = img
+                    }
+                }
             } else {
                 Text("Sin usuario")
             }
@@ -65,30 +106,47 @@ struct EditProfileView: View {
 
     private func save(user: User) {
         isSaving = true
-        
-        // Build KotlinInt? from the text field (o conserva el existente si está vacío o es inválido)
         let kPostcode: KotlinInt? = {
             guard !postcode.isEmpty, let v = Int32(postcode) else { return user.postcode }
-            return KotlinInt(value: v)   // <- clave: usar KotlinInt
+            return KotlinInt(value: v)
         }()
-        
+        let parts = dateOfBirth.split(separator: "/")
+        let backendDate: String = {
+            if parts.count == 3 {
+                let d = parts[0].padding(toLength: 2, withPad: "0", startingAt: 0)
+                let m = parts[1].padding(toLength: 2, withPad: "0", startingAt: 0)
+                let y = parts[2].padding(toLength: 4, withPad: "0", startingAt: 0)
+                return "\(y)-\(m)-\(d)"
+            } else { return user.dateOfBirth }
+        }()
+        let newSex = selectedSexIndex >= 0 ? sexOptions[selectedSexIndex].1 : user.sex
         let updated = User(
             id: user.id,
             fullName: fullName,
             email: user.email,
             phone: phone,
-            sex: user.sex,
-            dateOfBirth: user.dateOfBirth,
+            sex: newSex,
+            dateOfBirth: backendDate,
             postcode: kPostcode,
             postAddress: postAddress,
-            dni: user.dni,
+            dni: dni.isEmpty ? nil : dni,
             profilePictureName: user.profilePictureName
         )
-        vm.updateUserProfile(updated, profilePicData: nil) { success, error in
+        let data = image?.jpegData(compressionQuality: 0.8)
+        vm.updateUserProfile(updated, profilePicData: data) { success, error in
             isSaving = false
             alertMessage = success ? "Perfil actualizado" : (error ?? "Error desconocido")
             showAlert = true
         }
     }
-}
 
+    private func deletePhoto(user: User) {
+        vm.deleteProfilePic(for: user) { success, error in
+            alertMessage = success ? "Foto eliminada" : (error ?? "Error desconocido")
+            showAlert = true
+            if success {
+                image = nil
+            }
+        }
+    }
+}
