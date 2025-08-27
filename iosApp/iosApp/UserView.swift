@@ -46,10 +46,30 @@ struct UserView: View {
                         Text(user.phone)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+
+                        Text("Saldo: \(vm.balance, specifier: "%.2f") €")
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.yellow)
+                            .cornerRadius(8)
+                        HStack(spacing: 12) {
+                            NavigationLink("Mi perfil") {
+                                MyProfileView().environmentObject(vm)
+                            }
+                            .buttonStyle(.borderedProminent)
+
+                            NavigationLink("Editar perfil") {
+                                EditProfileView().environmentObject(vm)
+                            }
+                            .buttonStyle(.bordered)
+                        }
+
                     }
                     .frame(maxWidth: .infinity)
                     .listRowInsets(EdgeInsets())
                     .padding(.vertical)
+                    .onAppear { vm.loadBalance(for: user.id) }
+
 
                     ForEach(UserMenuOption.allCases) { option in
                         NavigationLink(option.rawValue) {

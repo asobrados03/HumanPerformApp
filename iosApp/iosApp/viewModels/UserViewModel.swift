@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import Foundation
 import shared
 import KMPNativeCoroutinesAsync
 
@@ -19,6 +20,8 @@ final class UserViewModel: ObservableObject {
     /// Usuario autenticado actualmente (nil si no hay sesión)
     @Published var currentUser: User? = nil
     @Published var isLoading: Bool = true
+    /// Saldo actual del monedero virtual
+    @Published var balance: Double = 0.0
     
     private var userTask: Task<Void, Never>?
 
@@ -74,6 +77,18 @@ final class UserViewModel: ObservableObject {
     func clearCurrentUser() {
         DispatchQueue.main.async { [weak self] in
             self?.currentUser = nil
+        }
+    }
+
+    // MARK: - Balance
+
+    /// Solicita al caso de uso el saldo actual del usuario.
+    /// - Parameter userId: identificador del usuario en KMM.
+    func loadBalance(for userId: Int32) {
+        userUseCase.getEwalletBalance(userId: userId) { [weak self] result, error in
+            DispatchQueue.main.async {
+                self?.balance = result?.doubleValue ?? 0.0
+            }
         }
     }
 
