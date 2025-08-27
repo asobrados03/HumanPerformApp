@@ -47,7 +47,11 @@ struct EditProfileView: View {
                     fullName = user.fullName
                     phone = user.phone
                     postAddress = user.postAddress
-                    postcode = user.postcode.map { String($0) } ?? ""
+                    if let pc = user.postcode {
+                            postcode = String(pc.int32Value)   // <- en vez de user.postcode.map { ... }
+                        } else {
+                            postcode = ""
+                        }
                 }
                 .alert(alertMessage, isPresented: $showAlert) { Button("OK", role: .cancel) { } }
             } else {
@@ -61,6 +65,13 @@ struct EditProfileView: View {
 
     private func save(user: User) {
         isSaving = true
+        
+        // Build KotlinInt? from the text field (o conserva el existente si está vacío o es inválido)
+        let kPostcode: KotlinInt? = {
+            guard !postcode.isEmpty, let v = Int32(postcode) else { return user.postcode }
+            return KotlinInt(value: v)   // <- clave: usar KotlinInt
+        }()
+        
         let updated = User(
             id: user.id,
             fullName: fullName,
@@ -68,7 +79,7 @@ struct EditProfileView: View {
             phone: phone,
             sex: user.sex,
             dateOfBirth: user.dateOfBirth,
-            postcode: Int32(postcode) ?? user.postcode,
+            postcode: kPostcode,
             postAddress: postAddress,
             dni: user.dni,
             profilePictureName: user.profilePictureName

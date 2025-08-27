@@ -84,13 +84,26 @@ final class UserViewModel: ObservableObject {
 
     /// Solicita al caso de uso el saldo actual del usuario.
     /// - Parameter userId: identificador del usuario en KMM.
+    private static func toDouble(_ any: Any?) -> Double? {
+        if let kd = any as? KotlinDouble { return kd.doubleValue }
+        if let ns = any as? NSNumber    { return ns.doubleValue }
+        if let d  = any as? Double      { return d }
+        if let s  = any as? String      { return Double(s) }
+        return nil
+    }
+
     func loadBalance(for userId: Int32) {
-        userUseCase.getEwalletBalance(userId: userId) { [weak self] result, error in
+        userUseCase.getEwalletBalanceForIos(userId: userId) { [weak self] balance, error in
             DispatchQueue.main.async {
-                self?.balance = result?.doubleValue ?? 0.0
+                if let balance = balance {
+                    self?.balance = balance.doubleValue
+                } else {
+                    self?.balance = 0.0
+                }
             }
         }
     }
+
 
     // MARK: - Actualización de perfil
 

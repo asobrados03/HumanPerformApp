@@ -93,7 +93,11 @@ struct UserView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical)
-        .onAppear { vm.loadBalance(for: user.id) }
+        .onAppear {
+            if let id = vm.currentUser?.id {
+                vm.loadBalance(for: id)
+            }
+        }
     }
 
     // MARK: - Destinos

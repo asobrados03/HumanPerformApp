@@ -10,8 +10,10 @@ import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.UserBooking
 import com.humanperformcenter.shared.domain.repository.UserRepository
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class UserUseCase(private val userRepository: UserRepository) {
@@ -89,6 +91,18 @@ class UserUseCase(private val userRepository: UserRepository) {
 
     suspend fun getEwalletBalance(userId: Int): Result<Double?> = withContext(Dispatchers.IO) {
         return@withContext userRepository.getEwalletBalance(userId)
+    }
+
+    fun getEwalletBalanceForIos(
+        userId: Int,
+        completion: (Double?, String?) -> Unit
+    ) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val result = getEwalletBalance(userId)
+            result
+                .onSuccess { balance -> completion(balance ?: 0.0, null) } // <-- devuelve Double nativo
+                .onFailure { error -> completion(null, error.message) }
+        }
     }
 
     suspend fun getEwalletTransactions(userId: Int): List<EwalletTransaction> = withContext(Dispatchers.IO) {
