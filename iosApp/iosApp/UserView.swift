@@ -63,11 +63,13 @@ struct UserView: View {
                             }
                             .buttonStyle(.bordered)
                         }
+
                     }
                     .frame(maxWidth: .infinity)
                     .listRowInsets(EdgeInsets())
                     .padding(.vertical)
                     .onAppear { vm.loadBalance(for: user.id) }
+
 
                     ForEach(UserMenuOption.allCases) { option in
                         NavigationLink(option.rawValue) {
