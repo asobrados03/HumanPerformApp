@@ -269,13 +269,32 @@ class AuthViewModel: ObservableObject {
             newPassword: new,
             confirmPassword: confirm,
             userId: userId
-        ) { _, error in
+        ) { result, error in
             DispatchQueue.main.async {
                 if let error = error {
                     self.changePasswordState = .error(message: error.localizedDescription)
-                } else {
-                    self.changePasswordState = .success(message: "Contraseña cambiada correctamente")
+                    return
                 }
+
+                guard let anyResult = result else {
+                    self.changePasswordState = .error(message: "Respuesta de cambio vacía")
+                    return
+                }
+
+                let desc = String(describing: anyResult)
+                if desc.contains("Failure(") {
+                    let rawMsg: String = {
+                        if let start = desc.range(of: "Failure(")?.upperBound,
+                           let end = desc.lastIndex(of: ")") {
+                            return String(desc[start..<end])
+                        }
+                        return desc
+                    }()
+                    self.changePasswordState = .error(message: rawMsg)
+                    return
+                }
+
+                self.changePasswordState = .success(message: "Contraseña cambiada correctamente")
             }
         }
     }
