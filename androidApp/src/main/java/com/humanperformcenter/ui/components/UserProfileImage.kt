@@ -3,54 +3,114 @@ package com.humanperformcenter.ui.components
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
+import coil.transform.RoundedCornersTransformation
 import com.humanperformcenter.shared.data.network.ApiClient
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
+/**
+ * Muestra la foto de perfil del usuario, ya sea desde una URI local o una URL remota.
+ * Incluye estados de carga, error y cache para mejorar la experiencia de usuario.
+ */
 @Composable
-fun UserProfileImage(photoName: String? = null, photoUri: Uri? = null) {
-    val baseUrl = "${ApiClient.baseUrl}/profile_pic/"
-    when {
-        // ① si hay URI local, la mostramos
-        photoUri != null -> AsyncImage(
-            model = photoUri,
-            contentDescription = "Foto de usuario",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .border(2.dp, Color.White, CircleShape)
-        )
-        // ② si no URI pero sí nombre remoto, construimos la URL
-        !photoName.isNullOrBlank() -> AsyncImage(
-            model = "$baseUrl$photoName",
-            contentDescription = "Foto de usuario",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .border(2.dp, Color.White, CircleShape)
-        )
-        // ③ fallback
-        else -> Icon(
-            imageVector = Icons.Default.AccountCircle,
-            contentDescription = "Avatar por defecto",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(Color.White)
-        )
+fun UserProfileImage(
+    photoName: String? = null,
+    photoUri: Uri? = null,
+    size: Dp = 80.dp,
+    modifier: Modifier = Modifier,
+    onError: ((Throwable?) -> Unit)? = null,
+) {
+    val context = LocalContext.current
+
+    // Determina la fuente de la imagen: URI local o URL remota construida de forma segura.
+    val data: Any? = remember(photoUri, photoName) {
+        when {
+            photoUri != null -> photoUri
+            !photoName.isNullOrBlank() -> buildPhotoUrl(ApiClient.baseUrl, photoName)
+            else -> null
+        }
     }
+
+    // Configura la petición de Coil con crossfade, cache y listeners de error/éxito.
+    val request = remember(data) {
+        data?.let {
+            ImageRequest.Builder(context)
+                .data(it)
+                .crossfade(true)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .diskCachePolicy(CachePolicy.ENABLED)
+                // Transformación circular para suavizar las esquinas si no se clipea.
+                .transformations(RoundedCornersTransformation(999f))
+                .listener(
+                    onError = { _, result -> onError?.invoke(result.throwable) },
+                    onSuccess = { _, _ -> onError?.invoke(null) },
+                )
+                .build()
+        }
+    }
+
+    SubcomposeAsyncImage(
+        model = request,
+        contentDescription = "Foto de usuario",
+        contentScale = ContentScale.Crop,
+        loading = {
+            Box(
+                modifier = Modifier
+                    .size(size)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(2.dp, Color.White, CircleShape),
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(size / 3))
+            }
+        },
+        error = {
+            // Fallback visible si falla la red o la URL
+            Icon(
+                imageVector = Icons.Default.AccountCircle,
+                contentDescription = "Avatar por defecto",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .size(size)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .border(2.dp, Color.White, CircleShape),
+            )
+        },
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+        // El borde se aplica una vez que se determina el tamaño y la forma
+            .border(2.dp, Color.White, CircleShape),
+    )
 }
+
+/** Construye la URL remota para la foto de perfil asegurando protocolo HTTPS y path codificado. */
+private fun buildPhotoUrl(baseApiUrl: String, fileName: String): String {
+    // Asegura https y elimina barras extra.
+    val root = baseApiUrl.trim().trimEnd('/').replaceFirst("http://", "https://")
+    val encoded = URLEncoder.encode(fileName.trim(), StandardCharsets.UTF_8.toString())
+    // Backend actual sirve en /profile_pic/{file}
+    return "$root/profile_pic/$encoded"
+}
+
