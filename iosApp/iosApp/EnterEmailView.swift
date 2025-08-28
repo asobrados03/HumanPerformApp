@@ -14,20 +14,23 @@ struct EnterEmailView: View {
             Text("Introduce tu correo electrónico para restablecer la contraseña")
                 .multilineTextAlignment(.center)
 
-            TextField("Correo electrónico", text: $email)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled(true)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 14)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.gray.opacity(0.35), lineWidth: 1)
-                )
-                .onChange(of: email) { newValue in
-                    isEmailValid = isValidEmail(newValue)
-                }
-
+            HStack(spacing: 10) {
+                Image(systemName: "envelope")
+                TextField("Correo electrónico", text: $email)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
+                    .onChange(of: email) { newValue in
+                        isEmailValid = isValidEmail(newValue)
+                    }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 14)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.gray.opacity(0.35), lineWidth: 1)
+            )
+            
             if !isEmailValid {
                 Text("Introduce un correo válido")
                     .font(.footnote)
