@@ -8,6 +8,17 @@
 import SwiftUI
 import shared
 
+/// Lista de sesiones disponibles para la fecha seleccionada.
+private extension DateFormatter {
+    static let yyyymmdd: DateFormatter = {
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd"
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = TimeZone(secondsFromGMT: 0)
+        return df
+    }()
+}
+
 /// Vista de calendario simple para iOS que replica la funcionalidad de la
 /// pantalla equivalente en Android, incluyendo filtros por servicio,
 /// comprobación de límites semanales, cuestionarios y notificaciones.
@@ -149,33 +160,42 @@ struct CalendarView: View {
         }
     }
 
-    /// Lista de sesiones disponibles para la fecha seleccionada.
+    
+
     private var sessionList: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        // Fuera del ViewBuilder puedes tener sentencias normales
+        let selectedDay = DateFormatter.yyyymmdd.string(from: selectedDate)
+
+        return VStack(alignment: .leading, spacing: 8) {
             if daySessionViewModel.sessions.isEmpty {
                 Text("No hay sesiones disponibles")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             } else {
                 ForEach(daySessionViewModel.sessions, id: \.hour) { session in
-                    let dayFormatter = DateFormatter()
-                    dayFormatter.dateFormat = "yyyy-MM-dd"
-                    let selectedDay = dayFormatter.string(from: selectedDate)
+                    // Solo expresiones (let) dentro del ViewBuilder
+                    let sHour = session.hour.count == 5 ? session.hour : String(session.hour.prefix(5))
+
                     let bookingForSession = daySessionViewModel.userBookings.first { b in
-                        let bDay = String(b.date.prefix(10))
+                        let bDay  = String(b.date.prefix(10))
                         let bHour = b.hour.count == 5 ? b.hour : String(b.hour.prefix(5))
-                        let sHour = session.hour.count == 5 ? session.hour : String(session.hour.prefix(5))
                         return bDay == selectedDay && bHour == sHour && b.coach_name == session.coachName
                     }
-                    let bookingSameDay = daySessionViewModel.userBookings.first { String($0.date.prefix(10)) == selectedDay }
 
-                    sessionRow(session: session,
-                               bookingForSession: bookingForSession,
-                               bookingSameDay: bookingSameDay)
+                    let bookingSameDay = daySessionViewModel.userBookings.first {
+                        String($0.date.prefix(10)) == selectedDay
+                    }
+
+                    sessionRow(
+                        session: session,
+                        bookingForSession: bookingForSession,
+                        bookingSameDay: bookingSameDay
+                    )
                 }
             }
         }
     }
+
 
     /// Vista para cada fila de sesión. Se extrae para reducir la complejidad del cuerpo y
     /// evitar que el compilador tarde demasiado en verificar tipos.

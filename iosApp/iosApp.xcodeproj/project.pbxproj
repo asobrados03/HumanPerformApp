@@ -89,6 +89,7 @@
 		DB0C66A22E5A3C7900EC3069 /* viewModels */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = viewModels; sourceTree = "<group>"; };
 		DB0C66A62E5A3D3400EC3069 /* data */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = data; sourceTree = "<group>"; };
 		DB39E4212E5C7361002CB3B0 /* components */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = components; sourceTree = "<group>"; };
+		DB3CEF452E60E837005950CF /* util */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = util; sourceTree = "<group>"; };
 		DB9F31992E5DAEA400BE1BAA /* navigation */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = navigation; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -134,6 +135,7 @@
 		7555FF7D242A565900829871 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				DB3CEF452E60E837005950CF /* util */,
 				DB9F31992E5DAEA400BE1BAA /* navigation */,
 				DB9F31972E5DAE3F00BE1BAA /* AppState.swift */,
 				DB9F31952E5DACC500BE1BAA /* SplashView.swift */,
@@ -198,6 +200,7 @@
 				DB0C66A22E5A3C7900EC3069 /* viewModels */,
 				DB0C66A62E5A3D3400EC3069 /* data */,
 				DB39E4212E5C7361002CB3B0 /* components */,
+				DB3CEF452E60E837005950CF /* util */,
 				DB9F31992E5DAEA400BE1BAA /* navigation */,
 			);
 			name = iosApp;
