@@ -15,6 +15,14 @@ enum ResetPasswordState: Equatable {
     case error(message: String)
 }
 
+// Estados para el cambio de contraseña
+enum ChangePasswordState: Equatable {
+    case idle
+    case loading
+    case success(message: String)
+    case error(message: String)
+}
+
 class AuthViewModel: ObservableObject {
     // Estado del registro (ya existente)
     @Published var registerState: RegisterState = .idle
@@ -38,6 +46,9 @@ class AuthViewModel: ObservableObject {
 
     // Estado del proceso de restablecimiento de contraseña
     @Published var resetPasswordState: ResetPasswordState = .idle
+
+    // Estado del proceso de cambio de contraseña
+    @Published var changePasswordState: ChangePasswordState = .idle
 
     private let authUseCase = AuthUseCase(authRepository: AuthRepositoryImpl())
 
@@ -250,9 +261,33 @@ class AuthViewModel: ObservableObject {
         }
     }
 
+    // Cambia la contraseña del usuario
+    func changePassword(current: String, new: String, confirm: String, userId: Int32) {
+        DispatchQueue.main.async { self.changePasswordState = .loading }
+        authUseCase.changePassword(
+            currentPassword: current,
+            newPassword: new,
+            confirmPassword: confirm,
+            userId: userId
+        ) { _, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.changePasswordState = .error(message: error.localizedDescription)
+                } else {
+                    self.changePasswordState = .success(message: "Contraseña cambiada correctamente")
+                }
+            }
+        }
+    }
+
     // Reinicia el estado de restablecimiento de contraseña
     func resetResetPasswordState() {
         resetPasswordState = .idle
+    }
+
+    // Reinicia el estado de cambio de contraseña
+    func resetChangePasswordState() {
+        changePasswordState = .idle
     }
 
 

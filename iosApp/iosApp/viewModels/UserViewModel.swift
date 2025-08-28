@@ -80,6 +80,19 @@ final class UserViewModel: ObservableObject {
         }
     }
 
+    /// Elimina la cuenta del usuario actual en el servidor
+    func deleteUser(email: String, completion: @escaping (Bool, String?) -> Void) {
+        userUseCase.deleteUser(email: email) { _, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(false, error.localizedDescription)
+                } else {
+                    completion(true, nil)
+                }
+            }
+        }
+    }
+
     // MARK: - Balance
 
     /// Solicita al caso de uso el saldo actual del usuario.
