@@ -7,6 +7,14 @@ enum LoginField: String {
     case password = "PASSWORD"
 }
 
+// Estados posibles para el proceso de restablecer contraseña
+enum ResetPasswordState: Equatable {
+    case idle
+    case loading
+    case success(message: String)
+    case error(message: String)
+}
+
 class AuthViewModel: ObservableObject {
     // Estado del registro (ya existente)
     @Published var registerState: RegisterState = .idle
@@ -27,6 +35,9 @@ class AuthViewModel: ObservableObject {
 
     // Estado del proceso de login (usado por la vista para reaccionar a los cambios)
     @Published var loginState: LoginState = .idle
+
+    // Estado del proceso de restablecimiento de contraseña
+    @Published var resetPasswordState: ResetPasswordState = .idle
 
     private let authUseCase = AuthUseCase(authRepository: AuthRepositoryImpl())
 
@@ -199,6 +210,51 @@ class AuthViewModel: ObservableObject {
         }
     }
 
+    // Restablecer contraseña a partir de un correo
+    func resetPassword(email: String) {
+        DispatchQueue.main.async { self.resetPasswordState = .loading }
+
+        authUseCase.resetPassword(email: email) { result, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    self.resetPasswordState = .error(message: error.localizedDescription)
+                }
+                return
+            }
+
+            guard let anyResult = result else {
+                DispatchQueue.main.async {
+                    self.resetPasswordState = .error(message: "Respuesta de restablecimiento vacía")
+                }
+                return
+            }
+
+            let desc = String(describing: anyResult)
+            if desc.contains("Failure(") {
+                let rawMsg: String = {
+                    if let start = desc.range(of: "Failure(")?.upperBound,
+                       let end = desc.lastIndex(of: ")") {
+                        return String(desc[start..<end])
+                    }
+                    return desc
+                }()
+                DispatchQueue.main.async {
+                    self.resetPasswordState = .error(message: rawMsg)
+                }
+                return
+            }
+
+            DispatchQueue.main.async {
+                self.resetPasswordState = .success(message: "Contraseña restablecida exitosamente")
+            }
+        }
+    }
+
+    // Reinicia el estado de restablecimiento de contraseña
+    func resetResetPasswordState() {
+        resetPasswordState = .idle
+    }
+
 
     // [3] Método para limpiar errores de login si los campos cambian y había errores de validación
     private func clearLoginErrorsIfNeeded() {
@@ -217,6 +273,7 @@ class AuthViewModel: ObservableObject {
         loginPassword = ""
         // Restablecer estado de login a idle
         loginState = .idle
+        resetPasswordState = .idle
     }
 
     // [5] Conversión a tipo KMM para la solicitud de login (si fuera necesario enviar un objeto en lugar de Strings)
