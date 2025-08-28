@@ -27,9 +27,8 @@
 		DB9F31A32E5DB23600BE1BAA /* KMPNativeCoroutinesAsync in Frameworks */ = {isa = PBXBuildFile; productRef = DB9F31A22E5DB23600BE1BAA /* KMPNativeCoroutinesAsync */; };
 		DB9F31BD2E5DEFDE00BE1BAA /* KMPNativeCoroutinesCombine in Frameworks */ = {isa = PBXBuildFile; productRef = DB9F31BC2E5DEFDE00BE1BAA /* KMPNativeCoroutinesCombine */; };
 		DBC55FF22E5F0F4600E13D63 /* AddCouponView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FF12E5F0F4600E13D63 /* AddCouponView.swift */; };
-                DBC55FF42E5F0F5600E13D63 /* ConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FF32E5F0F5600E13D63 /* ConfigurationView.swift */; };
-                DBF0C0022E6A0001000B0001 /* ChangePasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */; };
-                DBC55FF62E5F0F6100E13D63 /* DocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FF52E5F0F6100E13D63 /* DocumentView.swift */; };
+		DBC55FF42E5F0F5600E13D63 /* ConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FF32E5F0F5600E13D63 /* ConfigurationView.swift */; };
+		DBC55FF62E5F0F6100E13D63 /* DocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FF52E5F0F6100E13D63 /* DocumentView.swift */; };
 		DBC55FF82E5F0F6D00E13D63 /* ElectronicWalletView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FF72E5F0F6D00E13D63 /* ElectronicWalletView.swift */; };
 		DBC55FFA2E5F0F7A00E13D63 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FF92E5F0F7A00E13D63 /* FavoritesView.swift */; };
 		DBC55FFC2E5F0F8A00E13D63 /* PaymentMethodsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FFB2E5F0F8A00E13D63 /* PaymentMethodsView.swift */; };
@@ -37,6 +36,7 @@
 		DBC560002E5F164500E13D63 /* MyProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FFF2E5F164500E13D63 /* MyProfileView.swift */; };
 		DBE9A1252E606CB20006E288 /* EnterEmailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE9A1242E606CB20006E288 /* EnterEmailView.swift */; };
 		DBE9A1272E606CBF0006E288 /* PasswordResetInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE9A1262E606CBF0006E288 /* PasswordResetInfoView.swift */; };
+		DBF0C0022E6A0001000B0001 /* ChangePasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -73,9 +73,8 @@
 		DB9F31952E5DACC500BE1BAA /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		DB9F31972E5DAE3F00BE1BAA /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		DBC55FF12E5F0F4600E13D63 /* AddCouponView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCouponView.swift; sourceTree = "<group>"; };
-                DBC55FF32E5F0F5600E13D63 /* ConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationView.swift; sourceTree = "<group>"; };
-                DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
-                DBC55FF52E5F0F6100E13D63 /* DocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentView.swift; sourceTree = "<group>"; };
+		DBC55FF32E5F0F5600E13D63 /* ConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationView.swift; sourceTree = "<group>"; };
+		DBC55FF52E5F0F6100E13D63 /* DocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentView.swift; sourceTree = "<group>"; };
 		DBC55FF72E5F0F6D00E13D63 /* ElectronicWalletView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectronicWalletView.swift; sourceTree = "<group>"; };
 		DBC55FF92E5F0F7A00E13D63 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 		DBC55FFB2E5F0F8A00E13D63 /* PaymentMethodsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodsView.swift; sourceTree = "<group>"; };
@@ -83,6 +82,7 @@
 		DBC55FFF2E5F164500E13D63 /* MyProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyProfileView.swift; sourceTree = "<group>"; };
 		DBE9A1242E606CB20006E288 /* EnterEmailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnterEmailView.swift; sourceTree = "<group>"; };
 		DBE9A1262E606CBF0006E288 /* PasswordResetInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordResetInfoView.swift; sourceTree = "<group>"; };
+		DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -144,9 +144,9 @@
 				DBC55FFD2E5F163500E13D63 /* EditProfileView.swift */,
 				DBC55FFF2E5F164500E13D63 /* MyProfileView.swift */,
 				DBC55FF12E5F0F4600E13D63 /* AddCouponView.swift */,
-                                DBC55FF32E5F0F5600E13D63 /* ConfigurationView.swift */,
-                                DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */,
-                                DBC55FF52E5F0F6100E13D63 /* DocumentView.swift */,
+				DBC55FF32E5F0F5600E13D63 /* ConfigurationView.swift */,
+				DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */,
+				DBC55FF52E5F0F6100E13D63 /* DocumentView.swift */,
 				DBC55FF72E5F0F6D00E13D63 /* ElectronicWalletView.swift */,
 				DBC55FF92E5F0F7A00E13D63 /* FavoritesView.swift */,
 				DBC55FFB2E5F0F8A00E13D63 /* PaymentMethodsView.swift */,
@@ -283,10 +283,10 @@
 				DBE9A1252E606CB20006E288 /* EnterEmailView.swift in Sources */,
 				DB39E4452E5CD26B002CB3B0 /* StatsView.swift in Sources */,
 				DB9F31962E5DACCA00BE1BAA /* SplashView.swift in Sources */,
-                                DB39E42B2E5CC83B002CB3B0 /* MyProductsView.swift in Sources */,
-                                DBC55FF42E5F0F5600E13D63 /* ConfigurationView.swift in Sources */,
-                                DBF0C0022E6A0001000B0001 /* ChangePasswordView.swift in Sources */,
-                                DB39E4262E5CA2B1002CB3B0 /* ServicesView.swift in Sources */,
+				DB39E42B2E5CC83B002CB3B0 /* MyProductsView.swift in Sources */,
+				DBC55FF42E5F0F5600E13D63 /* ConfigurationView.swift in Sources */,
+				DBF0C0022E6A0001000B0001 /* ChangePasswordView.swift in Sources */,
+				DB39E4262E5CA2B1002CB3B0 /* ServicesView.swift in Sources */,
 				DBC55FF82E5F0F6D00E13D63 /* ElectronicWalletView.swift in Sources */,
 				DB39E42D2E5CC87B002CB3B0 /* HireServicesView.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,

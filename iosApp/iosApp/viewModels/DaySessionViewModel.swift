@@ -1,7 +1,6 @@
 import Foundation
 import UserNotifications
 import shared
-import KMPNativeCoroutinesAsync
 
 /// ViewModel de iOS para manejar las sesiones disponibles en un día.
 /// Replica la lógica avanzada existente en Android, incluyendo gestión de
@@ -14,8 +13,7 @@ class DaySessionViewModel: ObservableObject {
     /// Sesiones disponibles para la fecha seleccionada.
     @Published var sessions: [DaySession] = []
 
-    /// Resultado de la última operación: "success", "updated", "limit" o
-    /// "error".
+    /// Resultado de la última operación: "success", "updated", "limit" o "error".
     @Published var reservationResult: String? = nil
 
     // MARK: - Gestión de límites semanales
@@ -36,15 +34,107 @@ class DaySessionViewModel: ObservableObject {
     // MARK: - Festivos
     @Published var holidays: [Date] = []
 
+    // MARK: - Wrappers KMM -> async/await
+
+    private func getSessionsByDayAsync(serviceId: Int32, date: Kotlinx_datetimeLocalDate) async throws -> [DaySession] {
+        try await withCheckedThrowingContinuation { cont in
+            useCase.getSessionsByDay(serviceId: serviceId, date: date) { data, error in
+                if let error = error { cont.resume(throwing: error) }
+                else { cont.resume(returning: data ?? []) }
+            }
+        }
+    }
+
+    private func getUserBookingsAsync(customerId: Int32) async throws -> [UserBooking] {
+        try await withCheckedThrowingContinuation { cont in
+            userUseCase.getUserBookings(customerId: customerId) { data, error in
+                if let error = error { cont.resume(throwing: error) }
+                else { cont.resume(returning: data ?? []) }
+            }
+        }
+    }
+
+    private func getUserProductIdAsync(customerId: Int32) async throws -> Int32 {
+        try await withCheckedThrowingContinuation { cont in
+            useCase.getUserProductId(customerId: customerId) { value, error in
+                if let error = error { cont.resume(throwing: error) }
+                else { cont.resume(returning: value?.int32Value ?? 0) } // 👈 Int32
+            }
+        }
+    }
+
+    private func getTimeslotIdAsync(hour: String) async throws -> Int32 {
+        try await withCheckedThrowingContinuation { cont in
+            useCase.getTimeslotId(hora: hour) { value, error in
+                if let error = error { cont.resume(throwing: error) }
+                else { cont.resume(returning: value?.int32Value ?? 0) } // 👈 Int32
+            }
+        }
+    }
+
+    private func reservarSesionAsync(request: ReserveRequest) async throws {
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            useCase.reservarSesion(request: request) { _, error in
+                if let error = error { cont.resume(throwing: error) }
+                else { cont.resume(returning: ()) }
+            }
+        }
+    }
+
+    private func cambiarReservaSesionAsync(request: ReserveUpdateRequest) async throws {
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            useCase.cambiarReservaSesion(request: request) { _, error in
+                if let error = error { cont.resume(throwing: error) }
+                else { cont.resume(returning: ()) }
+            }
+        }
+    }
+
+    private func getUserWeeklyLimitAsync(userId: Int32) async throws -> UserWeeklyLimitResponse {
+        try await withCheckedThrowingContinuation { cont in
+            useCase.getUserWeeklyLimit(customerId: userId) { data, error in
+                if let error = error { cont.resume(throwing: error) }
+                else { cont.resume(returning: data!) } // La API debería devolver siempre algo
+            }
+        }
+    }
+
+    private func getHolidaysAsync() async throws -> [String] {
+        try await withCheckedThrowingContinuation { cont in
+            useCase.getHolidays { data, error in
+                if let error = error { cont.resume(throwing: error) }
+                else { cont.resume(returning: data ?? []) }
+            }
+        }
+    }
+
+    private func cuestionarioEnviadoAsync(bookingId: Int32) async throws -> Bool {
+        try await withCheckedThrowingContinuation { cont in
+            useCase.cuestionarioEnviado(bookingId: bookingId) { value, error in
+                if let error = error { cont.resume(throwing: error) }
+                else { cont.resume(returning: value?.boolValue ?? false) }
+            }
+        }
+    }
+
+    private func enviarCuestionarioReservaAsync(form: BookingQuestionnaireRequest) async throws {
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            useCase.enviarCuestionarioReserva(bookingForm: form) { _, error in
+                if let error = error { cont.resume(throwing: error) }
+                else { cont.resume(returning: ()) }
+            }
+        }
+    }
+
     // MARK: - Sesiones
     func fetchSessions(serviceId: Int32, date: Date) {
         let comps = Calendar.current.dateComponents([.year, .month, .day], from: date)
         guard let year = comps.year, let month = comps.month, let day = comps.day else { return }
-        let kotlinDate = Kotlinx_datetimeLocalDate(year: Int32(year), month: Int32(month), dayOfMonth: Int32(day))
+        let kotlinDate = Kotlinx_datetimeLocalDate(year: Int32(year), month: Int32(month), day: Int32(day)) // ✅ day:
 
         Task {
             do {
-                let result = try await asyncFunction(for: useCase.getSessionsByDay(serviceId: serviceId, date: kotlinDate))
+                let result = try await getSessionsByDayAsync(serviceId: serviceId, date: kotlinDate)
                 await MainActor.run { self.sessions = result }
             } catch {
                 print("Error al obtener sesiones: \(error)")
@@ -68,28 +158,30 @@ class DaySessionViewModel: ObservableObject {
 
         Task {
             do {
-                let bookings = try await asyncFunction(for: userUseCase.getUserBookings(customerId: customerId))
-                let exceeded = exceedsWeeklyLimit(serviceId: serviceId, selectedDate: date, bookings: bookings)
-                if exceeded {
+                let bookings = try await getUserBookingsAsync(customerId: customerId)
+                if exceedsWeeklyLimit(serviceId: serviceId, selectedDate: date, bookings: bookings) {
                     await MainActor.run { self.reservationResult = "limit" }
                     return
                 }
 
-                let productId = try await asyncFunction(for: useCase.getUserProductId(customerId: customerId))
-                let timeslotId = try await asyncFunction(for: useCase.getTimeslotId(hora: hour))
+                let productId = try await getUserProductIdAsync(customerId: customerId)
+                let timeslotId = try await getTimeslotIdAsync(hour: hour)
+
                 let request = ReserveRequest(
-                    customer_id: Int(customerId),
-                    coach_id: Int(coachId),
-                    session_timeslot_id: Int(timeslotId),
-                    service_id: Int(serviceId),
-                    product_id: Int(productId),
-                    center_id: Int(centerId),
+                    customer_id: Int32(customerId),
+                    coach_id: Int32(coachId),
+                    session_timeslot_id: Int32(timeslotId),
+                    service_id: Int32(serviceId),
+                    product_id: Int32(productId),
+                    center_id: Int32(centerId),
                     start_date: isoDate,
                     status: "active",
                     payment_status: "pending",
                     payment_method: "card"
                 )
-                _ = try await asyncFunction(for: useCase.reservarSesion(request: request))
+
+                try await reservarSesionAsync(request: request)
+
                 await MainActor.run {
                     self.reservationResult = "success"
                     self.refreshUserBookings(userId: customerId)
@@ -115,17 +207,20 @@ class DaySessionViewModel: ObservableObject {
 
         Task {
             do {
-                let productId = try await asyncFunction(for: useCase.getUserProductId(customerId: customerId))
-                let timeslotId = try await asyncFunction(for: useCase.getTimeslotId(hora: hour))
+                let productId = try await getUserProductIdAsync(customerId: customerId)
+                let timeslotId = try await getTimeslotIdAsync(hour: hour)
+
                 let request = ReserveUpdateRequest(
-                    booking_id: Int(bookingId),
-                    new_coach_id: Int(newCoachId),
-                    new_service_id: Int(newServiceId),
-                    new_product_id: Int(productId),
-                    new_session_timeslot_id: Int(timeslotId),
+                    booking_id: Int32(bookingId),
+                    new_coach_id: Int32(newCoachId),
+                    new_service_id: Int32(newServiceId),
+                    new_product_id: Int32(productId),
+                    new_session_timeslot_id: Int32(timeslotId),
                     new_start_date: isoDate
                 )
-                _ = try await asyncFunction(for: useCase.cambiarReservaSesion(request: request))
+
+                try await cambiarReservaSesionAsync(request: request)
+
                 await MainActor.run {
                     self.reservationResult = "updated"
                     self.refreshUserBookings(userId: customerId)
@@ -141,7 +236,7 @@ class DaySessionViewModel: ObservableObject {
     func fetchUserWeeklyLimit(userId: Int32) {
         Task {
             do {
-                let response = try await asyncFunction(for: useCase.getUserWeeklyLimit(customerId: userId))
+                let response = try await getUserWeeklyLimitAsync(userId: userId)
                 await MainActor.run {
                     self.weeklyLimits = response.weekly_limit as! [Int32: Int32]
                     self.unlimitedSessions = response.unlimited_sessions as! [Int32: Int32]
@@ -158,7 +253,7 @@ class DaySessionViewModel: ObservableObject {
     func refreshUserBookings(userId: Int32, completion: (() -> Void)? = nil) {
         Task {
             do {
-                let bookings = try await asyncFunction(for: userUseCase.getUserBookings(customerId: userId))
+                let bookings = try await getUserBookingsAsync(customerId: userId)
                 await MainActor.run {
                     self.userBookings = bookings
                     self.loadQuestionnaireIfNeeded()
@@ -183,7 +278,7 @@ class DaySessionViewModel: ObservableObject {
 
         if let limit = weeklyLimits[primaryTarget] {
             let count = bookings.filter { booking in
-                let primary = serviceToPrimary[Int32(booking.service_id ?? 0)] ?? Int32(booking.service_id ?? 0)
+                let primary = serviceToPrimary[Int32(truncating: booking.service_id ?? 0)] ?? Int32(truncating: booking.service_id ?? 0)
                 guard primary == primaryTarget,
                       let date = formatter.date(from: String(booking.date.prefix(10))) else { return false }
                 return date >= weekStart && date <= weekEnd
@@ -191,11 +286,15 @@ class DaySessionViewModel: ObservableObject {
             return count >= limit
         }
 
-        let pools = sharedSessions.filter { pool in pool.services.contains(Int(primaryTarget)) }
-        let validFromPrimaryDate = validFromByPrimary[primaryTarget].flatMap { formatter.date(from: String($0.prefix(10))) }
+        let pools = sharedSessions.filter { pool in
+            pool.services.contains(KotlinInt(value: Int32(primaryTarget)))   // 👈 asegurar Int32
+        }
+        let validFromPrimaryDate = validFromByPrimary[primaryTarget].flatMap {
+            formatter.date(from: String($0.prefix(10)))
+        }
 
         let usedTotal = bookings.filter { b in
-            let primary = serviceToPrimary[Int32(b.service_id ?? 0)] ?? Int32(b.service_id ?? 0)
+            let primary = serviceToPrimary[Int32(truncating: b.service_id ?? 0)] ?? Int32(truncating: b.service_id ?? 0)
             guard primary == primaryTarget,
                   let f = formatter.date(from: String(b.date.prefix(10))) else { return false }
             if let vf = validFromPrimaryDate { return f >= vf } else { return true }
@@ -210,14 +309,14 @@ class DaySessionViewModel: ObservableObject {
                 let vf = pool.valid_from.flatMap { formatter.date(from: String($0.prefix(10))) }
                 let vt = pool.valid_to.flatMap { formatter.date(from: String($0.prefix(10))) }
                 let usedInPool = bookings.filter { b in
-                    let primary = serviceToPrimary[Int32(b.service_id ?? 0)] ?? Int32(b.service_id ?? 0)
-                    guard pool.services.contains(Int(primary)),
+                    let primary = serviceToPrimary[Int32(truncating: b.service_id ?? 0)] ?? Int32(truncating: b.service_id ?? 0)
+                    guard pool.services.contains(KotlinInt(value: Int32(primary))),      // 👈 asegurar Int32
                           let f = formatter.date(from: String(b.date.prefix(10))) else { return false }
                     if let vf = vf, f < vf { return false }
                     if let vt = vt, f > vt { return false }
                     return true
                 }.count
-                sharedRemaining += max(Int32(pool.sessions - usedInPool), 0)
+                sharedRemaining += max(pool.sessions - Int32(usedInPool), Int32(0))
             }
         }
 
@@ -231,7 +330,7 @@ class DaySessionViewModel: ObservableObject {
     func fetchHolidays() {
         Task {
             do {
-                let result = try await asyncFunction(for: useCase.getHolidays())
+                let result = try await getHolidaysAsync()
                 let formatter = ISO8601DateFormatter()
                 let dates = result.compactMap { formatter.date(from: $0) }
                 await MainActor.run { self.holidays = dates }
@@ -256,7 +355,7 @@ class DaySessionViewModel: ObservableObject {
 
         Task {
             do {
-                let sent = try await asyncFunction(for: useCase.cuestionarioEnviado(bookingId: Int32(session.id)))
+                let sent = try await cuestionarioEnviadoAsync(bookingId: Int32(session.id))
                 if !sent {
                     await MainActor.run {
                         self.pendingBookingId = Int32(session.id)
@@ -288,7 +387,7 @@ class DaySessionViewModel: ObservableObject {
     private func sendQuestionnaire() {
         guard let bookingId = pendingBookingId else { return }
         let form = BookingQuestionnaireRequest(
-            booking_id: Int(bookingId),
+            booking_id: Int32(bookingId),
             sleep_quality: responses[0] ?? "",
             energy_level: responses[1] ?? "",
             muscle_pain: responses[2] ?? "",
@@ -298,7 +397,7 @@ class DaySessionViewModel: ObservableObject {
 
         Task {
             do {
-                _ = try await asyncFunction(for: useCase.enviarCuestionarioReserva(bookingForm: form))
+                try await enviarCuestionarioReservaAsync(form: form)
                 await MainActor.run { self.questionnaireActive = false }
             } catch {
                 print("Error al enviar cuestionario: \(error)")
@@ -330,4 +429,3 @@ class DaySessionViewModel: ObservableObject {
         }
     }
 }
-

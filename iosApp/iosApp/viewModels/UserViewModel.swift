@@ -193,18 +193,21 @@ final class UserViewModel: ObservableObject {
 
     /// Cancela una reserva y elimina la notificación programada.
     func cancelUserBooking(bookingId: Int32, completion: (() -> Void)? = nil) {
-        Task {
-            do {
-                _ = try await asyncFunction(for: userUseCase.cancelUserBooking(bookingId: bookingId))
-                let center = UNUserNotificationCenter.current()
-                center.removePendingNotificationRequests(withIdentifiers: ["booking_\(bookingId)"])
-                await MainActor.run { completion?() }
-            } catch {
-                print("Error al cancelar reserva: \(error)")
-                await MainActor.run { completion?() }
+        userUseCase.cancelUserBooking(bookingId: bookingId) { _, error in
+            let center = UNUserNotificationCenter.current()
+            if error == nil {
+                center.removePendingNotificationRequests(
+                    withIdentifiers: ["booking_\(bookingId)"]
+                )
+            } else {
+                print("Error al cancelar reserva: \(error!)")
+            }
+            DispatchQueue.main.async {
+                completion?()
             }
         }
     }
+
 
     // MARK: - (Opcional) Hidratar desde almacenamiento seguro
     // Si más adelante añades en KMM un método `suspend fun getStoredUser(): User?`,
