@@ -10,6 +10,7 @@ import SwiftUI
 import Foundation
 import shared
 import KMPNativeCoroutinesAsync
+import UserNotifications
 
 /// ViewModel nativo (Swift) para gestionar el usuario actual en iOS.
 /// No llama a métodos inexistentes de KMM (p.ej. getStoredUser / getUserById).
@@ -184,6 +185,23 @@ final class UserViewModel: ObservableObject {
                     )
                     completion(true, nil)
                 }
+            }
+        }
+    }
+
+    // MARK: - Reservas
+
+    /// Cancela una reserva y elimina la notificación programada.
+    func cancelUserBooking(bookingId: Int32, completion: (() -> Void)? = nil) {
+        Task {
+            do {
+                _ = try await asyncFunction(for: userUseCase.cancelUserBooking(bookingId: bookingId))
+                let center = UNUserNotificationCenter.current()
+                center.removePendingNotificationRequests(withIdentifiers: ["booking_\(bookingId)"])
+                await MainActor.run { completion?() }
+            } catch {
+                print("Error al cancelar reserva: \(error)")
+                await MainActor.run { completion?() }
             }
         }
     }

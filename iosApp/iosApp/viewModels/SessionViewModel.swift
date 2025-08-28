@@ -20,9 +20,15 @@ class SessionViewModel: ObservableObject {
     @Published var userStreet: String? = nil
     @Published var userPostalCode: Int? = nil
 
-    // Repositorio o use case relacionado a sesión, si existe en KMM (por ejemplo, SessionRepository)
+    /// Servicios que el usuario tiene permitidos reservar. Se cargan desde la
+    /// capa compartida y se exponen para que la vista pueda filtrar por ellos.
+    @Published var allowedServices: [ServiceAvailable] = []
+
+    // Repositorio o use case relacionado a sesión, si existe en KMM
+    // (por ejemplo, SessionRepository)
     //private let sessionRepository = SessionRepository()  // (Si hay implementación compartida)
-    // O podríamos usar UserUseCase para ciertas operaciones de sesión (como allowed services):
+    // O podríamos usar UserUseCase para ciertas operaciones de sesión (como
+    // allowed services):
     private let userUseCase = UserUseCase(userRepository: UserRepositoryImpl())
     
     @Published var isLoggedIn: Bool? = nil
@@ -71,9 +77,9 @@ class SessionViewModel: ObservableObject {
         userUseCase.getUserAllowedServices(customerId: Int32(id)) { services, error in
             if let svcList = services {
                 print("Servicios permitidos recibidos: \(svcList.count) servicios")
-                // Aquí podríamos publicarlos vía @Published si quisiéramos exponerlos en la UI
-                // Por ejemplo: @Published var allowedServices: [ServiceAvailable] = []
-                // DispatchQueue.main.async { self.allowedServices = svcList }
+                DispatchQueue.main.async {
+                    self.allowedServices = svcList
+                }
             } else if let error = error {
                 print("❌ Error al cargar servicios permitidos: \(error.localizedDescription)")
             }
