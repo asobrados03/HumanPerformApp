@@ -22,7 +22,7 @@ struct MyProfileView: View {
                         ProfileRow(label: "Nombre completo", value: user.fullName)
                         ProfileRow(label: "Correo electrónico", value: user.email)
                         ProfileRow(label: "Teléfono", value: user.phone)
-                        ProfileRow(label: "Sexo", value: user.sex)
+                        ProfileRow(label: "Sexo", value: localizedSex(user.sex))
                         ProfileRow(label: "Fecha de nacimiento", value: user.dateOfBirth)
                         if let dni = user.dni {
                             ProfileRow(label: "DNI", value: dni)
@@ -55,6 +55,14 @@ private struct ProfileRow: View {
             Spacer()
             Text(value)
         }
+    }
+}
+
+private func localizedSex(_ sex: String?) -> String {
+    switch sex {
+    case "Male": return "Hombre"
+    case "Female": return "Mujer"
+    default: return sex ?? ""
     }
 }
 
