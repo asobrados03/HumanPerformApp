@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-enum AuthRoute: Hashable { case welcome, register, login }
+enum AuthRoute: Hashable { case welcome, register, login, forgotPassword, passwordInfo }
 
 struct AuthFlow: View {
     let onLoginSuccess: () -> Void
@@ -35,9 +35,13 @@ struct AuthFlow: View {
                             // aquí puedes guardar token en SecureStorage y el flow emitirá true
                             onLoginSuccess()
                         },
-                        onForgot:  { /* ... */ },
+                        onForgot:  { path.append(.forgotPassword) },
                         onRegister:{ path = [.register] }
                     )
+                case .forgotPassword:
+                    EnterEmailView(onSuccess: { path.append(.passwordInfo) })
+                case .passwordInfo:
+                    PasswordResetInfoView()
                 }
             }
         }
