@@ -283,20 +283,38 @@ class AuthViewModel: ObservableObject {
 
                 let desc = String(describing: anyResult)
                 if desc.contains("Failure(") {
-                    let rawMsg: String = {
-                        if let start = desc.range(of: "Failure(")?.upperBound,
-                           let end = desc.lastIndex(of: ")") {
-                            return String(desc[start..<end])
-                        }
-                        return desc
-                    }()
-                    self.changePasswordState = .error(message: rawMsg)
+                    let userMsg = self.extractHumanMessage(from: desc)
+                    self.changePasswordState = .error(message: userMsg)
                     return
                 }
 
                 self.changePasswordState = .success(message: "Contraseña cambiada correctamente")
             }
         }
+    }
+    
+    /// Extrae un mensaje legible desde un `Result.Failure(...)` de KMM.
+    /// Devuelve el texto después del último ":" o, si no hay, intenta
+    /// limpiar el nombre de clase totalmente cualificado.
+    private func extractHumanMessage(from failureDesc: String) -> String {
+        // 1) Saca el interior de Failure( ... )
+        let inner: String = {
+            if let start = failureDesc.range(of: "Failure(")?.upperBound,
+               let end = failureDesc.range(of: ")", options: .backwards)?.lowerBound {
+                return String(failureDesc[start..<end])
+            }
+            return failureDesc
+        }()
+
+        // 2) Quédate con lo que hay después del último ":" (mensaje humano)
+        if let lastColon = inner.lastIndex(of: ":") {
+            let msg = inner[inner.index(after: lastColon)...].trimmingCharacters(in: .whitespacesAndNewlines)
+            if !msg.isEmpty { return msg }
+        }
+
+        // 3) Fallback: si no hay ":", elimina el paquete y deja solo el identificador final
+        let cleaned = inner.split(separator: ".").last.map(String.init) ?? inner
+        return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     // Reinicia el estado de restablecimiento de contraseña
