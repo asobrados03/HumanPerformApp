@@ -169,76 +169,87 @@ struct CalendarView: View {
                     }
                     let bookingSameDay = daySessionViewModel.userBookings.first { String($0.date.prefix(10)) == selectedDay }
 
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(session.hour)
-                                .font(.body)
-                            Text(session.coachName ?? "-")
-                                .font(.caption)
-                        }
-                        Spacer()
-                        Text("\(session.booked)/\(session.capacity)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        if let userId = sessionViewModel.userId, let serviceId = selectedServiceId {
-                            if bookingForSession != nil {
-                                Text("Reservado")
-                                    .font(.caption)
-                                    .foregroundColor(.green)
-                            } else if let existing = bookingSameDay {
-                                Button("Cambiar") {
-                                    daySessionViewModel.updateReservation(
-                                        customerId: Int32(userId),
-                                        bookingId: Int32(existing.id),
-                                        newCoachId: Int32(session.coachId),
-                                        newServiceId: serviceId,
-                                        date: selectedDate,
-                                        hour: session.hour
-                                    )
-                                }
-                                .buttonStyle(.borderedProminent)
-                            } else {
-                                Button("Reservar") {
-                                    daySessionViewModel.reserveSession(
-                                        customerId: Int32(userId),
-                                        coachId: Int32(session.coachId),
-                                        serviceId: serviceId,
-                                        centerId: 1,
-                                        date: selectedDate,
-                                        hour: session.hour
-                                    )
-                                }
-                                .buttonStyle(.borderedProminent)
+                    sessionRow(session: session,
+                               bookingForSession: bookingForSession,
+                               bookingSameDay: bookingSameDay)
+                }
+            }
+        }
+    }
+
+    /// Vista para cada fila de sesión. Se extrae para reducir la complejidad del cuerpo y
+    /// evitar que el compilador tarde demasiado en verificar tipos.
+    @ViewBuilder
+    private func sessionRow(session: DaySession,
+                            bookingForSession: UserBooking?,
+                            bookingSameDay: UserBooking?) -> some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text(session.hour)
+                    .font(.body)
+                Text(session.coachName ?? "-")
+                    .font(.caption)
+            }
+            Spacer()
+            Text("\(session.booked)/\(session.capacity)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            if let userId = sessionViewModel.userId, let serviceId = selectedServiceId {
+                if bookingForSession != nil {
+                    Text("Reservado")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                } else if let existing = bookingSameDay {
+                    Button("Cambiar") {
+                        daySessionViewModel.updateReservation(
+                            customerId: Int32(userId),
+                            bookingId: Int32(existing.id),
+                            newCoachId: Int32(session.coachId),
+                            newServiceId: serviceId,
+                            date: selectedDate,
+                            hour: session.hour
+                        )
+                    }
+                    .buttonStyle(.borderedProminent)
+                } else {
+                    Button("Reservar") {
+                        daySessionViewModel.reserveSession(
+                            customerId: Int32(userId),
+                            coachId: Int32(session.coachId),
+                            serviceId: serviceId,
+                            centerId: 1,
+                            date: selectedDate,
+                            hour: session.hour
+                        )
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+        }
+        .padding(8)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(8)
+        .contextMenu {
+            if let booking = bookingForSession {
+                Button("Descargar evento") {
+                    let hour = booking.hour.count == 5 ? booking.hour + ":00" : booking.hour
+                    let iso = String(booking.date.prefix(10)) + "T" + hour
+                    let formatter = ISO8601DateFormatter()
+                    if let date = formatter.date(from: iso) {
+                        let ics = createICSFile(eventTitle: booking.service, startDate: date)
+                        shareICS(content: ics)
+                    }
+                }
+                Button(role: .destructive) {
+                    userViewModel.cancelUserBooking(bookingId: Int32(booking.id)) {
+                        if let uid = sessionViewModel.userId {
+                            daySessionViewModel.refreshUserBookings(userId: Int32(uid)) {
+                                scheduleNotificationsForBookings()
                             }
                         }
                     }
-                    .padding(8)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                    .contextMenu {
-                        if let booking = bookingForSession {
-                            Button("Descargar evento") {
-                                let hour = booking.hour.count == 5 ? booking.hour + ":00" : booking.hour
-                                let iso = String(booking.date.prefix(10)) + "T" + hour
-                                let formatter = ISO8601DateFormatter()
-                                if let date = formatter.date(from: iso) {
-                                    let ics = createICSFile(eventTitle: booking.service, startDate: date)
-                                    shareICS(content: ics)
-                                }
-                            }
-                            Button(role: .destructive) {
-                                userViewModel.cancelUserBooking(bookingId: Int32(booking.id)) {
-                                    if let uid = sessionViewModel.userId {
-                                        daySessionViewModel.refreshUserBookings(userId: Int32(uid)) {
-                                            scheduleNotificationsForBookings()
-                                        }
-                                    }
-                                }
-                            } label: {
-                                Text("Cancelar reserva")
-                            }
-                        }
-                    }
+                } label: {
+                    Text("Cancelar reserva")
                 }
             }
         }
