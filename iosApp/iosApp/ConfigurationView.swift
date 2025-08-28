@@ -55,7 +55,7 @@ struct ConfigurationView: View {
 
     private func logout() {
         isProcessing = true
-        SecureStorage.shared.clear { _, _ in
+        SecureStorage.shared.clear { error in
             DispatchQueue.main.async {
                 userVM.clearCurrentUser()
                 appState.isAuthenticated = false
