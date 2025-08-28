@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 import shared
 
 /// Permite editar campos del perfil de usuario y la foto.
@@ -18,9 +19,11 @@ struct EditProfileView: View {
     @State private var dni: String = ""
 
     @State private var image: UIImage? = nil
+    @State private var imageData: Data? = nil
     @State private var showPicker = false
     @State private var pickerSource: UIImagePickerController.SourceType = .photoLibrary
     @State private var showDialog = false
+    @State private var imageFileName: String? = nil
 
     @State private var isSaving = false
     @State private var showAlert = false
@@ -101,8 +104,14 @@ struct EditProfileView: View {
                     Button("Cancelar", role: .cancel) { }
                 }
                 .sheet(isPresented: $showPicker) {
-                    ImagePicker(sourceType: pickerSource) { img in
+                    ImagePicker(sourceType: pickerSource) { img, name in
                         image = img
+                        imageData = img.jpegData(compressionQuality: 0.8)
+                        if let n = name {
+                            imageFileName = n
+                        } else {
+                            imageFileName = "IMG_\(Int(Date().timeIntervalSince1970)).jpg"
+                        }
                     }
                 }
             } else {
@@ -130,6 +139,10 @@ struct EditProfileView: View {
             } else { return user.dateOfBirth }
         }()
         let newSex = selectedSexIndex >= 0 ? sexOptions[selectedSexIndex].1 : user.sex
+        var picName = user.profilePictureName
+        if image != nil {
+            picName = imageFileName ?? "IMG_\(Int(Date().timeIntervalSince1970)).jpg"
+        }
         let updated = User(
             id: user.id,
             fullName: fullName,
@@ -140,10 +153,9 @@ struct EditProfileView: View {
             postcode: kPostcode,
             postAddress: postAddress,
             dni: dni.isEmpty ? nil : dni,
-            profilePictureName: user.profilePictureName
+            profilePictureName: picName
         )
-        let data = image?.jpegData(compressionQuality: 0.8)
-        vm.updateUserProfile(updated, profilePicData: data) { success, error in
+        vm.updateUserProfile(updated, profilePicData: imageData) { success, error in
             DispatchQueue.main.async {
                 isSaving = false
                 if success {
@@ -164,6 +176,8 @@ struct EditProfileView: View {
             showAlert = true
             if success {
                 image = nil
+                imageFileName = nil
+                imageData = nil
             }
         }
     }
