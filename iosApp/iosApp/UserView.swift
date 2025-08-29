@@ -14,7 +14,7 @@ private enum UserMenuOption: String, CaseIterable, Identifiable {
     case configuracion    = "Configuración"
     case favoritos        = "Mis favoritos"
     case documento        = "Documento"
-    case verPago          = "Ver metodos de pago"
+    case verPago          = "Ver métodos de pago"
     case monederoVirtual  = "Monedero Virtual"
     case anadirCupon      = "Añadir cupón"
 
