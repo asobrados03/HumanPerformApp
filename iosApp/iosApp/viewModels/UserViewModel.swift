@@ -182,7 +182,7 @@ final class UserViewModel: ObservableObject {
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.couponState.isLoading = false
-                if success {
+                if success as! Bool {
                     self.couponState.code = ""
                     self.loadUserCoupons(userId)
                 } else {
