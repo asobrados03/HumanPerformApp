@@ -16,38 +16,42 @@ struct FavoritesView: View {
     /// Color de fondo para el entrenador seleccionado (0xAAF683).
     private let selectedColor = Color(red: 170/255, green: 246/255, blue: 131/255)
 
+    private let avatarSize: CGFloat = 36
+
     var body: some View {
         Group {
             if vm.isLoading {
                 ProgressView()
             } else {
                 List {
-                    Section(header: Text("Profesionales del deporte").fontWeight(.bold)) {
+                    Section {
                         ForEach(vm.coaches, id: \.id) { coach in
                             let isSelected = coach.id == vm.preferredCoachId
-                            HStack(alignment: .center, spacing: 12) {
+                            HStack(spacing: 12) {
                                 coachImage(for: coach, selected: isSelected)
                                 Text(coach.name)
-                                    .foregroundColor(isSelected ? .white : .primary)
+                                    .font(.body)
+                                    .foregroundStyle(isSelected ? Color.white : .primary)
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
                             }
                             .padding(.vertical, 8)
-                            .listRowInsets(EdgeInsets())
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())                  // toda la fila tap
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 12))
                             .listRowBackground(isSelected ? selectedColor : Color(.systemBackground))
-                            .onTapGesture {
-                                vm.markFavorite(coach: coach, userId: userVM.currentUser?.id)
-                            }
+                            .onTapGesture { vm.markFavorite(coach: coach, userId: userVM.currentUser?.id) }
                         }
+                    } header: {
+                        Text("Profesionales del deporte")
+                            .font(.headline).textCase(nil)
                     }
                 }
-                .listStyle(.plain)
+                .listStyle(.insetGrouped)
             }
         }
-        .onAppear {
+        .task {
             vm.loadCoaches()
-            if let id = userVM.currentUser?.id {
-                vm.loadPreferredCoach(for: id)
-            }
+            if let id = userVM.currentUser?.id { vm.loadPreferredCoach(for: id) }
         }
         .alert(vm.alertMessage ?? "", isPresented: Binding(
             get: { vm.alertMessage != nil },
@@ -62,31 +66,45 @@ struct FavoritesView: View {
     /// Imagen del entrenador o icono por defecto.
     private func coachImage(for coach: Professional, selected: Bool) -> some View {
         let base = "\(ApiClient.shared.baseUrl)/profile_pic/"
+        let circleStroke = selected ? Color.white.opacity(0.7) : Color.secondary.opacity(0.25)
+
         if let photo = coach.photoName,
            let encoded = photo.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
            let url = URL(string: base + encoded) {
-            return AnyView(AsyncImage(url: url) { phase in
-                switch phase {
-                case .empty:
-                    ProgressView()
-                case .success(let img):
-                    img.resizable().scaledToFill()
-                case .failure:
-                    Image(systemName: "person.circle.fill").resizable()
-                        .foregroundColor(selected ? .white : .secondary)
-                @unknown default:
-                    Image(systemName: "person.circle.fill").resizable()
-                        .foregroundColor(selected ? .white : .secondary)
+
+            return AnyView(
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView().frame(width: avatarSize, height: avatarSize)
+                    case .success(let img):
+                        img.resizable()
+                            .scaledToFill()
+                            .frame(width: avatarSize, height: avatarSize)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(circleStroke, lineWidth: 1))
+                    case .failure:
+                        placeholderIcon(selected: selected)
+                    @unknown default:
+                        placeholderIcon(selected: selected)
+                    }
                 }
-            }
-            .frame(width: 40, height: 40)
-            .clipShape(Circle()))
+            )
         } else {
-            return AnyView(Image(systemName: "person.circle.fill")
-                .resizable()
-                .frame(width: 40, height: 40)
-                .foregroundColor(selected ? .white : .secondary))
+            return AnyView(placeholderIcon(selected: selected))
         }
     }
-}
 
+    @ViewBuilder
+    private func placeholderIcon(selected: Bool) -> some View {
+        ZStack {
+            Circle()
+                .fill(selected ? Color.white.opacity(0.18) : Color(.systemGray5))
+            Image(systemName: "person.fill")
+                .imageScale(.medium)
+                .foregroundColor(selected ? .white : .secondary)
+        }
+        .frame(width: avatarSize, height: avatarSize)
+        .overlay(Circle().stroke(selected ? Color.white.opacity(0.7) : Color.secondary.opacity(0.25), lineWidth: 1))
+    }
+}

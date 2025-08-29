@@ -25,7 +25,7 @@ final class FavoritesViewModel: ObservableObject {
                 self?.isLoading = false
                 guard let result = result else { return }
 
-                if let list = result.value as? [Professional] {
+                if let list = (result as AnyObject).value as? [Professional] {
                     self?.coaches = list
                 } else if let error = result.error {
                     self?.alertMessage = error.message
@@ -40,7 +40,7 @@ final class FavoritesViewModel: ObservableObject {
             DispatchQueue.main.async {
                 guard let result = result else { return }
 
-                if let response = result.value as? GetPreferredCoachResponse {
+                if let response = (result as AnyObject).value as? GetPreferredCoachResponse {
                     self?.preferredCoachId = response.coachId
                 } else if let error = result.error {
                     self?.alertMessage = error.message
@@ -51,11 +51,18 @@ final class FavoritesViewModel: ObservableObject {
 
     /// Marca como favorito al entrenador seleccionado y actualiza el favorito actual.
     func markFavorite(coach: Professional, userId: Int32?) {
-        userUseCase.markFavorite(coachId: coach.id, serviceName: coach.service, userId: userId) { [weak self] result, _ in
+        // Convertimos Int32? -> KotlinInt?
+        let kUserId: KotlinInt? = userId.map { KotlinInt(int: $0) }
+
+        userUseCase.markFavorite(
+            coachId: coach.id,
+            serviceName: coach.service,
+            userId: kUserId
+        ) { [weak self] result, _ in
             DispatchQueue.main.async {
                 guard let result = result else { return }
 
-                if let message = result.value as? String {
+                if let message = (result as AnyObject).value as? String {
                     self?.alertMessage = message
                     if let uid = userId {
                         self?.loadPreferredCoach(for: uid)
