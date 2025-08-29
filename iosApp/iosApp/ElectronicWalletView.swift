@@ -15,33 +15,28 @@ struct ElectronicWalletView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("💳 Saldo actual: \(userVM.balance, specifier: "%.2f") €")
+            VStack(alignment: .leading) {
+                Text("Monedero Virtual").font(.title2).fontWeight(.semibold)
+                Text("💳 Saldo actual: \(userVM.balance, format: .currency(code: "EUR"))")
                     .fontWeight(.semibold)
 
-                Text(showDetails ? "🔼 Ocultar detalles" : "▶️ Ver detalles")
-                    .fontWeight(.medium)
+                Button(showDetails ? "Ocultar detalles" : "Ver detalles") { showDetails.toggle() }
+                    .buttonStyle(.plain)
                     .foregroundColor(.blue)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .onTapGesture { showDetails.toggle() }
 
                 if showDetails {
-                    VStack(alignment: .leading, spacing: 8) {
+                    List {
                         ForEach(Array(userVM.ewalletTransactions.enumerated()), id: \.offset) { _, tx in
-                            VStack(alignment: .leading, spacing: 4) {
-                                let fecha = String(tx.date.prefix(10))
-                                Text("📅 \(fecha)")
-                                Text("💰 \(tx.amount > 0 ? "+" : "")\(tx.amount, specifier: "%.2f") €")
-                                Text("📝 \(tx.description)")
-                            }
-                            .padding(.vertical, 8)
+                            TxRow(tx: tx)
                         }
                     }
+                    .listStyle(.plain)
+                    .frame(maxHeight: 420)
                 }
             }
             .padding(16)
-            .background(Color(.systemBackground))
-            .cornerRadius(8)
+            .background(.background)
+            .cornerRadius(12)
             .shadow(radius: 4)
 
             Spacer()
@@ -58,3 +53,32 @@ struct ElectronicWalletView: View {
     }
 }
 
+private struct TxRow: View {
+    let tx: EwalletTransaction
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(formatDate(tx.date)).foregroundStyle(.secondary)
+                Spacer()
+                Text(amountString(tx.amount))
+                    .fontWeight(.semibold)
+                    .foregroundColor(tx.amount >= 0 ? .green : .red)
+            }
+            // Usa 'tx.description_' si no renombraste en Kotlin
+            Text("📝 \(tx.description_)")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 6)
+    }
+}
+
+private func amountString(_ value: Double) -> String {
+    value.formatted(.currency(code: "EUR"))
+}
+private func formatDate(_ iso: String) -> String {
+    if let d = ISO8601DateFormatter().date(from: iso) {
+        return d.formatted(date: .abbreviated, time: .omitted)
+    }
+    return String(iso.prefix(10))
+}
