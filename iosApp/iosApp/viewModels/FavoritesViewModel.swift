@@ -2,76 +2,87 @@ import Foundation
 import SwiftUI
 import shared
 
-/// ViewModel encargado de gestionar la lógica de la pantalla de favoritos en iOS.
-/// Se apoya en el módulo KMM para obtener los entrenadores disponibles,
-/// recuperar el entrenador favorito actual y marcar uno nuevo.
 final class FavoritesViewModel: ObservableObject {
-    /// Listado de profesionales disponibles.
     @Published var coaches: [Professional] = []
-    /// Identificador del entrenador favorito del usuario.
     @Published var preferredCoachId: Int32? = nil
-    /// Indicador de carga para la obtención de datos.
     @Published var isLoading: Bool = false
-    /// Mensaje a mostrar al usuario tras marcar favorito o si ocurre un error.
     @Published var alertMessage: String? = nil
 
+    // Usa tu UserUseCase habitual; ahora con las funciones *Raw* sin wrapper Result<T>.
     private let userUseCase = UserUseCase(userRepository: UserRepositoryImpl())
 
-    /// Recupera la lista de entrenadores desde el backend.
+    // MARK: - Carga de datos
+
     func loadCoaches() {
         isLoading = true
-        userUseCase.getCoaches { [weak self] result, _ in
+        userUseCase.getCoachesRaw { [weak self] value, error in
             DispatchQueue.main.async {
-                self?.isLoading = false
-                guard let result = result else { return }
+                guard let self else { return }
+                self.isLoading = false
 
-                if let list = (result as AnyObject).value as? [Professional] {
-                    self?.coaches = list
-                } else if let error = result.error {
-                    self?.alertMessage = error.message
+                if let err = error as? KotlinThrowable {
+                    self.alertMessage = err.message ?? "Unknown error"
+                    return
+                }
+
+                if let list = value {
+                    self.coaches = list
+                } else if let nsErr = error {
+                    self.alertMessage = nsErr.localizedDescription
+                } else {
+                    self.alertMessage = "Respuesta inválida."
                 }
             }
         }
     }
 
-    /// Obtiene el entrenador favorito del usuario autenticado.
     func loadPreferredCoach(for userId: Int32) {
-        userUseCase.getPreferredCoach(customerId: userId) { [weak self] result, _ in
+        userUseCase.getPreferredCoachRaw(customerId: Int32(Int(truncatingIfNeeded: userId))) { [weak self] value, error in
             DispatchQueue.main.async {
-                guard let result = result else { return }
+                guard let self else { return }
 
-                if let response = (result as AnyObject).value as? GetPreferredCoachResponse {
-                    self?.preferredCoachId = response.coachId
-                } else if let error = result.error {
-                    self?.alertMessage = error.message
+                if let err = error as? KotlinThrowable {
+                    self.alertMessage = err.message ?? "Unknown error"
+                    return
+                }
+
+                if let resp = value {
+                    self.preferredCoachId = resp.coachId
+                } else if let nsErr = error {
+                    self.alertMessage = nsErr.localizedDescription
                 }
             }
         }
     }
 
-    /// Marca como favorito al entrenador seleccionado y actualiza el favorito actual.
     func markFavorite(coach: Professional, userId: Int32?) {
-        // Convertimos Int32? -> KotlinInt?
+        // Tipos explícitos para evitar ambigüedad con el puente KMM
+        let coachId32: Int32 = coach.id
         let kUserId: KotlinInt? = userId.map { KotlinInt(int: $0) }
 
-        userUseCase.markFavorite(
-            coachId: coach.id,
+        userUseCase.markFavoriteRaw(
+            coachId: coachId32,
             serviceName: coach.service,
             userId: kUserId
-        ) { [weak self] result, _ in
-            DispatchQueue.main.async {
-                guard let result = result else { return }
+        ) { [weak self] (value: Any?, error: Error?) in
+            DispatchQueue.main.async { [weak self] in
+                // ✅ Sin guard. Solo optional chaining.
+                if let err = error as? KotlinThrowable {
+                    self?.alertMessage = err.message ?? "Unknown error"
+                    return
+                }
 
-                if let message = (result as AnyObject).value as? String {
-                    self?.alertMessage = message
+                if let msg = value as? String {
+                    self?.alertMessage = msg
                     if let uid = userId {
                         self?.loadPreferredCoach(for: uid)
                     }
-                } else if let error = result.error {
-                    self?.alertMessage = error.message
+                } else if let nsErr = error {
+                    self?.alertMessage = nsErr.localizedDescription
+                } else {
+                    self?.alertMessage = "Respuesta inválida."
                 }
             }
         }
     }
 }
-

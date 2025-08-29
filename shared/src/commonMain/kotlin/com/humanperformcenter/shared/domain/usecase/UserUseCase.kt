@@ -25,6 +25,30 @@ class UserUseCase(private val userRepository: UserRepository) {
         return@withContext userRepository.deleteUser(email)
     }
 
+
+    // 1. Devuelve directamente la lista de coaches
+    suspend fun getCoachesRaw(): List<Professional> = withContext(Dispatchers.IO) {
+        val result = userRepository.getCoaches()
+        result.getOrThrow() // lanza excepción si es Result.Failure
+    }
+
+    // 2. Marca favorito y devuelve el mensaje
+    suspend fun markFavoriteRaw(
+        coachId: Int,
+        serviceName: String?,
+        userId: Int?
+    ): String = withContext(Dispatchers.IO) {
+        val result = userRepository.markFavorite(coachId, serviceName, userId)
+        result.getOrThrow()
+    }
+
+    // 3. Devuelve directamente el preferred coach
+    suspend fun getPreferredCoachRaw(customerId: Int): GetPreferredCoachResponse =
+        withContext(Dispatchers.IO) {
+            val result = userRepository.getPreferredCoach(customerId)
+            result.getOrThrow()
+        }
+
     suspend fun getCoaches(): Result<List<Professional>> = withContext(Dispatchers.IO) {
         return@withContext userRepository.getCoaches()
     }
