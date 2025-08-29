@@ -13,7 +13,7 @@ import KMPNativeCoroutinesAsync
 import UserNotifications
 
 /// Estado de la subida de documentos.
-enum UploadState {
+enum UploadState: Equatable {
     case idle
     case loading
     case success(String)
@@ -205,24 +205,16 @@ final class UserViewModel: ObservableObject {
     func uploadDocument(name: String, data: Data) {
         uploadState = .loading
         let byteArray = Self.toKotlinByteArray(data)
-        userUseCase.uploadDocument(name: name, data: byteArray) { result, error in
-            DispatchQueue.main.async {
-                if let error = error {
+
+        Task {
+            do {
+                let message = try await userUseCase.uploadDocumentRaw(name: name, data: byteArray)
+                await MainActor.run {
+                    self.uploadState = .success(message) // o .success si tu enum no lleva mensaje
+                }
+            } catch {
+                await MainActor.run {
                     self.uploadState = .error(error.localizedDescription)
-                    return
-                }
-
-                guard let kotlinResult = result as? KotlinResult<NSString> else {
-                    self.uploadState = .error("Error al subir el documento")
-                    return
-                }
-
-                if kotlinResult.isSuccess {
-                    let message = kotlinResult.getOrNull() as? String ?? "Documento subido correctamente"
-                    self.uploadState = .success(message)
-                } else {
-                    let message = kotlinResult.exceptionOrNull()?.message ?? "Error al subir el documento"
-                    self.uploadState = .error(message)
                 }
             }
         }

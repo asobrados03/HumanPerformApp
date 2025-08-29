@@ -12,6 +12,12 @@ struct ConfigurationView: View {
     @State private var errorMessage: String?
 
     var body: some View {
+        VStack(spacing: 16) {
+            Text("Configuración")
+                .font(.title2)
+                .fontWeight(.semibold)
+        }
+        
         ZStack {
             List {
                 Section {

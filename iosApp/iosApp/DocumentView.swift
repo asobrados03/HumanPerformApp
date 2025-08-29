@@ -25,6 +25,10 @@ struct DocumentView: View {
 
     var body: some View {
         VStack(spacing: 16) {
+            Text("Subida de documentos")
+                .font(.title2)
+                .fontWeight(.semibold)
+            
             Button("Seleccionar archivo") {
                 showOptions = true
             }

@@ -103,6 +103,14 @@ class UserUseCase(private val userRepository: UserRepository) {
         return@withContext userRepository.uploadDocument(name, data)
     }
 
+    suspend fun uploadDocumentRaw(
+        name: String,
+        data: ByteArray
+    ): String = withContext(Dispatchers.IO) {
+        userRepository.uploadDocument(name, data).getOrThrow()
+    }
+
+
     suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse> = withContext(Dispatchers.IO) {
         return@withContext userRepository.getPreferredCoach(customerId)
     }
