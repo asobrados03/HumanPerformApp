@@ -12,6 +12,14 @@ import shared
 import KMPNativeCoroutinesAsync
 import UserNotifications
 
+/// Estado de la subida de documentos.
+enum UploadState {
+    case idle
+    case loading
+    case success(String)
+    case error(String)
+}
+
 /// ViewModel nativo (Swift) para gestionar el usuario actual en iOS.
 /// No llama a métodos inexistentes de KMM (p.ej. getStoredUser / getUserById).
 final class UserViewModel: ObservableObject {
@@ -23,6 +31,8 @@ final class UserViewModel: ObservableObject {
     @Published var isLoading: Bool = true
     /// Saldo actual del monedero virtual
     @Published var balance: Double = 0.0
+    /// Estado de la subida de documentos
+    @Published var uploadState: UploadState = .idle
     
     private var userTask: Task<Void, Never>?
 
@@ -187,6 +197,29 @@ final class UserViewModel: ObservableObject {
                 }
             }
         }
+    }
+
+    // MARK: - Documentos
+
+    /// Sube un documento al servidor.
+    func uploadDocument(name: String, data: Data) {
+        uploadState = .loading
+        let byteArray = Self.toKotlinByteArray(data)
+        userUseCase.uploadDocument(name: name, data: byteArray) { result, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.uploadState = .error(error.localizedDescription)
+                } else {
+                    let message = result as? String ?? "Documento subido correctamente"
+                    self.uploadState = .success(message)
+                }
+            }
+        }
+    }
+
+    /// Resetea el estado de subida de documentos.
+    func resetUploadState() {
+        uploadState = .idle
     }
 
     // MARK: - Reservas
