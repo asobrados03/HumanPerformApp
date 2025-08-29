@@ -20,6 +20,14 @@ enum UploadState: Equatable {
     case error(String)
 }
 
+/// Estado de la pantalla de cupones.
+struct CouponUiState {
+    var code: String = ""
+    var isLoading: Bool = false
+    var error: String? = nil
+    var currentCoupons: [Coupon] = []
+}
+
 /// ViewModel nativo (Swift) para gestionar el usuario actual en iOS.
 /// No llama a métodos inexistentes de KMM (p.ej. getStoredUser / getUserById).
 final class UserViewModel: ObservableObject {
@@ -35,6 +43,8 @@ final class UserViewModel: ObservableObject {
     @Published var ewalletTransactions: [EwalletTransaction] = []
     /// Estado de la subida de documentos
     @Published var uploadState: UploadState = .idle
+    /// Estado de gestión de cupones
+    @Published var couponState: CouponUiState = .init()
     
     private var userTask: Task<Void, Never>?
 
@@ -135,6 +145,49 @@ final class UserViewModel: ObservableObject {
         userUseCase.getEwalletTransactions(userId: userId) { [weak self] list, _ in
             DispatchQueue.main.async {
                 self?.ewalletTransactions = list ?? []
+            }
+        }
+    }
+
+    // MARK: - Cupones
+
+    /// Obtiene los cupones actuales del usuario.
+    func loadUserCoupons(_ userId: Int32) {
+        userUseCase.getUserCouponsForIos(userId: userId) { [weak self] list, error in
+            DispatchQueue.main.async {
+                if let coupons = list {
+                    self?.couponState.currentCoupons = coupons
+                }
+                self?.couponState.error = error
+            }
+        }
+    }
+
+    /// Actualiza el texto del cupón.
+    func onCouponCodeChanged(_ code: String) {
+        DispatchQueue.main.async {
+            self.couponState.code = code
+            self.couponState.error = nil
+        }
+    }
+
+    /// Añade el cupón al usuario y recarga la lista.
+    func addCouponToUser(userId: Int32, code: String) {
+        DispatchQueue.main.async {
+            self.couponState.isLoading = true
+            self.couponState.error = nil
+        }
+
+        userUseCase.addCouponToUserForIos(userId: userId, couponCode: code) { [weak self] success, error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.couponState.isLoading = false
+                if success {
+                    self.couponState.code = ""
+                    self.loadUserCoupons(userId)
+                } else {
+                    self.couponState.error = error
+                }
             }
         }
     }

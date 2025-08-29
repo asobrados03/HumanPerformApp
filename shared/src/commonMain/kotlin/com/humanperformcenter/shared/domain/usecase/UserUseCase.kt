@@ -97,6 +97,34 @@ class UserUseCase(private val userRepository: UserRepository) {
         return@withContext userRepository.getUserCoupons(userId)
     }
 
+    /**
+     * Métodos auxiliares para iOS que evitan exponer `Result` en Swift.
+     */
+    fun addCouponToUserForIos(
+        userId: Int,
+        couponCode: String,
+        completion: (Boolean, String?) -> Unit
+    ) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val result = addCouponToUser(userId, couponCode)
+            result
+                .onSuccess { completion(true, null) }
+                .onFailure { error -> completion(false, error.message) }
+        }
+    }
+
+    fun getUserCouponsForIos(
+        userId: Int,
+        completion: (List<Coupon>?, String?) -> Unit
+    ) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val result = getUserCoupons(userId)
+            result
+                .onSuccess { coupons -> completion(coupons, null) }
+                .onFailure { error -> completion(emptyList(), error.message) }
+        }
+    }
+
     suspend fun uploadDocument(
         name: String, data: ByteArray
     ): Result<String> = withContext(Dispatchers.IO) {
