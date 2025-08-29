@@ -262,52 +262,38 @@ object UserRepositoryImpl: UserRepository {
     override suspend fun addCouponToUser(
         userId: Int,
         couponCode: String
-    ): Result<Unit> {
-        return try{
-            val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
-                contentType(ContentType.Application.Json)
-                setBody(mapOf("coupon_code" to couponCode))
-            }
+    ): Result<Unit> = runCatching {
+        val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("coupon_code" to couponCode))
+        }
 
-            if (response.status == HttpStatusCode.NoContent) {
-                Result.success(Unit)
-            } else {
-                Result.failure(
-                    Exception(
-                        "Error al añadir el cupon de descuento: ${response.body<ErrorResponse>().error}")
-                )
+        when (response.status) {
+            HttpStatusCode.NoContent,
+            HttpStatusCode.OK,
+            HttpStatusCode.Created -> Unit
+
+            else -> {
+                // Intenta leer error en texto; si tu backend manda JSON, lo parseas.
+                val raw = response.bodyAsText() // no explota con 204
+                val msg = raw.ifBlank { "HTTP ${response.status.value}" }
+                throw Exception("Error al añadir el cupón: $msg")
             }
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 
-    /*override suspend fun getUserCoupon(userId: Int): Result<Coupon?> = runCatching {
-        // Asumimos que el endpoint devuelve 204 si no hay cupón,
-        // o JSON { … } si existe uno.
-        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/$userId/coupon")
-
-        return@runCatching when (response.status) {
-            HttpStatusCode.NoContent -> null
-            HttpStatusCode.OK -> response.body<Coupon>()
-            else -> {
-                val txt = response.bodyAsText()
-                throw RuntimeException("GET  → ${response.status}: $txt")
-            }
+    override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> = runCatching {
+        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
+            url { parameters.append("user_id", userId.toString()) } // (elige uno: path o query)
         }
-    }*/
-    override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> {
-        return try {
-            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
-                url {
-                    parameters.append("user_id", userId.toString())
-                }
-            }
 
-            val coupons: List<Coupon> = response.body()
-            Result.success(coupons)
-        } catch (e: Exception) {
-            Result.failure(e)
+        when (response.status) {
+            HttpStatusCode.NoContent -> emptyList()                     // sin cupones
+            HttpStatusCode.OK        -> response.body<List<Coupon>>()   // hay lista
+            else -> {
+                val raw = response.bodyAsText()
+                throw Exception("Error obteniendo cupones: HTTP ${response.status.value} ${raw}")
+            }
         }
     }
 
