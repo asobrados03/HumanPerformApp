@@ -209,9 +209,20 @@ final class UserViewModel: ObservableObject {
             DispatchQueue.main.async {
                 if let error = error {
                     self.uploadState = .error(error.localizedDescription)
-                } else {
-                    let message = result as? String ?? "Documento subido correctamente"
+                    return
+                }
+
+                guard let kotlinResult = result as? KotlinResult<NSString> else {
+                    self.uploadState = .error("Error al subir el documento")
+                    return
+                }
+
+                if kotlinResult.isSuccess {
+                    let message = kotlinResult.getOrNull() as? String ?? "Documento subido correctamente"
                     self.uploadState = .success(message)
+                } else {
+                    let message = kotlinResult.exceptionOrNull()?.message ?? "Error al subir el documento"
+                    self.uploadState = .error(message)
                 }
             }
         }
