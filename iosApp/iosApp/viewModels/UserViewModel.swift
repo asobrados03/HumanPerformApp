@@ -31,6 +31,8 @@ final class UserViewModel: ObservableObject {
     @Published var isLoading: Bool = true
     /// Saldo actual del monedero virtual
     @Published var balance: Double = 0.0
+    /// Transacciones del monedero virtual
+    @Published var ewalletTransactions: [EwalletTransaction] = []
     /// Estado de la subida de documentos
     @Published var uploadState: UploadState = .idle
     
@@ -124,6 +126,15 @@ final class UserViewModel: ObservableObject {
                 } else {
                     self?.balance = 0.0
                 }
+            }
+        }
+    }
+
+    /// Recupera las transacciones del monedero virtual.
+    func loadEwalletTransactions(for userId: Int32) {
+        userUseCase.getEwalletTransactions(userId: userId) { [weak self] list, _ in
+            DispatchQueue.main.async {
+                self?.ewalletTransactions = list ?? []
             }
         }
     }
