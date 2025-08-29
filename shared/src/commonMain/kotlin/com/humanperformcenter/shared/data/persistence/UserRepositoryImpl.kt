@@ -292,7 +292,7 @@ object UserRepositoryImpl: UserRepository {
             HttpStatusCode.OK        -> response.body<List<Coupon>>()   // hay lista
             else -> {
                 val raw = response.bodyAsText()
-                throw Exception("Error obteniendo cupones: HTTP ${response.status.value} ${raw}")
+                throw Exception("Error obteniendo cupones: HTTP ${response.status.value} $raw")
             }
         }
     }
