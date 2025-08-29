@@ -20,13 +20,15 @@ final class FavoritesViewModel: ObservableObject {
     /// Recupera la lista de entrenadores desde el backend.
     func loadCoaches() {
         isLoading = true
-        userUseCase.getCoaches { [weak self] coaches, error in
+        userUseCase.getCoaches { [weak self] result, _ in
             DispatchQueue.main.async {
                 self?.isLoading = false
-                if let coaches = coaches {
-                    self?.coaches = coaches
-                } else if let error = error {
-                    self?.alertMessage = error.localizedDescription
+                guard let result = result else { return }
+
+                if let list = result.value as? [Professional] {
+                    self?.coaches = list
+                } else if let error = result.error {
+                    self?.alertMessage = error.message
                 }
             }
         }
@@ -34,12 +36,14 @@ final class FavoritesViewModel: ObservableObject {
 
     /// Obtiene el entrenador favorito del usuario autenticado.
     func loadPreferredCoach(for userId: Int32) {
-        userUseCase.getPreferredCoach(customerId: userId) { [weak self] response, error in
+        userUseCase.getPreferredCoach(customerId: userId) { [weak self] result, _ in
             DispatchQueue.main.async {
-                if let response = response {
+                guard let result = result else { return }
+
+                if let response = result.value as? GetPreferredCoachResponse {
                     self?.preferredCoachId = response.coachId
-                } else if let error = error {
-                    self?.alertMessage = error.localizedDescription
+                } else if let error = result.error {
+                    self?.alertMessage = error.message
                 }
             }
         }
@@ -47,15 +51,17 @@ final class FavoritesViewModel: ObservableObject {
 
     /// Marca como favorito al entrenador seleccionado y actualiza el favorito actual.
     func markFavorite(coach: Professional, userId: Int32?) {
-        userUseCase.markFavorite(coachId: coach.id, serviceName: coach.service, userId: userId) { [weak self] message, error in
+        userUseCase.markFavorite(coachId: coach.id, serviceName: coach.service, userId: userId) { [weak self] result, _ in
             DispatchQueue.main.async {
-                if let message = message {
+                guard let result = result else { return }
+
+                if let message = result.value as? String {
                     self?.alertMessage = message
                     if let uid = userId {
                         self?.loadPreferredCoach(for: uid)
                     }
-                } else if let error = error {
-                    self?.alertMessage = error.localizedDescription
+                } else if let error = result.error {
+                    self?.alertMessage = error.message
                 }
             }
         }
