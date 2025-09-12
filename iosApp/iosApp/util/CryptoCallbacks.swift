@@ -42,31 +42,52 @@ class CryptoCallbacks {
     private static func aesCrypt(operation: CCOperation, data: Data, key: Data, iv: Data) throws -> Data {
         var outLength: size_t = 0
         let options = CCOptions(kCCOptionPKCS7Padding)
+        
+        // Reservamos suficiente espacio (data.count + tamaño de bloque extra por padding)
         var outData = Data(count: data.count + kCCBlockSizeAES128)
-
-        let status = outData.withUnsafeMutableBytes { outBytes in
-            data.withUnsafeBytes { dataBytes in
-                key.withUnsafeBytes { keyBytes in
-                    iv.withUnsafeBytes { ivBytes in
-                        CCCrypt(operation,
-                                CCAlgorithm(kCCAlgorithmAES),
-                                options,
-                                keyBytes.baseAddress, key.count,
-                                ivBytes.baseAddress,
-                                dataBytes.baseAddress, data.count,
-                                outBytes.baseAddress, outData.count,
-                                &outLength)
+        
+        let status: CCCryptorStatus = outData.withUnsafeMutableBytes { outBytes in
+            guard let outBase = outBytes.baseAddress else {
+                return CCCryptorStatus(kCCMemoryFailure)
+            }
+            
+            return data.withUnsafeBytes { dataBytes in
+                guard let dataBase = dataBytes.baseAddress else {
+                    return CCCryptorStatus(kCCMemoryFailure)
+                }
+                
+                return key.withUnsafeBytes { keyBytes in
+                    guard let keyBase = keyBytes.baseAddress else {
+                        return CCCryptorStatus(kCCMemoryFailure)
+                    }
+                    
+                    return iv.withUnsafeBytes { ivBytes in
+                        guard let ivBase = ivBytes.baseAddress else {
+                            return CCCryptorStatus(kCCMemoryFailure)
+                        }
+                        
+                        return CCCrypt(operation,
+                                       CCAlgorithm(kCCAlgorithmAES),
+                                       options,
+                                       keyBase, key.count,
+                                       ivBase,
+                                       dataBase, data.count,
+                                       outBase, outBytes.count,
+                                       &outLength)
                     }
                 }
             }
         }
-
+        
         guard status == kCCSuccess else {
             throw NSError(domain: "CryptoCallbacks", code: Int(status), userInfo: nil)
         }
+        
+        // Ajustamos el tamaño final según lo que realmente se cifró/descifró
         outData.removeSubrange(outLength..<outData.count)
         return outData
     }
+
 }
 
 private extension Data {
