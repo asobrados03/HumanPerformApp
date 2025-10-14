@@ -1,14 +1,9 @@
 package com.humanperformcenter.shared.domain.security
 
-object EncryptionHandler {
-    var encryptionCallback: ((ByteArray) -> ByteArray)? = null
-    var decryptionCallback: ((ByteArray) -> ByteArray)? = null
+expect object EncryptionHandler {
+    var encryptionCallback: ((ByteArray) -> ByteArray)?
+    var decryptionCallback: ((ByteArray) -> ByteArray)?
 
-    fun registerEncryptor(callback: (ByteArray) -> ByteArray) {
-        encryptionCallback = callback
-    }
-
-    fun registerDecryptor(callback: (ByteArray) -> ByteArray) {
-        decryptionCallback = callback
-    }
+    fun registerEncryptor(callback: (ByteArray) -> ByteArray)
+    fun registerDecryptor(callback: (ByteArray) -> ByteArray)
 }
