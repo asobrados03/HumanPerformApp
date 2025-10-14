@@ -1,22 +1,16 @@
 package com.humanperformcenter.shared.domain.security
 
-import kotlin.native.concurrent.AtomicReference
-import kotlin.native.concurrent.freeze
-
 actual object EncryptionHandler {
-    private val encryptorRef = AtomicReference<((ByteArray) -> ByteArray)?>(null)
-    private val decryptorRef = AtomicReference<((ByteArray) -> ByteArray)?>(null)
-
     actual var encryptionCallback: ((ByteArray) -> ByteArray)?
-        get() = encryptorRef.value
+        get() = encryptionCallbackInternal
         set(value) {
-            encryptorRef.value = value?.freeze()
+            encryptionCallbackInternal = value
         }
 
     actual var decryptionCallback: ((ByteArray) -> ByteArray)?
-        get() = decryptorRef.value
+        get() = decryptionCallbackInternal
         set(value) {
-            decryptorRef.value = value?.freeze()
+            decryptionCallbackInternal = value
         }
 
     actual fun registerEncryptor(callback: (ByteArray) -> ByteArray) {
@@ -26,4 +20,7 @@ actual object EncryptionHandler {
     actual fun registerDecryptor(callback: (ByteArray) -> ByteArray) {
         decryptionCallback = callback
     }
+
+    private var encryptionCallbackInternal: ((ByteArray) -> ByteArray)? = null
+    private var decryptionCallbackInternal: ((ByteArray) -> ByteArray)? = null
 }
