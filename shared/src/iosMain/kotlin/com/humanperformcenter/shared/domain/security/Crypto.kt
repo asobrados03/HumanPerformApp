@@ -7,7 +7,14 @@ actual object Crypto {
     }
 
     actual fun decrypt(cipherMessage: ByteArray): ByteArray {
-        return EncryptionHandler.decryptionCallback?.invoke(cipherMessage)
+        val result = EncryptionHandler.decryptionCallback?.invoke(cipherMessage)
             ?: throw IllegalStateException("Decryption callback not set")
+
+        // Si Swift devolvió vacío, significa error de descifrado (padding, clave, etc.)
+        if (result.isEmpty()) {
+            throw CryptoException.DecryptionFailed
+        }
+
+        return result
     }
 }
