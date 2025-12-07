@@ -17,7 +17,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 
 object ApiClient {
-    private const val BASE = "https://apihuman.fransdata.com/api"
+    private const val BASE = "https://human-app.duckdns.org/api"
     private val storage = SecureStorage
 
     // flujo que emitirá cuando toque cerrar sesión
