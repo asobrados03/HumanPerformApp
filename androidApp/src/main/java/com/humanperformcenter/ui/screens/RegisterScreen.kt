@@ -51,7 +51,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,6 +69,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.humanperformcenter.R
@@ -100,7 +100,7 @@ fun RegisterScreen(
     )
 
     // 2. Suscribirnos al estado de registro
-    val registerState by viewModel.registerState.observeAsState(RegisterState.Idle)
+    val registerState by viewModel.registerState.collectAsStateWithLifecycle()
 
     // — estados base —
     var nombre by rememberSaveable { mutableStateOf("") }

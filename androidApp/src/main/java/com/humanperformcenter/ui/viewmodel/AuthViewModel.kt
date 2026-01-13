@@ -1,10 +1,7 @@
 package com.humanperformcenter.ui.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.humanperformcenter.shared.data.model.LoginResponse
 import com.humanperformcenter.shared.data.model.RegisterRequest
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult
@@ -14,31 +11,35 @@ import com.humanperformcenter.ui.viewmodel.state.LoginState
 import com.humanperformcenter.ui.viewmodel.state.RegisterState
 import com.humanperformcenter.ui.viewmodel.state.ResetPasswordState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlin.onSuccess
 
 class AuthViewModel(
     private val authUseCase: AuthUseCase
 ) : ViewModel() {
 
-    private val _loginState = MutableLiveData<LoginState>(LoginState.Idle)
-    val loginState: LiveData<LoginState> = _loginState
+    // Usamos MutableStateFlow con un valor inicial obligatorio
+    private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
+    val loginState: StateFlow<LoginState> = _loginState.asStateFlow()
 
-    private val _registerState = MutableLiveData<RegisterState>(RegisterState.Idle)
-    val registerState: LiveData<RegisterState> = _registerState
+    private val _registerState = MutableStateFlow<RegisterState>(RegisterState.Idle)
+    val registerState: StateFlow<RegisterState> = _registerState.asStateFlow()
 
-    private val _isChangingPassword = MutableLiveData<ChangePasswordState>(ChangePasswordState.Idle)
-    val isChangingPassword: LiveData<ChangePasswordState> = _isChangingPassword
+    private val _isChangingPassword = MutableStateFlow<ChangePasswordState>(ChangePasswordState.Idle)
+    val isChangingPassword: StateFlow<ChangePasswordState> = _isChangingPassword.asStateFlow()
 
-    private val _isResettingPassword = MutableLiveData<ResetPasswordState>(ResetPasswordState.Idle)
-    val isResettingPassword: LiveData<ResetPasswordState> = _isResettingPassword
+    private val _isResettingPassword = MutableStateFlow<ResetPasswordState>(ResetPasswordState.Idle)
+    val isResettingPassword: StateFlow<ResetPasswordState> = _isResettingPassword.asStateFlow()
 
     fun login(email: String, password: String) {
         _loginState.value = LoginState.Loading
 
         viewModelScope.launch(Dispatchers.IO) {
-            val result: Result<LoginResponse> = authUseCase.login(email, password)
+            val result = authUseCase.login(email, password)
 
+            // StateFlow permite actualizar .value desde cualquier hilo (Dispatchers.IO es seguro aquí)
             result.onSuccess { loginResponse ->
                 _loginState.value = LoginState.Success(loginResponse)
             }.onFailure { throwable ->
@@ -84,7 +85,7 @@ class AuthViewModel(
             val result = authUseCase.resetPassword(email)
             _isResettingPassword.value = result
                 .map { ResetPasswordState.Success("Contraseña restablecida exitosamente") }
-                .getOrElse { ResetPasswordState.Error(it.message ?: "Restablecimiento de contraseña fallido") }
+                .getOrElse { ResetPasswordState.Error(it.message ?: "Error al restablecer") }
         }
     }
 
@@ -100,7 +101,7 @@ class AuthViewModel(
             val result = authUseCase.changePassword(currentPassword, newPassword, confirmPassword, userId)
             _isChangingPassword.value = result
                 .map { ChangePasswordState.Success("Contraseña cambiada exitosamente") }
-                .getOrElse { ChangePasswordState.Error(it.message ?: "Cambio de contraseña fallido") }
+                .getOrElse { ChangePasswordState.Error(it.message ?: "Error al cambiar contraseña") }
         }
     }
 

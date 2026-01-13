@@ -28,6 +28,7 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humanperformcenter.app.navigation.HireProduct
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 
@@ -40,8 +41,8 @@ fun ServicesScreen(
     serviceProductViewModel: ServiceProductViewModel,
     daySessionViewModel: DaySessionViewModel
 ) {
-    val user by userViewModel.userData.collectAsState()
-    val allServices by serviceProductViewModel.allServices.collectAsState()
+    val user by userViewModel.userData.collectAsStateWithLifecycle()
+    val allServices by serviceProductViewModel.allServices.collectAsStateWithLifecycle()
 
     LaunchedEffect(user) {
         user?.let {
@@ -102,8 +103,8 @@ fun ServicesScreen(
             }
         }
         // ⬇️ Mostrar cuestionario si está activo
-        val cuestionarioActivo by daySessionViewModel.cuestionarioActivo.collectAsState()
-        val preguntaActual by daySessionViewModel.preguntaActual.collectAsState()
+        val cuestionarioActivo by daySessionViewModel.cuestionarioActivo.collectAsStateWithLifecycle()
+        val preguntaActual by daySessionViewModel.preguntaActual.collectAsStateWithLifecycle()
         val contexto = LocalContext.current
 
         val preguntas = listOf(
@@ -169,7 +170,7 @@ fun HireView(
     viewModel: ServiceProductViewModel,
     navController: NavHostController
 ) {
-    val productosContratados by viewModel.userProducts.collectAsState()
+    val productosContratados by viewModel.userProducts.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = Modifier

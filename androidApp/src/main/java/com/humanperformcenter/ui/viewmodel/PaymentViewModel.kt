@@ -37,7 +37,9 @@ class PaymentViewModel(
     private val _paymentMethod = MutableStateFlow<String?>(null)
     val paymentMethod: StateFlow<String?> = _paymentMethod.asStateFlow()
 
-    private val _viewPaymentMethodsUiState = MutableStateFlow<PaymentMethodsUiState>(PaymentMethodsUiState.Empty)
+    private val _viewPaymentMethodsUiState = MutableStateFlow<PaymentMethodsUiState>(
+        PaymentMethodsUiState.Empty
+    )
 
     // StateFlow público de solo lectura para observar desde Compose
     val viewPaymentMethodsUiState: StateFlow<PaymentMethodsUiState> = _viewPaymentMethodsUiState.asStateFlow()

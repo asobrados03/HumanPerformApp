@@ -8,11 +8,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -26,6 +26,7 @@ import com.humanperformcenter.ui.screens.AddCouponScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
 import com.humanperformcenter.ui.screens.ChangePasswordScreen
 import com.humanperformcenter.ui.screens.DocumentScreen
+import com.humanperformcenter.ui.screens.ElectronicWalletScreen
 import com.humanperformcenter.ui.screens.EnterEmailScreen
 import com.humanperformcenter.ui.screens.HireProductScreen
 import com.humanperformcenter.ui.screens.LoginScreen
@@ -37,10 +38,9 @@ import com.humanperformcenter.ui.screens.ProductDetailScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
 import com.humanperformcenter.ui.screens.ServicesScreen
 import com.humanperformcenter.ui.screens.SplashScreen
+import com.humanperformcenter.ui.screens.StripeCheckoutScreen
 import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.UserStatsScreen
-import com.humanperformcenter.ui.screens.ElectronicWalletScreen
-import com.humanperformcenter.ui.screens.StripeCheckoutScreen
 import com.humanperformcenter.ui.screens.ViewPaymentMethodScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
@@ -56,8 +56,6 @@ import com.humanperformcenter.ui.viewmodel.UserStatsViewModel
 import com.humanperformcenter.ui.viewmodel.UserStatsViewModelFactory
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
-import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
-import com.humanperformcenter.ui.viewmodel.state.ResetPasswordState
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
 
@@ -143,9 +141,8 @@ fun Navigation(
                 )
             }
             composable<EnterEmail> {
-                val resetPasswordState by authViewModel.isResettingPassword.observeAsState(
-                    ResetPasswordState.Idle
-                )
+                val resetPasswordState by authViewModel.isResettingPassword
+                    .collectAsStateWithLifecycle()
 
                 EnterEmailScreen(
                     onEmailSubmit = { email ->
@@ -180,8 +177,7 @@ fun Navigation(
             composable<HireProduct> { backStackEntry ->
                 // Reconstruimos el objeto ServicioRoute
                 val route = backStackEntry.toRoute<HireProduct>()
-                val userId by sessionViewModel.userId.collectAsState()
-                val userEmail by sessionViewModel.userEmail.collectAsState()
+                val userId by sessionViewModel.userId.collectAsStateWithLifecycle()
 
                 // Sólo mostramos si tenemos usuario
                 if (userId != null) {
@@ -196,8 +192,8 @@ fun Navigation(
                     )
                 }
             }
-            composable<User> { backStackEntry ->
-                val loading by userViewModel.isLoading.collectAsState()
+            composable<User> {
+                val loading by userViewModel.isLoading.collectAsStateWithLifecycle()
 
                 when {
                     loading -> {
@@ -227,7 +223,7 @@ fun Navigation(
                 }
             }
             composable<ViewPaymentMethod>{
-                val userData by userViewModel.userData.collectAsState()
+                val userData by userViewModel.userData.collectAsStateWithLifecycle()
 
                 val userId = userData?.id ?: -1
 
@@ -238,7 +234,7 @@ fun Navigation(
                 )
             }
             composable<AddCoupon>{
-                val userState by userViewModel.userData.collectAsState(initial = null)
+                val userState by userViewModel.userData.collectAsStateWithLifecycle()
 
                 when (val user = userState) {
                     null -> {
@@ -262,9 +258,8 @@ fun Navigation(
                 )
             }
             composable<ChangePassword> {
-                val changePasswordState by authViewModel.isChangingPassword.observeAsState(
-                    ChangePasswordState.Idle
-                )
+                val changePasswordState by authViewModel.isChangingPassword
+                    .collectAsStateWithLifecycle()
 
                 val loading by userViewModel.isLoading.collectAsState()
                 val user by userViewModel.userData.collectAsState()

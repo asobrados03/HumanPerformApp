@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -13,6 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.ui.components.FullScreenLoading
@@ -27,9 +27,9 @@ fun ConfigurationRoute(
     userViewModel: UserViewModel
 ) {
     // 1) Estado de borrado
-    val deleteState by userViewModel.deleteState.collectAsState()
+    val deleteState by userViewModel.deleteState.collectAsStateWithLifecycle()
     // 2) Email actual de sesión
-    val user by userViewModel.userData.collectAsState()
+    val user by userViewModel.userData.collectAsStateWithLifecycle()
     val currentEmail = user?.email.orEmpty()
 
     // 3) Contexto para Toasts

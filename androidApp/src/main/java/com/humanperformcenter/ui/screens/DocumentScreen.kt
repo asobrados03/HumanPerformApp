@@ -21,7 +21,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.ui.components.DocumentsSheet
 import com.humanperformcenter.ui.components.LogoAppBar
@@ -47,7 +47,7 @@ fun DocumentScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
-    val uiState by userViewModel.uploadState.collectAsState()
+    val uiState by userViewModel.uploadState.collectAsStateWithLifecycle()
 
     // Estados para el documento seleccionado
     var documentBytes by remember { mutableStateOf<ByteArray?>(null) }

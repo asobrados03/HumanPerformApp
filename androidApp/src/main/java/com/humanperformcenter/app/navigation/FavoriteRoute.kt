@@ -6,9 +6,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.components.FullScreenTextLoading
@@ -22,10 +22,10 @@ fun FavoriteRoute(
     userViewModel: UserViewModel,
     navController: NavHostController
 ) {
-    val coachState by userViewModel.coachesState.collectAsState()
-    val getPreferredCoachState by userViewModel.getPreferredCoachState.collectAsState()
-    val markFavoriteState by userViewModel.markFavoriteState.collectAsState()
-    val userState by userViewModel.userData.collectAsState()
+    val coachState by userViewModel.coachesState.collectAsStateWithLifecycle()
+    val getPreferredCoachState by userViewModel.getPreferredCoachState.collectAsStateWithLifecycle()
+    val markFavoriteState by userViewModel.markFavoriteState.collectAsStateWithLifecycle()
+    val userState by userViewModel.userData.collectAsStateWithLifecycle()
     val userId = userState?.id
 
     // Sólo para getCoaches() al montar la pantalla

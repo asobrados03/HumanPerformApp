@@ -22,7 +22,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.UserBooking
@@ -57,7 +57,7 @@ fun UserBookingsSection(
     userBookings: List<UserBooking>, // Asegúrate de que tengas el modelo Booking importado
     userId: Int?
 ) {
-    val serviciosPermitidos by sessionViewModel.allowedServices.collectAsState()
+    val serviciosPermitidos by sessionViewModel.allowedServices.collectAsStateWithLifecycle()
     var servicioFiltro by remember { mutableStateOf<ServiceAvailable?>(null) }
 
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date

@@ -1,6 +1,5 @@
 package com.humanperformcenter.ui.viewmodel
 
-
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,7 +23,6 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlin.time.ExperimentalTime
-
 
 class DaySessionViewModel(
     private val useCase: DaySessionUseCase // inyectalo aquí

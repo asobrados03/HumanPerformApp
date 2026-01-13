@@ -39,7 +39,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +47,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.PaymentMethod
 import com.humanperformcenter.ui.components.LogoAppBar
@@ -60,7 +60,7 @@ fun ViewPaymentMethodScreen(
     paymentViewModel: PaymentViewModel,
     userId: Int
 ) {
-    val uiState by paymentViewModel.viewPaymentMethodsUiState.collectAsState()
+    val uiState by paymentViewModel.viewPaymentMethodsUiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(userId) { paymentViewModel.getPaymentMethods(userId) }
 

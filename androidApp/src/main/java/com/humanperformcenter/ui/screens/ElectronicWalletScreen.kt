@@ -13,7 +13,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
@@ -33,8 +33,8 @@ fun ElectronicWalletScreen(
     userViewModel: UserViewModel,
     userId: Int
 ) {
-    val balance by userViewModel.balance.collectAsState()
-    val ewalletTransactions by userViewModel.ewalletTransactions.collectAsState()
+    val balance by userViewModel.balance.collectAsStateWithLifecycle()
+    val ewalletTransactions by userViewModel.ewalletTransactions.collectAsStateWithLifecycle()
 
     var mostrarDetalles by remember { mutableStateOf(false) }
 

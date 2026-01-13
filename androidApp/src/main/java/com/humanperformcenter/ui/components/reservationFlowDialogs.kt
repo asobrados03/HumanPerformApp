@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humanperformcenter.shared.data.model.DaySession
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.SharedPool
@@ -183,16 +184,16 @@ fun reservationFlowDialogs(
     sessionViewModel: SessionViewModel,
     userViewModel: UserViewModel
 ): (LocalDate) -> Unit {
-    val user by userViewModel.userData.collectAsState()
+    val user by userViewModel.userData.collectAsStateWithLifecycle()
     val userId = user?.id ?: return {}
     val scope = rememberCoroutineScope()
 
-    val userBookings by userViewModel.userBookings.collectAsState()
-    val sessions by daySessionViewModel.sessions.collectAsState()
-    val weeklyLimits by daySessionViewModel.weeklyLimits.collectAsState()
-    val unlimitedSessions by daySessionViewModel.unlimitedSessions.collectAsState()
-    val sharedSessions by daySessionViewModel.sharedSessions.collectAsState()
-    val serviceToPrimary by daySessionViewModel.serviceToPrimary.collectAsState()
+    val userBookings by userViewModel.userBookings.collectAsStateWithLifecycle()
+    val sessions by daySessionViewModel.sessions.collectAsStateWithLifecycle()
+    val weeklyLimits by daySessionViewModel.weeklyLimits.collectAsStateWithLifecycle()
+    val unlimitedSessions by daySessionViewModel.unlimitedSessions.collectAsStateWithLifecycle()
+    val sharedSessions by daySessionViewModel.sharedSessions.collectAsStateWithLifecycle()
+    val serviceToPrimary by daySessionViewModel.serviceToPrimary.collectAsStateWithLifecycle()
 
     val state by remember(daySessionViewModel, userViewModel, scope, userId) {
         mutableStateOf(ReservationFlowState(
@@ -201,7 +202,7 @@ fun reservationFlowDialogs(
         ))
     }
 
-    val allowedServices by sessionViewModel.allowedServices.collectAsState()
+    val allowedServices by sessionViewModel.allowedServices.collectAsStateWithLifecycle()
 
     when (val dialog = state.dialog) {
         is ReservationFlowState.Dialog.Reservation -> ReservationDialog(state, dialog.date, allowedServices)

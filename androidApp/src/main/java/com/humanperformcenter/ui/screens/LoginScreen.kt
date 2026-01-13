@@ -25,7 +25,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -35,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.EnterEmail
@@ -60,7 +60,7 @@ fun LoginScreen(
     val viewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(AppModule.authUseCase)
     )
-    val loginState by viewModel.loginState.observeAsState(LoginState.Idle)
+    val loginState by viewModel.loginState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {

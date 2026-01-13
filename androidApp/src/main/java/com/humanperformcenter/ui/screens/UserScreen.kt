@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.humanperformcenter.app.navigation.MenuOption
@@ -87,7 +88,7 @@ fun UserScreen(
         userViewModel.loadBalance(user?.id ?: -1)
     }
 
-    val balance by userViewModel.balance.collectAsState(initial = 0.0)
+    val balance by userViewModel.balance.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {

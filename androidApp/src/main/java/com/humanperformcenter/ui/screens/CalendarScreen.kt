@@ -9,7 +9,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.ui.components.CalendarGrid
 import com.humanperformcenter.ui.components.CalendarHeader
@@ -25,7 +25,7 @@ import com.humanperformcenter.ui.components.CalendarWeekDays
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.components.UserBookingsSection
-import com.humanperformcenter.ui.components.reservationFlowDialogs  // ← Nota el nombre en minúscula
+import com.humanperformcenter.ui.components.reservationFlowDialogs
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
@@ -49,8 +49,8 @@ fun CalendarScreen(
     var displayedMonth by remember { mutableStateOf(today.month) }
     var displayedYear by remember { mutableIntStateOf(today.year) }
 
-    val user by userViewModel.userData.collectAsState()
-    val userBookings by userViewModel.userBookings.collectAsState()
+    val user by userViewModel.userData.collectAsStateWithLifecycle()
+    val userBookings by userViewModel.userBookings.collectAsStateWithLifecycle()
     val userId = user?.id
 
     val context = LocalContext.current

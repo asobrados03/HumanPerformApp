@@ -1,7 +1,5 @@
 package com.humanperformcenter.ui.screens
 
-import android.content.Intent
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,7 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.humanperformcenter.app.navigation.ProductDetail
@@ -44,11 +41,11 @@ fun MyProductsScreen(
     daySessionViewModel: DaySessionViewModel,
     userId: Int
 ) {
-    val productos by viewModel.userProducts.collectAsState()
+    val productos by viewModel.userProducts.collectAsStateWithLifecycle()
     val productosUnicos = productos.distinctBy { it.id }
     var productoSeleccionado by remember { mutableStateOf<ServiceItem?>(null) }
     var mostrarDialogoProducto by remember { mutableStateOf(false) }
-    val userBookings by userViewModel.userBookings.collectAsState()
+    val userBookings by userViewModel.userBookings.collectAsStateWithLifecycle()
     var mostrarConfirmacionBaja by remember { mutableStateOf(false) }
 
     LaunchedEffect(userBookings) {

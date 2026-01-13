@@ -33,7 +33,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.google.pay.button.ButtonType
@@ -80,7 +80,7 @@ fun HireProductScreen(
     sesionViewModel: SessionViewModel
 ) {
     val context = LocalContext.current
-    val gpayState by paymentViewModel.paymentState.collectAsState()
+    val gpayState by paymentViewModel.paymentState.collectAsStateWithLifecycle()
 
     var showMonederoConfirmation by remember { mutableStateOf(false) }
 
@@ -88,13 +88,13 @@ fun HireProductScreen(
     val paymentResult by (savedStateHandle
         ?.getStateFlow("payment_result", null as Boolean?)
         ?: kotlinx.coroutines.flow.MutableStateFlow<Boolean?>(null)
-            ).collectAsState(initial = null)
+            ).collectAsStateWithLifecycle()
 
     // --- Screen State ---
-    val productosMap by viewModel.serviceProducts.collectAsState()
+    val productosMap by viewModel.serviceProducts.collectAsStateWithLifecycle()
     val productos = productosMap[serviceId] ?: emptyList()
 
-    val productosContratados by viewModel.userProducts.collectAsState()
+    val productosContratados by viewModel.userProducts.collectAsStateWithLifecycle()
     val idsContratados = productosContratados.map { it.id }.toSet()
 
     var mostrarCuponSheet by remember { mutableStateOf(false) }
@@ -128,12 +128,12 @@ fun HireProductScreen(
     var showAlertMethod: Boolean by remember { mutableStateOf(false) }
     var mostrarTarjetasHpp by rememberSaveable { mutableStateOf(false) } // por defecto, mostrar en HPP
 
-    val userId = sesionViewModel.userId.collectAsState().value ?: 0
-    val userEmail = sesionViewModel.userEmail.collectAsState().value ?: ""
-    val userName = sesionViewModel.userName.collectAsState().value ?: ""
-    val userStreet = sesionViewModel.userStreet.collectAsState().value ?: ""
-    val userPostalCode = sesionViewModel.userPostalCode.collectAsState().value ?: 0
-    val userCoupons by viewModel.userCoupons.collectAsState()
+    val userId = sesionViewModel.userId.collectAsStateWithLifecycle().value ?: 0
+    val userEmail = sesionViewModel.userEmail.collectAsStateWithLifecycle().value ?: ""
+    val userName = sesionViewModel.userName.collectAsStateWithLifecycle().value ?: ""
+    val userStreet = sesionViewModel.userStreet.collectAsStateWithLifecycle().value ?: ""
+    val userPostalCode = sesionViewModel.userPostalCode.collectAsStateWithLifecycle().value ?: 0
+    val userCoupons by viewModel.userCoupons.collectAsStateWithLifecycle()
 
     LaunchedEffect(paymentResult) {
         if (paymentResult == true && productoIdSeleccionado != null) {
@@ -368,7 +368,7 @@ fun HireProductScreen(
                         val precioFinal = calcularPrecioConDescuento(
                             producto.id,
                             producto.price ?: 0.0,
-                            viewModel.userCoupons.collectAsState().value
+                            viewModel.userCoupons.collectAsStateWithLifecycle().value
                         )
                         Text(
                             "${precioFinal.toInt()}€",

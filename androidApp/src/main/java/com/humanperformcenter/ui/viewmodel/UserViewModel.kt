@@ -1,8 +1,6 @@
 package com.humanperformcenter.ui.viewmodel
 
 import android.content.Context
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkManager
@@ -59,9 +57,9 @@ class UserViewModel(
         }
     }
 
-    // 2) LiveData para exponer el estado de la operación de update
-    private val _updateState = MutableLiveData<UpdateState>(UpdateState.Idle)
-    val updateState: LiveData<UpdateState> = _updateState
+    // 2) StateFlow para exponer el estado de la operación de update
+    private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
+    val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
     private val _deleteState = MutableStateFlow<DeleteUserState>(DeleteUserState.Idle)
     val deleteState: StateFlow<DeleteUserState> = _deleteState

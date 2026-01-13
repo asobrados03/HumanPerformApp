@@ -9,23 +9,21 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.humanperformcenter.app.navigation.PaymentSuccess
-import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.components.PaymentWebView
+import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 
 @Composable
 fun PaymentScreen(viewModel: PaymentViewModel, navController: NavHostController) {
-    val paymentUrl by viewModel.paymentUrl.collectAsState()
-    val error by viewModel.error.collectAsState()
+    val paymentUrl by viewModel.paymentUrl.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     when {
