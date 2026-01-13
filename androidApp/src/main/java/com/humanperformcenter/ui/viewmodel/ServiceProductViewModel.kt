@@ -8,6 +8,7 @@ import com.humanperformcenter.shared.data.model.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -34,14 +35,14 @@ class ServiceProductViewModel(
     var productoSeleccionado: ServiceItem? = null
 
     fun loadAllServices() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val services = useCase.getAllServices()
             _allServices.value = services
         }
     }
 
     fun loadServiceProducts(serviceId: Int) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val products = useCase.getServiceProducts(serviceId)
             _serviceProducts.value = _serviceProducts.value.toMutableMap().apply {
                 put(serviceId, products)
@@ -50,7 +51,7 @@ class ServiceProductViewModel(
     }
 
     fun loadUserProducts(userId: Int) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val products = useCase.getUserProducts(userId)
             _userProducts.value = products
             println("User products loaded: ${products.size} items")
@@ -64,7 +65,7 @@ class ServiceProductViewModel(
         couponCode: String? = null,
         onResult: (Boolean, String?) -> Unit = { _, _ -> }
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val (success, error) = useCase.assignProductToUser(
                 userId = userId,
                 productId = productId,
@@ -82,7 +83,7 @@ class ServiceProductViewModel(
     }
 
     fun unassignProductFromUser(productId: Int, userId: Int) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val success = useCase.unassignProductFromUser(userId, productId)
             if (success) {
                 loadUserProducts(userId)
@@ -93,13 +94,13 @@ class ServiceProductViewModel(
     }
 
     fun fetchProductDetails(userId: Int, productId: Int) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _productDetails.value = useCase.getProductDetails(userId, productId)
         }
     }
 
     fun aplicarCupon(codigo: String, userId: Int, productId: Int, onResult: (Boolean) -> Unit) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val success = useCase.applyCoupon(codigo, userId, productId)
             onResult(success)
         }
@@ -112,7 +113,7 @@ class ServiceProductViewModel(
         onSuccess: (String) -> Unit,
         onError: () -> Unit
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 /*val response = PaymentApi.initiatePayment(
                     customerId = userId,
@@ -130,7 +131,7 @@ class ServiceProductViewModel(
     }
 
     fun loadUserCoupons(userId: Int) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val result = userUseCase.getUserCoupons(userId)
             result.onSuccess { _userCoupons.value = it }
         }

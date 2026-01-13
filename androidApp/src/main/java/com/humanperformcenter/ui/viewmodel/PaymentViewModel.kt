@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
+import kotlinx.coroutines.Dispatchers
 
 class PaymentViewModel(
     private val paymentUseCase: PaymentUseCase,
@@ -44,7 +45,7 @@ class PaymentViewModel(
 
     fun generatePaymentURL(request: PaymentRequest) {
         println("🔧 Generando URL de pago...")
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val url = paymentUseCase.generatePaymentUrl(request)
                 _paymentUrl.value = url
@@ -59,7 +60,7 @@ class PaymentViewModel(
      * y luego envía el token al backend dentro del use case.
      */
     fun payWithGooglePay(requestJson: String, amount: Int, currency: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _paymentState.value = PaymentState.Loading
             println("🟡 [GPay] VM.payWithGooglePay(amount=$amount, currency=$currency)")
             googlePayUseCase(requestJson, amount, currency).fold(
@@ -96,7 +97,7 @@ class PaymentViewModel(
         couponCode: String? = null,
         billing: BillingPrefill? = null
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 println("$amountInCents")
                 println("$currency")
@@ -107,7 +108,7 @@ class PaymentViewModel(
 
                 val cfg = stripeUseCase.getConfig()
 
-                val CreatePaymentIntentRequest = CreatePaymentIntentRequest(
+                val createPaymentIntentRequest = CreatePaymentIntentRequest(
                     amount = amountInCents,
                     currency = currency,
                     user_id = userId,
@@ -122,7 +123,7 @@ class PaymentViewModel(
                     )
                 )
                 // 2) Crear PaymentIntent
-                val pi = stripeUseCase.createPaymentIntent(CreatePaymentIntentRequest)
+                val pi = stripeUseCase.createPaymentIntent(createPaymentIntentRequest)
 
                 // 3) (Opcional) Customer para métodos guardados
                 var customerConfig: PaymentSheet.CustomerConfiguration? = null
@@ -163,7 +164,7 @@ class PaymentViewModel(
     }
 
     fun rebillWithSavedCard(rebillRequest: RebillRequest, onSuccess: () -> Unit, onError: (String) -> Unit) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val success = paymentUseCase.rebillPayment(rebillRequest)
                 if (success) {
@@ -178,7 +179,7 @@ class PaymentViewModel(
     }
 
     fun getPaymentMethods(userId: Int) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Loading
 
             try {

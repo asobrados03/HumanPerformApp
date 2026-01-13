@@ -11,8 +11,10 @@ import com.humanperformcenter.shared.data.model.DaySession
 import com.humanperformcenter.shared.data.model.SharedPool
 import com.humanperformcenter.shared.data.model.UserBooking
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
@@ -74,7 +76,7 @@ class DaySessionViewModel(
         println("Service ID enviado: $serviceId")
         println("=======================================")
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val result = useCase.getSessionsByDay(serviceId, date)
 
@@ -95,10 +97,14 @@ class DaySessionViewModel(
     }
 
     private val _coachesForHour = MutableStateFlow<List<DaySession>>(emptyList())
-    val coachesForHour: StateFlow<List<DaySession>> get() = _coachesForHour
+    val coachesForHour: StateFlow<List<DaySession>> = _coachesForHour.asStateFlow()
 
-    fun obtenerEntrenadoresPorHora(hora: String) {
+    fun filtrarEntrenadoresPorHora(hora: String) {
         _coachesForHour.value = _sessions.value.filter { it.hour == hora }
+    }
+
+    fun clearCoachesForHour() {
+        _coachesForHour.value = emptyList()
     }
 
     suspend fun realizarReserva(
@@ -149,7 +155,7 @@ class DaySessionViewModel(
         newStartDate: String,
         hour: String
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val productId = useCase.getUserProductId(customerId)
                 val timeslotId = useCase.getTimeslotId(hour)
@@ -221,70 +227,71 @@ class DaySessionViewModel(
         weeklyLimits: Map<Int, Int>,
         unlimitedSessions: Map<Int, Int>,
         sharedSessions: List<SharedPool>,
-        bookings: List<com.humanperformcenter.shared.data.model.UserBooking>,
+        bookings: List<UserBooking>,
         serviceToPrimary: Map<Int, Int>,
-        validFromByPrimary: Map<Int, String> = emptyMap() // NUEVO parámetro (con default)
+        validFromByPrimary: Map<Int, String> = emptyMap()
     ): Boolean {
         if (serviceId == null) return false
 
-        val primaryTarget = serviceToPrimary[serviceId] ?: serviceId
+        val primaryId = serviceToPrimary[serviceId] ?: serviceId
+        val weekStart = selectedDate.minus(selectedDate.dayOfWeek.ordinal.toLong(), DateTimeUnit.DAY)
+        val weekEnd = weekStart.plus(6, DateTimeUnit.DAY)
 
-        val semanaInicio = selectedDate.minus(selectedDate.dayOfWeek.ordinal, DateTimeUnit.DAY)
-        val semanaFin = semanaInicio.plus(6, DateTimeUnit.DAY)
+        // Preprocesar bookings: mapear a primary + parsear fecha una sola vez
+        val processedBookings = bookings.mapNotNull { booking ->
+            val primary = serviceToPrimary[booking.service_id] ?: booking.service_id
+            val date = booking.date.takeIf { it.length >= 10 }
+                ?.substring(0, 10)
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                ?: return@mapNotNull null
 
-        val bookingsByPrimary = bookings
-            .map { b ->
-                val primary = serviceToPrimary[b.service_id] ?: b.service_id
-                b.copy(service_id = primary)
-            }
-
-        val reservasServicio = bookingsByPrimary.filter { it.service_id == primaryTarget }
-
-        val esRecurrente = weeklyLimits.containsKey(primaryTarget)
-        val limiteSemanal = weeklyLimits[primaryTarget] ?: Int.MAX_VALUE
-
-        if (esRecurrente) {
-            val estaSemana = reservasServicio.count {
-                val fecha = runCatching { LocalDate.parse(it.date.substring(0, 10)) }.getOrNull()
-                fecha != null && fecha in semanaInicio..semanaFin
-            }
-            return estaSemana >= limiteSemanal
+            ProcessedBooking(primary, date)
         }
 
-        val poolsQueAplican = sharedSessions.filter { primaryTarget in it.services }
-
-        val validFromPrimaryDate = parseDateOrNull(validFromByPrimary[primaryTarget])
-        val usadasTotalesServicio = reservasServicio.count { b ->
-            val f = runCatching { LocalDate.parse(b.date.substring(0, 10)) }.getOrNull()
-            f != null && (validFromPrimaryDate == null || f >= validFromPrimaryDate)
+        // Caso recurrente (límite semanal)
+        if (primaryId in weeklyLimits) {
+            val limit = weeklyLimits[primaryId]!!
+            val countThisWeek = processedBookings.count {
+                it.primaryId == primaryId && it.date in weekStart..weekEnd
+            }
+            return countThisWeek >= limit
         }
-        val dedicadoPermitido = unlimitedSessions[primaryTarget] // puede ser null si no hay bono dedicado
-        val dedicadoRestante = if (dedicadoPermitido != null)
-            (dedicadoPermitido - usadasTotalesServicio).coerceAtLeast(0)
-        else 0
 
-        val restanteCompartidoSum = if (poolsQueAplican.isNotEmpty()) {
-            poolsQueAplican.sumOf { pool ->
-                val vf = parseDateOrNull(pool.valid_from)
-                val vt = parseDateOrNull(pool.valid_to)
-                val usadasEnPool = bookingsByPrimary.count { b ->
-                    val f = runCatching { LocalDate.parse(b.date.substring(0, 10)) }.getOrNull()
-                    f != null &&
-                            (vf == null || f >= vf) &&
-                            (vt == null || f <= vt) &&
-                            b.service_id in pool.services
+        // Caso bonos: dedicados + pools compartidos
+        val validFromDate = validFromByPrimary[primaryId]?.let(::parseDateOrNull)
+
+        val usedDedicated = processedBookings.count {
+            it.primaryId == primaryId &&
+                    (validFromDate == null || it.date >= validFromDate)
+        }
+
+        val dedicatedAllowed = unlimitedSessions[primaryId] ?: 0
+        val dedicatedRemaining = (dedicatedAllowed - usedDedicated).coerceAtLeast(0)
+
+        val sharedRemaining = sharedSessions
+            .filter { primaryId in it.services }
+            .sumOf { pool ->
+                val poolFrom = pool.valid_from?.let(::parseDateOrNull)
+                val poolTo = pool.valid_to?.let(::parseDateOrNull)
+
+                val usedInPool = processedBookings.count { b ->
+                    b.primaryId in pool.services &&
+                            (poolFrom == null || b.date >= poolFrom) &&
+                            (poolTo == null || b.date <= poolTo)
                 }
-                (pool.sessions - usadasEnPool).coerceAtLeast(0)
+
+                (pool.sessions - usedInPool).coerceAtLeast(0)
             }
-        } else 0
 
-        if (dedicadoPermitido == null && poolsQueAplican.isEmpty()) {
-            return false
-        }
-
-        val disponibleTotal = (dedicadoRestante + restanteCompartidoSum).coerceAtLeast(0)
-        return disponibleTotal <= 0
+        val totalAvailable = dedicatedRemaining + sharedRemaining
+        return totalAvailable <= 0
     }
+
+    // Data class auxiliar
+    private data class ProcessedBooking(
+        val primaryId: Int?,
+        val date: LocalDate
+    )
 
     @OptIn(ExperimentalTime::class)
     suspend fun cargarFormularioSiProcede(proximasSesiones: List<UserBooking>) {
@@ -368,7 +375,7 @@ class DaySessionViewModel(
 
     private fun enviarRespuestas() {
         val bookingId = bookingIdPendiente ?: return
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val enviado = useCase.enviarCuestionarioReserva(
                     BookingQuestionnaireRequest(

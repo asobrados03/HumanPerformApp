@@ -17,12 +17,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class UserUseCase(private val userRepository: UserRepository) {
-    suspend fun updateUser(user: User, profilePicBytes: ByteArray?): User = withContext(Dispatchers.IO) {
-        return@withContext userRepository.updateUser(user, profilePicBytes)
+    suspend fun updateUser(user: User, profilePicBytes: ByteArray?): User {
+        return userRepository.updateUser(user, profilePicBytes)
     }
 
-    suspend fun deleteUser(email: String): Result<Unit> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.deleteUser(email)
+    suspend fun deleteUser(email: String): Result<Unit> {
+        return userRepository.deleteUser(email)
     }
 
 
@@ -49,52 +49,47 @@ class UserUseCase(private val userRepository: UserRepository) {
             result.getOrThrow()
         }
 
-    suspend fun getCoaches(): Result<List<Professional>> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.getCoaches()
+    suspend fun getCoaches(): Result<List<Professional>> {
+        return userRepository.getCoaches()
     }
 
-    suspend fun markFavorite(
-        coachId: Int, serviceName: String?, userId: Int?
-    ): Result<String> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.markFavorite(coachId, serviceName, userId)
+    suspend fun markFavorite(coachId: Int, serviceName: String?, userId: Int?): Result<String> {
+        return userRepository.markFavorite(coachId, serviceName, userId)
     }
 
-    suspend fun deleteProfilePic(req: DeleteProfilePicRequest) = withContext(Dispatchers.IO) {
-        return@withContext userRepository.deleteProfilePic(req)
+    suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit> {
+        return userRepository.deleteProfilePic(req)
     }
 
-    suspend fun getUserAllowedServices(customerId: Int): List<ServiceAvailable> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.getUserAllowedServices(customerId)
+    suspend fun getUserAllowedServices(customerId: Int): List<ServiceAvailable> {
+        return userRepository.getUserAllowedServices(customerId)
     }
 
-    suspend fun getUserBookings(customerId: Int): List<UserBooking> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.getUserBookings(customerId)
+    suspend fun getUserBookings(customerId: Int): List<UserBooking> {
+        return userRepository.getUserBookings(customerId)
     }
 
-    suspend fun cancelUserBooking(bookingId: Int): Result<Unit> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.cancelUserBooking(bookingId)
+    suspend fun cancelUserBooking(bookingId: Int): Result<Unit> {
+        return userRepository.cancelUserBooking(bookingId)
     }
 
-    suspend fun getUserStats(customerId: Int): UserStatistics = withContext(Dispatchers.IO) {
-        return@withContext userRepository.getUserStats(customerId)
+    suspend fun getUserStats(customerId: Int): UserStatistics {
+        return userRepository.getUserStats(customerId)
     }
 
     /**
      * Añade un código de cupón al perfil del usuario.
      * El repo devuelve Result<Unit> indicando éxito o fallo.
      */
-    suspend fun addCouponToUser(
-        userId: Int,
-        couponCode: String
-    ): Result<Unit> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.addCouponToUser(userId, couponCode)
+    suspend fun addCouponToUser(userId: Int, couponCode: String): Result<Unit> {
+        return userRepository.addCouponToUser(userId, couponCode)
     }
 
     /**
      * Recupera el cupón activo del usuario, o null si no tiene.
      */
-    suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.getUserCoupons(userId)
+    suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> {
+        return userRepository.getUserCoupons(userId)
     }
 
     /**
@@ -125,10 +120,8 @@ class UserUseCase(private val userRepository: UserRepository) {
         }
     }
 
-    suspend fun uploadDocument(
-        name: String, data: ByteArray
-    ): Result<String> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.uploadDocument(name, data)
+    suspend fun uploadDocument(name: String, data: ByteArray): Result<String> {
+        return userRepository.uploadDocument(name, data)
     }
 
     suspend fun uploadDocumentRaw(
@@ -139,12 +132,12 @@ class UserUseCase(private val userRepository: UserRepository) {
     }
 
 
-    suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.getPreferredCoach(customerId)
+    suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse> {
+        return userRepository.getPreferredCoach(customerId)
     }
 
-    suspend fun getEwalletBalance(userId: Int): Result<Double?> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.getEwalletBalance(userId)
+    suspend fun getEwalletBalance(userId: Int): Result<Double?> {
+        return userRepository.getEwalletBalance(userId)
     }
 
     fun getEwalletBalanceForIos(
@@ -159,7 +152,7 @@ class UserUseCase(private val userRepository: UserRepository) {
         }
     }
 
-    suspend fun getEwalletTransactions(userId: Int): List<EwalletTransaction> = withContext(Dispatchers.IO) {
-        return@withContext userRepository.getEwalletTransactions(userId)
+    suspend fun getEwalletTransactions(userId: Int): List<EwalletTransaction> {
+        return userRepository.getEwalletTransactions(userId)
     }
 }

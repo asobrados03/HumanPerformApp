@@ -5,21 +5,18 @@ import com.humanperformcenter.shared.data.model.RegisterRequest
 import com.humanperformcenter.shared.data.model.RegisterResponse
 import com.humanperformcenter.shared.domain.repository.AuthRepository
 import com.humanperformcenter.shared.domain.usecase.validation.ChangePasswordException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.withContext
 
 class AuthUseCase(private val authRepository: AuthRepository) {
-    suspend fun login(email: String, password: String): Result<LoginResponse> = withContext(Dispatchers.IO)  {
-        return@withContext authRepository.login(email, password)
+    suspend fun login(email: String, password: String): Result<LoginResponse> {
+        return authRepository.login(email, password)
     }
 
-    suspend fun register(data: RegisterRequest): Result<RegisterResponse> = withContext(Dispatchers.IO) {
-        return@withContext authRepository.register(data)
+    suspend fun register(data: RegisterRequest): Result<RegisterResponse> {
+        return authRepository.register(data)
     }
 
-    suspend fun resetPassword(email: String): Result<Unit> = withContext(Dispatchers.IO) {
-        return@withContext authRepository.resetPassword(email)
+    suspend fun resetPassword(email: String): Result<Unit> {
+        return authRepository.resetPassword(email)
     }
 
     suspend fun changePassword(
@@ -27,8 +24,8 @@ class AuthUseCase(private val authRepository: AuthRepository) {
         newPassword: String,
         confirmPassword: String,
         userId: Int
-    ): Result<Unit> = withContext(Dispatchers.IO) {
-        return@withContext try {
+    ): Result<Unit> {
+        return try {
             // — Validaciones de negocio; lanzan ChangePasswordException
             when {
                 currentPassword.isBlank()       -> throw ChangePasswordException.CurrentRequired
@@ -43,8 +40,7 @@ class AuthUseCase(private val authRepository: AuthRepository) {
                 newPassword.contains(" ")       -> throw ChangePasswordException.ContainsSpace
                 else -> {
                     // Intentamos el cambio en el repositorio; forzamos excepción si falla
-                    authRepository.changePassword(currentPassword, newPassword, userId)
-                        .getOrThrow()
+                    authRepository.changePassword(currentPassword, newPassword, userId).getOrThrow()
                 }
             }
             Result.success(Unit)

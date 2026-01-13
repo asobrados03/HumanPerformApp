@@ -13,6 +13,7 @@ import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
 import com.humanperformcenter.ui.viewmodel.state.LoginState
 import com.humanperformcenter.ui.viewmodel.state.RegisterState
 import com.humanperformcenter.ui.viewmodel.state.ResetPasswordState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.onSuccess
 
@@ -35,7 +36,7 @@ class AuthViewModel(
     fun login(email: String, password: String) {
         _loginState.value = LoginState.Loading
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val result: Result<LoginResponse> = authUseCase.login(email, password)
 
             result.onSuccess { loginResponse ->
@@ -68,7 +69,7 @@ class AuthViewModel(
 
         _registerState.value = RegisterState.Loading
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val result = authUseCase.register(data)
             _registerState.value = result
                 .map { RegisterState.Success(it) }
@@ -79,7 +80,7 @@ class AuthViewModel(
     fun resetPassword(email: String) {
         _isResettingPassword.value = ResetPasswordState.Loading
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val result = authUseCase.resetPassword(email)
             _isResettingPassword.value = result
                 .map { ResetPasswordState.Success("Contraseña restablecida exitosamente") }
@@ -95,7 +96,7 @@ class AuthViewModel(
     ) {
         _isChangingPassword.value = ChangePasswordState.Loading
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val result = authUseCase.changePassword(currentPassword, newPassword, confirmPassword, userId)
             _isChangingPassword.value = result
                 .map { ChangePasswordState.Success("Contraseña cambiada exitosamente") }
