@@ -28,6 +28,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.shared.data.model.ServiceItem
+import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
@@ -54,7 +55,6 @@ fun MyProductsScreen(
         }
     }
 
-
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -66,8 +66,11 @@ fun MyProductsScreen(
                 Text("No tienes productos contratados.")
             }
         } else {
-            items(productosUnicos) { producto ->
-                val imageUrl = producto.image?.let { "https://apihuman.fransdata.com/api/product_images/$it" }
+            items(
+                items = productosUnicos,
+                key = { it.id }
+            ) { producto ->
+                val imageUrl = producto.image?.let { "${ApiClient.baseUrl}/product_images/$it" }
 
                 AppCard(onClick = {
                     productoSeleccionado = producto
@@ -102,8 +105,6 @@ fun MyProductsScreen(
         }
     }
     if (mostrarDialogoProducto && productoSeleccionado != null) {
-        val context = LocalContext.current
-
         AlertDialog(
             onDismissRequest = {
                 mostrarDialogoProducto = false

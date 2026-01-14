@@ -59,6 +59,7 @@ import com.humanperformcenter.app.navigation.StripeCheckout
 import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.shared.data.model.RebillRequest
+import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.BillingPrefill
@@ -332,7 +333,10 @@ fun HireProductScreen(
                 item {
                     Text("No hay productos disponibles para este servicio.")
                 }
-            } else items(productosFiltrados) { producto ->
+            } else items(
+                items = productosFiltrados,
+                key = { it.id }
+            ) { producto ->
                 val contratado = idsContratados.contains(producto.id)
                 AppCard(onClick = {
                     if (!contratado) {
@@ -348,7 +352,7 @@ fun HireProductScreen(
                     ) {
                         producto.image?.let {
                             AsyncImage(
-                                model = "https://apihuman.fransdata.com/api/product_images/$it",
+                                model = "${ApiClient.baseUrl}/product_images/$it",
                                 contentDescription = producto.name,
                                 modifier = Modifier
                                     .size(69.dp)
