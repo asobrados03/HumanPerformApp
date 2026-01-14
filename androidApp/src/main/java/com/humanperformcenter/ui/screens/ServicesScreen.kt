@@ -181,7 +181,7 @@ fun HireView(
     ) {
         items(
             items = servicios,
-            key = {servicio -> servicio.id}
+            key = { it.id }
         ) { servicio ->
             val imageUrl = servicio.image?.let { "${ApiClient.baseUrl}/service_images/$it" }
             val contratado = productosContratados.any { producto ->

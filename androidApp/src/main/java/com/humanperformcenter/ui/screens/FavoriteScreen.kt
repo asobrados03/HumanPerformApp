@@ -111,7 +111,10 @@ fun FavoriteScreen(
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
-            items(coaches) { prof ->
+            items(
+                items = coaches,
+                key = { it.id }
+                ) { prof ->
                 val isSelected = prof.id == preferredCoachId
 
                 Card(

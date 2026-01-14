@@ -69,11 +69,11 @@ fun MyProductsScreen(
             items(
                 items = productosUnicos,
                 key = { it.id }
-            ) { producto ->
-                val imageUrl = producto.image?.let { "${ApiClient.baseUrl}/product_images/$it" }
+            ) { product ->
+                val imageUrl = product.image?.let { "${ApiClient.baseUrl}/product_images/$it" }
 
                 AppCard(onClick = {
-                    productoSeleccionado = producto
+                    productoSeleccionado = product
                     mostrarDialogoProducto = true
                 }) {
                     Row(
@@ -83,7 +83,7 @@ fun MyProductsScreen(
                         imageUrl?.let {
                             AsyncImage(
                                 model = it,
-                                contentDescription = producto.name,
+                                contentDescription = product.name,
                                 modifier = Modifier
                                     .size(69.dp)
                                     .padding(end = 12.dp)
@@ -91,11 +91,11 @@ fun MyProductsScreen(
                         }
 
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(producto.name, fontWeight = FontWeight.Bold)
+                            Text(product.name, fontWeight = FontWeight.Bold)
                         }
 
                         Text(
-                            text = "${producto.price?.toInt() ?: 0}€",
+                            text = "${product.price?.toInt() ?: 0}€",
                             fontWeight = FontWeight.Bold,
                             color = Color.Red
                         )
