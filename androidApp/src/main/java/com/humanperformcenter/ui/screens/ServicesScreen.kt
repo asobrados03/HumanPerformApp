@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humanperformcenter.app.navigation.HireProduct
+import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -182,7 +183,7 @@ fun HireView(
             items = servicios,
             key = {servicio -> servicio.id}
         ) { servicio ->
-            val imageUrl = servicio.image?.let { "https://apihuman.fransdata.com/api/service_images/$it" }
+            val imageUrl = servicio.image?.let { "${ApiClient.baseUrl}/service_images/$it" }
             val contratado = productosContratados.any { producto ->
                 producto.serviceIds.contains(servicio.id)
             }

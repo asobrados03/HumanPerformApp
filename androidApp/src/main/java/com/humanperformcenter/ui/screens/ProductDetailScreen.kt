@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import java.time.LocalDate
@@ -70,7 +71,7 @@ fun ProductDetailScreen(
                     .verticalScroll(rememberScrollState())
             ) {
                 detail.let { producto ->
-                    val imageUrl = producto.image?.let { "https://apihuman.fransdata.com/api/product_images/$it" }
+                    val imageUrl = producto.image?.let { "${ApiClient.baseUrl}/product_images/$it" }
 
                     imageUrl?.let {
                         AsyncImage(
