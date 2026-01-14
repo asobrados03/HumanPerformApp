@@ -460,7 +460,7 @@ fun HireProductScreen(
                         show_stored = mostrarTarjetasHpp,
                         product_id = selectedProduct.id,
                         interval_months = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
-                        subscribe = if (selectedProduct.tipo_producto == "recurrent") true else false
+                        subscribe = selectedProduct.tipo_producto == "recurrent"
                     )
 
                     navController.currentBackStackEntry?.savedStateHandle?.apply {
@@ -645,7 +645,7 @@ fun HireProductScreen(
                         show_stored = mostrarTarjetasHpp,
                         product_id = selectedProduct.id,
                         interval_months = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
-                        subscribe = if (selectedProduct.tipo_producto == "recurrent") true else false
+                        subscribe = selectedProduct.tipo_producto == "recurrent"
                     )
 
                     navController.currentBackStackEntry?.savedStateHandle?.apply {
@@ -681,7 +681,7 @@ fun HireProductScreen(
                         show_stored = mostrarTarjetasHpp,
                         product_id = selectedProduct.id,
                         interval_months = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
-                        subscribe = if (selectedProduct.tipo_producto == "recurrent") true else false
+                        subscribe = selectedProduct.tipo_producto == "recurrent"
                     )
 
                     navController.currentBackStackEntry?.savedStateHandle?.apply {

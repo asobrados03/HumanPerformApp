@@ -28,7 +28,6 @@ import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
-import java.time.LocalDate
 
 @Composable
 fun ProductDetailScreen(
@@ -57,12 +56,6 @@ fun ProductDetailScreen(
                 CircularProgressIndicator()
             }
         } else {
-            val parsedDate = try {
-                LocalDate.parse(detail.created_at.substring(0, 10))
-            } catch (e: Exception) {
-                null
-            }
-
             Column(
                 modifier = Modifier
                     .padding(padding)
@@ -107,9 +100,7 @@ fun ProductDetailScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Fechas y precios
-                    producto.created_at?.let {
-                        Text("Fecha de obtención: ${it.substring(0, 10)}", modifier = Modifier.fillMaxWidth())
-                    }
+                    Text("Fecha de obtención: ${producto.created_at.take(10)}", modifier = Modifier.fillMaxWidth())
                     producto.expiry_date?.let {
                         Text("Fecha de caducidad: ${it.substring(0, 10)}", modifier = Modifier.fillMaxWidth())
                     }
