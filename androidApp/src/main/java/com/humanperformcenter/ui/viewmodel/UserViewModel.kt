@@ -89,19 +89,9 @@ class UserViewModel(
      * del caso de uso.
      */
     fun updateUser(candidate: User, profilePicBytes: ByteArray?) {
-        val dobParts = candidate.dateOfBirth.split("-")
-        val dateOfBirthText = if (dobParts.size == 3) {
-            val y = dobParts[0].padStart(4, '0')
-            val m = dobParts[1].padStart(2, '0')
-            val d = dobParts[2].padStart(2, '0')
-            "$d/$m/$y"
-        } else {
-            ""
-        }
-
         val validation = UserValidator.validateProfile(
             fullName = candidate.fullName,
-            dateOfBirthText = dateOfBirthText,
+            dateOfBirthText = candidate.dateOfBirth,
             selectedSexBackend = candidate.sex,
             phone = candidate.phone,
             postAddress = candidate.postAddress,

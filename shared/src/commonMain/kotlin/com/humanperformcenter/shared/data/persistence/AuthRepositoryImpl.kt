@@ -82,9 +82,10 @@ object AuthRepositoryImpl : AuthRepository {
                 append("password",     data.password)
                 append("sexo",         data.sexo)
                 append("fecha_nacimiento", data.fechaNacimiento) // ddMMyyyy
-                append("codigoPostal",   data.codigoPostal)
-                append("direccionPostal", data.direccionPostal)
+                append("codigo_postal",   data.codigoPostal)
+                append("direccion_postal", data.direccionPostal)
                 append("dni",             data.dni)
+                append("device_type",      data.deviceType)
             }
 
             // 2) Envío con MULTIPART, sin tocar el Content-Type manualmente

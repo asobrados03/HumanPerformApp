@@ -467,20 +467,12 @@ fun EditProfileScreen(
 
                 Button(
                     onClick = {
-                        // Convertir "dd/MM/yyyy" ⇒ "yyyy-MM-dd"
-                        val partes = dateOfBirthText.split("/")
-                        val d = partes.getOrNull(0)?.padStart(2, '0') ?: ""
-                        val m = partes.getOrNull(1)?.padStart(2, '0') ?: ""
-                        val y = partes.getOrNull(2)?.padStart(4, '0') ?: ""
-                        val dateOfBirthBackend =
-                            if (partes.size == 3) "$y-$m-$d" else ""
+                        val newSex = selectedSex?.backendValue ?: user.sex
 
-                        // Construir el candidato final
-                        val nuevoSexo = selectedSex?.backendValue ?: user.sex
                         val updated = user.copy(
                             fullName = fullName.trim(),
-                            dateOfBirth = dateOfBirthBackend,
-                            sex = nuevoSexo,
+                            dateOfBirth = dateOfBirthText,
+                            sex = newSex,
                             phone = phone.trim(),
                             postcode = postcodeInt,
                             postAddress = postAddress,
@@ -488,13 +480,11 @@ fun EditProfileScreen(
                             profilePictureName = profilePicName
                         )
 
-                        // Guardamos en el SavedStateHandle
                         navController
                             .previousBackStackEntry
                             ?.savedStateHandle
                             ?.set("new_profile_uri", profilePicUri.toString())
 
-                        // Limpiar errores previos y delegar en el ViewModel
                         onSave(updated, profilePicBytes)
                     },
                     modifier = Modifier
