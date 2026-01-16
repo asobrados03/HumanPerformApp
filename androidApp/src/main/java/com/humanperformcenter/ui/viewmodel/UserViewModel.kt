@@ -89,8 +89,6 @@ class UserViewModel(
      * del caso de uso.
      */
     fun updateUser(candidate: User, profilePicBytes: ByteArray?) {
-        // 1) Convertir dateOfBirth de "yyyy-MM-dd" (que la UI ya le pasó) a formato dd/MM/yyyy
-        //    para validar en el caso de uso. Podemos invertir la cadena:
         val dobParts = candidate.dateOfBirth.split("-")
         val dateOfBirthText = if (dobParts.size == 3) {
             val y = dobParts[0].padStart(4, '0')
@@ -101,20 +99,17 @@ class UserViewModel(
             ""
         }
 
-        // 2) Invocar al caso de uso para validar
         val validation = UserValidator.validateProfile(
             fullName = candidate.fullName,
             dateOfBirthText = dateOfBirthText,
             selectedSexBackend = candidate.sex,
             phone = candidate.phone,
             postAddress = candidate.postAddress,
-            dni = candidate.dni.toString()
+            dni = candidate.dni ?: ""
         )
 
         if (validation is EditValidationResult.Error) {
-            // 2.1) Si hay errores, los voltamos a UpdateState.ValidationErrors
             val fieldErrors = validation.fieldErrors.mapKeys { (campo, _) ->
-                // Mapear ValidationResult.Field → UpdateState.Field
                 when (campo) {
                     EditValidationResult.Field.FULL_NAME -> UpdateState.Field.FULL_NAME
                     EditValidationResult.Field.DATE_OF_BIRTH -> UpdateState.Field.DATE_OF_BIRTH
@@ -128,7 +123,6 @@ class UserViewModel(
             return
         }
 
-        // 3) Si pasó validación, invocamos updateUser() en Loading
         _updateState.value = UpdateState.Loading
 
         viewModelScope.launch(Dispatchers.IO) {

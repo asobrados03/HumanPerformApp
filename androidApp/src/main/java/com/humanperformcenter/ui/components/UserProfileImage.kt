@@ -25,8 +25,6 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.transform.RoundedCornersTransformation
 import com.humanperformcenter.shared.data.network.ApiClient
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 /**
  * Muestra la foto de perfil del usuario, ya sea desde una URI local o una URL remota.
@@ -37,7 +35,6 @@ fun UserProfileImage(
     photoName: String? = null,
     photoUri: Uri? = null,
     size: Dp = 80.dp,
-    modifier: Modifier = Modifier,
     onError: ((Throwable?) -> Unit)? = null,
 ) {
     val context = LocalContext.current
@@ -46,7 +43,7 @@ fun UserProfileImage(
     val data: Any? = remember(photoUri, photoName) {
         when {
             photoUri != null -> photoUri
-            !photoName.isNullOrBlank() -> buildPhotoUrl(ApiClient.baseUrl, photoName)
+            !photoName.isNullOrBlank() ->  "${ApiClient.baseUrl}/profile_pic/$photoName"
             else -> null
         }
     }
@@ -97,20 +94,10 @@ fun UserProfileImage(
                     .border(2.dp, Color.White, CircleShape),
             )
         },
-        modifier = modifier
+        modifier = Modifier
             .size(size)
             .clip(CircleShape)
-        // El borde se aplica una vez que se determina el tamaño y la forma
+            // El borde se aplica una vez que se determina el tamaño y la forma
             .border(2.dp, Color.White, CircleShape),
     )
 }
-
-/** Construye la URL remota para la foto de perfil asegurando protocolo HTTPS y path codificado. */
-private fun buildPhotoUrl(baseApiUrl: String, fileName: String): String {
-    // Asegura https y elimina barras extra.
-    val root = baseApiUrl.trim().trimEnd('/').replaceFirst("http://", "https://")
-    val encoded = URLEncoder.encode(fileName.trim(), StandardCharsets.UTF_8.toString())
-    // Backend actual sirve en /profile_pic/{file}
-    return "$root/profile_pic/$encoded"
-}
-

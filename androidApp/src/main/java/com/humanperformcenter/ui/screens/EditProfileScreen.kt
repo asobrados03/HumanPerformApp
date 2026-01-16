@@ -4,6 +4,8 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -89,22 +91,37 @@ fun EditProfileScreen(
     val deleteProfilePicState: DeleteProfilePicState by userViewModel.deleteProfilePicState
         .collectAsStateWithLifecycle()
 
-    // Snackbar para errores genéricos de red/servidor
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    // ◀─ Nuevo: estados para la foto de perfil
+    LaunchedEffect(deleteProfilePicState) {
+        when(val state = deleteProfilePicState) {
+            is DeleteProfilePicState.Success -> {
+                userViewModel.clearDeleteProfilePicState()
+                navController.popBackStack()
+            }
+            is DeleteProfilePicState.Error -> {
+                userViewModel.clearDeleteProfilePicState()
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = state.message,
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            }
+            else -> Unit
+        }
+    }
+
     var profilePicBytes by remember { mutableStateOf<ByteArray?>(null) }
     var profilePicName by remember { mutableStateOf(user.profilePictureName) }
     var profilePicUri by rememberSaveable { mutableStateOf<Uri?>(null) }
 
-    // Estado para el ModalBottomSheet
     var showSheet by remember { mutableStateOf(false) }
 
     var tempCameraUri by rememberSaveable { mutableStateOf<Uri?>(null) }
 
-    // ◀─ Nuevo: launcher para galería
     val imagePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -164,51 +181,6 @@ fun EditProfileScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // 2) Spinner si estamos en Loading
-            if (updateState is UpdateState.Loading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
-
-            // 3) Efecto para Success (cerrar pantalla) o Error genérico (snackbar)
-            LaunchedEffect(updateState) {
-                when (val state = updateState) {
-                    is UpdateState.Success -> {
-                        userViewModel.clearUpdateState()
-                        navController.popBackStack()
-                    }
-                    is UpdateState.Error -> {
-                        userViewModel.clearUpdateState()
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(
-                                message = state.message,
-                                duration = SnackbarDuration.Short
-                            )
-                        }
-                    }
-                    else -> Unit
-                }
-            }
-
-            LaunchedEffect(deleteProfilePicState) {
-                when(val state = deleteProfilePicState) {
-                    is DeleteProfilePicState.Success -> {
-                        userViewModel.clearDeleteProfilePicState()
-                        navController.popBackStack()
-                    }
-                    is DeleteProfilePicState.Error -> {
-                        userViewModel.clearDeleteProfilePicState()
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(
-                                message = state.message,
-                                duration = SnackbarDuration.Short
-                            )
-                        }
-                    }
-                    else -> Unit
-                }
-            }
-
-            // 4) Estados locales de UI para retener el texto y los mensajes de error por campo
             var fullName by rememberSaveable { mutableStateOf(user.fullName) }
             var fullNameError by remember { mutableStateOf("") }
 
@@ -230,15 +202,16 @@ fun EditProfileScreen(
 
             var postcodeText by rememberSaveable { mutableStateOf(user.postcode?.toString() ?: "") }
             val postcodeInt: Int? = postcodeText.toIntOrNull()
+            var postcodeError by remember { mutableStateOf("") }
 
             var postAddress by rememberSaveable { mutableStateOf(user.postAddress) }
             var postAddressError by remember { mutableStateOf("") }
 
             var dni by rememberSaveable { mutableStateOf(user.dni ?: "") }
+            var dniError by remember { mutableStateOf("") }
 
             val scrollState = rememberScrollState()
 
-            // Opciones de sexo
             val sexOptions = listOf(
                 SexOption("Masculino", "Male", Icons.Default.Man),
                 SexOption("Femenino",  "Female", Icons.Default.Woman)
@@ -253,19 +226,6 @@ fun EditProfileScreen(
             val selectedSex: SexOption? =
                 selectedIndex.takeIf { it >= 0 }?.let { sexOptions[it] }
 
-            // 5) Cuando updateState cambie a ValidationErrors, volcamos los mensajes a los estados locales
-            LaunchedEffect(updateState) {
-                if (updateState is UpdateState.ValidationErrors) {
-                    val fieldErrors = (updateState as UpdateState.ValidationErrors).fieldErrors
-                    fullNameError = fieldErrors[Field.FULL_NAME] ?: ""
-                    dateOfBirthError = fieldErrors[Field.DATE_OF_BIRTH] ?: ""
-                    sexError = fieldErrors[Field.SEX] ?: ""
-                    postAddressError = fieldErrors[Field.POST_ADDRESS] ?: ""
-                    phoneError = fieldErrors[Field.PHONE] ?: ""
-                }
-            }
-
-            // 6) Contenido del formulario
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -324,7 +284,6 @@ fun EditProfileScreen(
                     )
                 }
 
-                // --- Correo (no editable) ---
                 OutlinedTextField(
                     value = user.email,
                     onValueChange = { /* no editable */ },
@@ -337,12 +296,15 @@ fun EditProfileScreen(
                         .widthIn(max = 600.dp)
                 )
 
-                // --- Nombre completo ---
                 OutlinedTextField(
                     value = fullName,
                     onValueChange = {
                         fullName = it
                         if (fullNameError.isNotEmpty()) fullNameError = ""
+                    },
+                    isError = fullNameError.isNotEmpty(),
+                    supportingText = {
+                        if (fullNameError.isNotEmpty()) Text(text = fullNameError, color = Color.Red)
                     },
                     label = { Text("Nombre y Apellidos") },
                     leadingIcon = { Icon(Icons.Default.Person, null) },
@@ -351,23 +313,17 @@ fun EditProfileScreen(
                         .padding(vertical = 4.dp)
                         .widthIn(max = 600.dp)
                 )
-                if (fullNameError.isNotEmpty()) {
-                    Text(
-                        text = fullNameError,
-                        color = Color.Red,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 8.dp)
-                    )
-                }
 
-                // --- Fecha de nacimiento ---
                 OutlinedTextField(
                     value = dateOfBirthText,
                     onValueChange = { new ->
                         val filtered = new.filter { it.isDigit() || it == '/' }.take(10)
                         dateOfBirthText = filtered
                         if (dateOfBirthError.isNotEmpty()) dateOfBirthError = ""
+                    },
+                    isError = dateOfBirthError.isNotEmpty(),
+                    supportingText = {
+                        if (dateOfBirthError.isNotEmpty()) Text(text = dateOfBirthError, color = Color.Red)
                     },
                     label = { Text("Fecha de nacimiento") },
                     placeholder = { Text("dd/MM/yyyy") },
@@ -379,17 +335,7 @@ fun EditProfileScreen(
                         .padding(vertical = 4.dp)
                         .widthIn(max = 600.dp)
                 )
-                if (dateOfBirthError.isNotEmpty()) {
-                    Text(
-                        text = dateOfBirthError,
-                        color = Color.Red,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 8.dp)
-                    )
-                }
 
-                // --- Sexo desplegable ---
                 ExposedDropdownMenuBox(
                     expanded = expandedSex,
                     onExpandedChange = { expandedSex = !expandedSex },
@@ -402,6 +348,10 @@ fun EditProfileScreen(
                             ?: user.sex.takeIf { it.isNotBlank() } ?: "",
                         onValueChange = { /* readOnly */ },
                         readOnly = true,
+                        isError = sexError.isNotEmpty(),
+                        supportingText = {
+                            if (sexError.isNotEmpty()) Text(text = sexError, color = Color.Red)
+                        },
                         label = { Text("Sexo") },
                         leadingIcon = {
                             if (selectedSex != null) {
@@ -436,22 +386,16 @@ fun EditProfileScreen(
                         }
                     }
                 }
-                if (sexError.isNotEmpty()) {
-                    Text(
-                        text = sexError,
-                        color = Color.Red,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 8.dp)
-                    )
-                }
 
-                // --- Teléfono ---
                 OutlinedTextField(
                     value = phone,
                     onValueChange = {
                         phone = it
                         if (phoneError.isNotEmpty()) phoneError = ""
+                    },
+                    isError = phoneError.isNotEmpty(),
+                    supportingText = {
+                        if (phoneError.isNotEmpty()) Text(text = phoneError, color = Color.Red)
                     },
                     label = { Text("Teléfono") },
                     leadingIcon = { Icon(Icons.Default.Phone, null) },
@@ -461,21 +405,16 @@ fun EditProfileScreen(
                         .widthIn(max = 600.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                 )
-                if (phoneError.isNotEmpty()) {
-                    Text(
-                        text = phoneError,
-                        color = Color.Red,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 8.dp)
-                    )
-                }
 
                 OutlinedTextField(
                     value = postAddress,
                     onValueChange = {
                         postAddress = it
                         if (postAddressError.isNotEmpty()) postAddressError = ""
+                    },
+                    isError = postAddressError.isNotEmpty(),
+                    supportingText = {
+                        if (postAddressError.isNotEmpty()) Text(text = postAddressError, color = Color.Red)
                     },
                     label = { Text("Dirección Postal") },
                     leadingIcon = { Icon(Icons.Default.LocationOn, null) },
@@ -484,23 +423,18 @@ fun EditProfileScreen(
                         .padding(vertical = 4.dp)
                         .widthIn(max = 600.dp)
                 )
-                if (postAddressError.isNotEmpty()) {
-                    Text(
-                        text = postAddressError,
-                        color = Color.Red,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 8.dp)
-                    )
-                }
 
-                // --- Código Postal (opcional) ---
                 OutlinedTextField(
                     value = postcodeText,
                     onValueChange = { newText ->
                         if (newText.all { it.isDigit() }) {
                             postcodeText = newText
                         }
+                        if (postcodeError.isNotEmpty()) postcodeError = ""
+                    },
+                    isError = postcodeError.isNotEmpty(),
+                    supportingText = {
+                        if (postcodeError.isNotEmpty()) Text(text = postcodeError, color = Color.Red)
                     },
                     label = { Text("Código Postal") },
                     leadingIcon = { Icon(Icons.Default.LocationCity, null) },
@@ -511,10 +445,16 @@ fun EditProfileScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
-                // --- DNI (opcional) ---
                 OutlinedTextField(
                     value = dni,
-                    onValueChange = { dni = it },
+                    onValueChange = {
+                        dni = it
+                        if (dniError.isNotEmpty()) dniError = ""
+                    },
+                    isError = dniError.isNotEmpty(),
+                    supportingText = {
+                        if (dniError.isNotEmpty()) Text(text = dniError, color = Color.Red)
+                    },
                     label = { Text("DNI") },
                     leadingIcon = { Icon(Icons.Default.Badge, null) },
                     modifier = Modifier
@@ -525,7 +465,6 @@ fun EditProfileScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // --- Botón Guardar: delega validación en el ViewModel + caso de uso ---
                 Button(
                     onClick = {
                         // Convertir "dd/MM/yyyy" ⇒ "yyyy-MM-dd"
@@ -562,6 +501,54 @@ fun EditProfileScreen(
                         .align(Alignment.CenterHorizontally)
                 ) {
                     Text("Guardar")
+                }
+            }
+
+            LaunchedEffect(updateState) {
+                when (updateState) {
+                    is UpdateState.ValidationErrors -> {
+                        // Asignamos los errores a cada campo
+                        val errors = (updateState as UpdateState.ValidationErrors).fieldErrors
+                        fullNameError = errors[Field.FULL_NAME] ?: ""
+                        dateOfBirthError = errors[Field.DATE_OF_BIRTH] ?: ""
+                        sexError = errors[Field.SEX] ?: ""
+                        postAddressError = errors[Field.POST_ADDRESS] ?: ""
+                        phoneError = errors[Field.PHONE] ?: ""
+                        dniError = errors[Field.DNI] ?: ""
+
+                        // Mostramos snackbar con los campos que tienen error
+                        val camposConError = errors.keys.joinToString(", ") { it.name }
+                        snackbarHostState.showSnackbar(
+                            message = "Revisa los campos con errores: $camposConError",
+                            duration = SnackbarDuration.Long
+                        )
+                    }
+                    is UpdateState.Error -> {
+                        snackbarHostState.showSnackbar(
+                            message = (updateState as UpdateState.Error).message,
+                            duration = SnackbarDuration.Short
+                        )
+                        userViewModel.clearUpdateState()
+                    }
+                    is UpdateState.Success -> {
+                        snackbarHostState.showSnackbar("Perfil actualizado correctamente")
+                        userViewModel.clearUpdateState()
+                        navController.popBackStack()
+                    }
+                    else -> {}
+                }
+            }
+
+            // Spinner si estamos en Loading
+            if (updateState is UpdateState.Loading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.3f))
+                        .clickable(enabled = false) {},
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
             }
         }

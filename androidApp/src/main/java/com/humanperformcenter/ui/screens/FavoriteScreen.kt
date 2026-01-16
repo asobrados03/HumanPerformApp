@@ -61,11 +61,11 @@ fun FavoriteScreen(
     val baseUrl = "${ApiClient.baseUrl}/profile_pic/"
 
     LaunchedEffect(markFavoriteState) {
-        when(val state = markFavoriteState) {
+        when(markFavoriteState) {
             is MarkFavoriteState.Error -> {
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar(
-                        message = state.message,
+                        message = markFavoriteState.message,
                         duration = SnackbarDuration.Short
                     )
                 }
@@ -76,7 +76,7 @@ fun FavoriteScreen(
             is MarkFavoriteState.Success -> {
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar(
-                        message = state.message,
+                        message = markFavoriteState.message,
                         duration = SnackbarDuration.Short
                     )
                 }
