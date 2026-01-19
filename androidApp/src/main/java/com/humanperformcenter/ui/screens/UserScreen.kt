@@ -64,8 +64,6 @@ fun UserScreen(
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
 
-    // 2) Extraigo el LiveData<String> del savedStateHandle,
-    //    usando remember para que no lo vuelva a crear en cada recomposición.
     val newProfileUriLiveData = remember(backStackEntry) {
         backStackEntry
             ?.savedStateHandle
@@ -73,10 +71,8 @@ fun UserScreen(
             ?: MutableLiveData<String?>(null)
     }
 
-    // 3) Observo ese LiveData como State<String?>, con valor inicial null
     val newUriString by newProfileUriLiveData.observeAsState(initial = null)
 
-    // 4) Convierto a Uri si tengo cadena
     val photoUri = remember(newUriString) {
         newUriString?.toUri()
     }
@@ -87,11 +83,8 @@ fun UserScreen(
         userViewModel.fetchUserProfile()
     }
 
-    // 3. DISPARAR CARGA DEL SALDO (Dependiente del Usuario)
-    // Escuchamos cambios en 'user'. Cuando pase de null a tener datos, este bloque se ejecuta.
     LaunchedEffect(user) {
         user?.let { currentUser ->
-            // Solo cargamos el saldo cuando ya tenemos un ID de usuario válido
             userViewModel.loadBalance(currentUser.id)
         }
     }
