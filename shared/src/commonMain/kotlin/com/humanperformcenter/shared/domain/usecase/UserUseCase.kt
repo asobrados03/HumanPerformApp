@@ -21,6 +21,10 @@ class UserUseCase(private val userRepository: UserRepository) {
         return userRepository.updateUser(user, profilePicBytes)
     }
 
+    suspend fun getUserById(id: Int): Result<User> {
+        return userRepository.getUserById(id)
+    }
+
     suspend fun deleteUser(email: String): Result<Unit> {
         return userRepository.deleteUser(email)
     }

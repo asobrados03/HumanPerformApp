@@ -12,6 +12,7 @@ import com.humanperformcenter.shared.data.model.UserBooking
 
 interface UserRepository {
     suspend fun updateUser(user: User, profilePicBytes: ByteArray?): User
+    suspend fun getUserById(id: Int): Result<User>
     suspend fun deleteUser(email: String): Result<Unit>
     suspend fun getCoaches(): Result<List<Professional>>
     suspend fun markFavorite(coachId: Int, serviceName: String?, userId: Int?): Result<String>

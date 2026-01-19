@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -34,14 +35,18 @@ fun ConfigurationScreen(
     navController: NavHostController,
     onLogout: () -> Unit,
     onDeleteAccount: () -> Unit,
-    onChangePasswordRequested: () -> Unit
+    onChangePasswordRequested: () -> Unit,
+    isLoggingOut: Boolean
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     ConfirmLogoutDialog(
         showDialog = showLogoutDialog,
-        onConfirm = onLogout,
+        onConfirm = {
+            showLogoutDialog = false // Cerramos el diálogo
+            onLogout() // Disparamos la lógica del ViewModel
+        },
         onDismiss = { showLogoutDialog = false }
     )
     ConfirmDeleteAccountDialog(
@@ -87,7 +92,7 @@ fun ConfigurationScreen(
             }
             item {
                 AppCard(
-                    onClick = { showLogoutDialog = true },
+                    onClick = { if (!isLoggingOut) showLogoutDialog = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -157,6 +162,10 @@ fun ConfigurationScreen(
                     }
                 }
             }
+        }
+        // Overlay de carga si está borrando datos
+        if (isLoggingOut) {
+            CircularProgressIndicator(modifier = Modifier.fillMaxSize())
         }
     }
 }

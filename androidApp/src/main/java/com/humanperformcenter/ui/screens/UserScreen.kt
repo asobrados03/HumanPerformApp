@@ -52,7 +52,6 @@ import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.components.UserProfileImage
 import com.humanperformcenter.ui.viewmodel.UserViewModel
-import kotlinx.coroutines.flow.filterNotNull
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,10 +81,19 @@ fun UserScreen(
         newUriString?.toUri()
     }
 
-    val user by userViewModel.userData.filterNotNull().collectAsState(initial = null)
+    val user by userViewModel.userData.collectAsState(initial = null)
 
     LaunchedEffect(Unit) {
-        userViewModel.loadBalance(user?.id ?: -1)
+        userViewModel.fetchUserProfile()
+    }
+
+    // 3. DISPARAR CARGA DEL SALDO (Dependiente del Usuario)
+    // Escuchamos cambios en 'user'. Cuando pase de null a tener datos, este bloque se ejecuta.
+    LaunchedEffect(user) {
+        user?.let { currentUser ->
+            // Solo cargamos el saldo cuando ya tenemos un ID de usuario válido
+            userViewModel.loadBalance(currentUser.id)
+        }
     }
 
     val balance by userViewModel.balance.collectAsStateWithLifecycle()
@@ -110,7 +118,6 @@ fun UserScreen(
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
-                    // -- HEADER ROJO como primer ítem --
                     item {
                         Box(
                             modifier = Modifier
@@ -176,10 +183,8 @@ fun UserScreen(
                         }
                     }
 
-                    // -- Spacer antes de las opciones --
                     item { Spacer(Modifier.height(16.dp)) }
 
-                    // -- LISTA DE MENÚ --
                     val items = listOf(
                         MenuOption.CONFIGURACION to "Configuración",
                         MenuOption.FAVORITOS      to "Mis favoritos",

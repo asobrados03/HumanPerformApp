@@ -6,10 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -19,28 +15,20 @@ import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.screens.ConfigurationScreen
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
-import kotlinx.coroutines.launch
 
 @Composable
 fun ConfigurationRoute(
     navController: NavHostController,
     userViewModel: UserViewModel
 ) {
-    // 1) Estado de borrado
     val deleteState by userViewModel.deleteState.collectAsStateWithLifecycle()
-    // 2) Email actual de sesión
     val user by userViewModel.userData.collectAsStateWithLifecycle()
     val currentEmail = user?.email.orEmpty()
 
-    // 3) Contexto para Toasts
     val context = LocalContext.current
 
-    val scope = rememberCoroutineScope()
+    val isLoggingOut by userViewModel.isLoggingOut.collectAsStateWithLifecycle()
 
-    // State to track logout operation
-    var isLoggingOut by remember { mutableStateOf(false) }
-
-    // 4) Side-effects en un único LaunchedEffect
     LaunchedEffect(deleteState) {
         when (deleteState) {
             DeleteUserState.Success -> {
@@ -70,33 +58,23 @@ fun ConfigurationRoute(
         }
     }
 
-    // 5) Muestra la pantalla y el loading overlay si toca
     Box(Modifier.fillMaxSize()) {
         ConfigurationScreen(
             navController = navController,
             onLogout = {
-                // Prevent multiple logout attempts
-                if (isLoggingOut) return@ConfigurationScreen
-
-                isLoggingOut = true
-                scope.launch {
-                    SecureStorage.clear()
-
+                userViewModel.logout {
                     navController.navigate(Welcome) {
-                        popUpTo(Welcome) {
-                            inclusive = true
-                        }
+                        popUpTo(0) { inclusive = true }
                     }
-                    isLoggingOut = false
                 }
-
             },
             onDeleteAccount = {
                 userViewModel.deleteUser(currentEmail)
             },
             onChangePasswordRequested = {
                 navController.navigate(ChangePassword)
-            }
+            },
+            isLoggingOut = isLoggingOut
         )
 
         if (deleteState is DeleteUserState.Loading) {

@@ -24,9 +24,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class UserViewModel(
     private val userUseCase: UserUseCase
@@ -50,10 +50,10 @@ class UserViewModel(
 
     init {
         viewModelScope.launch {
-            // Lee sólo UNA vez el user almacenado
-            val storedUser = SecureStorage.userFlow().firstOrNull()
-            _userData.value = storedUser
-            _isLoading.value = false
+            SecureStorage.userFlow().collect { storedUser ->
+                _userData.value = storedUser
+                _isLoading.value = false
+            }
         }
     }
 
@@ -63,6 +63,9 @@ class UserViewModel(
 
     private val _deleteState = MutableStateFlow<DeleteUserState>(DeleteUserState.Idle)
     val deleteState: StateFlow<DeleteUserState> = _deleteState
+
+    private val _isLoggingOut = MutableStateFlow(false)
+    val isLoggingOut: StateFlow<Boolean> = _isLoggingOut.asStateFlow()
 
     private val _coachesState = MutableStateFlow<CoachState>(CoachState.Idle)
     val coachesState: StateFlow<CoachState> = _coachesState
@@ -135,6 +138,21 @@ class UserViewModel(
         _updateState.value = UpdateState.Idle
     }
 
+    fun fetchUserProfile() {
+        val currentUser = _userData.value ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            // Asumiendo que tienes un método en userUseCase para obtener el perfil por ID o Email
+            val result = userUseCase.getUserById(currentUser.id)
+            result.onSuccess { updatedUser ->
+                _userData.value = updatedUser
+                // Opcional: Guardar en SecureStorage para persistencia
+                SecureStorage.saveUser(updatedUser)
+            }.onFailure {
+                // Manejar error si es necesario
+            }
+        }
+    }
+
     fun deleteUser(email: String) {
         viewModelScope.launch(Dispatchers.IO) {
             _deleteState.value = DeleteUserState.Loading
@@ -159,6 +177,22 @@ class UserViewModel(
     /** Úsalo si quieres resetear el flujo (por ejemplo al salir de la pantalla) */
     fun resetDeleteState() {
         _deleteState.value = DeleteUserState.Idle
+    }
+
+    fun logout(onSuccess: () -> Unit) {
+        if (_isLoggingOut.value) return
+
+        viewModelScope.launch {
+            _isLoggingOut.value = true
+
+            SecureStorage.clear()
+            // Aseguramos que la navegación ocurra en el hilo principal
+            withContext(Dispatchers.Main) {
+                onSuccess()
+            }
+
+            _isLoggingOut.value = false
+        }
     }
 
     fun getCoaches() {

@@ -91,6 +91,26 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
+    override suspend fun getUserById(id: Int): Result<User> {
+        return try {
+            val resp: HttpResponse = ApiClient.apiClient.get(
+                "${ApiClient.baseUrl}/mobile/user"
+            ) {
+                contentType(ContentType.Application.Json)
+                parameter("user_id", id)
+            }
+
+            if (resp.status == HttpStatusCode.OK) {
+                val user: User = resp.body()
+                Result.success(user)
+            } else {
+                Result.failure(Exception("Error al leer el usuario: ${resp.status.value}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun deleteUser(email: String): Result<Unit> {
         return try {
             val resp: HttpResponse = ApiClient.apiClient.delete("${ApiClient.baseUrl}/mobile/user") {
@@ -418,6 +438,5 @@ object UserRepositoryImpl: UserRepository {
             emptyList()
         }
     }
-
 
 }
