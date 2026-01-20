@@ -13,6 +13,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -26,10 +27,6 @@ import coil.request.ImageRequest
 import coil.transform.RoundedCornersTransformation
 import com.humanperformcenter.shared.data.network.ApiClient
 
-/**
- * Muestra la foto de perfil del usuario, ya sea desde una URI local o una URL remota.
- * Incluye estados de carga, error y cache para mejorar la experiencia de usuario.
- */
 @Composable
 fun UserProfileImage(
     photoName: String? = null,
@@ -77,8 +74,12 @@ fun UserProfileImage(
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .border(2.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(modifier = Modifier.size(size / 3))
+                CircularProgressIndicator(
+                    modifier = Modifier.size(size / 3),
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         },
         error = {
