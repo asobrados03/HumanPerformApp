@@ -30,6 +30,8 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Woman
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -38,11 +40,14 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -76,6 +81,9 @@ import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState.Field
 import kotlinx.coroutines.launch
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -184,18 +192,13 @@ fun EditProfileScreen(
             var fullName by rememberSaveable { mutableStateOf(user.fullName) }
             var fullNameError by remember { mutableStateOf("") }
 
-            // Convertir "yyyy-MM-dd" ⇒ "dd/MM/yyyy" para mostrar
-            val initialDateText: String = user.dateOfBirth.takeIf { it.isNotBlank() }?.let { db ->
-                val p = db.split("-")
-                if (p.size == 3) {
-                    val y = p[0].padStart(4, '0')
-                    val m = p[1].padStart(2, '0')
-                    val d = p[2].padStart(2, '0')
-                    "$d/$m/$y"
-                } else ""
-            } ?: ""
-            var dateOfBirthText by rememberSaveable { mutableStateOf(initialDateText) }
+            var dateOfBirthText by rememberSaveable { mutableStateOf(
+                formatDate(user.dateOfBirth)
+            ) }
             var dateOfBirthError by remember { mutableStateOf("") }
+
+            var showDatePicker by remember { mutableStateOf(false) }
+            val datePickerState = rememberDatePickerState()
 
             var phone by rememberSaveable { mutableStateOf(user.phone) }
             var phoneError by remember { mutableStateOf("") }
@@ -284,6 +287,41 @@ fun EditProfileScreen(
                     )
                 }
 
+                if (showDatePicker) {
+                    DatePickerDialog(
+                        onDismissRequest = { showDatePicker = false },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                val selectedDate = datePickerState.selectedDateMillis
+                                if (selectedDate != null) {
+                                    // Convertimos milisegundos a formato dd/MM/yyyy
+                                    val date = Date(selectedDate)
+                                    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                                    dateOfBirthText = formatter.format(date)
+                                }
+                                showDatePicker = false
+                            }) {
+                                Text("Aceptar")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDatePicker = false }) {
+                                Text("Cancelar")
+                            }
+                        }
+                    ) {
+                        DatePicker(
+                            state = datePickerState,
+                            headline = {
+                                Text(
+                                    text = if (datePickerState.selectedDateMillis != null) "Fecha seleccionada" else "Selecciona fecha",
+                                    modifier = Modifier.padding(start = 24.dp)
+                                )
+                            }
+                        )
+                    }
+                }
+
                 OutlinedTextField(
                     value = user.email,
                     onValueChange = { /* no editable */ },
@@ -295,6 +333,8 @@ fun EditProfileScreen(
                         .padding(vertical = 4.dp)
                         .widthIn(max = 600.dp)
                 )
+
+                Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedTextField(
                     value = fullName,
@@ -314,27 +354,37 @@ fun EditProfileScreen(
                         .widthIn(max = 600.dp)
                 )
 
-                OutlinedTextField(
-                    value = dateOfBirthText,
-                    onValueChange = { new ->
-                        val filtered = new.filter { it.isDigit() || it == '/' }.take(10)
-                        dateOfBirthText = filtered
-                        if (dateOfBirthError.isNotEmpty()) dateOfBirthError = ""
-                    },
-                    isError = dateOfBirthError.isNotEmpty(),
-                    supportingText = {
-                        if (dateOfBirthError.isNotEmpty()) Text(text = dateOfBirthError, color = Color.Red)
-                    },
-                    label = { Text("Fecha de nacimiento") },
-                    placeholder = { Text("dd/MM/yyyy") },
-                    leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
-                        .widthIn(max = 600.dp)
-                )
+                        .clickable { showDatePicker = true }
+                ) {
+                    OutlinedTextField(
+                        value = dateOfBirthText,
+                        onValueChange = { },
+                        readOnly = true,
+                        isError = dateOfBirthError.isNotEmpty(),
+                        supportingText = {
+                            if (dateOfBirthError.isNotEmpty()) Text(text = dateOfBirthError,
+                                color = Color.Red)
+                        },
+                        label = { Text("Fecha de nacimiento") },
+                        leadingIcon = { Icon(Icons.Default.CalendarMonth, null) },
+                        placeholder = { Text("dd/MM/yyyy") },
+                        modifier = Modifier.fillMaxWidth(),
+                        // Importante: deshabilitamos el focus para que no vibre el teclado
+                        enabled = false,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
 
                 ExposedDropdownMenuBox(
                     expanded = expandedSex,
@@ -462,8 +512,6 @@ fun EditProfileScreen(
                         .padding(vertical = 4.dp)
                         .widthIn(max = 600.dp)
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
                     onClick = {

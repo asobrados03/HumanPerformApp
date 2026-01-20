@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +34,8 @@ import androidx.compose.material.icons.filled.Woman
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -42,12 +45,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -80,12 +85,15 @@ import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidatio
 import com.humanperformcenter.ui.components.EditableUserProfileImage
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.ProfilePhotoSheet
-import com.humanperformcenter.ui.util.DateVisualTransformation
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
 import com.humanperformcenter.ui.viewmodel.state.RegisterState
 import kotlinx.coroutines.launch
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,36 +108,45 @@ fun RegisterScreen(
 
     val registerState by viewModel.registerState.collectAsStateWithLifecycle()
 
-    var nombre by rememberSaveable { mutableStateOf("") }
-    var nombreError by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf("") }
+    var nameError by remember { mutableStateOf("") }
 
-    var apellidos by rememberSaveable { mutableStateOf("") }
-    var apellidosError by remember { mutableStateOf("") }
+    var surnames by rememberSaveable { mutableStateOf("") }
+    var surnamesError by remember { mutableStateOf("") }
 
     var email by rememberSaveable { mutableStateOf("") }
     var emailError by remember { mutableStateOf("") }
 
-    var telefono by rememberSaveable { mutableStateOf("") }
-    var telefonoError by remember { mutableStateOf("") }
+    var phoneNumber by rememberSaveable { mutableStateOf("") }
+    var phoneError by remember { mutableStateOf("") }
 
     var password by rememberSaveable { mutableStateOf("") }
     var passwordError by remember { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
-    var fechaNacimientoText by rememberSaveable { mutableStateOf("") }
-    var fechaNacimientoError by remember { mutableStateOf("") }
+    var dateOfBirthText by rememberSaveable { mutableStateOf("") }
+    var dateOfBirthError by remember { mutableStateOf("") }
 
-    var codigoPostal by rememberSaveable { mutableStateOf("") }
-    var codigoPostalError by remember { mutableStateOf("") }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
 
-    var direccionPostal by rememberSaveable { mutableStateOf("") }
-    var direccionPostalError by rememberSaveable { mutableStateOf("") }
+    val dateFormatter = remember {
+        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+    }
+
+    var postalCode by rememberSaveable { mutableStateOf("") }
+    var postalCodeError by remember { mutableStateOf("") }
+
+    var postalAddress by rememberSaveable { mutableStateOf("") }
+    var postalAddressError by rememberSaveable { mutableStateOf("") }
 
     var dni by rememberSaveable { mutableStateOf("") }
     var dniError by remember { mutableStateOf("") }
 
-    var aceptoTerminos by rememberSaveable { mutableStateOf(false) }
-    var aceptoPolitica by rememberSaveable { mutableStateOf(false) }
+    var hasAcceptedTerms by rememberSaveable { mutableStateOf(false) }
+    var hasAcceptedPrivacyPolicy by rememberSaveable { mutableStateOf(false) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
@@ -168,16 +185,13 @@ fun RegisterScreen(
     ) { success: Boolean ->
         if (success) {
             tempCameraUri?.let { uri ->
-                // 4) actualizamos el estado local
                 profilePicUri = uri
 
-                // 5) leemos bytes y nombre como haces en galería
                 coroutineScope.launch {
-                    // bytes
                     context.contentResolver.openInputStream(uri)?.use { stream ->
                         profilePicBytes = stream.readBytes()
                     }
-                    // nombre (aquí, como es un file provider, extraemos del path)
+
                     val name = uri.lastPathSegment
                         ?.substringAfterLast('/')
                         ?: "IMG_${System.currentTimeMillis()}.jpg"
@@ -189,7 +203,6 @@ fun RegisterScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Sexo desplegable
     val sexOptions = listOf(
         SexOption("Masculino", "Male", Icons.Default.Man),
         SexOption("Femenino", "Female", Icons.Default.Woman)
@@ -205,15 +218,14 @@ fun RegisterScreen(
     LaunchedEffect(registerState) {
         if (registerState is RegisterState.ValidationErrors) {
             val fieldErrors = (registerState as RegisterState.ValidationErrors).fieldErrors
-            nombreError = fieldErrors[RegisterField.FIRST_NAME] ?: ""
-            apellidosError = fieldErrors[RegisterField.LAST_NAME] ?: ""
+            nameError = fieldErrors[RegisterField.FIRST_NAME] ?: ""
+            surnamesError = fieldErrors[RegisterField.LAST_NAME] ?: ""
             emailError = fieldErrors[RegisterField.EMAIL] ?: ""
-            telefonoError = fieldErrors[RegisterField.PHONE] ?: ""
+            phoneError = fieldErrors[RegisterField.PHONE] ?: ""
             passwordError = fieldErrors[RegisterField.PASSWORD] ?: ""
-            fechaNacimientoError = fieldErrors[RegisterField.DATE_OF_BIRTH] ?: ""
             sexError = fieldErrors[RegisterField.SEX] ?: ""
-            codigoPostalError = fieldErrors[RegisterField.POSTCODE] ?: ""
-            direccionPostalError = fieldErrors[RegisterField.POSTAL_ADDRESS] ?: ""
+            postalCodeError = fieldErrors[RegisterField.POSTCODE] ?: ""
+            postalAddressError = fieldErrors[RegisterField.POSTAL_ADDRESS] ?: ""
             dniError = fieldErrors[RegisterField.DNI] ?: ""
         }
     }
@@ -240,13 +252,44 @@ fun RegisterScreen(
             Text("Registro", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(16.dp))
 
-            // 🔹 Botón para seleccionar imagen
             EditableUserProfileImage(
                 photoName = profilePicName,
                 photoUri  = profilePicUri,
                 onChangePhotoClick = { showSheet = true },
                 modifier = Modifier.padding(bottom = 16.dp)
             )
+
+            if (showDatePicker) {
+                DatePickerDialog(
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            datePickerState.selectedDateMillis?.let { millis ->
+                                dateOfBirthText = dateFormatter.format(Date(millis))
+                                if (dateOfBirthError.isNotEmpty()) dateOfBirthError = ""
+                            }
+                            showDatePicker = false
+                        }) {
+                            Text("OK")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePicker = false }) {
+                            Text("Cancelar")
+                        }
+                    }
+                ) {
+                    DatePicker(
+                        state = datePickerState,
+                        headline = {
+                            Text(
+                                text = if (datePickerState.selectedDateMillis != null) "Fecha seleccionada" else "Selecciona fecha",
+                                modifier = Modifier.padding(start = 24.dp)
+                            )
+                        }
+                    )
+                }
+            }
 
             if (showSheet) {
                 ProfilePhotoSheet(
@@ -260,7 +303,7 @@ fun RegisterScreen(
                     },
                     onCamera       = {
                         showSheet = false
-                        // 1) crear archivo temporal
+
                         val file = File(
                             context.cacheDir,
                             "IMG_${System.currentTimeMillis()}.jpg"
@@ -271,7 +314,7 @@ fun RegisterScreen(
                             file
                         )
                         tempCameraUri = uri
-                        // 2) lanzar cámara
+
                         cameraLauncher.launch(uri)
                     },
                     onGallery      = {
@@ -284,14 +327,14 @@ fun RegisterScreen(
             Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
-                value = nombre,
+                value = name,
                 onValueChange = {
-                    nombre = it
-                    if (nombreError.isNotEmpty()) nombreError = ""
+                    name = it
+                    if (nameError.isNotEmpty()) nameError = ""
                 },
-                isError = nombreError.isNotEmpty(),
+                isError = nameError.isNotEmpty(),
                 supportingText = {
-                    if (nombreError.isNotEmpty()) Text(text = nombreError, color = Color.Red)
+                    if (nameError.isNotEmpty()) Text(text = nameError, color = Color.Red)
                 },
                 label = { Text("Nombre") },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
@@ -301,14 +344,14 @@ fun RegisterScreen(
             Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
-                value = apellidos,
+                value = surnames,
                 onValueChange = {
-                    apellidos = it
-                    if (apellidosError.isNotEmpty()) apellidosError = ""
+                    surnames = it
+                    if (surnamesError.isNotEmpty()) surnamesError = ""
                 },
-                isError = apellidosError.isNotEmpty(),
+                isError = surnamesError.isNotEmpty(),
                 supportingText = {
-                    if (apellidosError.isNotEmpty()) Text(text = apellidosError, color = Color.Red)
+                    if (surnamesError.isNotEmpty()) Text(text = surnamesError, color = Color.Red)
                 },
                 label = { Text("Apellidos") },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
@@ -337,14 +380,14 @@ fun RegisterScreen(
             Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
-                value = telefono,
+                value = phoneNumber,
                 onValueChange = {
-                    telefono = it
-                    if (telefonoError.isNotEmpty()) telefonoError = ""
+                    phoneNumber = it
+                    if (phoneError.isNotEmpty()) phoneError = ""
                 },
-                isError = telefonoError.isNotEmpty(),
+                isError = phoneError.isNotEmpty(),
                 supportingText = {
-                    if (telefonoError.isNotEmpty()) Text(text = telefonoError, color = Color.Red)
+                    if (phoneError.isNotEmpty()) Text(text = phoneError, color = Color.Red)
                 },
                 label = { Text("Teléfono") },
                 leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
@@ -433,37 +476,49 @@ fun RegisterScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = fechaNacimientoText,
-                onValueChange = { new ->
-                    val filtered = new.filter { it.isDigit() || it == '/' }.take(10)
-                    fechaNacimientoText = filtered
-                    if (fechaNacimientoError.isNotEmpty()) fechaNacimientoError = ""
-                },
-                isError = fechaNacimientoError.isNotEmpty(),
-                supportingText = {
-                    if (fechaNacimientoError.isNotEmpty()) Text(text = fechaNacimientoError, color = Color.Red)
-                },
-                label = { Text("Fecha de nacimiento") },
-                placeholder = { Text("dd/mm/yyyy") },
-                leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                visualTransformation = DateVisualTransformation(),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .clickable { showDatePicker = true }
+            ) {
+                OutlinedTextField(
+                    value = dateOfBirthText,
+                    onValueChange = { },
+                    readOnly = true,
+                    enabled = false,
+                    isError = dateOfBirthError.isNotEmpty(),
+                    supportingText = {
+                        if (dateOfBirthError.isNotEmpty()) Text(text = dateOfBirthError,
+                            color = Color.Red)
+                    },
+                    label = { Text("Fecha de nacimiento") },
+                    placeholder = { Text("Selecciona tu fecha") },
+                    leadingIcon = { Icon(Icons.Default.CalendarMonth,
+                        contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = if (dateOfBirthError.isNotEmpty()) Color.Red
+                                            else MaterialTheme.colorScheme.outline,
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+            }
 
             Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
-                value = direccionPostal,
+                value = postalAddress,
                 onValueChange = {
-                    direccionPostal = it
-                    if (direccionPostalError.isNotEmpty()) direccionPostalError = ""
+                    postalAddress = it
+                    if (postalAddressError.isNotEmpty()) postalAddressError = ""
                 },
-                isError = direccionPostalError.isNotEmpty(),
+                isError = postalAddressError.isNotEmpty(),
                 supportingText = {
-                    if (direccionPostalError.isNotEmpty()) Text(text = direccionPostalError, color = Color.Red)
+                    if (postalAddressError.isNotEmpty()) Text(text = postalAddressError, color = Color.Red)
                 },
                 label = { Text("Dirección Postal") },
                 leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
@@ -474,14 +529,14 @@ fun RegisterScreen(
             Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
-                value = codigoPostal,
+                value = postalCode,
                 onValueChange = {
-                    codigoPostal = it
-                    if (codigoPostalError.isNotEmpty()) codigoPostalError = ""
+                    postalCode = it
+                    if (postalCodeError.isNotEmpty()) postalCodeError = ""
                 },
-                isError = codigoPostalError.isNotEmpty(),
+                isError = postalCodeError.isNotEmpty(),
                 supportingText = {
-                    if (codigoPostalError.isNotEmpty()) Text(text = codigoPostalError, color = Color.Red)
+                    if (postalCodeError.isNotEmpty()) Text(text = postalCodeError, color = Color.Red)
                 },
                 label = { Text("Código Postal") },
                 leadingIcon = { Icon(Icons.Default.LocationCity, contentDescription = null) },
@@ -510,9 +565,9 @@ fun RegisterScreen(
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
-                        checked = aceptoTerminos,
+                        checked = hasAcceptedTerms,
                         onCheckedChange = {
-                            aceptoTerminos = it
+                            hasAcceptedTerms = it
                             errorMessage = null
                         }
                     )
@@ -532,9 +587,9 @@ fun RegisterScreen(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
-                        checked = aceptoPolitica,
+                        checked = hasAcceptedPrivacyPolicy,
                         onCheckedChange = {
-                            aceptoPolitica = it
+                            hasAcceptedPrivacyPolicy = it
                             errorMessage = null
                         }
                     )
@@ -553,7 +608,6 @@ fun RegisterScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            // Mensaje de error (local o proveniente del servidor)
             errorMessage?.let {
                 Text(
                     text = it,
@@ -562,7 +616,6 @@ fun RegisterScreen(
                 )
             }
 
-            // Estado de registro: Loading, Error o Success
             when (registerState) {
                 is RegisterState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.padding(16.dp))
@@ -579,37 +632,34 @@ fun RegisterScreen(
                     }
                 }
                 is RegisterState.Error -> {
-                    // Mostrar el mensaje de error recibido desde el repositorio (JSON)
                     errorMessage = (registerState as RegisterState.Error).message
                 }
-                else -> { /* Idle: nada que hacer */ }
+                else -> { }
             }
 
             Spacer(Modifier.height(16.dp))
 
-            // Botón de Registro
             Button(
                 onClick = {
-                    // Validaciones locales antes de enviar
                     when {
-                        !aceptoTerminos ->
+                        !hasAcceptedTerms ->
                             errorMessage = "Debes aceptar los términos y condiciones"
-                        !aceptoPolitica ->
+                        !hasAcceptedPrivacyPolicy ->
                             errorMessage = "Debes aceptar la política de privacidad"
                         else -> {
                             // Si pasa las validaciones, se envía la petición
                             errorMessage = null
                             val sexValue = selectedSex?.backendValue ?: ""
                             val req = RegisterRequest(
-                                nombre,
-                                apellidos,
+                                name,
+                                surnames,
                                 email,
-                                telefono,
+                                phoneNumber,
                                 password,
                                 sexValue,
-                                fechaNacimientoText,
-                                codigoPostal,
-                                direccionPostal,
+                                dateOfBirthText,
+                                postalCode,
+                                postalAddress,
                                 dni,
                                 "android",
                                 profilePicBytes,

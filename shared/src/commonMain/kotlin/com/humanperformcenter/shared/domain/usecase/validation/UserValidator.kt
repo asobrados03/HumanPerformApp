@@ -11,7 +11,7 @@ object UserValidator {
     /**
      * Valida en el dominio cada campo obligatorio del perfil:
      * - fullName no vacío
-     * - dateOfBirthText debe estar en formato "dd/MM/yyyy" y rangos válidos
+     * - dateOfBirthText debe estar en formato "DD/MM/YYYY" y rangos válidos
      * - selectedSexBackend debe ser "Male" o "Female"
      * - phone al menos 9 dígitos numéricos
      *
@@ -41,7 +41,7 @@ object UserValidator {
                 partes.any { it.isBlank() } ||
                 partes.any { parte -> !parte.all { ch -> ch.isDigit() } }
             ) {
-                errors[EditValidationResult.Field.DATE_OF_BIRTH] = "Fecha inválida. Usa dd/MM/yyyy"
+                errors[EditValidationResult.Field.DATE_OF_BIRTH] = "Fecha inválida. Usa DD/MM/YYYY"
             } else {
                 val d = partes[0].toIntOrNull() ?: -1
                 val m = partes[1].toIntOrNull() ?: -1
