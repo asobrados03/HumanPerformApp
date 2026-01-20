@@ -51,15 +51,15 @@ class AuthViewModel(
 
     fun register(data: RegisterRequest) {
         val validation = UserValidator.validateRegister(
-            firstName = data.nombre,
-            lastName = data.apellidos,
+            firstName = data.name,
+            lastName = data.surnames,
             email = data.email,
-            phone = data.telefono,
+            phone = data.phone,
             password = data.password,
-            dateOfBirthText = data.fechaNacimiento,
-            selectedSexBackend = data.sexo,
-            postcode = data.codigoPostal,
-            address = data.direccionPostal,
+            dateOfBirthText = data.dateOfBirth,
+            selectedSexBackend = data.sex,
+            postcode = data.postCode,
+            address = data.postAddress,
             dni = data.dni
         )
 

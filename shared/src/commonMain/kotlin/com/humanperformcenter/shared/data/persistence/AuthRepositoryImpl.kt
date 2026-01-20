@@ -75,15 +75,15 @@ object AuthRepositoryImpl : AuthRepository {
                             "filename=\"${data.profilePicName}\"")
                     })
                 }
-                append("nombre",       data.nombre)
-                append("apellidos",    data.apellidos)
+                append("nombre",       data.name)
+                append("apellidos",    data.surnames)
                 append("email",        data.email)
-                append("telefono",     data.telefono)
+                append("telefono",     data.phone)
                 append("password",     data.password)
-                append("sexo",         data.sexo)
-                append("fecha_nacimiento", data.fechaNacimiento) // ddMMyyyy
-                append("codigo_postal",   data.codigoPostal)
-                append("direccion_postal", data.direccionPostal)
+                append("sexo",         data.sex)
+                append("fecha_nacimiento", data.dateOfBirth)
+                append("codigo_postal",   data.postCode)
+                append("direccion_postal", data.postAddress)
                 append("dni",             data.dni)
                 append("device_type",      data.deviceType)
             }
