@@ -233,8 +233,7 @@ class UserViewModel(
                 onSuccess = {
                     _deleteProfilePicState.value = DeleteProfilePicState.Success
 
-                    _userData.value = _userData.value
-                        ?.copy(profilePictureName = null)
+                    _userData.value = _userData.value?.copy(profilePictureName = null)
 
                     SecureStorage.saveUser(_userData.value!!)
                 },
