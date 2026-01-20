@@ -21,6 +21,7 @@ import com.humanperformcenter.ui.viewmodel.state.MarkFavoriteState
 import com.humanperformcenter.ui.viewmodel.state.UpdateState
 import com.humanperformcenter.ui.viewmodel.state.UploadState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -141,11 +142,9 @@ class UserViewModel(
     fun fetchUserProfile() {
         val currentUser = _userData.value ?: return
         viewModelScope.launch(Dispatchers.IO) {
-            // Asumiendo que tienes un método en userUseCase para obtener el perfil por ID o Email
             val result = userUseCase.getUserById(currentUser.id)
             result.onSuccess { updatedUser ->
                 _userData.value = updatedUser
-                // Opcional: Guardar en SecureStorage para persistencia
                 SecureStorage.saveUser(updatedUser)
             }.onFailure {
                 // Manejar error si es necesario
@@ -159,6 +158,9 @@ class UserViewModel(
 
             userUseCase.deleteUser(email).fold(
                 onSuccess = {
+                    SecureStorage.clear()
+                    delay(1000)
+
                     _deleteState.value = DeleteUserState.Success
                 },
                 onFailure = { throwable ->
@@ -183,15 +185,24 @@ class UserViewModel(
         if (_isLoggingOut.value) return
 
         viewModelScope.launch {
-            _isLoggingOut.value = true
+            try {
+                _isLoggingOut.value = true
 
-            SecureStorage.clear()
-            // Aseguramos que la navegación ocurra en el hilo principal
-            withContext(Dispatchers.Main) {
-                onSuccess()
+                SecureStorage.clear()
+                println("DEBUG: Almacenamiento local eliminado")
+
+                // Esto permite que el CircularProgressIndicator se vea y la UX sea fluida
+                delay(800)
+
+                _isLoggingOut.value = false
+
+                withContext(Dispatchers.Main) {
+                    onSuccess()
+                }
+            } catch (e: Exception) {
+                _isLoggingOut.value = false
+                println("DEBUG: Error en logout: ${e.message}")
             }
-
-            _isLoggingOut.value = false
         }
     }
 
@@ -202,7 +213,9 @@ class UserViewModel(
                 _coachesState.value = CoachState.Success(professionals)
             }.onFailure { throwable ->
                 _coachesState.value = CoachState.Error(
-                    throwable.message.orEmpty().ifEmpty { "Error desconocido al cargar blogs" }
+                    throwable.message.orEmpty().ifEmpty {
+                        "Error desconocido al cargar profesionales"
+                    }
                 )
             }
         }
@@ -244,7 +257,9 @@ class UserViewModel(
                 _markFavoriteState.value = MarkFavoriteState.Success(message)
             }.onFailure { throwable ->
                 _markFavoriteState.value = MarkFavoriteState.Error(
-                    throwable.message.orEmpty().ifEmpty { "Error desconocido al marcar como favorito" }
+                    throwable.message.orEmpty().ifEmpty {
+                        "Error desconocido al marcar como favorito"
+                    }
                 )
             }
         }
@@ -327,7 +342,9 @@ class UserViewModel(
                 }
                 .onFailure { throwable ->
                     _uploadState.value = UploadState.Error(
-                        throwable.message.orEmpty().ifEmpty { "Error desconocido al subir documento" }
+                        throwable.message.orEmpty().ifEmpty {
+                            "Error desconocido al subir documento"
+                        }
                     )
                 }
         }

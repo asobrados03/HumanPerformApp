@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.screens.ConfigurationScreen
 import com.humanperformcenter.ui.viewmodel.UserViewModel
@@ -32,7 +31,6 @@ fun ConfigurationRoute(
     LaunchedEffect(deleteState) {
         when (deleteState) {
             DeleteUserState.Success -> {
-                SecureStorage.clear()
                 navController.navigate(Welcome) {
                     popUpTo(Welcome) { inclusive = true }
                 }
@@ -63,8 +61,12 @@ fun ConfigurationRoute(
             navController = navController,
             onLogout = {
                 userViewModel.logout {
+                    // Usamos una navegación que evite duplicados si el usuario pulsa dos veces rápido
                     navController.navigate(Welcome) {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo(navController.graph.startDestinationId) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
                     }
                 }
             },
