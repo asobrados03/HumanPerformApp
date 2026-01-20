@@ -3,8 +3,6 @@ package com.humanperformcenter.shared.domain.security
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import java.security.KeyStore
-import java.security.KeyStoreException
-import javax.crypto.BadPaddingException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -17,40 +15,31 @@ actual object Crypto {
     private const val PADDING = KeyProperties.ENCRYPTION_PADDING_PKCS7
     private const val TRANSFORMATION = "$ALGORITHM/$BLOCK_MODE/$PADDING"
 
-    private val cipher = Cipher.getInstance(TRANSFORMATION)
-    private val keyStore = KeyStore
-        .getInstance("AndroidKeyStore")
-        .apply {
-            load(null)
-        }
+    private val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
 
     private fun getKey(): SecretKey {
-        val existingKey = keyStore
-            .getEntry(KEY_ALIAS, null) as? KeyStore.SecretKeyEntry
+        val existingKey = keyStore.getEntry(KEY_ALIAS, null) as? KeyStore.SecretKeyEntry
         return existingKey?.secretKey ?: createKey()
     }
 
     private fun createKey(): SecretKey {
-        return KeyGenerator
-            .getInstance(ALGORITHM)
-            .apply {
-                init(
-                    KeyGenParameterSpec.Builder(
-                        KEY_ALIAS,
-                        KeyProperties.PURPOSE_ENCRYPT or
-                                KeyProperties.PURPOSE_DECRYPT
-                    )
-                        .setBlockModes(BLOCK_MODE)
-                        .setEncryptionPaddings(PADDING)
-                        .setRandomizedEncryptionRequired(true)
-                        .setUserAuthenticationRequired(false)
-                        .build()
-                )
-            }
-            .generateKey()
+        val keyGenerator = KeyGenerator.getInstance(ALGORITHM, "AndroidKeyStore")
+        keyGenerator.init(
+            KeyGenParameterSpec.Builder(
+                KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+                .setBlockModes(BLOCK_MODE)
+                .setEncryptionPaddings(PADDING)
+                .setRandomizedEncryptionRequired(true)
+                .setUserAuthenticationRequired(false)
+                .build()
+        )
+        return keyGenerator.generateKey()
     }
 
     actual fun encrypt(plain: ByteArray): ByteArray {
+        val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, getKey())
         val iv = cipher.iv
         val encrypted = cipher.doFinal(plain)
@@ -58,22 +47,19 @@ actual object Crypto {
     }
 
     actual fun decrypt(cipherMessage: ByteArray): ByteArray {
-        // Extraemos el IV y los datos cifrados
-        val iv = cipherMessage.copyOfRange(0, cipher.blockSize)
-        val data = cipherMessage.copyOfRange(cipher.blockSize, cipherMessage.size)
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+
+        val blockSize = cipher.blockSize
+        if (cipherMessage.size < blockSize) throw CryptoException.DecryptionFailed
+
+        val iv = cipherMessage.copyOfRange(0, blockSize)
+        val data = cipherMessage.copyOfRange(blockSize, cipherMessage.size)
 
         return try {
-            // Inicializamos en modo DESCIFRADO con la clave y el IV
             cipher.init(Cipher.DECRYPT_MODE, getKey(), IvParameterSpec(iv))
-            // Devolvemos el resultado; si el padding no encaja, saltará BadPaddingException
             cipher.doFinal(data)
-        } catch (e: BadPaddingException) {
-            // El padding es incorrecto: la clave/IV no coinciden con los datos
-            println("BadPaddingException: {$e}")
-            throw CryptoException.DecryptionFailed
-        } catch (e: KeyStoreException) {
-            // Problema con el Keystore (p. ej. clave borrada)
-            println("KeyStoreException: {$e}")
+        } catch (e: Exception) {
+            println("Error en descifrado: ${e.message}")
             throw CryptoException.DecryptionFailed
         }
     }
