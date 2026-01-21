@@ -20,7 +20,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,13 +35,13 @@ import com.humanperformcenter.ui.viewmodel.UserViewModel
 
 @Composable
 fun MyProductsScreen(
-    viewModel: ServiceProductViewModel,
+    serviceProductViewModel: ServiceProductViewModel,
     navController: NavHostController,
     userViewModel: UserViewModel,
     daySessionViewModel: DaySessionViewModel,
     userId: Int
 ) {
-    val productos by viewModel.userProducts.collectAsStateWithLifecycle()
+    val productos by serviceProductViewModel.userProducts.collectAsStateWithLifecycle()
     val productosUnicos = productos.distinctBy { it.id }
     var productoSeleccionado by remember { mutableStateOf<ServiceItem?>(null) }
     var mostrarDialogoProducto by remember { mutableStateOf(false) }
@@ -115,7 +114,7 @@ fun MyProductsScreen(
             confirmButton = {
                 Column {
                     TextButton(onClick = {
-                        viewModel.productoSeleccionado = productoSeleccionado
+                        serviceProductViewModel.productoSeleccionado = productoSeleccionado
                         navController.navigate(ProductDetail(productoSeleccionado!!.id))
                     }) {
                         Text("Ver detalles")
@@ -146,7 +145,7 @@ fun MyProductsScreen(
             text = { Text("¿Estás seguro de que quieres darte de baja de este producto?") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.unassignProductFromUser(productoSeleccionado!!.id, userId)
+                    serviceProductViewModel.unassignProductFromUser(productoSeleccionado!!.id, userId)
                     mostrarDialogoProducto = false
                     productoSeleccionado = null
                     mostrarConfirmacionBaja = false
