@@ -51,7 +51,6 @@ import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.viewmodel.PaymentViewModelFactory
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModelFactory
-import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.UserStatsViewModel
 import com.humanperformcenter.ui.viewmodel.UserStatsViewModelFactory
 import com.humanperformcenter.ui.viewmodel.UserViewModel
@@ -61,7 +60,6 @@ import com.stripe.android.paymentsheet.PaymentSheetResult
 
 @Composable
 fun Navigation(
-    sessionViewModel: SessionViewModel,
     navController: NavHostController,
     paymentSheet: PaymentSheet,
     registerPaymentSheetResult: ((PaymentSheetResult) -> Unit) -> Unit,
@@ -71,10 +69,6 @@ fun Navigation(
         statusBarColor = Color(0xFFB71C1C),
         navigationBarColor = Color(0xFFB71C1C)
     )
-
-    val isLoggedIn by sessionViewModel
-        .isLoggedInFlow
-        .collectAsState(initial = false)
 
     val paymentViewModel: PaymentViewModel = viewModel(
         factory = PaymentViewModelFactory(AppModule.googlePayUseCase, AppModule.paymentUseCase, AppModule.stripeUseCase)
@@ -87,6 +81,14 @@ fun Navigation(
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(AppModule.authUseCase)
     )
+
+    val serviceProductViewModel: ServiceProductViewModel =  viewModel(
+        factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
+    )
+
+    val isLoggedIn by userViewModel.isLoggedInFlow.collectAsStateWithLifecycle(initialValue = null)
+
+    val userData by userViewModel.userData.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         ApiClient.logoutEvents.collect {
@@ -102,7 +104,7 @@ fun Navigation(
             startDestination = Splash
         ) {
             composable<Splash> {
-                SplashScreen(navController, sessionViewModel)
+                SplashScreen(navController, userViewModel)
             }
             composable<Welcome> {
                 WelcomeScreen(
@@ -162,33 +164,26 @@ fun Navigation(
             composable<Service> {
                 ServicesScreen(
                     navController = navController,
-                    sessionViewModel = sessionViewModel,
-                    userViewModel = viewModel(
-                        factory = UserViewModelFactory(AppModule.userUseCase)
-                    ),
-                    serviceProductViewModel = viewModel(
-                        factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
-                    ),
-                    daySessionViewModel = viewModel(
-                        factory = DaySessionViewModelFactory(AppModule.daySessionUseCase)
-                    )
+                    userViewModel = userViewModel,
+                    serviceProductViewModel = serviceProductViewModel
                 )
             }
             composable<HireProduct> { backStackEntry ->
                 // Reconstruimos el objeto ServicioRoute
                 val route = backStackEntry.toRoute<HireProduct>()
-                val userId by sessionViewModel.userId.collectAsStateWithLifecycle()
+                val user = userViewModel.userData.collectAsStateWithLifecycle().value
+                val userId = user?.id
 
                 // Sólo mostramos si tenemos usuario
                 if (userId != null) {
                     HireProductScreen(
                         serviceId     = route.serviceId,
                         navController = navController,
-                        viewModel     = viewModel(
+                        serviceProductViewModel     = viewModel(
                             factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
                         ),
                         paymentViewModel = paymentViewModel,
-                        sesionViewModel = sessionViewModel
+                        userData = userData
                     )
                 }
             }
@@ -223,8 +218,6 @@ fun Navigation(
                 }
             }
             composable<ViewPaymentMethod>{
-                val userData by userViewModel.userData.collectAsStateWithLifecycle()
-
                 val userId = userData?.id ?: -1
 
                 ViewPaymentMethodScreen(
@@ -234,9 +227,7 @@ fun Navigation(
                 )
             }
             composable<AddCoupon>{
-                val userState by userViewModel.userData.collectAsStateWithLifecycle()
-
-                when (val user = userState) {
+                when (val user = userData) {
                     null -> {
                         // Mientras no tenemos usuario, muestra loading
                         FullScreenLoading()
@@ -305,7 +296,7 @@ fun Navigation(
                 ElectronicWalletScreen(
                     navController = navController,
                     userViewModel = userViewModel,
-                    userId = sessionViewModel.userId.collectAsState().value ?: 0
+                    userId = userData?.id ?: 0
                 )
             }
             composable<StartPayment> {
@@ -317,7 +308,7 @@ fun Navigation(
             composable<StripeCheckout> {
                 StripeCheckoutScreen(navController, paymentViewModel,
                     viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)) ,
-                    userId = sessionViewModel.userId.collectAsState().value ?: 0 ,paymentSheet,registerPaymentSheetResult)
+                    userId = userData?.id ?: 0 ,paymentSheet,registerPaymentSheetResult)
             }
 
             composable<EditProfile> {
@@ -365,7 +356,7 @@ fun Navigation(
 
                 CalendarScreen(
                     navController = navController,
-                    sessionViewModel = sessionViewModel,
+                    serviceProductViewModel = serviceProductViewModel,
                     userViewModel = userViewModel,
                     onPlaySound = onPlaySound,
                     daySessionViewModel = daySessionViewModel
@@ -375,7 +366,7 @@ fun Navigation(
                 val statsViewModel: UserStatsViewModel = viewModel(
                     factory = UserStatsViewModelFactory(AppModule.userUseCase)
                 )
-                val userId by sessionViewModel.userId.collectAsState()
+                val userId = userData?.id
 
                 LaunchedEffect(userId) {
                     statsViewModel.loadStatistics(userId!!)
@@ -397,12 +388,12 @@ fun Navigation(
                     parentEntry,
                     factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
                 )
-                val userId by sessionViewModel.userId.collectAsState()
+                val userId = userData?.id
 
                 if (userId != null) {
                     ProductDetailScreen(
                         productId = productDetail.productId,
-                        userId = userId!!,
+                        userId = userId,
                         viewModel = viewModel,
                         navController = navController
                     )

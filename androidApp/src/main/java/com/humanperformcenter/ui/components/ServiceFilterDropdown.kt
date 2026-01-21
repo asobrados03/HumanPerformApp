@@ -22,13 +22,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.humanperformcenter.shared.data.model.ServiceAvailable
+import com.humanperformcenter.shared.data.model.ServiceItem
 
 @Composable
 fun ServiceFilterDropdown(
-    serviciosPermitidos: List<ServiceAvailable>,
-    servicioFiltro: ServiceAvailable?,
-    onServicioSeleccionado: (ServiceAvailable?) -> Unit
+    serviciosPermitidos: List<ServiceItem>,
+    servicioFiltro: ServiceItem?,
+    onServicioSeleccionado: (ServiceItem?) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     var buttonWidth by remember { mutableIntStateOf(0) }

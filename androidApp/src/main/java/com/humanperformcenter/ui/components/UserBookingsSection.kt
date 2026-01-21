@@ -35,11 +35,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.humanperformcenter.shared.data.model.ServiceAvailable
+import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.shared.data.model.UserBooking
 import com.humanperformcenter.ui.util.createICSFile
 import com.humanperformcenter.ui.util.shareICS
-import com.humanperformcenter.ui.viewmodel.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -53,12 +53,12 @@ import kotlin.time.ExperimentalTime
 @Composable
 fun UserBookingsSection(
     userViewModel: UserViewModel,
-    sessionViewModel: SessionViewModel,
+    serviceProductViewModel: ServiceProductViewModel,
     userBookings: List<UserBooking>, // Asegúrate de que tengas el modelo Booking importado
     userId: Int?
 ) {
-    val serviciosPermitidos by sessionViewModel.allowedServices.collectAsStateWithLifecycle()
-    var servicioFiltro by remember { mutableStateOf<ServiceAvailable?>(null) }
+    val serviciosPermitidos by serviceProductViewModel.userProducts.collectAsStateWithLifecycle()
+    var servicioFiltro by remember { mutableStateOf<ServiceItem?>(null) }
 
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 

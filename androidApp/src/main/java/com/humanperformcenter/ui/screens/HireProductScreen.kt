@@ -59,13 +59,13 @@ import com.humanperformcenter.app.navigation.StripeCheckout
 import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.shared.data.model.RebillRequest
+import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.BillingPrefill
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.ui.viewmodel.SessionViewModel
 import com.humanperformcenter.ui.viewmodel.state.PaymentState
 import org.json.JSONArray
 import org.json.JSONObject
@@ -76,9 +76,9 @@ import java.util.Locale
 fun HireProductScreen(
     serviceId: Int,
     navController: NavHostController,
-    viewModel: ServiceProductViewModel,
+    serviceProductViewModel: ServiceProductViewModel,
     paymentViewModel: PaymentViewModel,
-    sesionViewModel: SessionViewModel
+    userData: User?
 ) {
     val context = LocalContext.current
     val gpayState by paymentViewModel.paymentState.collectAsStateWithLifecycle()
@@ -92,10 +92,10 @@ fun HireProductScreen(
             ).collectAsStateWithLifecycle()
 
     // --- Screen State ---
-    val productosMap by viewModel.serviceProducts.collectAsStateWithLifecycle()
+    val productosMap by serviceProductViewModel.serviceProducts.collectAsStateWithLifecycle()
     val productos = productosMap[serviceId] ?: emptyList()
 
-    val productosContratados by viewModel.userProducts.collectAsStateWithLifecycle()
+    val productosContratados by serviceProductViewModel.userProducts.collectAsStateWithLifecycle()
     val idsContratados = productosContratados.map { it.id }.toSet()
 
     var mostrarCuponSheet by remember { mutableStateOf(false) }
@@ -129,18 +129,18 @@ fun HireProductScreen(
     var showAlertMethod: Boolean by remember { mutableStateOf(false) }
     var mostrarTarjetasHpp by rememberSaveable { mutableStateOf(false) } // por defecto, mostrar en HPP
 
-    val userId = sesionViewModel.userId.collectAsStateWithLifecycle().value ?: 0
-    val userEmail = sesionViewModel.userEmail.collectAsStateWithLifecycle().value ?: ""
-    val userName = sesionViewModel.userName.collectAsStateWithLifecycle().value ?: ""
-    val userStreet = sesionViewModel.userStreet.collectAsStateWithLifecycle().value ?: ""
-    val userPostalCode = sesionViewModel.userPostalCode.collectAsStateWithLifecycle().value ?: 0
-    val userCoupons by viewModel.userCoupons.collectAsStateWithLifecycle()
+    val userId = userData?.id ?: 0
+    val userEmail = userData?.email ?: ""
+    val userName = userData?.fullName ?: ""
+    val userStreet = userData?.postAddress ?: ""
+    val userPostalCode = userData?.postcode ?: 0
+    val userCoupons by serviceProductViewModel.userCoupons.collectAsStateWithLifecycle()
 
     LaunchedEffect(paymentResult) {
         if (paymentResult == true && productoIdSeleccionado != null) {
             val selectedId = productoIdSeleccionado ?: return@LaunchedEffect
 
-            viewModel.assignProductToUser(
+            serviceProductViewModel.assignProductToUser(
                 userId = userId,
                 productId = selectedId,
                 paymentMethod = "card",
@@ -149,7 +149,7 @@ fun HireProductScreen(
                 if (success) {
                     Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
                     navController.navigate(ProductDetail(productId = selectedId))
-                    viewModel.loadUserProducts(userId)
+                    serviceProductViewModel.loadUserProducts(userId)
                     mostrarCuponSheet = false
                     cuponTexto = ""
                     productoIdSeleccionado = null
@@ -168,9 +168,9 @@ fun HireProductScreen(
 
 
     LaunchedEffect(serviceId) {
-        viewModel.loadServiceProducts(serviceId)
-        viewModel.loadUserProducts(userId)
-        viewModel.loadUserCoupons(userId)
+        serviceProductViewModel.loadServiceProducts(serviceId)
+        serviceProductViewModel.loadUserProducts(userId)
+        serviceProductViewModel.loadUserCoupons(userId)
         productos.forEach {
             println("Producto: ${it.name}, tipo: ${it.tipo_producto}")
         }
@@ -187,7 +187,7 @@ fun HireProductScreen(
             is PaymentState.Success -> {
                 // Igual que haces tras payment_result == true, asigna y navega
                 val selectedId = productoIdSeleccionado ?: return@LaunchedEffect
-                viewModel.assignProductToUser(
+                serviceProductViewModel.assignProductToUser(
                     userId = userId,
                     productId = selectedId,
                     paymentMethod = "card",
@@ -196,7 +196,7 @@ fun HireProductScreen(
                     if (success) {
                         Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
                         navController.navigate(ProductDetail(productId = selectedId))
-                        viewModel.loadUserProducts(userId)
+                        serviceProductViewModel.loadUserProducts(userId)
                         mostrarCuponSheet = false
                         cuponTexto = ""
                         productoIdSeleccionado = null
@@ -372,7 +372,7 @@ fun HireProductScreen(
                         val precioFinal = calcularPrecioConDescuento(
                             producto.id,
                             producto.price ?: 0.0,
-                            viewModel.userCoupons.collectAsStateWithLifecycle().value
+                            serviceProductViewModel.userCoupons.collectAsStateWithLifecycle().value
                         )
                         Text(
                             "${precioFinal.toInt()}€",
@@ -549,7 +549,7 @@ fun HireProductScreen(
                         paymentViewModel.rebillWithSavedCard(rebillRequest,
                             onSuccess = {
                                 Toast.makeText(context, "Rebill exitoso", Toast.LENGTH_SHORT).show()
-                                viewModel.loadUserProducts(userId)
+                                serviceProductViewModel.loadUserProducts(userId)
                                 navController.navigate(ProductDetail(productId = productoIdSeleccionado ?: 0))
                             },
                             onError = { error ->
@@ -584,7 +584,7 @@ fun HireProductScreen(
                         }
 
                         // NO uses productoIdSeleccionado!! aquí
-                        viewModel.assignProductToUser(
+                        serviceProductViewModel.assignProductToUser(
                             userId = userId,
                             productId = selectedId,
                             paymentMethod = "cash",
@@ -594,7 +594,7 @@ fun HireProductScreen(
                                 Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
                                 // Usa selectedId también al navegar
                                 navController.navigate(ProductDetail(productId = selectedId))
-                                viewModel.loadUserProducts(userId)
+                                serviceProductViewModel.loadUserProducts(userId)
 
                                 // limpia al final
                                 mostrarCuponSheet = false

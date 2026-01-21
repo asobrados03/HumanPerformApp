@@ -7,10 +7,14 @@ import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.ServiceItem
+import com.humanperformcenter.shared.data.model.ServiceUiModel
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class ServiceProductViewModel(
@@ -34,6 +38,29 @@ class ServiceProductViewModel(
 
     var productoSeleccionado: ServiceItem? = null
 
+    val hireViewUiState: StateFlow<List<ServiceUiModel>> = combine(
+        allServices,
+        userProducts
+    ) { services, products ->
+
+        // Aquí ocurre la "magia" en un hilo secundario (IO/Default), no en el Main Thread
+        services.map { service ->
+            // Calculamos una sola vez si está contratado
+            val isHired = products.any { product ->
+                product.serviceIds.contains(service.id)
+            }
+
+            ServiceUiModel(
+                service = service,
+                isHired = isHired
+            )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     fun loadAllServices() {
         viewModelScope.launch(Dispatchers.IO) {
             val services = useCase.getAllServices()
@@ -55,6 +82,22 @@ class ServiceProductViewModel(
             val products = useCase.getUserProducts(userId)
             _userProducts.value = products
             println("User products loaded: ${products.size} items")
+        }
+    }
+
+    fun loadInitialData(userId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // 1. Cargar servicios
+            loadAllServices()
+            // 2. Cargar productos del usuario
+            loadUserProducts(userId)
+
+            // 3. (Opcional) Si necesitas cargar detalles de cada servicio, hazlo aquí,
+            // no en la UI. Idealmente tu backend debería devolver todo junto.
+            // Si es obligatorio hacerlo así:
+            allServices.value.forEach { service ->
+                loadServiceProducts(service.id)
+            }
         }
     }
 

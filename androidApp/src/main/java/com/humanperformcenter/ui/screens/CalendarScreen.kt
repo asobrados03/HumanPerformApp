@@ -27,7 +27,7 @@ import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.components.UserBookingsSection
 import com.humanperformcenter.ui.components.reservationFlowDialogs
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
-import com.humanperformcenter.ui.viewmodel.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import com.humanperformcenter.worker.scheduleSessionNotification
 import kotlinx.datetime.Month
@@ -41,7 +41,7 @@ import kotlin.time.ExperimentalTime
 fun CalendarScreen(
     navController: NavHostController,
     daySessionViewModel: DaySessionViewModel,
-    sessionViewModel: SessionViewModel,
+    serviceProductViewModel: ServiceProductViewModel,
     userViewModel: UserViewModel,
     onPlaySound: (Int) -> Unit
 ) {
@@ -60,7 +60,6 @@ fun CalendarScreen(
         userId?.let {
             userViewModel.fetchUserBookings(it)
             daySessionViewModel.fetchUserWeeklyLimit(it)
-            sessionViewModel.cargarServiciosPermitidos(it)
             daySessionViewModel.fetchHolidays()
         }
     }
@@ -75,7 +74,7 @@ fun CalendarScreen(
     // Obtenemos el callback que maneja todo el flujo de reserva
     val onDayClicked = reservationFlowDialogs(
         daySessionViewModel = daySessionViewModel,
-        sessionViewModel = sessionViewModel,
+        serviceProductViewModel = serviceProductViewModel,
         userViewModel = userViewModel
     )
 
@@ -129,7 +128,7 @@ fun CalendarScreen(
 
             UserBookingsSection(
                 userViewModel = userViewModel,
-                sessionViewModel = sessionViewModel,
+                serviceProductViewModel = serviceProductViewModel,
                 userBookings = userBookings,
                 userId = userId
             )

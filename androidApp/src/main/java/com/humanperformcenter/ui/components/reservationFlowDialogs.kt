@@ -3,32 +3,57 @@ package com.humanperformcenter.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humanperformcenter.shared.data.model.DaySession
-import com.humanperformcenter.shared.data.model.ServiceAvailable
+import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.shared.data.model.SharedPool
 import com.humanperformcenter.shared.data.model.UserBooking
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
-import com.humanperformcenter.ui.viewmodel.SessionViewModel
+import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlin.time.Clock          // stdlib
-import kotlinx.datetime.*
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 private val SuccessColor = Color(0xFF4CAF50)
@@ -54,7 +79,7 @@ private class ReservationFlowState(
     var dialog by mutableStateOf<Dialog>(Dialog.Hidden)
         private set
 
-    var selectedService by mutableStateOf<ServiceAvailable?>(null)
+    var selectedService by mutableStateOf<ServiceItem?>(null)
 
     // Tiempo actual en KMM
     @OptIn(ExperimentalTime::class)
@@ -78,7 +103,7 @@ private class ReservationFlowState(
         dialog = Dialog.Reservation(date)
     }
 
-    fun onServiceSelected(service: ServiceAvailable, date: LocalDate) {
+    fun onServiceSelected(service: ServiceItem, date: LocalDate) {
         selectedService = service
         daySessionViewModel.clearCoachesForHour()
         daySessionViewModel.fetchAvailableSessions(service.id, date)
@@ -181,7 +206,7 @@ private class ReservationFlowState(
 @Composable
 fun reservationFlowDialogs(
     daySessionViewModel: DaySessionViewModel,
-    sessionViewModel: SessionViewModel,
+    serviceProductViewModel: ServiceProductViewModel,
     userViewModel: UserViewModel
 ): (LocalDate) -> Unit {
     val user by userViewModel.userData.collectAsStateWithLifecycle()
@@ -202,7 +227,7 @@ fun reservationFlowDialogs(
         ))
     }
 
-    val allowedServices by sessionViewModel.allowedServices.collectAsStateWithLifecycle()
+    val allowedServices by serviceProductViewModel.userProducts.collectAsStateWithLifecycle()
 
     when (val dialog = state.dialog) {
         is ReservationFlowState.Dialog.Reservation -> ReservationDialog(state, dialog.date, allowedServices)
@@ -218,7 +243,7 @@ fun reservationFlowDialogs(
 }
 
 @Composable
-private fun ReservationDialog(state: ReservationFlowState, date: LocalDate, allowedServices: List<ServiceAvailable>) {
+private fun ReservationDialog(state: ReservationFlowState, date: LocalDate, allowedServices: List<ServiceItem>) {
     AlertDialog(
         onDismissRequest = state::dismiss,
         title = {
@@ -316,7 +341,7 @@ private fun ChangeExistingDialog(state: ReservationFlowState, dialog: Reservatio
 // ... Resto de diálogos (ConfirmDialog, ServiceSelector, etc) se mantienen similares ...
 
 @Composable
-private fun ServiceSelector(services: List<ServiceAvailable>, selected: ServiceAvailable?, onSelect: (ServiceAvailable) -> Unit) {
+private fun ServiceSelector(services: List<ServiceItem>, selected: ServiceItem?, onSelect: (ServiceItem) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         Text(selected?.name ?: "Seleccionar servicio", Modifier.clickable { expanded = true }.background(ErrorColor, RoundedCornerShape(8.dp)).padding(16.dp), color = Color.White)

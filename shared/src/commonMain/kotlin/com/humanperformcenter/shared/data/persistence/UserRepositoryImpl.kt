@@ -8,7 +8,6 @@ import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.EwalletTransaction
 import com.humanperformcenter.shared.data.model.GetPreferredCoachResponse
 import com.humanperformcenter.shared.data.model.Professional
-import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.UploadResponse
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.UserBooking
@@ -234,17 +233,6 @@ object UserRepositoryImpl: UserRepository {
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    override suspend fun getUserAllowedServices(customerId: Int): List<ServiceAvailable> {
-        val response = ApiClient.apiClient.get(
-            "${ApiClient.baseUrl}/mobile/user-services"
-        ) {
-            url {
-                parameters.append("user_id", customerId.toString())
-            }
-        }
-        return response.body()
     }
 
     override suspend fun getUserBookings(customerId: Int): List<UserBooking> {

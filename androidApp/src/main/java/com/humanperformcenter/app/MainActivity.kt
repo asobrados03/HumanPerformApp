@@ -7,18 +7,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.humanperformcenter.app.navigation.Navigation
-import com.humanperformcenter.data.SessionDatabase
-import com.humanperformcenter.data.SessionRepository
 import com.humanperformcenter.shared.data.persistence.GooglePayRepository
 import com.humanperformcenter.shared.domain.storage.DataStoreProvider
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.ui.theme.HumanPerformAppTheme
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
-import com.humanperformcenter.ui.viewmodel.SessionViewModel
-import com.humanperformcenter.ui.viewmodel.SessionViewModelFactory
 import com.stripe.android.PaymentConfiguration
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheet.Builder
@@ -48,17 +43,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
-            val context = this
-            val sessionDao = SessionDatabase.getDatabase(context).sessionDao()
-            val sessionRepository = SessionRepository(sessionDao)
-            val sessionViewModel: SessionViewModel = viewModel(
-                factory = SessionViewModelFactory(sessionRepository, DataStoreProvider.get(applicationContext))
-            )
 
             HumanPerformAppTheme {
                 Navigation(
                     navController = navController,
-                    sessionViewModel = sessionViewModel,
                     paymentSheet = paymentSheet,
                     registerPaymentSheetResult = { handler ->
                         // la UI nos pasa su handler y lo enganchamos

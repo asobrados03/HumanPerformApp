@@ -4,11 +4,10 @@ import com.humanperformcenter.shared.data.model.Coupon
 import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.EwalletTransaction
 import com.humanperformcenter.shared.data.model.GetPreferredCoachResponse
-import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.data.model.Professional
-import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.UserBooking
+import com.humanperformcenter.shared.data.model.UserStatistics
 import com.humanperformcenter.shared.domain.repository.UserRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -63,10 +62,6 @@ class UserUseCase(private val userRepository: UserRepository) {
 
     suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit> {
         return userRepository.deleteProfilePic(req)
-    }
-
-    suspend fun getUserAllowedServices(customerId: Int): List<ServiceAvailable> {
-        return userRepository.getUserAllowedServices(customerId)
     }
 
     suspend fun getUserBookings(customerId: Int): List<UserBooking> {
