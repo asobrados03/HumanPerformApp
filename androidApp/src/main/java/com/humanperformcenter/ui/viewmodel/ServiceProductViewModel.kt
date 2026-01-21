@@ -8,12 +8,14 @@ import com.humanperformcenter.shared.data.model.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.shared.data.model.ServiceUiModel
+import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -60,6 +62,12 @@ class ServiceProductViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    val productsState = _userProducts.map { list ->
+        list.distinctBy { it.id }.map { item ->
+            item.copy(image = "${ApiClient.baseUrl}/product_images/${item.image}")
+        }
+    }
 
     fun loadAllServices() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -125,9 +133,9 @@ class ServiceProductViewModel(
         }
     }
 
-    fun unassignProductFromUser(productId: Int, userId: Int) {
+    fun unassignProductFromUser(targetId: Int, userId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            val success = useCase.unassignProductFromUser(userId, productId)
+            val success = useCase.unassignProductFromUser(userId, targetId)
             if (success) {
                 loadUserProducts(userId)
             } else {

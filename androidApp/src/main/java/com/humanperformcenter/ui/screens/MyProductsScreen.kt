@@ -1,16 +1,12 @@
 package com.humanperformcenter.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,16 +15,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
 import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.shared.data.model.ServiceItem
-import com.humanperformcenter.shared.data.network.ApiClient
-import com.humanperformcenter.ui.components.AppCard
+import com.humanperformcenter.ui.components.ConfirmCancelDialog
+import com.humanperformcenter.ui.components.ProductCard
+import com.humanperformcenter.ui.components.ProductOptionsDialog
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
@@ -41,125 +35,89 @@ fun MyProductsScreen(
     daySessionViewModel: DaySessionViewModel,
     userId: Int
 ) {
-    val productos by serviceProductViewModel.userProducts.collectAsStateWithLifecycle()
-    val productosUnicos = productos.distinctBy { it.id }
-    var productoSeleccionado by remember { mutableStateOf<ServiceItem?>(null) }
-    var mostrarDialogoProducto by remember { mutableStateOf(false) }
+    val processedProducts by serviceProductViewModel.productsState.collectAsStateWithLifecycle(
+        initialValue = emptyList()
+    )
+
+    // ----- NO TENGO NI IDEA DE LO QUE HACE ESTE TROZO DE CÓDIGO
     val userBookings by userViewModel.userBookings.collectAsStateWithLifecycle()
-    var mostrarConfirmacionBaja by remember { mutableStateOf(false) }
 
     LaunchedEffect(userBookings) {
         if (userBookings.isNotEmpty()) {
             daySessionViewModel.cargarFormularioSiProcede(userBookings)
         }
     }
+    // ------------------------------------
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
+    // El contenido puro de la UI
+    MyProductsContent(
+        productos = processedProducts,
+        onProductClick = { product ->
+            serviceProductViewModel.productoSeleccionado = product
+            navController.navigate(ProductDetail(product.id))
+        },
+        onConfirmCancel = { targetId ->
+            serviceProductViewModel.unassignProductFromUser(targetId, userId)
+        }
+    )
+}
+
+@Composable
+fun MyProductsContent(
+    productos: List<ServiceItem>,
+    onProductClick: (ServiceItem) -> Unit,
+    onConfirmCancel: (Int) -> Unit
+) {
+    var selectedProduct by remember { mutableStateOf<ServiceItem?>(null) }
+    var showOptionsDialog by remember { mutableStateOf(false) }
+    var showCancelConfirmation by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
         if (productos.isEmpty()) {
-            item {
-                Text("No tienes productos contratados.")
-            }
+            Text(
+                "No tienes productos contratados.",
+                modifier = Modifier.align(Alignment.Center)
+            )
         } else {
-            items(
-                items = productosUnicos,
-                key = { it.id }
-            ) { product ->
-                val imageUrl = product.image?.let { "${ApiClient.baseUrl}/product_images/$it" }
-
-                AppCard(onClick = {
-                    productoSeleccionado = product
-                    mostrarDialogoProducto = true
-                }) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(12.dp)
-                    ) {
-                        imageUrl?.let {
-                            AsyncImage(
-                                model = it,
-                                contentDescription = product.name,
-                                modifier = Modifier
-                                    .size(69.dp)
-                                    .padding(end = 12.dp)
-                            )
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(items = productos, key = { it.id }) { product ->
+                    ProductCard(
+                        product = product,
+                        onClick = {
+                            selectedProduct = product
+                            showOptionsDialog = true
                         }
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(product.name, fontWeight = FontWeight.Bold)
-                        }
-
-                        Text(
-                            text = "${product.price?.toInt() ?: 0}€",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Red
-                        )
-                    }
+                    )
                 }
             }
         }
-    }
-    if (mostrarDialogoProducto && productoSeleccionado != null) {
-        AlertDialog(
-            onDismissRequest = {
-                mostrarDialogoProducto = false
-                productoSeleccionado = null
-            },
-            title = { Text("Producto: ${productoSeleccionado!!.name}") },
-            text = { Text("¿Qué deseas hacer con este producto?") },
-            confirmButton = {
-                Column {
-                    TextButton(onClick = {
-                        serviceProductViewModel.productoSeleccionado = productoSeleccionado
-                        navController.navigate(ProductDetail(productoSeleccionado!!.id))
-                    }) {
-                        Text("Ver detalles")
-                    }
 
-                    TextButton(
-                        onClick = { mostrarConfirmacionBaja = true }
-                    ) {
-                        Text("Darse de baja", color = Color.Red)
-                    }
+        // Gestión de Diálogos
+        if (showOptionsDialog && selectedProduct != null) {
+            ProductOptionsDialog(
+                productName = selectedProduct!!.name,
+                onViewDetails = {
+                    onProductClick(selectedProduct!!)
+                    showOptionsDialog = false
+                },
+                onCancelRequest = { showCancelConfirmation = true },
+                onDismiss = { showOptionsDialog = false }
+            )
+        }
 
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    mostrarDialogoProducto = false
-                    productoSeleccionado = null
-                }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
-    if (mostrarConfirmacionBaja) {
-        AlertDialog(
-            onDismissRequest = { mostrarConfirmacionBaja = false },
-            title = { Text("Confirmar baja") },
-            text = { Text("¿Estás seguro de que quieres darte de baja de este producto?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    serviceProductViewModel.unassignProductFromUser(productoSeleccionado!!.id, userId)
-                    mostrarDialogoProducto = false
-                    productoSeleccionado = null
-                    mostrarConfirmacionBaja = false
-                }) {
-                    Text("Sí, darse de baja", color = Color.Red)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    mostrarConfirmacionBaja = false
-                }) {
-                    Text("Cancelar")
-                }
-            }
-        )
+        if (showCancelConfirmation && selectedProduct != null) {
+            ConfirmCancelDialog(
+                onConfirm = {
+                    onConfirmCancel(selectedProduct!!.id)
+                    showCancelConfirmation = false
+                    showOptionsDialog = false
+                    selectedProduct = null
+                },
+                onDismiss = { showCancelConfirmation = false }
+            )
+        }
     }
 }
