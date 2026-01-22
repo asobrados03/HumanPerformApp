@@ -4,12 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.shared.data.model.RebillRequest
+import com.humanperformcenter.shared.data.model.ServiceItem
+import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.model.stripe.CreatePaymentIntentRequest
+import com.humanperformcenter.shared.domain.entities.BillingPrefill
 import com.humanperformcenter.shared.domain.usecase.GooglePayUseCase
 import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
 import com.humanperformcenter.shared.domain.usecase.StripeUseCase
 import com.humanperformcenter.ui.viewmodel.state.PaymentState
 import com.humanperformcenter.ui.viewmodel.state.PaymentMethodsUiState
+import com.humanperformcenter.ui.viewmodel.state.StripeUiState
 import com.stripe.android.Stripe.Companion.API_VERSION
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -102,7 +106,7 @@ class PaymentViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 println("$amountInCents")
-                println("$currency")
+                println(currency)
                 println("$userId")
                 println("$productId")
                 println("$couponCode")
@@ -207,18 +211,26 @@ class PaymentViewModel(
         _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Empty
     }
 
+    fun createHppPaymentRequest(
+        product: ServiceItem,
+        user: User?,
+        showStored:
+        Boolean,
+        saveCard: Boolean): PaymentRequest {
+
+        return paymentUseCase.createHppPaymentRequest(product, user, showStored, saveCard)
+    }
+
+    val allowedPaymentMethods = googlePayUseCase.obtenerConfiguracionGPay()
+
+    fun ejecutarPagoGPay(precio: Double) {
+        val requestJson = googlePayUseCase.prepararJsonPago(precio)
+
+        // SOLUCIÓN AL ERROR DE IMAGEN:
+        // Convertimos a Int aquí antes de llamar a la función de la pasarela
+        val centimos = (precio * 100).toInt()
+
+        //launchGooglePay(requestJson, centimos)
+    }
 }
 
-data class BillingPrefill(
-    val name: String? = null,
-    val email: String? = null,
-    val addressLine1: String? = null,
-    val postalCode: String? = null,
-    val city: String? = null
-)
-sealed class StripeUiState {
-    object Idle : StripeUiState()
-    data class Ready(val clientSecret: String, val config: PaymentSheet.Configuration) : StripeUiState()
-    data class Result(val result: PaymentSheetResult) : StripeUiState()
-    data class Error(val message: String) : StripeUiState()
-}

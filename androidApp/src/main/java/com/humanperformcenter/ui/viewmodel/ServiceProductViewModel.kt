@@ -9,6 +9,7 @@ import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.shared.data.model.ServiceUiModel
 import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.domain.entities.ProductTypeFilter
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -188,4 +189,16 @@ class ServiceProductViewModel(
         }
     }
 
+    fun filterProducts(
+        list: List<ServiceItem>,
+        filter: ProductTypeFilter,
+        sessionCount: Int
+    ): List<ServiceItem> {
+        return useCase.filterProducts(list, filter, sessionCount)
+    }
+
+    fun calcularPrecioConDescuento(productoId: Int, precioOriginal: Double, cupones: List<Coupon>)
+            : Double {
+        return useCase.calcularPrecioConDescuento(productoId, precioOriginal, cupones)
+    }
 }

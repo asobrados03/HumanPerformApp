@@ -42,6 +42,14 @@ object PaymentRepositoryImpl: PaymentRepository{
             accept(ContentType.Application.Json)
         }.body()
 
+    override fun getAllowedPaymentMethods(): String {
+        TODO("Not yet implemented")
+    }
+
+    override fun buildPaymentRequestJson(precio: Double): String {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun getPaymentMethod(userId: Int): String? {
         val response: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/user/saved-payment-method") {
             parameter("user_id", userId)

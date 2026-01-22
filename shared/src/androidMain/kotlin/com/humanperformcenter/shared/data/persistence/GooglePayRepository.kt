@@ -22,6 +22,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.cancellation.CancellationException
@@ -104,7 +105,7 @@ object GooglePayRepository : PaymentRepository {
         return resp.status.isSuccess()
     }
 
-    override suspend fun getPaymentMethod(userId: Int): String? {
+    override suspend fun getPaymentMethod(userId: Int): String {
         TODO("Not yet implemented")
     }
 
@@ -114,6 +115,50 @@ object GooglePayRepository : PaymentRepository {
 
     override suspend fun getPaymentMethods(userId: Int): List<PaymentMethod> {
         TODO("Not yet implemented")
+    }
+
+    override fun getAllowedPaymentMethods(): String = """
+        [{
+          "type":"CARD",
+          "parameters":{
+            "allowedAuthMethods":["PAN_ONLY","CRYPTOGRAM_3DS"],
+            "allowedCardNetworks":["VISA","MASTERCARD","AMEX"]
+          },
+          "tokenizationSpecification":{
+            "type":"PAYMENT_GATEWAY",
+            "parameters":{
+              "gateway":"globalpayments",
+              "gatewayMerchantId":"367660321"
+            }
+          }
+        }]
+        """.trimIndent()
+
+    override fun buildPaymentRequestJson(precio: Double): String {
+        val precioStr = String.format(java.util.Locale.US, "%.2f", precio)
+
+        val transactionInfo = JSONObject().apply {
+            put("totalPrice", precioStr)
+            put("totalPriceStatus", "FINAL")
+            put("currencyCode", "EUR")
+            put("countryCode", "ES")
+        }
+        val merchantInfo = JSONObject().apply {
+            put("merchantName", "Human Perform Center")
+            put("merchantId", "BCR2DN7TWDXLFZBW")
+        }
+        return JSONObject().apply {
+            put("apiVersion", 2)
+            put("apiVersionMinor", 0)
+            put("allowedPaymentMethods", JSONArray(
+                getAllowedPaymentMethods()
+            )
+            )
+            put("transactionInfo", transactionInfo)
+            put("merchantInfo", merchantInfo)
+            put("emailRequired", true)
+            put("shippingAddressRequired", false)
+        }.toString()
     }
 
     /** 3) (Opcional) Genera una URL de pago en tu backend */
@@ -133,7 +178,7 @@ object GooglePayRepository : PaymentRepository {
         when (resultCode) {
             Activity.RESULT_OK -> {
                 val paymentData = PaymentData.getFromIntent(data!!)
-                val token = JSONObject(paymentData?.toJson())
+                val token = JSONObject(paymentData?.toJson() ?: "")
                     .getJSONObject("paymentMethodData")
                     .getJSONObject("tokenizationData")
                     .getString("token")

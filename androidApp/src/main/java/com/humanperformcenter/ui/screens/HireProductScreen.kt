@@ -47,7 +47,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -57,19 +56,16 @@ import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.app.navigation.StartPayment
 import com.humanperformcenter.app.navigation.StripeCheckout
 import com.humanperformcenter.shared.data.model.Coupon
-import com.humanperformcenter.shared.data.model.PaymentRequest
-import com.humanperformcenter.shared.data.model.RebillRequest
+import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.domain.entities.BillingPrefill
+import com.humanperformcenter.shared.domain.entities.ProductTypeFilter
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.ui.viewmodel.BillingPrefill
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.state.PaymentState
-import org.json.JSONArray
-import org.json.JSONObject
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,286 +77,286 @@ fun HireProductScreen(
     userData: User?
 ) {
     val context = LocalContext.current
-    val gpayState by paymentViewModel.paymentState.collectAsStateWithLifecycle()
-
-    var showMonederoConfirmation by remember { mutableStateOf(false) }
-
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
-    val paymentResult by (savedStateHandle
-        ?.getStateFlow("payment_result", null as Boolean?)
-        ?: kotlinx.coroutines.flow.MutableStateFlow<Boolean?>(null)
-            ).collectAsStateWithLifecycle()
 
-    // --- Screen State ---
+    // --- State Collection ---
     val productosMap by serviceProductViewModel.serviceProducts.collectAsStateWithLifecycle()
     val productos = productosMap[serviceId] ?: emptyList()
-
     val productosContratados by serviceProductViewModel.userProducts.collectAsStateWithLifecycle()
-    val idsContratados = productosContratados.map { it.id }.toSet()
+    val userCoupons by serviceProductViewModel.userCoupons.collectAsStateWithLifecycle()
+    val gpayState by paymentViewModel.paymentState.collectAsStateWithLifecycle()
 
-    var mostrarCuponSheet by remember { mutableStateOf(false) }
-    var productoIdSeleccionado by rememberSaveable  { mutableStateOf<Int?>(null) }
+    // Payment Result Listener (desde navegación)
+    val paymentResult by (savedStateHandle
+        ?.getStateFlow("payment_result", null as Boolean?)
+        ?: kotlinx.coroutines.flow.MutableStateFlow(null)
+            ).collectAsStateWithLifecycle()
+
+    val idsContratados = remember(productosContratados) { productosContratados.map { it.id }.toSet() }
+    val sesionesDisponibles = remember(productos) { productos.mapNotNull { it.session }.distinct().sorted() }
+
+    // --- UI State Local ---
+    var selectedFilter by remember { mutableStateOf(ProductTypeFilter.ALL) }
+    var selectedSessionCount by remember { mutableIntStateOf(0) }
+    var productoIdSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
+    var showPaymentSheet by remember { mutableStateOf(false) }
     var cuponTexto by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
 
-    var selectedFilter by remember { mutableStateOf(ProductTypeFilter.ALL) }
-
-    var guardarTarjeta by rememberSaveable { mutableStateOf(false) }
-
-    var selectedSessionCount by remember { mutableIntStateOf(0) } // 0 = sin filtro
-    val sesionesDisponibles = productos.mapNotNull { it.session }.distinct().sorted()
     val productosFiltrados by remember(productos, selectedFilter, selectedSessionCount) {
         derivedStateOf {
-            productos.filter { producto ->
-                val tipoOk = when (selectedFilter) {
-                    ProductTypeFilter.RECURRENT -> producto.tipo_producto == "recurrent"
-                    ProductTypeFilter.NON_RECURRENT -> producto.tipo_producto != "recurrent"
-                    ProductTypeFilter.ALL -> true
-                }
-                val sesionesOk = if (selectedSessionCount == 0) true
-                else producto.session == selectedSessionCount
+            // filterProducts ahora acepta List<ServiceItem>
+            serviceProductViewModel.filterProducts(
+                productos, selectedFilter, selectedSessionCount
+            )
+        }
+    }
 
-                tipoOk && sesionesOk
+    // --- Handlers (Lógica unificada) ---
+
+    // Función centralizada para manejar el éxito del pago
+    fun handleProductAssignment(productId: Int, method: String) {
+        serviceProductViewModel.assignProductToUser(
+            userId = userData?.id ?: 0,
+            productId = productId,
+            paymentMethod = method,
+            couponCode = cuponTexto.takeIf { it.isNotBlank() }
+        ) { success, error ->
+            if (success) {
+                Toast.makeText(context, "Producto asignado con éxito", Toast.LENGTH_SHORT).show()
+                navController.navigate(ProductDetail(productId = productId))
+                serviceProductViewModel.loadUserProducts(userData?.id ?: 0)
+                // Reset states
+                showPaymentSheet = false
+                cuponTexto = ""
+                productoIdSeleccionado = null
+                savedStateHandle?.set("payment_result", null)
+            } else {
+                errorMessage = error ?: "Error al asignar producto"
             }
         }
     }
 
-    var showAlertMethod: Boolean by remember { mutableStateOf(false) }
-    var mostrarTarjetasHpp by rememberSaveable { mutableStateOf(false) } // por defecto, mostrar en HPP
+    // --- Effects ---
 
-    val userId = userData?.id ?: 0
-    val userEmail = userData?.email ?: ""
-    val userName = userData?.fullName ?: ""
-    val userStreet = userData?.postAddress ?: ""
-    val userPostalCode = userData?.postcode ?: 0
-    val userCoupons by serviceProductViewModel.userCoupons.collectAsStateWithLifecycle()
+    LaunchedEffect(serviceId, userData) {
+        userData?.id?.let { uid ->
+            serviceProductViewModel.loadServiceProducts(serviceId)
+            serviceProductViewModel.loadUserProducts(uid)
+            serviceProductViewModel.loadUserCoupons(uid)
+        }
+    }
 
+    // Monitor de resultados de pago (HPP/Web)
     LaunchedEffect(paymentResult) {
         if (paymentResult == true && productoIdSeleccionado != null) {
-            val selectedId = productoIdSeleccionado ?: return@LaunchedEffect
-
-            serviceProductViewModel.assignProductToUser(
-                userId = userId,
-                productId = selectedId,
-                paymentMethod = "card",
-                cuponTexto.takeIf { it.isNotBlank() }
-            ) { success, error ->
-                if (success) {
-                    Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
-                    navController.navigate(ProductDetail(productId = selectedId))
-                    serviceProductViewModel.loadUserProducts(userId)
-                    mostrarCuponSheet = false
-                    cuponTexto = ""
-                    productoIdSeleccionado = null
-                } else {
-                    errorMessage = error ?: "Error al asignar producto"
-                }
-            }
-
-            savedStateHandle?.set("payment_result", null)
-
+            handleProductAssignment(productoIdSeleccionado!!, "card")
         } else if (paymentResult == false) {
             Toast.makeText(context, "Pago cancelado o fallido", Toast.LENGTH_SHORT).show()
             savedStateHandle?.set("payment_result", null)
         }
     }
 
-
-    LaunchedEffect(serviceId) {
-        serviceProductViewModel.loadServiceProducts(serviceId)
-        serviceProductViewModel.loadUserProducts(userId)
-        serviceProductViewModel.loadUserCoupons(userId)
-        productos.forEach {
-            println("Producto: ${it.name}, tipo: ${it.tipo_producto}")
-        }
-    }
-
+    // Monitor de GPay
     LaunchedEffect(gpayState) {
-        when (val s = gpayState) {
-            is PaymentState.Loading -> {
-                // puedes mostrar un loading overlay con algún estado local si quieres
-                println("Cargando estado de pago...")
-                println("🟡 [GPay] paymentState=$gpayState")
-
-            }
-            is PaymentState.Success -> {
-                // Igual que haces tras payment_result == true, asigna y navega
-                val selectedId = productoIdSeleccionado ?: return@LaunchedEffect
-                serviceProductViewModel.assignProductToUser(
-                    userId = userId,
-                    productId = selectedId,
-                    paymentMethod = "card",
-                    cuponTexto.takeIf { it.isNotBlank() }
-                ) { success, error ->
-                    if (success) {
-                        Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
-                        navController.navigate(ProductDetail(productId = selectedId))
-                        serviceProductViewModel.loadUserProducts(userId)
-                        mostrarCuponSheet = false
-                        cuponTexto = ""
-                        productoIdSeleccionado = null
-                    } else {
-                        errorMessage = error ?: "Error al asignar producto"
-                    }
-                }
-            }
-            is PaymentState.Error -> {
-                Toast.makeText(context, "Pago cancelado o fallido: ${s.message}", Toast.LENGTH_LONG).show()
-            }
-            PaymentState.Idle -> Unit
+        if (gpayState is PaymentState.Success && productoIdSeleccionado != null) {
+            handleProductAssignment(productoIdSeleccionado!!, "google_pay")
+        } else if (gpayState is PaymentState.Error) {
+            Toast.makeText(context, "Error GPay: ${(gpayState as PaymentState.Error).message}", Toast.LENGTH_LONG).show()
         }
     }
 
     Scaffold(
         topBar = {
             Column {
-                LogoAppBar(showBackArrow = true) {
-                    navController.popBackStack()
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Dropdown de tipo de producto
-                    var tipoExpanded by remember { mutableStateOf(false) }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { tipoExpanded = true }
-                            .padding(horizontal = 12.dp, vertical = 12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = selectedFilter.label,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = null
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = tipoExpanded,
-                            onDismissRequest = { tipoExpanded = false },
-                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-                        ) {
-                            ProductTypeFilter.entries.forEach { filter ->
-                                DropdownMenuItem(
-                                    text = { Text(filter.label) },
-                                    onClick = {
-                                        selectedFilter = filter
-                                        tipoExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    // Dropdown de sesiones
-                    var sesionesExpanded by remember { mutableStateOf(false) }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { sesionesExpanded = true }
-                            .padding(horizontal = 12.dp, vertical = 12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = if (selectedSessionCount == 0) "Todas las sesiones" else "$selectedSessionCount sesiones",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = null
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = sesionesExpanded,
-                            onDismissRequest = { sesionesExpanded = false },
-                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Todas") },
-                                onClick = {
-                                    selectedSessionCount = 0
-                                    sesionesExpanded = false
-                                }
-                            )
-                            sesionesDisponibles.forEach { sesion ->
-                                DropdownMenuItem(
-                                    text = { Text("$sesion sesiones") },
-                                    onClick = {
-                                        selectedSessionCount = sesion
-                                        sesionesExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
+                LogoAppBar(showBackArrow = true) { navController.popBackStack() }
+                ProductFiltersSection(
+                    selectedFilter = selectedFilter,
+                    onFilterChange = { selectedFilter = it },
+                    selectedSessionCount = selectedSessionCount,
+                    onSessionChange = { selectedSessionCount = it },
+                    sesionesDisponibles = sesionesDisponibles
+                )
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(top = 8.dp)
-                .padding(bottom = 16.dp)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            if (productosFiltrados.isEmpty()) {
-                item {
-                    Text("No hay productos disponibles para este servicio.")
-                }
-            } else items(
-                items = productosFiltrados,
-                key = { it.id }
-            ) { producto ->
-                val contratado = idsContratados.contains(producto.id)
-                AppCard(onClick = {
-                    if (!contratado) {
-                        productoIdSeleccionado = producto.id
-                        mostrarCuponSheet = true
+        ProductList(
+            modifier = Modifier.padding(padding),
+            availableProducts = productosFiltrados,
+            idsContratados = idsContratados,
+            userCoupons = userCoupons,
+            onProductClick = { product ->
+                productoIdSeleccionado = product.id
+                showPaymentSheet = true
+            },
+            serviceProductViewModel = serviceProductViewModel
+        )
+    }
+
+    if (errorMessage != null) {
+        errorMessage?.let { message ->
+            AlertDialog(
+                onDismissRequest = { errorMessage = null },
+                confirmButton = {
+                    TextButton(onClick = { errorMessage = null }) {
+                        Text("Aceptar")
                     }
-                }) {
+                },
+                title = { Text("Atención") },
+                text = { Text(message) }
+            )
+        }
+    }
+
+    if (showPaymentSheet && productoIdSeleccionado != null) {
+        val selectedProduct = productos.firstOrNull { it.id == productoIdSeleccionado }
+
+        if (selectedProduct != null) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    showPaymentSheet = false
+                    productoIdSeleccionado = null
+                    cuponTexto = ""
+                },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            ) {
+                PaymentSelectionContent(
+                    product = selectedProduct,
+                    userData = userData,
+                    userCoupons = userCoupons,
+                    cuponTexto = cuponTexto,
+                    onCuponChange = { cuponTexto = it },
+                    paymentViewModel = paymentViewModel,
+                    navController = navController,
+                    onMonederoPay = {
+                        handleProductAssignment(selectedProduct.id, "cash")
+                    },
+                    onRebillSuccess = {
+                        // Lógica específica de rebill o reusar la genérica
+                        Toast.makeText(context, "Rebill exitoso", Toast.LENGTH_SHORT).show()
+                        serviceProductViewModel.loadUserProducts(userData?.id ?: 0)
+                        navController.navigate(ProductDetail(productId = selectedProduct.id))
+                    },
+                    serviceProductViewModel = serviceProductViewModel
+                )
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// SUB-COMPOSABLES (Para limpiar el código principal) que en un futuro
+// estarán en archivos/composables independientes en ui/components
+// -----------------------------------------------------------------------------
+
+@Composable
+fun ProductFiltersSection(
+    selectedFilter: ProductTypeFilter,
+    onFilterChange: (ProductTypeFilter) -> Unit,
+    selectedSessionCount: Int,
+    onSessionChange: (Int) -> Unit,
+    sesionesDisponibles: List<Int>
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Dropdown Tipo
+        CustomDropdown(
+            label = selectedFilter.label,
+            modifier = Modifier.weight(1f)
+        ) { closeMenu ->
+            ProductTypeFilter.entries.forEach { filter ->
+                DropdownMenuItem(
+                    text = { Text(filter.label) },
+                    onClick = { onFilterChange(filter); closeMenu() }
+                )
+            }
+        }
+
+        // Dropdown Sesiones
+        CustomDropdown(
+            label = if (selectedSessionCount == 0) "Todas las sesiones" else "$selectedSessionCount sesiones",
+            modifier = Modifier.weight(1f)
+        ) { closeMenu ->
+            DropdownMenuItem(
+                text = { Text("Todas") },
+                onClick = { onSessionChange(0); closeMenu() }
+            )
+            sesionesDisponibles.forEach { sesion ->
+                DropdownMenuItem(
+                    text = { Text("$sesion sesiones") },
+                    onClick = { onSessionChange(sesion); closeMenu() }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ProductList(
+    modifier: Modifier = Modifier,
+    availableProducts: List<ServiceItem>,
+    idsContratados: Set<Int>,
+    userCoupons: List<Coupon>,
+    onProductClick: (ServiceItem) -> Unit,
+    serviceProductViewModel: ServiceProductViewModel,
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(top = 8.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (availableProducts.isEmpty()) {
+            item {
+                Text("No hay productos disponibles para este servicio.")
+            }
+        } else {
+            items(
+                items = availableProducts,
+                key = { it.id }
+            ) { availableProduct ->
+                val contratado = idsContratados.contains(availableProduct.id)
+
+                // Calculamos el precio aquí para usarlo en la tarjeta
+                val precioFinal = remember(availableProduct, userCoupons) {
+                    serviceProductViewModel.calcularPrecioConDescuento(
+                        availableProduct.id,
+                        availableProduct.price ?: 0.0,
+                        userCoupons
+                    )
+                }
+
+                AppCard(
+                    onClick = {
+                        if (!contratado) {
+                            onProductClick(availableProduct)
+                        }
+                    }
+                ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        producto.image?.let {
+                        // Imagen
+                        availableProduct.image?.let { imagePath ->
                             AsyncImage(
-                                model = "${ApiClient.baseUrl}/product_images/$it",
-                                contentDescription = producto.name,
+                                model = "${ApiClient.baseUrl}/product_images/$imagePath",
+                                contentDescription = availableProduct.name,
                                 modifier = Modifier
                                     .size(69.dp)
                                     .padding(end = 12.dp)
                             )
                         }
+
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(producto.name, style = MaterialTheme.typography.titleMedium)
+                            Text(availableProduct.name, style = MaterialTheme.typography.titleMedium)
                             if (contratado) {
                                 Text(
                                     "Ya contratado",
@@ -369,13 +365,9 @@ fun HireProductScreen(
                                 )
                             }
                         }
-                        val precioFinal = calcularPrecioConDescuento(
-                            producto.id,
-                            producto.price ?: 0.0,
-                            serviceProductViewModel.userCoupons.collectAsStateWithLifecycle().value
-                        )
+
                         Text(
-                            "${precioFinal.toInt()}€",
+                            text = "${precioFinal.toInt()}€",
                             fontWeight = if (contratado) FontWeight.Normal else FontWeight.Bold,
                             color = if (contratado) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
                         )
@@ -384,384 +376,155 @@ fun HireProductScreen(
             }
         }
     }
-    if (errorMessage != null) {
-        AlertDialog(
-            onDismissRequest = { errorMessage = null },
-            title = { Text("Error") },
-            text = { Text(errorMessage ?: "") },
-            confirmButton = {
-                TextButton(onClick = { errorMessage = null }) {
-                    Text("Aceptar")
-                }
+}
+
+@Composable
+fun PaymentSelectionContent(
+    product: ServiceItem,
+    userData: User?,
+    userCoupons: List<Coupon>,
+    cuponTexto: String,
+    onCuponChange: (String) -> Unit,
+    paymentViewModel: PaymentViewModel,
+    navController: NavHostController,
+    onMonederoPay: () -> Unit,
+    onRebillSuccess: () -> Unit,
+    serviceProductViewModel: ServiceProductViewModel,
+) {
+    var showMonederoConfirmation by remember { mutableStateOf(false) }
+    // Aquí puedes meter más lógica UI para mostrar/ocultar tarjetas guardadas
+    // Simplificado para legibilidad
+
+    Column(Modifier.padding(16.dp)) {
+        Text("Selecciona método de pago", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(16.dp))
+
+        // Input cupón podría ir aquí
+        // OutlinedTextField(value = cuponTexto, onValueChange = onCuponChange, label = { Text("Cupón") })
+
+        val precioFinal = serviceProductViewModel.calcularPrecioConDescuento(
+            product.id,
+            product.price ?: 0.0,
+            userCoupons
+        )
+
+        // 1. Google Pay
+        PayButton(
+            modifier = Modifier.fillMaxWidth(),
+            type = ButtonType.Pay,
+            allowedPaymentMethods = paymentViewModel.allowedPaymentMethods,
+            onClick = {
+                paymentViewModel.ejecutarPagoGPay(precioFinal)
             }
         )
-    }
+        Spacer(Modifier.height(8.dp))
 
-    if (mostrarCuponSheet && productoIdSeleccionado != null) {
+        // 2. Tarjeta HPP
+        Button(
+            onClick = {
+                val paymentRequest = paymentViewModel
+                    .createHppPaymentRequest(product, userData, showStored = true, saveCard = false)
 
-        ModalBottomSheet(
-            onDismissRequest = {
-                mostrarCuponSheet = false
-                productoIdSeleccionado = null
-                cuponTexto = ""
+                navController.currentBackStackEntry?.savedStateHandle?.apply {
+                    set("selected_product_id", product.id)
+                    set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                }
+                paymentViewModel.generatePaymentURL(paymentRequest)
+                navController.navigate(StartPayment)
             },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5))
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Text("Selecciona método de pago", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(16.dp))
+            Text("Pagar con tarjeta 💳")
+        }
+        Spacer(Modifier.height(8.dp))
 
-                PayButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    type = ButtonType.Pay,
-                    allowedPaymentMethods = allowedPaymentMethodsJson,
-                    onClick = {
-                        val selectedProduct = productos.first { it.id == productoIdSeleccionado }
-                        val precio = calcularPrecioConDescuento(
-                            selectedProduct.id,
-                            selectedProduct.price ?: 0.0,
-                            userCoupons
-                        )
-                        val amountCents = (precio * 100).toInt()
-                        val requestJson = buildPaymentRequestJson(1.00/*precio*/)
-                        println("🟢 [GPay] Click PayButton → productId=${selectedProduct.id}, precio=${"%.2f".format(precio)}, amountCents=$amountCents")
-                        println("🟢 [GPay] merchantId(Google)='BCR2DN7TWDXLFZBW', gateway='globalpayments', gatewayMerchantId(Addon)='367660321'")
-                        println("🟢 [GPay] PaymentDataRequest JSON=$requestJson")
-                        paymentViewModel.payWithGooglePay(requestJson, /*amountCents*/100, "EUR")
-                    }
+        // 3. Stripe
+        Button(
+            onClick = {
+                navController.currentBackStackEntry?.savedStateHandle?.apply {
+                    set("selected_product_id", product.id)
+                    set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                }
+                paymentViewModel.startStripeCheckout(
+                    amountInCents = (precioFinal * 100).toInt(),
+                    currency = "EUR",
+                    userId = userData?.id ?: 0,
+                    productId = product.id,
+                    couponCode = cuponTexto.takeIf { it.isNotBlank() },
+                    billing = BillingPrefill(
+                        name = userData?.fullName,
+                        email = userData?.email,
+                        addressLine1 = userData?.postAddress,
+                        postalCode = userData?.postcode?.toString(),
+                        city = "Segovia"
+                    )
                 )
+                navController.navigate(StripeCheckout)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5))
+        ) {
+            Text("Pagar con Stripe 💳")
+        }
+        Spacer(Modifier.height(8.dp))
 
-                Spacer(Modifier.height(8.dp))
-
-                val selectedProduct = productos.first { it.id == productoIdSeleccionado }
-                val precioFinal = calcularPrecioConDescuento(
-                    selectedProduct.id,
-                    selectedProduct.price ?: 0.0,
-                    userCoupons
-                )
-                val amountInCents = (precioFinal * 100).toInt()
-
-                Button(onClick = {
-                    guardarTarjeta = false
-                    mostrarTarjetasHpp = true
-                    val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
-                    val lastName = userName.split(" ").drop(1).joinToString(" ")
-                    val paymentRequest = PaymentRequest(
-                        amount = 1,
-                        currency = "EUR",
-                        firstName,
-                        lastName,
-                        email = userEmail,
-                        street = userStreet,
-                        postalCode = userPostalCode,
-                        city = "Segovia",
-                        card_storage = guardarTarjeta,
-                        payer_ref = "user_$userId",
-                        show_stored = mostrarTarjetasHpp,
-                        product_id = selectedProduct.id,
-                        interval_months = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
-                        subscribe = selectedProduct.tipo_producto == "recurrent"
-                    )
-
-                    navController.currentBackStackEntry?.savedStateHandle?.apply {
-                        set("selected_product_id", selectedProduct.id)
-                        set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
-                    }
-                    paymentViewModel.generatePaymentURL(paymentRequest)
-                    navController.navigate(StartPayment)
-                    productoIdSeleccionado = selectedProduct.id
-
-                }, modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF1E88E5),
-                        contentColor = Color.White)
-                ) {
-                    Text("Pagar con tarjeta 💳", fontSize = 16.sp)
-                }
-                    Spacer(Modifier.height(8.dp))
-
-                Button(
-                    onClick = {
-                        val selectedProduct = productos.first { it.id == productoIdSeleccionado }
-                        /*val precioFinal = calcularPrecioConDescuento(
-                            selectedProduct.id,
-                            selectedProduct.price ?: 0.0,
-                            userCoupons
-                        )
-                        val amountInCents = (precioFinal * 100).toInt()*/
-
-                        // Guarda lo que necesites en savedStateHandle
-                        navController.currentBackStackEntry?.savedStateHandle?.apply {
-                            set("selected_product_id", selectedProduct.id)
-                            set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
-                        }
-
-                        // Lanza preparación PaymentSheet
-                        paymentViewModel.startStripeCheckout(
-                            amountInCents = 51,
-                            currency = "EUR",
-                            userId = userId,
-                            productId = selectedProduct.id,
-                            couponCode = cuponTexto.takeIf { it.isNotBlank() },
-                            billing = BillingPrefill(
-                                name = userName,
-                                email = userEmail,
-                                addressLine1 = userStreet,
-                                postalCode = userPostalCode?.toString(),
-                                city = "Segovia"
-                            )
-                        )
-                        // Navega a una pantalla contenedora que observe el estado y presente la hoja
-                        navController.navigate(StripeCheckout)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF1E88E5),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text("Pagar con tarjeta Stripe💳", fontSize = 16.sp)
-                }
-                Spacer(Modifier.height(8.dp))
-
-
-                Button(
-                    onClick = {
-                        showMonederoConfirmation = true
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF1E88E5),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text("Pagar con monedero virtual 👛", fontSize = 16.sp)
-                }
-
-                Button(
-                    onClick = {
-                        val rebillRequest = RebillRequest(
-                            user_id = userId,
-                            amount = 1,
-                            currency = "EUR",
-                            product_id = productoIdSeleccionado ?: 0,
-                        )
-                        paymentViewModel.rebillWithSavedCard(rebillRequest,
-                            onSuccess = {
-                                Toast.makeText(context, "Rebill exitoso", Toast.LENGTH_SHORT).show()
-                                serviceProductViewModel.loadUserProducts(userId)
-                                navController.navigate(ProductDetail(productId = productoIdSeleccionado ?: 0))
-                            },
-                            onError = { error ->
-                                Toast.makeText(context, "Error al rebillar: $error", Toast.LENGTH_LONG).show()
-                            }
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF1E88E5),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text("Pago subs", fontSize = 16.sp)
-                }
-            }
+        // 4. Monedero
+        Button(
+            onClick = { showMonederoConfirmation = true },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5))
+        ) {
+            Text("Monedero virtual 👛")
         }
     }
 
     if (showMonederoConfirmation) {
         AlertDialog(
             onDismissRequest = { showMonederoConfirmation = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showMonederoConfirmation = false
-
-                        val selectedId = productoIdSeleccionado
-                        if (selectedId == null) {
-                            errorMessage = "No se ha seleccionado ningún producto."
-                            return@TextButton
-                        }
-
-                        // NO uses productoIdSeleccionado!! aquí
-                        serviceProductViewModel.assignProductToUser(
-                            userId = userId,
-                            productId = selectedId,
-                            paymentMethod = "cash",
-                            cuponTexto.takeIf { it.isNotBlank() }
-                        ) { success, error ->
-                            if (success) {
-                                Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
-                                // Usa selectedId también al navegar
-                                navController.navigate(ProductDetail(productId = selectedId))
-                                serviceProductViewModel.loadUserProducts(userId)
-
-                                // limpia al final
-                                mostrarCuponSheet = false
-                                productoIdSeleccionado = null
-                                cuponTexto = ""
-                            } else {
-                                errorMessage = error ?: "Error al asignar producto"
-                            }
-                        }
-                    }
-                ) { Text("Confirmar") }
-            },
-            dismissButton = { TextButton(onClick = { showMonederoConfirmation = false }) { Text("Cancelar") } },
-            title = { Text("Confirmar pago con monedero") },
-            text = { Text("¿Estás seguro de que deseas pagar este producto usando tu saldo virtual?") }
-        )
-    }
-    if (showAlertMethod) {
-        val selectedProduct = productos.first { it.id == productoIdSeleccionado }
-        val precioFinal = calcularPrecioConDescuento(
-            selectedProduct.id,
-            selectedProduct.price ?: 0.0,
-            userCoupons
-        )
-        val amountInCents = (precioFinal * 100).toInt()
-        AlertDialog(
-            onDismissRequest = { showAlertMethod = false },
-            title = { Text("Método de pago") },
-            text = { Text("Tienes una tarjeta guardada. ¿Deseas usarla?") },
+            title = { Text("Confirmar pago") },
+            text = { Text("¿Pagar con saldo virtual?") },
             confirmButton = {
                 TextButton(onClick = {
-                    showAlertMethod = false
-                    guardarTarjeta = false
-                    mostrarTarjetasHpp = true
-                    val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
-                    val lastName = userName.split(" ").drop(1).joinToString(" ")
-                    val paymentRequest = PaymentRequest(
-                        amount = 1,
-                        currency = "EUR",
-                        firstName,
-                        lastName,
-                        email = userEmail,
-                        street = userStreet,
-                        postalCode = userPostalCode,
-                        city = "Segovia",
-                        card_storage = guardarTarjeta,
-                        payer_ref = "user_$userId",
-                        show_stored = mostrarTarjetasHpp,
-                        product_id = selectedProduct.id,
-                        interval_months = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
-                        subscribe = selectedProduct.tipo_producto == "recurrent"
-                    )
-
-                    navController.currentBackStackEntry?.savedStateHandle?.apply {
-                        set("selected_product_id", selectedProduct.id)
-                        set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
-                    }
-                    paymentViewModel.generatePaymentURL(paymentRequest)
-                    navController.navigate(StartPayment)
-                    productoIdSeleccionado = selectedProduct.id
-
-                }) {
-                    Text("Usar tarjeta guardada")
-                }
+                    showMonederoConfirmation = false
+                    onMonederoPay()
+                }) { Text("Confirmar") }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showAlertMethod = false // Muestra botón de pago normal
-                    guardarTarjeta = true
-                    mostrarTarjetasHpp = false // No usar HPP
-                    val firstName = userName.split(" ").firstOrNull() ?: "Usuario"
-                    val lastName = userName.split(" ").drop(1).joinToString(" ")
-                    val paymentRequest = PaymentRequest(
-                        amount = 1,
-                        currency = "EUR",
-                        firstName,
-                        lastName,
-                        email = userEmail,
-                        street = userStreet,
-                        postalCode = userPostalCode,
-                        city = "Segovia",
-                        card_storage = guardarTarjeta,
-                        payer_ref = if (guardarTarjeta) "user_$userId" else null,
-                        show_stored = mostrarTarjetasHpp,
-                        product_id = selectedProduct.id,
-                        interval_months = if (selectedProduct.tipo_producto == "recurrent") 1 else null,
-                        subscribe = selectedProduct.tipo_producto == "recurrent"
-                    )
-
-                    navController.currentBackStackEntry?.savedStateHandle?.apply {
-                        set("selected_product_id", selectedProduct.id)
-                        set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
-                    }
-                    paymentViewModel.generatePaymentURL(paymentRequest)
-                    navController.navigate(StartPayment)
-                    productoIdSeleccionado = selectedProduct.id
-                }) {
-                    Text("Pagar con otra")
-                }
+                TextButton(onClick = { showMonederoConfirmation = false }) { Text("Cancelar") }
             }
         )
     }
 }
 
-
-
-enum class ProductTypeFilter(val label: String) {
-    RECURRENT("Recurrente"),
-    NON_RECURRENT("No recurrente"),
-    ALL("Todos")
-}
-
-// --- Helpers ---
-
-private val allowedPaymentMethodsJson = """
-[{
-  "type":"CARD",
-  "parameters":{
-    "allowedAuthMethods":["PAN_ONLY","CRYPTOGRAM_3DS"],
-    "allowedCardNetworks":["VISA","MASTERCARD","AMEX"]
-  },
-  "tokenizationSpecification":{
-    "type":"PAYMENT_GATEWAY",
-    "parameters":{
-      "gateway":"globalpayments",
-      "gatewayMerchantId":"367660321"
+@Composable
+fun CustomDropdown(
+    label: String,
+    modifier: Modifier = Modifier,
+    content: @Composable (closeMenu: () -> Unit) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable { expanded = true }
+            .padding(12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = label, style = MaterialTheme.typography.bodyMedium)
+            Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+        ) {
+            content { expanded = false }
+        }
     }
-  }
-}]
-""".trimIndent()
-
-/**
- * Construye el JSON de PaymentDataRequest según Google Pay API
- * @param precio total a cobrar (número decimal)
- */
-private fun buildPaymentRequestJson(precio: Double): String {
-    // Formateamos el precio con Locale.US para evitar bugs de coma/punto
-    val precioStr = String.format(Locale.US, "%.2f", precio)
-
-    val transactionInfo = JSONObject().apply {
-        put("totalPrice", precioStr)
-        put("totalPriceStatus", "FINAL")
-        put("currencyCode", "EUR")
-        put("countryCode", "ES")
-    }
-    val merchantInfo = JSONObject().apply {
-        put("merchantName", "Human Perform Center")
-        put("merchantId", "BCR2DN7TWDXLFZBW") // Opcional si ya lo tienes en Google Console
-    }
-    return JSONObject().apply {
-        put("apiVersion", 2)
-        put("apiVersionMinor", 0)
-        put("allowedPaymentMethods", JSONArray(allowedPaymentMethodsJson))
-        put("transactionInfo", transactionInfo)
-        put("merchantInfo", merchantInfo)
-        // Pedimos email al usuario (no enviamos userEmail explícito)
-        put("emailRequired", true)
-        // No pedimos dirección de envío
-        put("shippingAddressRequired", false)
-    }.toString()
-}
-
-private fun calcularPrecioConDescuento(productoId: Int, precioOriginal: Double, cupones: List<Coupon>): Double {
-    val descuentos = cupones.filter { cupon -> cupon.productIds.isEmpty() || cupon.productIds.contains(productoId) }.map { cupon ->
-        if (cupon.isPercentage) precioOriginal * cupon.discount / 100
-        else cupon.discount
-    }
-    val mayorDescuento = descuentos.maxOrNull() ?: 0.0
-    return (precioOriginal - mayorDescuento).coerceAtLeast(0.0)
 }

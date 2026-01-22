@@ -12,8 +12,8 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.PaymentSuccess
 import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
-import com.humanperformcenter.ui.viewmodel.StripeUiState
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.ui.viewmodel.state.StripeUiState
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
 

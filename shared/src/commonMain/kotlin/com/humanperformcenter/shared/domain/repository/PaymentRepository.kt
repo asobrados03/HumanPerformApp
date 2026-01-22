@@ -11,4 +11,6 @@ interface PaymentRepository {
     suspend fun getPaymentMethod(userId: Int): String?
     suspend fun rebillPayment(rebillRequest: RebillRequest): Boolean
     suspend fun getPaymentMethods(userId: Int): List<PaymentMethod>
+    fun getAllowedPaymentMethods(): String
+    fun buildPaymentRequestJson(precio: Double): String
 }

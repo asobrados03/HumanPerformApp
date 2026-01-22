@@ -3,6 +3,8 @@ package com.humanperformcenter.shared.domain.usecase
 import com.humanperformcenter.shared.data.model.PaymentMethod
 import com.humanperformcenter.shared.data.model.PaymentRequest
 import com.humanperformcenter.shared.data.model.RebillRequest
+import com.humanperformcenter.shared.data.model.ServiceItem
+import com.humanperformcenter.shared.data.model.User
 import com.humanperformcenter.shared.domain.repository.PaymentRepository
 
 class PaymentUseCase(private val paymentRepository: PaymentRepository) {
@@ -28,5 +30,33 @@ class PaymentUseCase(private val paymentRepository: PaymentRepository) {
 
     suspend fun getPaymentMethods(userId: Int): List<PaymentMethod> {
         return paymentRepository.getPaymentMethods(userId)
+    }
+
+    fun createHppPaymentRequest(
+        product: ServiceItem,
+        user: User?,
+        showStored: Boolean,
+        saveCard: Boolean
+    ): PaymentRequest {
+        // Extraer lógica de nombres, direcciones, etc.
+        val firstName = user?.fullName?.split(" ")?.firstOrNull() ?: "Usuario"
+        val lastName = user?.fullName?.split(" ")?.drop(1)?.joinToString(" ") ?: ""
+
+        return PaymentRequest(
+            amount = 1, // OJO: Revisar si esto es 1 siempre o el precio real
+            currency = "EUR",
+            firstName = firstName,
+            lastName = lastName,
+            email = user?.email ?: "",
+            street = user?.postAddress ?: "",
+            postalCode = user?.postcode ?: 0,
+            city = "Segovia", // Hardcoded, considerar sacar de user o config
+            card_storage = saveCard,
+            payer_ref = user?.let { "user_${it.id}" },
+            show_stored = showStored,
+            product_id = product.id,
+            interval_months = if (product.tipo_producto == "recurrent") 1 else null,
+            subscribe = product.tipo_producto == "recurrent"
+        )
     }
 }
