@@ -15,6 +15,6 @@ interface ServiceProductRepository {
         couponCode: String? = null,
     ): Pair<Boolean, String?>
     suspend fun unassignProductFromUser(userId: Int, productId: Int): Boolean
-    suspend fun getProductDetails(userId: Int, productId: Int): ProductDetailResponse?
+    suspend fun getProductDetails(userId: Int, productId: Int): Result<ProductDetailResponse>
     suspend fun applyCoupon(code: String, userId: Int, productId: Int): Boolean
 }

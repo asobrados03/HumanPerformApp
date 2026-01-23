@@ -11,6 +11,7 @@ import com.humanperformcenter.shared.data.model.ServiceUiModel
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.entities.ProductTypeFilter
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
+import com.humanperformcenter.ui.viewmodel.state.ProductDetailState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ServiceProductViewModel(
     private val useCase: ServiceProductUseCase
@@ -33,8 +35,8 @@ class ServiceProductViewModel(
     private val _userProducts = MutableStateFlow<List<ServiceItem>>(emptyList())
     val userProducts: StateFlow<List<ServiceItem>> get() = _userProducts
 
-    private val _productDetails = MutableStateFlow<ProductDetailResponse?>(null)
-    val productDetails: StateFlow<ProductDetailResponse?> get() = _productDetails
+    private val _productDetailsState = MutableStateFlow<ProductDetailState>(ProductDetailState.Loading)
+    val productDetailsState: StateFlow<ProductDetailState> get() = _productDetailsState
 
     private val _userCoupons = MutableStateFlow<List<Coupon>>(emptyList())
     val userCoupons: StateFlow<List<Coupon>> = _userCoupons
@@ -130,7 +132,9 @@ class ServiceProductViewModel(
             } else {
                 println("❌ Error al asignar producto")
             }
-            onResult(success, error)
+            withContext(Dispatchers.Main) {
+                onResult(success, error)
+            }
         }
     }
 
@@ -146,8 +150,17 @@ class ServiceProductViewModel(
     }
 
     fun fetchProductDetails(userId: Int, productId: Int) {
+        _productDetailsState.value = ProductDetailState.Loading
+
         viewModelScope.launch(Dispatchers.IO) {
-            _productDetails.value = useCase.getProductDetails(userId, productId)
+            val result = useCase.getProductDetails(userId, productId)
+
+            result.onSuccess { productDetail ->
+                _productDetailsState.value = ProductDetailState.Success(productDetail)
+            }.onFailure { throwable ->
+                val errorMsg = throwable.message ?: "Error al cargar el producto"
+                _productDetailsState.value = ProductDetailState.Error(errorMsg)
+            }
         }
     }
 

@@ -29,7 +29,7 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
     suspend fun unassignProductFromUser(userId: Int, productId: Int): Boolean {
         return serviceProductRepository.unassignProductFromUser(userId, productId)
     }
-    suspend fun getProductDetails(userId: Int, productId: Int): ProductDetailResponse? {
+    suspend fun getProductDetails(userId: Int, productId: Int): Result<ProductDetailResponse> {
         return serviceProductRepository.getProductDetails(userId, productId)
     }
 

@@ -124,7 +124,7 @@ fun HireProductScreen(
             couponCode = cuponTexto.takeIf { it.isNotBlank() }
         ) { success, error ->
             if (success) {
-                Toast.makeText(context, "Producto asignado con éxito", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Producto asignado con éxito", Toast.LENGTH_SHORT).show() // Linea 127
                 navController.navigate(ProductDetail(productId = productId))
                 serviceProductViewModel.loadUserProducts(userData?.id ?: 0)
                 // Reset states

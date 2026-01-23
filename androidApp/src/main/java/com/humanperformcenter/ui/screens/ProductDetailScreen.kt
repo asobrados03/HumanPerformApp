@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -28,6 +29,7 @@ import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.ui.viewmodel.state.ProductDetailState
 
 @Composable
 fun ProductDetailScreen(
@@ -36,8 +38,7 @@ fun ProductDetailScreen(
     viewModel: ServiceProductViewModel,
     navController: NavHostController
 ) {
-    val detailState = viewModel.productDetails.collectAsStateWithLifecycle()
-    val detail = detailState.value
+    val detailState = viewModel.productDetailsState.collectAsStateWithLifecycle()
 
     LaunchedEffect(productId, userId) {
         viewModel.fetchProductDetails(userId, productId)
@@ -51,19 +52,39 @@ fun ProductDetailScreen(
             )
         }
     ) { padding ->
-        if (detail == null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        when (val state = detailState.value) {
+            is ProductDetailState.Loading -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
-        } else {
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-            ) {
-                detail.let { producto ->
+
+            is ProductDetailState.Error -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "Error: ${state.message}",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = {
+                            viewModel.fetchProductDetails(userId, productId)
+                        }) {
+                            Text("Reintentar")
+                        }
+                    }
+                }
+            }
+
+            is ProductDetailState.Success -> {
+                val producto = state.product
+                Column(
+                    modifier = Modifier
+                        .padding(padding)
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
                     val imageUrl = producto.image?.let { "${ApiClient.baseUrl}/product_images/$it" }
 
                     imageUrl?.let {
@@ -80,7 +101,6 @@ fun ProductDetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Nombre del producto
                     Text(
                         text = producto.name,
                         style = MaterialTheme.typography.titleLarge,
@@ -88,7 +108,6 @@ fun ProductDetailScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Descripción
                     Text(
                         text = producto.description ?: "No hay descripción disponible.",
                         style = MaterialTheme.typography.bodyMedium,
@@ -99,7 +118,6 @@ fun ProductDetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Fechas y precios
                     Text("Fecha de obtención: ${producto.created_at.take(10)}", modifier = Modifier.fillMaxWidth())
                     producto.expiry_date?.let {
                         Text("Fecha de caducidad: ${it.substring(0, 10)}", modifier = Modifier.fillMaxWidth())
@@ -122,7 +140,6 @@ fun ProductDetailScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Servicios incluidos
                     Text(
                         text = "Servicios incluidos:",
                         style = MaterialTheme.typography.titleMedium,

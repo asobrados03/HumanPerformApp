@@ -2,12 +2,14 @@ package com.humanperformcenter.shared.data.persistence
 
 import com.humanperformcenter.shared.data.model.AssignProductRequest
 import com.humanperformcenter.shared.data.model.CouponApplyRequest
+import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.ServiceAvailable
 import com.humanperformcenter.shared.data.model.ServiceItem
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
 import io.ktor.client.call.body
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.accept
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -17,6 +19,7 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.json.Json
@@ -117,26 +120,33 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
         }
     }
 
-    override suspend fun getProductDetails(userId: Int, productId: Int): ProductDetailResponse? {
-        return try {
-            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/product-details") {
-                parameter("user_id", userId)
-                parameter("product_id", productId)
-            }
-            val text = response.bodyAsText()
-
-            println("📦 Respuesta del backend (detalles): $text")
-
-            if (text.contains("error", ignoreCase = true)) {
-                println("❌ Error backend: $text")
-                null
-            } else {
-                Json.decodeFromString<ProductDetailResponse>(text)
-            }
-        } catch (e: Exception) {
-            println("❌ Excepción en getProductDetails: ${e.message}")
-            null
+    override suspend fun getProductDetails(userId: Int, productId: Int): Result<ProductDetailResponse> = try {
+        val resp: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/product-details") {
+            parameter("user_id", userId)
+            parameter("product_id", productId)
+            expectSuccess = false
         }
+
+        when (resp.status) {
+            HttpStatusCode.OK -> {
+                val data: ProductDetailResponse = resp.body()
+                println("📦 Producto obtenido: ${data.name}")
+                Result.success(data)
+            }
+            HttpStatusCode.NotFound -> {
+                Result.failure(Exception("Producto no encontrado"))
+            }
+            HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized -> {
+                val err: ErrorResponse = resp.body() ?: ErrorResponse("Error al obtener detalles")
+                Result.failure(Exception(err.error))
+            }
+            else -> {
+                Result.failure(Exception("Error al cargar el producto: ${resp.status}"))
+            }
+        }
+    } catch (err: Throwable) {
+        println("❌ Excepción en getProductDetails: ${err.message}")
+        Result.failure(err)
     }
 
     override suspend fun applyCoupon(code: String, userId: Int, productId: Int): Boolean {
