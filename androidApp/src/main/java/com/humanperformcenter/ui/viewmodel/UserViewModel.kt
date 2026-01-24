@@ -4,10 +4,10 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkManager
-import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
-import com.humanperformcenter.shared.data.model.EwalletTransaction
-import com.humanperformcenter.shared.data.model.User
-import com.humanperformcenter.shared.data.model.UserBooking
+import com.humanperformcenter.shared.data.model.user.DeleteProfilePicRequest
+import com.humanperformcenter.shared.data.model.payment.EwalletTransaction
+import com.humanperformcenter.shared.data.model.user.User
+import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult

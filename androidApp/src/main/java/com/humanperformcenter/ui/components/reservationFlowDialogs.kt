@@ -35,10 +35,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.humanperformcenter.shared.data.model.DaySession
-import com.humanperformcenter.shared.data.model.ServiceItem
-import com.humanperformcenter.shared.data.model.SharedPool
-import com.humanperformcenter.shared.data.model.UserBooking
+import com.humanperformcenter.shared.data.model.booking.DaySession
+import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.booking.SharedPool
+import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel

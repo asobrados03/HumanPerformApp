@@ -1,6 +1,6 @@
 package com.humanperformcenter.ui.viewmodel.state
 
-import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.data.model.user.User
 
 sealed class UpdateState {
     object Idle : UpdateState()

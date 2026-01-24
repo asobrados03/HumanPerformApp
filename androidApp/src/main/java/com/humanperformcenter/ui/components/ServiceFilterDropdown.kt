@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.humanperformcenter.shared.data.model.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.ServiceItem
 
 @Composable
 fun ServiceFilterDropdown(

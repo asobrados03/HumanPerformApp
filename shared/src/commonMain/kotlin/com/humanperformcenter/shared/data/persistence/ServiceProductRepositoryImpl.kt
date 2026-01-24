@@ -1,11 +1,11 @@
 package com.humanperformcenter.shared.data.persistence
 
-import com.humanperformcenter.shared.data.model.AssignProductRequest
-import com.humanperformcenter.shared.data.model.CouponApplyRequest
+import com.humanperformcenter.shared.data.model.product_service.AssignProductRequest
+import com.humanperformcenter.shared.data.model.payment.CouponApplyRequest
 import com.humanperformcenter.shared.data.model.ErrorResponse
-import com.humanperformcenter.shared.data.model.ProductDetailResponse
-import com.humanperformcenter.shared.data.model.ServiceAvailable
-import com.humanperformcenter.shared.data.model.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.ProductDetailResponse
+import com.humanperformcenter.shared.data.model.product_service.ServiceAvailable
+import com.humanperformcenter.shared.data.model.product_service.ServiceItem
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
 import io.ktor.client.call.body

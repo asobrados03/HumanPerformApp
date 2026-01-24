@@ -1,9 +1,9 @@
 package com.humanperformcenter.shared.domain.usecase
 
-import com.humanperformcenter.shared.data.model.stripe.CreatePaymentIntentRequest
-import com.humanperformcenter.shared.data.model.stripe.CreatePiDto
-import com.humanperformcenter.shared.data.model.stripe.EphemeralKeyDto
-import com.humanperformcenter.shared.data.model.stripe.StripeConfigDto
+import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
+import com.humanperformcenter.shared.data.model.payment.CreatePiDto
+import com.humanperformcenter.shared.data.model.payment.EphemeralKeyDto
+import com.humanperformcenter.shared.data.model.payment.StripeConfigDto
 import com.humanperformcenter.shared.domain.repository.StripeRepository
 
 class StripeUseCase (private val stripeRepository: StripeRepository) {

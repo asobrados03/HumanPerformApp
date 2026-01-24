@@ -1,6 +1,6 @@
 package com.humanperformcenter.ui.viewmodel.state
 
-import com.humanperformcenter.shared.data.model.PaymentMethod
+import com.humanperformcenter.shared.data.model.payment.PaymentMethod
 
 sealed class PaymentMethodsUiState {
     object Loading : PaymentMethodsUiState()

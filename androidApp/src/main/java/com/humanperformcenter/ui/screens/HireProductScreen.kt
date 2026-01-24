@@ -55,9 +55,9 @@ import com.google.pay.button.PayButton
 import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.app.navigation.StartPayment
 import com.humanperformcenter.app.navigation.StripeCheckout
-import com.humanperformcenter.shared.data.model.Coupon
-import com.humanperformcenter.shared.data.model.ServiceItem
-import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.data.model.payment.Coupon
+import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.entities.BillingPrefill
 import com.humanperformcenter.shared.domain.entities.ProductTypeFilter

@@ -80,7 +80,7 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.R
 import com.humanperformcenter.data.SexOption
 import com.humanperformcenter.di.AppModule
-import com.humanperformcenter.shared.data.model.RegisterRequest
+import com.humanperformcenter.shared.data.model.auth.RegisterRequest
 import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult.RegisterField
 import com.humanperformcenter.ui.components.EditableUserProfileImage
 import com.humanperformcenter.ui.components.LogoAppBar

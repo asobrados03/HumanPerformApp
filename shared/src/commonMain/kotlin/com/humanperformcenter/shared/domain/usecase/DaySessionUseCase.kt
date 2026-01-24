@@ -1,12 +1,12 @@
 package com.humanperformcenter.shared.domain.usecase
 
-import com.humanperformcenter.shared.data.model.BookingQuestionnaireRequest
-import com.humanperformcenter.shared.data.model.DaySession
-import com.humanperformcenter.shared.data.model.ReserveRequest
-import com.humanperformcenter.shared.data.model.ReserveResponse
-import com.humanperformcenter.shared.data.model.ReserveUpdateRequest
-import com.humanperformcenter.shared.data.model.ReserveUpdateResponse
-import com.humanperformcenter.shared.data.model.UserWeeklyLimitResponse
+import com.humanperformcenter.shared.data.model.booking.BookingQuestionnaireRequest
+import com.humanperformcenter.shared.data.model.booking.DaySession
+import com.humanperformcenter.shared.data.model.booking.ReserveRequest
+import com.humanperformcenter.shared.data.model.booking.ReserveResponse
+import com.humanperformcenter.shared.data.model.booking.ReserveUpdateRequest
+import com.humanperformcenter.shared.data.model.booking.ReserveUpdateResponse
+import com.humanperformcenter.shared.data.model.booking.UserWeeklyLimitResponse
 import com.humanperformcenter.shared.domain.repository.DaySessionRepository
 import kotlinx.datetime.LocalDate
 

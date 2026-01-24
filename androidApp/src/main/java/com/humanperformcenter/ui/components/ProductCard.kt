@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.humanperformcenter.shared.data.model.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.ServiceItem
 
 @Composable
 fun ProductCard(product: ServiceItem, onClick: () -> Unit) {

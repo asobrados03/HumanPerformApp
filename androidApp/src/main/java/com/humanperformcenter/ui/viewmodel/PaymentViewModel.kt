@@ -2,11 +2,11 @@ package com.humanperformcenter.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.humanperformcenter.shared.data.model.PaymentRequest
-import com.humanperformcenter.shared.data.model.RebillRequest
-import com.humanperformcenter.shared.data.model.ServiceItem
-import com.humanperformcenter.shared.data.model.User
-import com.humanperformcenter.shared.data.model.stripe.CreatePaymentIntentRequest
+import com.humanperformcenter.shared.data.model.payment.PaymentRequest
+import com.humanperformcenter.shared.data.model.payment.RebillRequest
+import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.user.User
+import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
 import com.humanperformcenter.shared.domain.entities.BillingPrefill
 import com.humanperformcenter.shared.domain.usecase.GooglePayUseCase
 import com.humanperformcenter.shared.domain.usecase.PaymentUseCase

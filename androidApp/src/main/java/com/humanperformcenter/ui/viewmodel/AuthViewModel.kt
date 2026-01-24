@@ -2,7 +2,7 @@ package com.humanperformcenter.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.humanperformcenter.shared.data.model.RegisterRequest
+import com.humanperformcenter.shared.data.model.auth.RegisterRequest
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult
 import com.humanperformcenter.shared.domain.usecase.validation.UserValidator

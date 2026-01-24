@@ -1,9 +1,9 @@
 package com.humanperformcenter.shared.domain.usecase
 
-import com.humanperformcenter.shared.data.model.Coupon
-import com.humanperformcenter.shared.data.model.ProductDetailResponse
-import com.humanperformcenter.shared.data.model.ServiceAvailable
-import com.humanperformcenter.shared.data.model.ServiceItem
+import com.humanperformcenter.shared.data.model.payment.Coupon
+import com.humanperformcenter.shared.data.model.product_service.ProductDetailResponse
+import com.humanperformcenter.shared.data.model.product_service.ServiceAvailable
+import com.humanperformcenter.shared.data.model.product_service.ServiceItem
 import com.humanperformcenter.shared.domain.entities.ProductTypeFilter
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
 

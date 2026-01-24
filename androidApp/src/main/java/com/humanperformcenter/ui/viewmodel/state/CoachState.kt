@@ -1,6 +1,6 @@
 package com.humanperformcenter.ui.viewmodel.state
 
-import com.humanperformcenter.shared.data.model.Professional
+import com.humanperformcenter.shared.data.model.user.Professional
 
 sealed class CoachState {
     object Idle : CoachState()

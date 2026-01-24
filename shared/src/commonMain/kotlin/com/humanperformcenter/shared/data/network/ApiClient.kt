@@ -1,6 +1,6 @@
 package com.humanperformcenter.shared.data.network
 
-import com.humanperformcenter.shared.data.model.RefreshResponse
+import com.humanperformcenter.shared.data.model.auth.RefreshResponse
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body

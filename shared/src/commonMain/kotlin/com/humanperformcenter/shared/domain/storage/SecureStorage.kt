@@ -2,7 +2,7 @@ package com.humanperformcenter.shared.domain.storage
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.security.AuthPreferences
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import kotlinx.coroutines.flow.Flow

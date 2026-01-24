@@ -1,8 +1,8 @@
 package com.humanperformcenter.shared.domain.repository
 
-import com.humanperformcenter.shared.data.model.PaymentMethod
-import com.humanperformcenter.shared.data.model.PaymentRequest
-import com.humanperformcenter.shared.data.model.RebillRequest
+import com.humanperformcenter.shared.data.model.payment.PaymentMethod
+import com.humanperformcenter.shared.data.model.payment.PaymentRequest
+import com.humanperformcenter.shared.data.model.payment.RebillRequest
 
 interface PaymentRepository {
     suspend fun generatePaymentUrl(request: PaymentRequest) : String

@@ -1,6 +1,6 @@
 package com.humanperformcenter.ui.viewmodel.state
 
-import com.humanperformcenter.shared.data.model.LoginResponse
+import com.humanperformcenter.shared.data.model.auth.LoginResponse
 
 sealed class LoginState {
     object Idle    : LoginState()

@@ -35,8 +35,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.humanperformcenter.shared.data.model.ServiceItem
-import com.humanperformcenter.shared.data.model.UserBooking
+import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.ui.util.createICSFile
 import com.humanperformcenter.ui.util.shareICS
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel

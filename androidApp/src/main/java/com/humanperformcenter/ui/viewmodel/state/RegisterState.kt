@@ -1,6 +1,6 @@
 package com.humanperformcenter.ui.viewmodel.state
 
-import com.humanperformcenter.shared.data.model.RegisterResponse
+import com.humanperformcenter.shared.data.model.auth.RegisterResponse
 import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult.RegisterField
 
 sealed class RegisterState {

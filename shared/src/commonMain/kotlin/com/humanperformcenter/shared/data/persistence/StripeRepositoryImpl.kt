@@ -1,6 +1,6 @@
 package com.humanperformcenter.shared.data.persistence
 
-import com.humanperformcenter.shared.data.model.stripe.*
+import com.humanperformcenter.shared.data.model.payment.*
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.data.network.ApiClient.baseUrl
 import com.humanperformcenter.shared.domain.repository.StripeRepository

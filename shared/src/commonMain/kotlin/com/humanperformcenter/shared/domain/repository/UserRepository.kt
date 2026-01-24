@@ -1,13 +1,13 @@
 package com.humanperformcenter.shared.domain.repository
 
-import com.humanperformcenter.shared.data.model.Coupon
-import com.humanperformcenter.shared.data.model.DeleteProfilePicRequest
-import com.humanperformcenter.shared.data.model.EwalletTransaction
-import com.humanperformcenter.shared.data.model.GetPreferredCoachResponse
-import com.humanperformcenter.shared.data.model.Professional
-import com.humanperformcenter.shared.data.model.User
-import com.humanperformcenter.shared.data.model.UserBooking
-import com.humanperformcenter.shared.data.model.UserStatistics
+import com.humanperformcenter.shared.data.model.payment.Coupon
+import com.humanperformcenter.shared.data.model.user.DeleteProfilePicRequest
+import com.humanperformcenter.shared.data.model.payment.EwalletTransaction
+import com.humanperformcenter.shared.data.model.user.GetPreferredCoachResponse
+import com.humanperformcenter.shared.data.model.user.Professional
+import com.humanperformcenter.shared.data.model.user.User
+import com.humanperformcenter.shared.data.model.user.UserBooking
+import com.humanperformcenter.shared.data.model.user.UserStatistics
 
 interface UserRepository {
     suspend fun updateUser(user: User, profilePicBytes: ByteArray?): User

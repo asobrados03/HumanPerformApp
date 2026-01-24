@@ -1,8 +1,8 @@
 package com.humanperformcenter.shared.domain.usecase
 
-import com.humanperformcenter.shared.data.model.LoginResponse
-import com.humanperformcenter.shared.data.model.RegisterRequest
-import com.humanperformcenter.shared.data.model.RegisterResponse
+import com.humanperformcenter.shared.data.model.auth.LoginResponse
+import com.humanperformcenter.shared.data.model.auth.RegisterRequest
+import com.humanperformcenter.shared.data.model.auth.RegisterResponse
 import com.humanperformcenter.shared.domain.repository.AuthRepository
 import com.humanperformcenter.shared.domain.usecase.validation.ChangePasswordException
 

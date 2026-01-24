@@ -1,10 +1,10 @@
 package com.humanperformcenter.shared.domain.usecase
 
-import com.humanperformcenter.shared.data.model.PaymentMethod
-import com.humanperformcenter.shared.data.model.PaymentRequest
-import com.humanperformcenter.shared.data.model.RebillRequest
-import com.humanperformcenter.shared.data.model.ServiceItem
-import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.data.model.payment.PaymentMethod
+import com.humanperformcenter.shared.data.model.payment.PaymentRequest
+import com.humanperformcenter.shared.data.model.payment.RebillRequest
+import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.repository.PaymentRepository
 
 class PaymentUseCase(private val paymentRepository: PaymentRepository) {

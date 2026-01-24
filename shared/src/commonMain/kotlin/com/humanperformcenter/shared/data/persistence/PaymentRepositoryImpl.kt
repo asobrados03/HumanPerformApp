@@ -1,8 +1,8 @@
 package com.humanperformcenter.shared.data.persistence
 
-import com.humanperformcenter.shared.data.model.PaymentMethod
-import com.humanperformcenter.shared.data.model.PaymentRequest
-import com.humanperformcenter.shared.data.model.RebillRequest
+import com.humanperformcenter.shared.data.model.payment.PaymentMethod
+import com.humanperformcenter.shared.data.model.payment.PaymentRequest
+import com.humanperformcenter.shared.data.model.payment.RebillRequest
 import com.humanperformcenter.shared.domain.repository.PaymentRepository
 import com.humanperformcenter.shared.data.network.ApiClient
 import io.ktor.client.call.body

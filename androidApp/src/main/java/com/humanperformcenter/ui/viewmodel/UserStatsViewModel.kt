@@ -2,7 +2,7 @@ package com.humanperformcenter.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.humanperformcenter.shared.data.model.UserStatistics
+import com.humanperformcenter.shared.data.model.user.UserStatistics
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

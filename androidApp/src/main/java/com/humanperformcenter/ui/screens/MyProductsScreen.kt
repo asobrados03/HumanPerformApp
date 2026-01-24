@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.ProductDetail
-import com.humanperformcenter.shared.data.model.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.ServiceItem
 import com.humanperformcenter.ui.components.ConfirmCancelDialog
 import com.humanperformcenter.ui.components.ProductCard
 import com.humanperformcenter.ui.components.ProductOptionsDialog

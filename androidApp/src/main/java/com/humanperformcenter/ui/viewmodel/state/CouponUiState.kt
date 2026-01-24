@@ -1,6 +1,6 @@
 package com.humanperformcenter.ui.viewmodel.state
 
-import com.humanperformcenter.shared.data.model.Coupon
+import com.humanperformcenter.shared.data.model.payment.Coupon
 
 data class CouponUiState(
     val code: String?       = "",

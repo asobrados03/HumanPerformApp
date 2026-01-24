@@ -3,11 +3,10 @@ package com.humanperformcenter.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humanperformcenter.di.AppModule.userUseCase
-import com.humanperformcenter.shared.data.model.Coupon
-import com.humanperformcenter.shared.data.model.ProductDetailResponse
-import com.humanperformcenter.shared.data.model.ServiceAvailable
-import com.humanperformcenter.shared.data.model.ServiceItem
-import com.humanperformcenter.shared.data.model.ServiceUiModel
+import com.humanperformcenter.shared.data.model.payment.Coupon
+import com.humanperformcenter.shared.data.model.product_service.ServiceAvailable
+import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.ServiceUiModel
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.entities.ProductTypeFilter
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase

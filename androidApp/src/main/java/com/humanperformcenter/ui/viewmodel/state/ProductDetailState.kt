@@ -1,6 +1,6 @@
 package com.humanperformcenter.ui.viewmodel.state
 
-import com.humanperformcenter.shared.data.model.ProductDetailResponse
+import com.humanperformcenter.shared.data.model.product_service.ProductDetailResponse
 
 sealed class ProductDetailState {
     object Loading : ProductDetailState()

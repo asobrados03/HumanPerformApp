@@ -1,12 +1,12 @@
 package com.humanperformcenter.shared.data.persistence
 
-import com.humanperformcenter.shared.data.model.ChangePasswordRequest
+import com.humanperformcenter.shared.data.model.auth.ChangePasswordRequest
 import com.humanperformcenter.shared.data.model.ErrorResponse
-import com.humanperformcenter.shared.data.model.LoginResponse
-import com.humanperformcenter.shared.data.model.RegisterRequest
-import com.humanperformcenter.shared.data.model.RegisterResponse
-import com.humanperformcenter.shared.data.model.ResetPasswordRequest
-import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.data.model.auth.LoginResponse
+import com.humanperformcenter.shared.data.model.auth.RegisterRequest
+import com.humanperformcenter.shared.data.model.auth.RegisterResponse
+import com.humanperformcenter.shared.data.model.auth.ResetPasswordRequest
+import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.AuthRepository
 import com.humanperformcenter.shared.domain.storage.SecureStorage

@@ -8,10 +8,10 @@ import com.google.android.gms.wallet.PaymentData
 import com.google.android.gms.wallet.PaymentDataRequest
 import com.google.android.gms.wallet.Wallet
 import com.google.android.gms.wallet.WalletConstants
-import com.humanperformcenter.shared.data.model.GooglePayChargeRequest
-import com.humanperformcenter.shared.data.model.PaymentMethod
-import com.humanperformcenter.shared.data.model.PaymentRequest
-import com.humanperformcenter.shared.data.model.RebillRequest
+import com.humanperformcenter.shared.data.model.payment.GooglePayChargeRequest
+import com.humanperformcenter.shared.data.model.payment.PaymentMethod
+import com.humanperformcenter.shared.data.model.payment.PaymentRequest
+import com.humanperformcenter.shared.data.model.payment.RebillRequest
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.PaymentRepository
 import io.ktor.client.call.body

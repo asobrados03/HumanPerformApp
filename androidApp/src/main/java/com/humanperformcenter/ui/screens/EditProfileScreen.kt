@@ -71,7 +71,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.R
 import com.humanperformcenter.data.SexOption
-import com.humanperformcenter.shared.data.model.User
+import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.ui.components.EditableUserProfileImage
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.ProfilePhotoSheet

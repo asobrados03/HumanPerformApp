@@ -2,7 +2,7 @@ package com.humanperformcenter.worker
 
 import android.content.Context
 import androidx.work.*
-import com.humanperformcenter.shared.data.model.UserBooking
+import com.humanperformcenter.shared.data.model.user.UserBooking
 import java.time.*
 import java.util.concurrent.TimeUnit
 
