@@ -30,7 +30,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -52,6 +51,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.google.pay.button.ButtonType
 import com.google.pay.button.PayButton
+import com.humanperformcenter.app.navigation.HireProduct
 import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.app.navigation.StartPayment
 import com.humanperformcenter.app.navigation.StripeCheckout
@@ -59,13 +59,16 @@ import com.humanperformcenter.shared.data.model.payment.Coupon
 import com.humanperformcenter.shared.data.model.product_service.ServiceItem
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.network.ApiClient
-import com.humanperformcenter.shared.domain.entities.BillingPrefill
-import com.humanperformcenter.shared.domain.entities.ProductTypeFilter
+import com.humanperformcenter.shared.presentation.ui.AssignEvent
+import com.humanperformcenter.shared.presentation.ui.ServiceProductUiState
+import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
+import com.humanperformcenter.shared.presentation.ui.models.BillingPrefill
+import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.components.ServiceProductsShimmer
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.ui.viewmodel.state.PaymentState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,19 +84,28 @@ fun HireProductScreen(
 
     // --- State Collection ---
     val productosMap by serviceProductViewModel.serviceProducts.collectAsStateWithLifecycle()
-    val productos = productosMap[serviceId] ?: emptyList()
-    val productosContratados by serviceProductViewModel.userProducts.collectAsStateWithLifecycle()
+    // Si no hay estado en el mapa para este ID, asumimos Loading
+    val estadoProductos = productosMap[serviceId] ?: ServiceProductUiState.Loading
+
+    val productosContratados by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
     val userCoupons by serviceProductViewModel.userCoupons.collectAsStateWithLifecycle()
     val gpayState by paymentViewModel.paymentState.collectAsStateWithLifecycle()
 
-    // Payment Result Listener (desde navegación)
-    val paymentResult by (savedStateHandle
-        ?.getStateFlow("payment_result", null as Boolean?)
-        ?: kotlinx.coroutines.flow.MutableStateFlow(null)
-            ).collectAsStateWithLifecycle()
+    // Extraemos la lista de forma segura solo si el estado es Success
+    val listaBase = remember(estadoProductos) {
+        (estadoProductos as? ServiceProductUiState.Success)?.services ?: emptyList()
+    }
 
-    val idsContratados = remember(productosContratados) { productosContratados.map { it.id }.toSet() }
-    val sesionesDisponibles = remember(productos) { productos.mapNotNull { it.session }.distinct().sorted() }
+    val idsContratados = remember(productosContratados) {
+        if (productosContratados is UserProductsUiState.Success) {
+            (productosContratados as UserProductsUiState.Success).products.map { it.id }.toSet()
+        } else {
+            emptySet()
+        }
+    }
+    val sesionesDisponibles = remember(listaBase) {
+        listaBase.mapNotNull { it.session }.distinct().sorted()
+    }
 
     // --- UI State Local ---
     var selectedFilter by remember { mutableStateOf(ProductTypeFilter.ALL) }
@@ -101,69 +113,54 @@ fun HireProductScreen(
     var productoIdSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
     var showPaymentSheet by remember { mutableStateOf(false) }
     var cuponTexto by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-
-    val productosFiltrados by remember(productos, selectedFilter, selectedSessionCount) {
+    // Productos filtrados a partir de la lista base del estado Success
+    val productosFiltrados by remember(listaBase, selectedFilter, selectedSessionCount) {
         derivedStateOf {
-            // filterProducts ahora acepta List<ServiceItem>
-            serviceProductViewModel.filterProducts(
-                productos, selectedFilter, selectedSessionCount
-            )
+            serviceProductViewModel.filterProducts(listaBase, selectedFilter, selectedSessionCount)
         }
     }
 
-    // --- Handlers (Lógica unificada) ---
+    LaunchedEffect(Unit) {
+        serviceProductViewModel.assignEvent.collect { event ->
+            when (event) {
+                is AssignEvent.Success -> {
+                    Toast.makeText(context, "Asignado con éxito", Toast.LENGTH_SHORT).show()
 
-    // Función centralizada para manejar el éxito del pago
-    fun handleProductAssignment(productId: Int, method: String) {
-        serviceProductViewModel.assignProductToUser(
-            userId = userData?.id ?: 0,
-            productId = productId,
-            paymentMethod = method,
-            couponCode = cuponTexto.takeIf { it.isNotBlank() }
-        ) { success, error ->
-            if (success) {
-                Toast.makeText(context, "Producto asignado con éxito", Toast.LENGTH_SHORT).show() // Linea 127
-                navController.navigate(ProductDetail(productId = productId))
-                serviceProductViewModel.loadUserProducts(userData?.id ?: 0)
-                // Reset states
-                showPaymentSheet = false
-                cuponTexto = ""
-                productoIdSeleccionado = null
-                savedStateHandle?.set("payment_result", null)
-            } else {
-                errorMessage = error ?: "Error al asignar producto"
+                    showPaymentSheet = false
+                    productoIdSeleccionado = null
+
+                    navController.navigate(ProductDetail(productId = event.productId)) {
+                        popUpTo(HireProduct) { inclusive = true }
+                    }
+                }
+                is AssignEvent.Error -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
 
-    // --- Effects ---
+    // --- Handlers ---
+    fun handleProductAssignment(productId: Int, method: String) {
+        val uid = userData?.id
+        if (uid != null) {
+            serviceProductViewModel.assignProductToUser(
+                userId = uid,
+                productId = productId,
+                paymentMethod = method,
+                couponCode = cuponTexto.takeIf { it.isNotBlank() }
+            )
+        } else {
+            Toast.makeText(context, "Debes iniciar sesión", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     LaunchedEffect(serviceId, userData) {
         userData?.id?.let { uid ->
             serviceProductViewModel.loadServiceProducts(serviceId)
             serviceProductViewModel.loadUserProducts(uid)
             serviceProductViewModel.loadUserCoupons(uid)
-        }
-    }
-
-    // Monitor de resultados de pago (HPP/Web)
-    LaunchedEffect(paymentResult) {
-        if (paymentResult == true && productoIdSeleccionado != null) {
-            handleProductAssignment(productoIdSeleccionado!!, "card")
-        } else if (paymentResult == false) {
-            Toast.makeText(context, "Pago cancelado o fallido", Toast.LENGTH_SHORT).show()
-            savedStateHandle?.set("payment_result", null)
-        }
-    }
-
-    // Monitor de GPay
-    LaunchedEffect(gpayState) {
-        if (gpayState is PaymentState.Success && productoIdSeleccionado != null) {
-            handleProductAssignment(productoIdSeleccionado!!, "google_pay")
-        } else if (gpayState is PaymentState.Error) {
-            Toast.makeText(context, "Error GPay: ${(gpayState as PaymentState.Error).message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -181,66 +178,68 @@ fun HireProductScreen(
             }
         }
     ) { padding ->
-        ProductList(
-            modifier = Modifier.padding(padding),
-            availableProducts = productosFiltrados,
-            idsContratados = idsContratados,
-            userCoupons = userCoupons,
-            onProductClick = { product ->
-                productoIdSeleccionado = product.id
-                showPaymentSheet = true
-            },
-            serviceProductViewModel = serviceProductViewModel
-        )
-    }
-
-    if (errorMessage != null) {
-        errorMessage?.let { message ->
-            AlertDialog(
-                onDismissRequest = { errorMessage = null },
-                confirmButton = {
-                    TextButton(onClick = { errorMessage = null }) {
-                        Text("Aceptar")
-                    }
-                },
-                title = { Text("Atención") },
-                text = { Text(message) }
-            )
+        // Gestión de la navegación de estados
+        when (estadoProductos) {
+            is ServiceProductUiState.Loading -> {
+                ServiceProductsShimmer(Modifier.padding(padding))
+            }
+            is ServiceProductUiState.Error -> {
+                ErrorView(
+                    message = estadoProductos.message,
+                    modifier = Modifier.padding(padding),
+                    onRetry = { serviceProductViewModel.loadServiceProducts(serviceId) }
+                )
+            }
+            is ServiceProductUiState.Success -> {
+                ProductList(
+                    modifier = Modifier.padding(padding),
+                    availableProducts = productosFiltrados,
+                    idsContratados = idsContratados,
+                    userCoupons = userCoupons,
+                    onProductClick = { product ->
+                        productoIdSeleccionado = product.id
+                        showPaymentSheet = true
+                    },
+                    serviceProductViewModel = serviceProductViewModel
+                )
+            }
         }
     }
 
+    // Diálogos y Sheets (Se mantienen igual, usando listaBase)
     if (showPaymentSheet && productoIdSeleccionado != null) {
-        val selectedProduct = productos.firstOrNull { it.id == productoIdSeleccionado }
-
-        if (selectedProduct != null) {
-            ModalBottomSheet(
-                onDismissRequest = {
-                    showPaymentSheet = false
-                    productoIdSeleccionado = null
-                    cuponTexto = ""
-                },
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-            ) {
+        listaBase.firstOrNull { it.id == productoIdSeleccionado }?.let { product ->
+            ModalBottomSheet(onDismissRequest = { showPaymentSheet = false }) {
                 PaymentSelectionContent(
-                    product = selectedProduct,
+                    product = product,
                     userData = userData,
                     userCoupons = userCoupons,
                     cuponTexto = cuponTexto,
                     onCuponChange = { cuponTexto = it },
                     paymentViewModel = paymentViewModel,
                     navController = navController,
-                    onMonederoPay = {
-                        handleProductAssignment(selectedProduct.id, "cash")
-                    },
-                    onRebillSuccess = {
-                        // Lógica específica de rebill o reusar la genérica
-                        Toast.makeText(context, "Rebill exitoso", Toast.LENGTH_SHORT).show()
-                        serviceProductViewModel.loadUserProducts(userData?.id ?: 0)
-                        navController.navigate(ProductDetail(productId = selectedProduct.id))
-                    },
-                    serviceProductViewModel = serviceProductViewModel
+                    onMonederoPay = { handleProductAssignment(product.id, "cash") },
+                    serviceProductViewModel = serviceProductViewModel,
+                    onRebillSuccess = { /* Lógica rebill */ }
                 )
             }
+        }
+    }
+}
+
+// --- Componentes de Apoyo ---
+
+@Composable
+private fun ErrorView(message: String, modifier: Modifier, onRetry: () -> Unit) {
+    Column(
+        modifier = modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Ocurrió un error", style = MaterialTheme.typography.titleMedium)
+        Text(message, style = MaterialTheme.typography.bodySmall)
+        Button(onClick = onRetry, modifier = Modifier.padding(top = 16.dp)) {
+            Text("Reintentar")
         }
     }
 }

@@ -11,7 +11,7 @@ import com.humanperformcenter.shared.data.model.user.UserStatistics
 import com.humanperformcenter.shared.domain.repository.UserRepository
 
 class UserUseCase(private val userRepository: UserRepository) {
-    suspend fun updateUser(user: User, profilePicBytes: ByteArray?): User {
+    suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User> {
         return userRepository.updateUser(user, profilePicBytes)
     }
 
@@ -35,7 +35,7 @@ class UserUseCase(private val userRepository: UserRepository) {
         return userRepository.deleteProfilePic(req)
     }
 
-    suspend fun getUserBookings(customerId: Int): List<UserBooking> {
+    suspend fun getUserBookings(customerId: Int): Result<List<UserBooking>> {
         return userRepository.getUserBookings(customerId)
     }
 
@@ -43,7 +43,7 @@ class UserUseCase(private val userRepository: UserRepository) {
         return userRepository.cancelUserBooking(bookingId)
     }
 
-    suspend fun getUserStats(customerId: Int): UserStatistics {
+    suspend fun getUserStats(customerId: Int): Result<UserStatistics> {
         return userRepository.getUserStats(customerId)
     }
 
@@ -74,7 +74,7 @@ class UserUseCase(private val userRepository: UserRepository) {
         return userRepository.getEwalletBalance(userId)
     }
 
-    suspend fun getEwalletTransactions(userId: Int): List<EwalletTransaction> {
+    suspend fun getEwalletTransactions(userId: Int): Result<List<EwalletTransaction>> {
         return userRepository.getEwalletTransactions(userId)
     }
 }

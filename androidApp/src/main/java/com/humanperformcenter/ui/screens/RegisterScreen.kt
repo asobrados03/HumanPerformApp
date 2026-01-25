@@ -87,7 +87,7 @@ import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.ProfilePhotoSheet
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
-import com.humanperformcenter.ui.viewmodel.state.RegisterState
+import com.humanperformcenter.shared.presentation.ui.RegisterState
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat

@@ -29,7 +29,7 @@ import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.ui.viewmodel.state.ProductDetailState
+import com.humanperformcenter.shared.presentation.ui.ProductDetailState
 
 @Composable
 fun ProductDetailScreen(

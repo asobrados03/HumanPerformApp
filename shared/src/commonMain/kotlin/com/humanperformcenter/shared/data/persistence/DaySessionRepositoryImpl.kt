@@ -15,8 +15,7 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.datetime.LocalDate
@@ -26,118 +25,107 @@ import kotlinx.serialization.json.jsonPrimitive
 
 object DaySessionRepositoryImpl : DaySessionRepository {
 
-    override suspend fun getSessionsByDay(serviceId: Int, weekStart: LocalDate): List<DaySession> {
-        val client = ApiClient.apiClient
+    override suspend fun getSessionsByDay(serviceId: Int, weekStart: LocalDate): Result<List<DaySession>> {
+        return try {
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/daily") {
+                parameter("service_id", serviceId)
+                parameter("date", weekStart.toString()) // Ktor maneja bien el toString de LocalDate
+            }
 
-        return client.get("${ApiClient.baseUrl}/mobile/daily") {
-            parameter("service_id", serviceId)
-            parameter("date", weekStart.toString()) // formato yyyy-MM-dd
-        }.body()
+            if (response.status.isSuccess()) {
+                val sessions = response.body<List<DaySession>>()
+                Result.success(sessions)
+            } else {
+                // Intentamos capturar un error amigable si el backend lo envía
+                Result.failure(Exception("Error al cargar sesiones: ${response.status.value}"))
+            }
+        } catch (e: Exception) {
+            println("❌ Error en getSessionsByDay: ${e.message}")
+            Result.failure(e)
+        }
     }
 
-    override suspend fun reservarSesion(reserveRequest: ReserveRequest): ReserveResponse {
+    override suspend fun reservarSesion(reserveRequest: ReserveRequest): Result<ReserveResponse> = runCatching {
         val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/reserve") {
-            contentType(io.ktor.http.ContentType.Application.Json)
+            contentType(ContentType.Application.Json)
             setBody(reserveRequest)
         }
-        if (response.status.value == 409) {
-            throw IllegalStateException("Ya tienes una reserva a esta hora.")
-        }
 
-        val rawBody = response.bodyAsText()
-        println("🔵 JSON response de reserva: $rawBody")
+        if (response.status.value == 409) return Result.failure(Exception("Ya tienes una reserva a esta hora."))
+        if (!response.status.isSuccess()) return Result.failure(Exception("Error de reserva: ${response.status}"))
 
-        return response.body()
+        response.body<ReserveResponse>()
     }
 
-    override suspend fun cambiarReservaSesion(reserveUpdateRequest: ReserveUpdateRequest): ReserveUpdateResponse {
+    override suspend fun cambiarReservaSesion(reserveUpdateRequest: ReserveUpdateRequest): Result<ReserveUpdateResponse> = runCatching {
         val response = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/update-booking") {
-            contentType(io.ktor.http.ContentType.Application.Json)
+            contentType(ContentType.Application.Json)
             setBody(reserveUpdateRequest)
         }
-        if (!response.status.isSuccess()) {
-            throw IllegalStateException("Error al actualizar reserva: ${response.status}")
-        }
-        return response.body()
+
+        if (!response.status.isSuccess()) return Result.failure(Exception("Error al actualizar reserva: ${response.status}"))
+
+        response.body<ReserveUpdateResponse>()
     }
 
-    override suspend fun getUserProductId(customerId: Int): Int {
-        val client = ApiClient.apiClient
-        val response = client.get("${ApiClient.baseUrl}/mobile/user-product") {
+    override suspend fun getUserProductId(customerId: Int): Result<Int> = runCatching {
+        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-product") {
             parameter("user_id", customerId)
         }
         val json = response.body<Map<String, Int>>()
-        return json["product_id"] ?: throw IllegalStateException("No se encontró el product_id")
+        json["product_id"] ?: throw Exception("No se encontró el product_id")
     }
 
-    override suspend fun getPreferredCoach(customerId: Int, serviceId: Int): Int? {
+    override suspend fun getPreferredCoach(customerId: Int, serviceId: Int): Result<Int?> = runCatching {
         val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/preferred-coach") {
             parameter("customer_id", customerId)
             parameter("service_id", serviceId)
         }
-
+        // Usamos body<JsonObject> para manejar la nulabilidad de forma segura
         val json = response.body<JsonObject>()
-        return json["coach_id"]?.jsonPrimitive?.intOrNull
+        json["coach_id"]?.jsonPrimitive?.intOrNull
     }
-    override suspend fun getTimeslotId(hora: String): Int {
+
+    override suspend fun getTimeslotId(hora: String): Result<Int> = runCatching {
         val formattedHour = if (hora.length == 5) "$hora:00" else hora
         val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/timeslot-id") {
             parameter("hour", formattedHour)
         }
-
         val json = response.body<Map<String, Int>>()
-        return json["session_timeslot_id"] ?: throw IllegalStateException("Respuesta inválida")
+        json["session_timeslot_id"] ?: throw Exception("ID de franja horaria no válido")
     }
 
-    override suspend fun getUserWeeklyLimit(userId: Int): UserWeeklyLimitResponse {
-        val response: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-weekly-limit") {
-            url {
-                parameters.append("user_id", userId.toString())
-            }
+    override suspend fun getUserWeeklyLimit(userId: Int): Result<UserWeeklyLimitResponse> = runCatching {
+        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-weekly-limit") {
+            parameter("user_id", userId)
         }
-
-        if (!response.status.isSuccess()) {
-            throw IllegalStateException("Error al obtener límite semanal: ${response.status}")
-        }
-
-        return response.body()
+        if (!response.status.isSuccess()) throw Exception("Error de servidor: ${response.status}")
+        response.body<UserWeeklyLimitResponse>()
     }
 
-    override suspend fun getHolidays(): List<String> {
-        val response: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/holidays")
-        if (!response.status.isSuccess()) {
-            throw IllegalStateException("Error al obtener festivos: ${response.status}")
-        }
-        return response.body()
+    override suspend fun getHolidays(): Result<List<String>> = runCatching {
+        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/holidays")
+        if (!response.status.isSuccess()) throw Exception("Error al cargar festivos")
+        response.body<List<String>>()
     }
 
-    override suspend fun enviarCuestionarioReserva(bookingForm: BookingQuestionnaireRequest): Boolean {
+    override suspend fun enviarCuestionarioReserva(bookingForm: BookingQuestionnaireRequest): Result<Unit> = runCatching {
         val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/booking-questionnaire") {
-            contentType(io.ktor.http.ContentType.Application.Json)
+            contentType(ContentType.Application.Json)
             setBody(bookingForm)
         }
-
-        if (!response.status.isSuccess()) {
-            val errorBody = response.bodyAsText()
-            throw IllegalStateException("Error al enviar cuestionario: ${response.status} - $errorBody")
-        }
-
-        return true
+        if (!response.status.isSuccess()) throw Exception("Error al enviar cuestionario")
     }
 
-    override suspend fun cuestionarioEnviado(booking_id: Int): Boolean {
-        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/booking-questionnaire/$booking_id")
+    override suspend fun cuestionarioEnviado(bookingId: Int): Result<Boolean> = runCatching {
+        val response = ApiClient.apiClient.get(
+            "${ApiClient.baseUrl}/mobile/booking-questionnaire/$bookingId"
+        )
 
-        if (response.status.value == 404) {
-            return false
+        when {
+            response.status.value == 404 -> false
+            response.status.isSuccess() -> response.body<Boolean>()
+            else -> throw Exception("Error al consultar estado: ${response.status}")
         }
-
-        if (!response.status.isSuccess()) {
-            throw IllegalStateException("Error al consultar cuestionario: ${response.status} - ${response.bodyAsText()}")
-        }
-
-        return response.body<Boolean>()
     }
-
-
 }

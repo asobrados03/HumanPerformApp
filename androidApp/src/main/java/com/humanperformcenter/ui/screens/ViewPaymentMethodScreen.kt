@@ -1,12 +1,6 @@
 package com.humanperformcenter.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,8 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.CreditCard
-import androidx.compose.material.icons.rounded.ErrorOutline
-import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -42,17 +34,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.payment.PaymentMethod
+import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
+import com.humanperformcenter.ui.components.ErrorComponent
 import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.components.rememberShimmerBrush
 import com.humanperformcenter.ui.viewmodel.PaymentViewModel
-import com.humanperformcenter.ui.viewmodel.state.PaymentMethodsUiState
 
 @Composable
 fun ViewPaymentMethodScreen(
@@ -92,7 +84,7 @@ fun ViewPaymentMethodScreen(
                 }
 
                 is PaymentMethodsUiState.Error -> {
-                    ErrorState(
+                    ErrorComponent(
                         message = state.message,
                         onRetry = { paymentViewModel.getPaymentMethods(userId) }
                     )
@@ -254,38 +246,6 @@ private fun EmptyState(title: String, subtitle: String) {
     }
 }
 
-@Composable
-private fun ErrorState(message: String, onRetry: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.ErrorOutline,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.error,
-            modifier = Modifier.size(56.dp)
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "No se pudo cargar",
-            style = MaterialTheme.typography.titleMedium
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = onRetry) { Text("Reintentar") }
-    }
-}
-
 /* ---------- Shimmer Loading ---------- */
 
 @Composable
@@ -306,28 +266,5 @@ private fun PaymentMethodsShimmer() {
             )
         }
     }
-}
-
-@Composable
-private fun rememberShimmerBrush(): Brush {
-    val transition = rememberInfiniteTransition(label = "shimmer")
-    val x by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "shimmer-x"
-    )
-    return Brush.linearGradient(
-        colors = listOf(
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-        ),
-        start = Offset(x, 0f),
-        end = Offset(x + 300f, 300f)
-    )
 }
 

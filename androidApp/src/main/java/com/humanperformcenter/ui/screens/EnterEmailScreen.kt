@@ -1,6 +1,5 @@
 package com.humanperformcenter.ui.screens
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,7 +35,7 @@ import androidx.core.util.PatternsCompat.EMAIL_ADDRESS
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.PasswordResetInfo
 import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.ui.viewmodel.state.ResetPasswordState
+import com.humanperformcenter.shared.presentation.ui.ResetPasswordState
 
 @Composable
 fun EnterEmailScreen(

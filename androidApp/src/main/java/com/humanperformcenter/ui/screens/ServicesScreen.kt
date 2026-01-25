@@ -19,8 +19,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.humanperformcenter.di.AppModule
+import com.humanperformcenter.shared.presentation.ui.ServiceUiState
+import com.humanperformcenter.ui.components.ErrorComponent
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
+import com.humanperformcenter.ui.components.ServicesShimmer
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
@@ -34,7 +37,7 @@ fun ServicesScreen(
     serviceProductViewModel: ServiceProductViewModel
 ) {
     val user by userViewModel.userData.collectAsStateWithLifecycle()
-    val availableServices by serviceProductViewModel.hireViewUiState.collectAsStateWithLifecycle()
+    val availableServicesState by serviceProductViewModel.serviceUiState.collectAsStateWithLifecycle()
 
     val daySessionViewModel: DaySessionViewModel = viewModel(
         factory = DaySessionViewModelFactory(AppModule.daySessionUseCase)
@@ -47,8 +50,8 @@ fun ServicesScreen(
 
     LaunchedEffect(user) {
         user?.let {
-            serviceProductViewModel.loadInitialData(it.id)
             userViewModel.fetchUserBookings(it.id)
+            serviceProductViewModel.loadAllServices(it.id)
         }
     }
 
@@ -90,10 +93,28 @@ fun ServicesScreen(
                         daySessionViewModel = daySessionViewModel,
                         userId = user?.id ?: 0
                     )
-                    1 -> HireView(
-                        availableServices = availableServices,
-                        navController = navController
-                    )
+                    1 -> when (val state = availableServicesState) {
+                        is ServiceUiState.Loading -> {
+                            ServicesShimmer()
+                        }
+                        is ServiceUiState.Success -> {
+                            HireView(
+                                availableServices = state.services,
+                                navController = navController
+                            )
+                        }
+                        is ServiceUiState.Error -> {
+                            // Aquí podrías poner un botón de "Reintentar"
+                            ErrorComponent(
+                                message = state.message,
+                                onRetry = {
+                                    user?.let {
+                                        serviceProductViewModel.loadAllServices(it.id)
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }

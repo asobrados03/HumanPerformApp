@@ -7,13 +7,13 @@ import com.humanperformcenter.shared.data.model.payment.RebillRequest
 import com.humanperformcenter.shared.data.model.product_service.ServiceItem
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
-import com.humanperformcenter.shared.domain.entities.BillingPrefill
+import com.humanperformcenter.shared.presentation.ui.models.BillingPrefill
 import com.humanperformcenter.shared.domain.usecase.GooglePayUseCase
 import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
 import com.humanperformcenter.shared.domain.usecase.StripeUseCase
-import com.humanperformcenter.ui.viewmodel.state.PaymentState
-import com.humanperformcenter.ui.viewmodel.state.PaymentMethodsUiState
-import com.humanperformcenter.ui.viewmodel.state.StripeUiState
+import com.humanperformcenter.shared.presentation.ui.PaymentState
+import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
+import com.humanperformcenter.shared.presentation.ui.StripeUiState
 import com.stripe.android.Stripe.Companion.API_VERSION
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -129,14 +129,14 @@ class PaymentViewModel(
                     )
                 )
                 // 2) Crear PaymentIntent
-                val pi = stripeUseCase.createPaymentIntent(createPaymentIntentRequest)
+                val pi = stripeUseCase.createPaymentIntent(createPaymentIntentRequest).getOrThrow()
 
                 // 3) (Opcional) Customer para métodos guardados
                 var customerConfig: PaymentSheet.CustomerConfiguration? = null
                 if (!pi.customerId.isNullOrBlank()) {
                     // Usa la versión del SDK actual
                     val apiVersion = API_VERSION
-                    val ek = stripeUseCase.createEphemeralKey(pi.customerId!!, apiVersion)
+                    val ek = stripeUseCase.createEphemeralKey(pi.customerId!!, apiVersion).getOrThrow()
                     customerConfig = PaymentSheet.CustomerConfiguration(
                         id = pi.customerId!!,
                         ephemeralKeySecret = ek.secret

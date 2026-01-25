@@ -6,10 +6,10 @@ import com.humanperformcenter.shared.data.model.auth.RegisterRequest
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult
 import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
-import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
-import com.humanperformcenter.ui.viewmodel.state.LoginState
-import com.humanperformcenter.ui.viewmodel.state.RegisterState
-import com.humanperformcenter.ui.viewmodel.state.ResetPasswordState
+import com.humanperformcenter.shared.presentation.ui.ChangePasswordState
+import com.humanperformcenter.shared.presentation.ui.LoginState
+import com.humanperformcenter.shared.presentation.ui.RegisterState
+import com.humanperformcenter.shared.presentation.ui.ResetPasswordState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

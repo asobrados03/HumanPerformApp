@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.domain.entities
+package com.humanperformcenter.shared.presentation.ui.models
 
 data class BillingPrefill(
     val name: String? = null,

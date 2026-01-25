@@ -12,16 +12,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.network.ApiClient
 
 @Composable
 fun ProductCard(product: ServiceItem, onClick: () -> Unit) {
+    val imageUrl = product.image?.let {
+        "${ApiClient.baseUrl}/product_images/$it"
+    }
+
     AppCard(onClick = onClick) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(12.dp)
         ) {
             AsyncImage(
-                model = product.image, // Ya viene con la URL completa
+                model = imageUrl,
                 contentDescription = product.name,
                 modifier = Modifier.size(64.dp).padding(end = 12.dp)
             )

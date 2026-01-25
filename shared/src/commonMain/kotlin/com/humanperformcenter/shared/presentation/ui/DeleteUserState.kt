@@ -1,4 +1,4 @@
-package com.humanperformcenter.ui.viewmodel.state
+package com.humanperformcenter.shared.presentation.ui
 
 sealed class DeleteUserState {
     object Idle    : DeleteUserState()

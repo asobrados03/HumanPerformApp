@@ -1,5 +1,6 @@
-package com.humanperformcenter.shared.data.model.product_service
+package com.humanperformcenter.shared.presentation.ui.models
 
+import com.humanperformcenter.shared.data.model.product_service.ServiceAvailable
 import com.humanperformcenter.shared.data.network.ApiClient
 
 /**

@@ -5,21 +5,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkManager
 import com.humanperformcenter.shared.data.model.user.DeleteProfilePicRequest
-import com.humanperformcenter.shared.data.model.payment.EwalletTransaction
 import com.humanperformcenter.shared.data.model.user.User
-import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
 import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
-import com.humanperformcenter.ui.viewmodel.state.CoachState
-import com.humanperformcenter.ui.viewmodel.state.CouponUiState
-import com.humanperformcenter.ui.viewmodel.state.DeleteProfilePicState
-import com.humanperformcenter.ui.viewmodel.state.DeleteUserState
-import com.humanperformcenter.ui.viewmodel.state.GetPreferredCoachState
-import com.humanperformcenter.ui.viewmodel.state.MarkFavoriteState
-import com.humanperformcenter.ui.viewmodel.state.UpdateState
-import com.humanperformcenter.ui.viewmodel.state.UploadState
+import com.humanperformcenter.shared.presentation.ui.CoachState
+import com.humanperformcenter.shared.presentation.ui.CouponUiState
+import com.humanperformcenter.shared.presentation.ui.DeleteProfilePicState
+import com.humanperformcenter.shared.presentation.ui.DeleteUserState
+import com.humanperformcenter.shared.presentation.ui.EwalletUiState
+import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
+import com.humanperformcenter.shared.presentation.ui.GetPreferredCoachState
+import com.humanperformcenter.shared.presentation.ui.MarkFavoriteState
+import com.humanperformcenter.shared.presentation.ui.UpdateState
+import com.humanperformcenter.shared.presentation.ui.UploadState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -43,8 +43,8 @@ class UserViewModel(
     private val _userData = MutableStateFlow<User?>(null)
     val userData: StateFlow<User?> = _userData
 
-    private val _userBookings = MutableStateFlow<List<UserBooking>>(emptyList())
-    val userBookings: StateFlow<List<UserBooking>> get() = _userBookings
+    private val _userBookings = MutableStateFlow<FetchUserBookingsState>(FetchUserBookingsState.Loading)
+    val userBookings: StateFlow<FetchUserBookingsState> = _userBookings.asStateFlow()
 
     private val _couponUiState = MutableStateFlow(CouponUiState())
     val couponUiState: StateFlow<CouponUiState> = _couponUiState.asStateFlow()
@@ -90,8 +90,8 @@ class UserViewModel(
     private val _balance = MutableStateFlow<Double?>(null)
     val balance: StateFlow<Double?> = _balance
 
-    private val _ewalletTransactions = MutableStateFlow<List<EwalletTransaction>>(emptyList())
-    val ewalletTransactions: StateFlow<List<EwalletTransaction>> = _ewalletTransactions
+    private val _ewalletTransactions = MutableStateFlow<EwalletUiState>(EwalletUiState.Loading)
+    val ewalletTransactions: StateFlow<EwalletUiState> = _ewalletTransactions.asStateFlow()
 
     /**
      * Recibe un User “candidato” (con campos fullName, dateOfBirth = "yyyy-MM-dd",
@@ -127,7 +127,7 @@ class UserViewModel(
         _updateState.value = UpdateState.Loading
 
         viewModelScope.launch(Dispatchers.IO) {
-            val result = runCatching { userUseCase.updateUser(candidate, profilePicBytes) }
+            val result = userUseCase.updateUser(candidate, profilePicBytes)
 
             result.onSuccess { newUser ->
                 _updateState.value = UpdateState.Success(newUser)
@@ -362,7 +362,21 @@ class UserViewModel(
 
     fun fetchUserBookings(userId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            _userBookings.value = userUseCase.getUserBookings(userId)
+            _userBookings.value = FetchUserBookingsState.Loading
+
+            userUseCase.getUserBookings(userId).onSuccess { bookings ->
+                    if (bookings.isEmpty()) {
+                        _userBookings.value = FetchUserBookingsState.Success(
+                            emptyList()
+                        )
+                    } else {
+                        _userBookings.value = FetchUserBookingsState.Success(bookings)
+                    }
+            }.onFailure { exception ->
+                _userBookings.value = FetchUserBookingsState.Error(
+                    exception.localizedMessage ?: "Ocurrió un error inesperado"
+                )
+            }
         }
     }
 
@@ -386,25 +400,36 @@ class UserViewModel(
     }
 
     fun loadBalance(userId: Int) {
-        if(userId == -1) _balance.value = 0.0
+        if (userId == -1) {
+            _balance.value = 0.0
+            return
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
-            val result = userUseCase.getEwalletBalance(userId)
-            _balance.value = result.getOrElse {
-                println("❌ Error al cargar el balance: ${it.message}")
-                null
-            }
+            userUseCase.getEwalletBalance(userId).fold(
+                onSuccess = { nuevoBalance ->
+                    _balance.value = nuevoBalance ?: 0.0
+                },
+                onFailure = { error ->
+                    println("❌ Error al cargar el balance: ${error.message}")
+                    // Opcional: podrías emitir un evento de error para mostrar un Toast
+                }
+            )
         }
     }
 
     fun loadEwalletTransactions(userId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val transactions = userUseCase.getEwalletTransactions(userId)
-                _ewalletTransactions.value = transactions
-            } catch (e: Exception) {
-                println("❌ Error al cargar transacciones de e-wallet: ${e.message}")
-                _ewalletTransactions.value = emptyList()
-            }
+        viewModelScope.launch {
+            _ewalletTransactions.value = EwalletUiState.Loading
+
+            userUseCase.getEwalletTransactions(userId)
+                .onSuccess { list ->
+                    _ewalletTransactions.value = EwalletUiState.Success(list)
+                }
+                .onFailure { e ->
+                    _ewalletTransactions.value = EwalletUiState.Error(e.message ?:
+                    "Error desconocido")
+                }
         }
     }
 }

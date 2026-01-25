@@ -42,7 +42,7 @@ import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
-import com.humanperformcenter.ui.viewmodel.state.LoginState
+import com.humanperformcenter.shared.presentation.ui.LoginState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

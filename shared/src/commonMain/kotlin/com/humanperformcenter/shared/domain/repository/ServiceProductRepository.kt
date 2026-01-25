@@ -3,18 +3,19 @@ package com.humanperformcenter.shared.domain.repository
 import com.humanperformcenter.shared.data.model.product_service.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.product_service.ServiceAvailable
 import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.presentation.ui.SimpleResponse
 
 interface ServiceProductRepository {
-    suspend fun getAllServices(): List<ServiceAvailable>
-    suspend fun getServiceProducts(serviceId: Int): List<ServiceItem>
-    suspend fun getUserProducts(customerId: Int): List<ServiceItem>
+    suspend fun getAllServices(): Result<List<ServiceAvailable>>
+    suspend fun getServiceProducts(serviceId: Int): Result<List<ServiceItem>>
+    suspend fun getUserProducts(customerId: Int): Result<List<ServiceItem>>
     suspend fun assignProductToUser(
         userId: Int,
         productId: Int,
         paymentMethod: String,
         couponCode: String? = null,
-    ): Pair<Boolean, String?>
-    suspend fun unassignProductFromUser(userId: Int, productId: Int): Boolean
+    ): Result<Int>
+    suspend fun unassignProductFromUser(userId: Int, productId: Int): Result<Unit>
     suspend fun getProductDetails(userId: Int, productId: Int): Result<ProductDetailResponse>
-    suspend fun applyCoupon(code: String, userId: Int, productId: Int): Boolean
+    suspend fun applyCoupon(code: String, userId: Int, productId: Int): Result<SimpleResponse>
 }

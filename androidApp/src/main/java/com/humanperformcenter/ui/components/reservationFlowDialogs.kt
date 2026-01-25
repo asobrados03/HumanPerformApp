@@ -39,6 +39,8 @@ import com.humanperformcenter.shared.data.model.booking.DaySession
 import com.humanperformcenter.shared.data.model.product_service.ServiceItem
 import com.humanperformcenter.shared.data.model.booking.SharedPool
 import com.humanperformcenter.shared.data.model.user.UserBooking
+import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
+import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.viewmodel.UserViewModel
@@ -213,26 +215,48 @@ fun reservationFlowDialogs(
     val userId = user?.id ?: return {}
     val scope = rememberCoroutineScope()
 
+    // --- Recolección de estados ---
     val userBookings by userViewModel.userBookings.collectAsStateWithLifecycle()
+    val bookingsList = (userBookings as? FetchUserBookingsState.Success)?.bookings ?: emptyList()
+
     val sessions by daySessionViewModel.sessions.collectAsStateWithLifecycle()
     val weeklyLimits by daySessionViewModel.weeklyLimits.collectAsStateWithLifecycle()
     val unlimitedSessions by daySessionViewModel.unlimitedSessions.collectAsStateWithLifecycle()
     val sharedSessions by daySessionViewModel.sharedSessions.collectAsStateWithLifecycle()
     val serviceToPrimary by daySessionViewModel.serviceToPrimary.collectAsStateWithLifecycle()
 
-    val state by remember(daySessionViewModel, userViewModel, scope, userId) {
-        mutableStateOf(ReservationFlowState(
-            daySessionViewModel, userViewModel, scope, userId, userBookings,
-            sessions, weeklyLimits, unlimitedSessions, sharedSessions, serviceToPrimary
-        ))
+    // --- CORRECCIÓN: Estado de Productos ---
+    val userProductsState by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
+
+    // Extraemos la lista limpia para el diálogo
+    val listaProductosValidos = remember(userProductsState) {
+        (userProductsState as? UserProductsUiState.Success)?.products ?: emptyList()
     }
 
-    val allowedServices by serviceProductViewModel.userProducts.collectAsStateWithLifecycle()
+    // --- CORRECCIÓN DE REACTIVIDAD ---
+    // Si usas 'remember' simple, el objeto ReservationFlowState no se enterará de
+    // los cambios en 'bookingsList' o 'sessions' después de crearse.
+    val state = remember(userId) {
+        ReservationFlowState(
+            daySessionViewModel, userViewModel, scope, userId, bookingsList,
+            sessions, weeklyLimits, unlimitedSessions, sharedSessions, serviceToPrimary
+        )
+    }
 
+    // --- Renderizado de Diálogos ---
     when (val dialog = state.dialog) {
-        is ReservationFlowState.Dialog.Reservation -> ReservationDialog(state, dialog.date, allowedServices)
+        is ReservationFlowState.Dialog.Reservation -> {
+            ReservationDialog(
+                state = state,
+                date = dialog.date,
+                allowedServices = listaProductosValidos // Ahora pasamos List<ServiceItem>
+            )
+        }
         is ReservationFlowState.Dialog.Confirm -> ConfirmDialog(state, dialog)
-        is ReservationFlowState.Dialog.ConfirmContinue -> ConfirmContinueDialog({ state.startReservationFlow(dialog.date) }, state::dismiss)
+        is ReservationFlowState.Dialog.ConfirmContinue -> ConfirmContinueDialog(
+            onConfirm = { state.startReservationFlow(dialog.date) },
+            onDismiss = state::dismiss
+        )
         is ReservationFlowState.Dialog.ChangeExisting -> ChangeExistingDialog(state, dialog)
         is ReservationFlowState.Dialog.HourOccupied -> InfoDialog("Reserva existente", "Ya tienes una reserva a esa hora.", state::dismiss)
         is ReservationFlowState.Dialog.NoCoachesAvailable -> InfoDialog("Sin disponibilidad", "No hay entrenadores disponibles.", state::dismiss)

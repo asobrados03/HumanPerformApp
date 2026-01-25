@@ -1,11 +1,12 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.humanperformcenter.shared.data.model.ErrorResponse
+import com.humanperformcenter.shared.data.model.payment.Coupon
+import com.humanperformcenter.shared.data.model.payment.EwalletResponse
+import com.humanperformcenter.shared.data.model.payment.EwalletTransaction
 import com.humanperformcenter.shared.data.model.user.AssignPreferredCoachRequest
 import com.humanperformcenter.shared.data.model.user.AssignPreferredCoachResponse
-import com.humanperformcenter.shared.data.model.payment.Coupon
 import com.humanperformcenter.shared.data.model.user.DeleteProfilePicRequest
-import com.humanperformcenter.shared.data.model.ErrorResponse
-import com.humanperformcenter.shared.data.model.payment.EwalletTransaction
 import com.humanperformcenter.shared.data.model.user.GetPreferredCoachResponse
 import com.humanperformcenter.shared.data.model.user.Professional
 import com.humanperformcenter.shared.data.model.user.UploadResponse
@@ -36,10 +37,9 @@ import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -50,7 +50,7 @@ object UserRepositoryImpl: UserRepository {
      * Si el servidor responde 200 OK, devuelve el `User` actualizado.
      * Si responde otro código o ocurre una excepción, se lanza dicho error.
      */
-    override suspend fun updateUser(user: User, profilePicBytes: ByteArray?): User {
+    override suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User> {
         // 1) Serializamos el User a JSON
         val userJson = Json.encodeToString(User.serializer(), user)
 
@@ -84,9 +84,10 @@ object UserRepositoryImpl: UserRepository {
         if (resp.status == HttpStatusCode.OK) {
             val updatedUser: User = resp.body()
             SecureStorage.saveUser(updatedUser)
-            return updatedUser
+            return Result.success(updatedUser)
         } else {
-            throw Exception("Error al actualizar usuario: código HTTP ${resp.status.value}")
+            return Result.failure(Exception("Error al actualizar usuario: código HTTP " +
+                    "${resp.status.value}"))
         }
     }
 
@@ -235,13 +236,36 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun getUserBookings(customerId: Int): List<UserBooking> {
-        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-bookings") {
-            url {
-                parameters.append("user_id", customerId.toString())
+    override suspend fun getUserBookings(customerId: Int): Result<List<UserBooking>> {
+        require(customerId > 0) { "customerId debe ser mayor que 0" }
+
+        return try {
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-bookings/$customerId")
+
+            when (response.status.value) {
+                200 -> {
+                    val bookings =
+                        response.body<List<UserBooking>>()
+
+                    if (bookings.isEmpty()) {
+                        Result.success(emptyList())
+                    } else {
+                        Result.success(bookings)
+                    }
+                }
+                404 -> Result.success(emptyList()) // Usuario sin reservas
+                else -> {
+                    println("getUserBookings failed for customerId=$customerId: $response")
+                    Result.failure(Exception("Error ${response.status.value}: $response"))
+                }
             }
+        } catch (e: IOException) {
+            println("Network error for customerId=$customerId")
+            Result.failure(Exception("Error de red: ${e.message}", e))
+        } catch (e: Exception) {
+            println("Unexpected error for customerId=$customerId")
+            Result.failure(e)
         }
-        return response.body()
     }
 
     override suspend fun cancelUserBooking(bookingId: Int): Result<Unit> {
@@ -258,13 +282,20 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun getUserStats(customerId: Int): UserStatistics {
-        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-stats") {
-            url {
-                parameters.append("user_id", customerId.toString())
+    override suspend fun getUserStats(customerId: Int): Result<UserStatistics> {
+        return try {
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-stats") {
+                url { parameters.append("user_id", customerId.toString()) }
             }
+
+            if (response.status.value in 200..299) {
+                Result.success(response.body<UserStatistics>())
+            } else {
+                Result.failure(Exception("Error HTTP: ${response.status.value}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        return response.body()
     }
 
     override suspend fun addCouponToUser(
@@ -406,25 +437,12 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun getEwalletTransactions(userId: Int): List<EwalletTransaction> {
-        return try {
-            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/transactions") {
-                url {
-                    parameters.append("user_id", userId.toString())
-                }
-            }
+    override suspend fun getEwalletTransactions(userId: Int): Result<List<EwalletTransaction>> = runCatching {
+        val response: EwalletResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/transactions") {
+            parameter("user_id", userId)
+        }.body()
 
-            val body = response.bodyAsText()
-            val json = Json.parseToJsonElement(body).jsonObject
-            val txArray = json["transactions"]?.jsonArray ?: return emptyList()
-
-            txArray.map {
-                Json.decodeFromJsonElement<EwalletTransaction>(it)
-            }
-        } catch (e: Exception) {
-            println("❌ Error al cargar transacciones: ${e.message}")
-            emptyList()
-        }
+        response.transactions
     }
 
 }

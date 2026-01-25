@@ -19,4 +19,5 @@
     <color name="blue_ultra_light">#80D7F7</color>
     <color name="blue_transparent">#BBE8FE</color>
     <color name="blue_white">#F2FAFF</color>
+    <color name="background">#FFFFFF</color>
 </resources>

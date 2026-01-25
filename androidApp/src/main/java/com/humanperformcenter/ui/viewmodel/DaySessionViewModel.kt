@@ -10,6 +10,7 @@ import com.humanperformcenter.shared.data.model.booking.DaySession
 import com.humanperformcenter.shared.data.model.booking.SharedPool
 import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
+import com.humanperformcenter.shared.presentation.ui.DailySessionsUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,41 +62,47 @@ class DaySessionViewModel(
 
     private var bookingIdPendiente: Int? = null
 
+    private val _coachesForHour = MutableStateFlow<List<DaySession>>(emptyList())
+    val coachesForHour: StateFlow<List<DaySession>> = _coachesForHour.asStateFlow()
+
+    private val _dailySessionsState = MutableStateFlow<DailySessionsUiState>(DailySessionsUiState.Loading)
+    val dailySessionsState = _dailySessionsState.asStateFlow()
+
+    private val _holidays = MutableStateFlow<List<LocalDate>>(emptyList())
+    val holidays: StateFlow<List<LocalDate>> get() = _holidays
+
     init {
         repeat(5) { _respuestas.add(null) }
     }
 
     fun fetchAvailableSessions(serviceId: Int, date: LocalDate) {
-        val weekStart = date.toString()
+        // 1. Preparamos el estado inicial
+        _dailySessionsState.value = DailySessionsUiState.Loading
 
-        println("==== FETCH DE SESIONES DISPONIBLES ====")
-        println("Fecha seleccionada: $date")
-        println("Inicio de semana: $weekStart")
-        println("Service ID enviado: $serviceId")
-        println("=======================================")
+        viewModelScope.launch { // Eliminamos Dispatchers.IO aquí (se encarga el Repo/UseCase)
 
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val result = useCase.getSessionsByDay(serviceId, date)
+            // 2. Llamada al UseCase que ahora devuelve Result<List<DaySession>>
+            val result = useCase.getSessionsByDay(serviceId, date)
 
-                println("---- Resultados recibidos (${result.size}) ----")
-                result.forEach {
-                    println("→ ${it.date} | ${it.hour} | service_id=${it.serviceId} | coach=${it.coachName} | booked=${it.booked}/${it.capacity}")
+            result.fold(
+                onSuccess = { allSessions ->
+                    // 3. Filtrado (Si el backend ya filtra por serviceId, esto es opcional pero seguro)
+                    val filtered = allSessions.filter { it.serviceId == serviceId }
+
+                    // 4. Actualizamos el estado de éxito
+                    _dailySessionsState.value = DailySessionsUiState.Success(filtered)
+
+                    // Logs limpios para depuración
+                    println("✅ Sesiones cargadas: ${filtered.size} para el servicio $serviceId")
+                },
+                onFailure = { error ->
+                    // 5. Gestión de error unificada
+                    _dailySessionsState.value = DailySessionsUiState.Error(error.message ?: "Error al cargar sesiones")
+                    println("❌ ERROR: ${error.message}")
                 }
-
-                _sessions.value = result.filter {
-                    it.serviceId == serviceId
-                }
-
-                println("→ Sesiones filtradas: ${_sessions.value.size}")
-            } catch (e: Exception) {
-                println("❌ ERROR AL CONSULTAR SESIONES: ${e.message}")
-            }
+            )
         }
     }
-
-    private val _coachesForHour = MutableStateFlow<List<DaySession>>(emptyList())
-    val coachesForHour: StateFlow<List<DaySession>> = _coachesForHour.asStateFlow()
 
     fun filtrarEntrenadoresPorHora(hora: String) {
         _coachesForHour.value = _sessions.value.filter { it.hour == hora }
@@ -110,38 +117,46 @@ class DaySessionViewModel(
         coachId: Int,
         serviceId: Int,
         centerId: Int,
-        selectedDate: String, // "2025-06-27"
-        hour: String          // "09:00"
+        selectedDate: String,
+        hour: String
     ) {
-        val productId = useCase.getUserProductId(customerId)
-        val timeslotId = useCase.getTimeslotId(hour)
+        useCase.getUserProductId(customerId).onFailure { error ->
+                println("❌ Error obteniendo productId: ${error.message}")
+                _mensajeErrorReserva.value = error.message
+                return
+        }.onSuccess { productId ->
+            useCase.getTimeslotId(hour).onFailure { error ->
+                    println("❌ Error obteniendo timeslotId: ${error.message}")
+                    _mensajeErrorReserva.value = error.message
+                    return
+            }.onSuccess { timeslotId ->
+                println("🎯 Realizando reserva con:")
+                println("→ customerId = $customerId")
+                println("→ coachId = $coachId")
+                println("→ timeslotId = $timeslotId")
+                println("→ serviceId = $serviceId")
+                println("→ productId = $productId")
+                println("→ centerId = $centerId")
+                println("→ start_date = $selectedDate")
 
-        println("🎯 Realizando reserva con:")
-        println("→ customerId = $customerId")
-        println("→ coachId = $coachId")
-        println("→ timeslotId = $timeslotId")
-        println("→ serviceId = $serviceId")
-        println("→ productId = $productId")
-        println("→ centerId = $centerId")
-        println("→ start_date = $selectedDate")
+                val reserva = ReserveRequest(
+                    customer_id = customerId,
+                    coach_id = coachId,
+                    session_timeslot_id = timeslotId,
+                    service_id = serviceId,
+                    product_id = productId,
+                    center_id = centerId,
+                    start_date = selectedDate
+                )
 
-        val reserva = ReserveRequest(
-            customer_id = customerId,
-            coach_id = coachId,
-            session_timeslot_id = timeslotId,
-            service_id = serviceId,
-            product_id = productId,
-            center_id = centerId,
-            start_date = selectedDate
-        )
-
-        try {
-            useCase.reservarSesion(reserva)
-            println("✅ Reserva enviada correctamente")
-            _mensajeErrorReserva.value = null
-        } catch (e: IllegalStateException) {
-            println("❌ Error al reservar: ${e.message}")
-            _mensajeErrorReserva.value = e.message
+                useCase.reservarSesion(reserva).onSuccess {
+                    println("✅ Reserva enviada correctamente")
+                    _mensajeErrorReserva.value = null
+                }.onFailure { error ->
+                    println("❌ Error al reservar: ${error.message}")
+                    _mensajeErrorReserva.value = error.message
+                }
+            }
         }
     }
 
@@ -154,26 +169,36 @@ class DaySessionViewModel(
         hour: String
     ) {
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val productId = useCase.getUserProductId(customerId)
-                val timeslotId = useCase.getTimeslotId(hour)
 
-                val request = ReserveUpdateRequest(
-                    booking_id = bookingId,
-                    new_coach_id = newCoachId,
-                    new_service_id = newServiceId,
-                    new_product_id = productId,
-                    new_session_timeslot_id = timeslotId,
-                    new_start_date = newStartDate
-                )
+            useCase.getUserProductId(customerId).onFailure { error ->
+                println("❌ Error obteniendo productId: ${error.message}")
+                _mensajeErrorReserva.value = error.message
+                return@launch
+            }
+            .onSuccess { productId ->
 
-                useCase.cambiarReservaSesion(request)
+                useCase.getTimeslotId(hour).onFailure { error ->
+                    println("❌ Error obteniendo timeslotId: ${error.message}")
+                    _mensajeErrorReserva.value = error.message
+                    return@launch
+                }.onSuccess { timeslotId ->
+                    val request = ReserveUpdateRequest(
+                        booking_id = bookingId,
+                        new_coach_id = newCoachId,
+                        new_service_id = newServiceId,
+                        new_product_id = productId,
+                        new_session_timeslot_id = timeslotId,
+                        new_start_date = newStartDate
+                    )
 
-                println("✅ Reserva actualizada correctamente")
-                _mensajeErrorReserva.value = null
-            } catch (e: Exception) {
-                println("❌ Error al actualizar reserva: ${e.message}")
-                _mensajeErrorReserva.value = e.message
+                    useCase.cambiarReservaSesion(request).onSuccess {
+                        println("✅ Reserva actualizada correctamente")
+                        _mensajeErrorReserva.value = null
+                    }.onFailure { error ->
+                        println("❌ Error al actualizar reserva: ${error.message}")
+                        _mensajeErrorReserva.value = error.message
+                    }
+                }
             }
         }
     }
@@ -182,36 +207,35 @@ class DaySessionViewModel(
         _sessions.value = emptyList()
     }
 
-    suspend fun getPreferredCoachId(customerId: Int, serviceId: Int): Int? {
-        return useCase.getPreferredCoach(customerId, serviceId)
+    suspend fun getPreferredCoachId(
+        customerId: Int,
+        serviceId: Int
+    ): Int? {
+        return useCase.getPreferredCoach(customerId, serviceId).onFailure { error ->
+            println("❌ Error obteniendo coach preferido: ${error.message}")
+        }.getOrNull()
     }
 
-    private val _holidays = MutableStateFlow<List<LocalDate>>(emptyList())
-    val holidays: StateFlow<List<LocalDate>> get() = _holidays
-
     fun fetchHolidays() {
-        viewModelScope.launch {
-            try {
-                val result = useCase.getHolidays() // Devuelve List<String>
+        viewModelScope.launch(Dispatchers.IO) {
+            useCase.getHolidays().onSuccess { result ->
                 _holidays.value = result.map { LocalDate.parse(it) }
-            } catch (e: Exception) {
-                println("❌ Error al cargar festivos: ${e.message}")
+            }.onFailure { error ->
+                println("❌ Error al cargar festivos: ${error.message}")
             }
         }
     }
 
-
     fun fetchUserWeeklyLimit(userId: Int) {
-        viewModelScope.launch {
-            try {
-                val response = useCase.getUserWeeklyLimit(userId)
-                _weeklyLimits.value = response.weekly_limit
-                _unlimitedSessions.value = response.unlimited_sessions
-                _sharedSessions.value = response.unlimited_shared
-                _serviceToPrimary.value = response.service_to_primary
-                _validFromByPrimary.value = response.valid_from_by_primary
-            } catch (e: Exception) {
-                println("Error al cargar límites semanales: ${e.message}")
+        viewModelScope.launch(Dispatchers.IO) {
+            useCase.getUserWeeklyLimit(userId).onSuccess { response ->
+                    _weeklyLimits.value = response.weekly_limit
+                    _unlimitedSessions.value = response.unlimited_sessions
+                    _sharedSessions.value = response.unlimited_shared
+                    _serviceToPrimary.value = response.service_to_primary
+                    _validFromByPrimary.value = response.valid_from_by_primary
+            }.onFailure { error ->
+                println("❌ Error al cargar límites semanales: ${error.message}")
             }
         }
     }
@@ -295,7 +319,6 @@ class DaySessionViewModel(
     suspend fun cargarFormularioSiProcede(proximasSesiones: List<UserBooking>) {
         val zona = TimeZone.currentSystemDefault()
 
-        // Obtener la fecha y hora actuales desde java.time (Android)
         val nowJava = java.time.LocalDateTime.now()
         val ahora = LocalDateTime(
             year = nowJava.year,
@@ -311,7 +334,8 @@ class DaySessionViewModel(
 
         val sesionesFuturas = proximasSesiones.filter { sesion ->
             try {
-                val horaFormateada = if (sesion.hour.length == 5) "${sesion.hour}:00" else sesion.hour
+                val horaFormateada =
+                    if (sesion.hour.length == 5) "${sesion.hour}:00" else sesion.hour
                 val fechaSolo = sesion.date.take(10)
                 val sesionDateTime = LocalDateTime.parse("${fechaSolo}T$horaFormateada")
                 val sesionInstant = sesionDateTime.toInstant(zona)
@@ -324,17 +348,15 @@ class DaySessionViewModel(
 
         val sesionProxima = sesionesFuturas.firstOrNull { sesion ->
             try {
-
-                val horaFormateada = if (sesion.hour.length == 5) "${sesion.hour}:00" else sesion.hour
-                val fechaSolo = sesion.date.take(10) // "2025-06-03"
+                val horaFormateada =
+                    if (sesion.hour.length == 5) "${sesion.hour}:00" else sesion.hour
+                val fechaSolo = sesion.date.take(10)
                 val sesionDateTime = LocalDateTime.parse("${fechaSolo}T$horaFormateada")
                 val sesionInstant = sesionDateTime.toInstant(zona)
 
                 val diferencia = sesionInstant - nowInstant
-
-
-
                 val enMargen = diferencia.inWholeMinutes in 0..60
+
                 if (enMargen) println("✅ Sesión próxima en menos de una hora")
                 enMargen
             } catch (e: Exception) {
@@ -344,18 +366,21 @@ class DaySessionViewModel(
         }
 
         if (sesionProxima != null) {
-            val yaRespondido = useCase.cuestionarioEnviado(sesionProxima.id)
-
-            if (!yaRespondido) {
-                bookingIdPendiente = sesionProxima.id
-                _cuestionarioActivo.value = true
-            } else {
-                println("⛔ Ya se respondió, no se mostrará el formulario.")
+            useCase.cuestionarioEnviado(sesionProxima.id).onSuccess { yaRespondido ->
+                if (!yaRespondido) {
+                    bookingIdPendiente = sesionProxima.id
+                    _cuestionarioActivo.value = true
+                } else {
+                    println("⛔ Ya se respondió, no se mostrará el formulario.")
+                }
+            }.onFailure { error ->
+                println("❌ Error comprobando cuestionario: ${error.message}")
             }
         } else {
             println("🔕 No hay sesiones en la próxima hora.")
         }
     }
+
 
     fun responderPregunta(respuesta: String) {
         _respuestas[_preguntaActual.value] = respuesta
@@ -373,25 +398,23 @@ class DaySessionViewModel(
 
     private fun enviarRespuestas() {
         val bookingId = bookingIdPendiente ?: return
+
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val enviado = useCase.enviarCuestionarioReserva(
-                    BookingQuestionnaireRequest(
-                        booking_id = bookingId,
-                        sleep_quality = respuestas[0]!!,
-                        energy_level = respuestas[1]!!,
-                        muscle_pain = respuestas[2]!!,
-                        stress_level = respuestas[3]!!,
-                        mood = respuestas[4]!!
-                    )
-                )
-                if (enviado) {
-                    _cuestionarioActivo.value = false
-                }
-            } catch (e: Exception) {
-                println("❌ Error al enviar cuestionario: ${e.message}")
+
+            val request = BookingQuestionnaireRequest(
+                booking_id = bookingId,
+                sleep_quality = respuestas[0]!!,
+                energy_level = respuestas[1]!!,
+                muscle_pain = respuestas[2]!!,
+                stress_level = respuestas[3]!!,
+                mood = respuestas[4]!!
+            )
+
+            useCase.enviarCuestionarioReserva(request).onSuccess {
+                _cuestionarioActivo.value = false
+            }.onFailure { error ->
+                println("❌ Error al enviar cuestionario: ${error.message}")
             }
         }
     }
 }
-

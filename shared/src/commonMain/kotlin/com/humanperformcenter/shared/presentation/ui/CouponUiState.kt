@@ -1,4 +1,4 @@
-package com.humanperformcenter.ui.viewmodel.state
+package com.humanperformcenter.shared.presentation.ui
 
 import com.humanperformcenter.shared.data.model.payment.Coupon
 

@@ -42,7 +42,7 @@ import com.humanperformcenter.shared.data.model.user.Professional
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.viewmodel.UserViewModel
-import com.humanperformcenter.ui.viewmodel.state.MarkFavoriteState
+import com.humanperformcenter.shared.presentation.ui.MarkFavoriteState
 import kotlinx.coroutines.launch
 
 @Composable

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.model.product_service.ServiceItem
 import com.humanperformcenter.shared.data.model.user.UserBooking
+import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.ui.util.createICSFile
 import com.humanperformcenter.ui.util.shareICS
 import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
@@ -54,14 +56,22 @@ import kotlin.time.ExperimentalTime
 fun UserBookingsSection(
     userViewModel: UserViewModel,
     serviceProductViewModel: ServiceProductViewModel,
-    userBookings: List<UserBooking>, // Asegúrate de que tengas el modelo Booking importado
+    userBookings: List<UserBooking>, // Recibimos la lista limpia (Success.bookings)
     userId: Int?
 ) {
-    val serviciosPermitidos by serviceProductViewModel.userProducts.collectAsStateWithLifecycle()
+    val productosState by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
     var servicioFiltro by remember { mutableStateOf<ServiceItem?>(null) }
-
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
+    val listaParaDropdown = remember(productosState) {
+        if (productosState is UserProductsUiState.Success) {
+            (productosState as UserProductsUiState.Success).products
+        } else {
+            emptyList()
+        }
+    }
+
+    // La lógica de filtrado se mantiene igual, ya que userBookings vuelve a ser una List
     val reservasFiltradas = remember(userBookings, servicioFiltro, today) {
         userBookings.filter { booking ->
             val fecha = try {
@@ -92,7 +102,7 @@ fun UserBookingsSection(
         )
 
         ServiceFilterDropdown(
-            serviciosPermitidos = serviciosPermitidos,
+            serviciosPermitidos = listaParaDropdown,
             servicioFiltro = servicioFiltro,
             onServicioSeleccionado = { servicioFiltro = it }
         )
@@ -106,10 +116,11 @@ fun UserBookingsSection(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else {
-            LazyColumn {
+            // Importante: Usar heightIn o Modifier.weight si está dentro de un Column con scroll
+            LazyColumn(modifier = Modifier.heightIn(max = 1000.dp)) {
                 items(
                     items = reservasFiltradas,
-                    key = {booking -> booking.id}
+                    key = { booking -> booking.id }
                 ) { booking ->
                     val dateFormateada = booking.date.take(10)
                     val horaFormateada = booking.hour.take(5)

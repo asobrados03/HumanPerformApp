@@ -76,9 +76,9 @@ import com.humanperformcenter.ui.components.EditableUserProfileImage
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.ProfilePhotoSheet
 import com.humanperformcenter.ui.viewmodel.UserViewModel
-import com.humanperformcenter.ui.viewmodel.state.DeleteProfilePicState
-import com.humanperformcenter.ui.viewmodel.state.UpdateState
-import com.humanperformcenter.ui.viewmodel.state.UpdateState.Field
+import com.humanperformcenter.shared.presentation.ui.DeleteProfilePicState
+import com.humanperformcenter.shared.presentation.ui.UpdateState
+import com.humanperformcenter.shared.presentation.ui.UpdateState.Field
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat

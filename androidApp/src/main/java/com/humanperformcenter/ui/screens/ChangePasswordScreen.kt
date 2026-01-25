@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.ui.viewmodel.state.ChangePasswordState
+import com.humanperformcenter.shared.presentation.ui.ChangePasswordState
 
 @Composable
 fun ChangePasswordScreen(

@@ -12,27 +12,28 @@ import kotlinx.coroutines.launch
 class UserStatsViewModel(
     private val userUseCase: UserUseCase
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(UserStatistics())
     val uiState: StateFlow<UserStatistics> = _uiState.asStateFlow()
 
     fun loadStatistics(userId: Int) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            try {
-                val stats = userUseCase.getUserStats(userId)
-                _uiState.value = UserStatistics(
+
+            val result = userUseCase.getUserStats(userId)
+
+            result.onSuccess { stats ->
+                _uiState.value = _uiState.value.copy(
                     entrenamientosMesPasado = stats.entrenamientosMesPasado,
                     entrenadorMasUsado = stats.entrenadorMasUsado,
                     reservasPendientes = stats.reservasPendientes,
                     isLoading = false,
                     error = null
                 )
-                println("Estadísticas cargadas: ${stats.entrenamientosMesPasado} entrenamientos, ${stats.entrenadorMasUsado}")
-            } catch (e: Exception) {
+                println("Estadísticas cargadas con éxito")
+            }.onFailure { exception ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Error desconocido"
+                    error = exception.message ?: "Error al cargar estadísticas"
                 )
             }
         }

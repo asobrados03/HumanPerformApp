@@ -10,14 +10,14 @@ import com.humanperformcenter.shared.data.model.booking.UserWeeklyLimitResponse
 import kotlinx.datetime.LocalDate
 
 interface DaySessionRepository {
-    suspend fun getSessionsByDay(serviceId: Int, weekStart: LocalDate): List<DaySession>
-    suspend fun reservarSesion(reserveRequest: ReserveRequest): ReserveResponse
-    suspend fun cambiarReservaSesion(reserveUpdateRequest: ReserveUpdateRequest): ReserveUpdateResponse
-    suspend fun getUserProductId(customerId: Int): Int
-    suspend fun getPreferredCoach(customerId: Int, serviceId: Int): Int?
-    suspend fun getTimeslotId(hora: String): Int
-    suspend fun getUserWeeklyLimit(userId: Int): UserWeeklyLimitResponse
-    suspend fun getHolidays(): List<String>
-    suspend fun enviarCuestionarioReserva(bookingForm: BookingQuestionnaireRequest): Boolean
-    suspend fun cuestionarioEnviado(booking_id: Int): Boolean
+    suspend fun getSessionsByDay(serviceId: Int, weekStart: LocalDate): Result<List<DaySession>>
+    suspend fun reservarSesion(reserveRequest: ReserveRequest): Result<ReserveResponse>
+    suspend fun cambiarReservaSesion(reserveUpdateRequest: ReserveUpdateRequest): Result<ReserveUpdateResponse>
+    suspend fun getUserProductId(customerId: Int): Result<Int>
+    suspend fun getPreferredCoach(customerId: Int, serviceId: Int): Result<Int?>
+    suspend fun getTimeslotId(hora: String): Result<Int>
+    suspend fun getUserWeeklyLimit(userId: Int): Result<UserWeeklyLimitResponse>
+    suspend fun getHolidays(): Result<List<String>>
+    suspend fun enviarCuestionarioReserva(bookingForm: BookingQuestionnaireRequest): Result<Unit>
+    suspend fun cuestionarioEnviado(bookingId: Int): Result<Boolean>
 }

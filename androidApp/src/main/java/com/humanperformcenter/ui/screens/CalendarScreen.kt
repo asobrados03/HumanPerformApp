@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
 import com.humanperformcenter.ui.components.CalendarGrid
 import com.humanperformcenter.ui.components.CalendarHeader
 import com.humanperformcenter.ui.components.CalendarWeekDays
@@ -57,17 +60,25 @@ fun CalendarScreen(
 
     // Carga inicial de datos
     LaunchedEffect(userId) {
-        userId?.let {
-            userViewModel.fetchUserBookings(it)
-            daySessionViewModel.fetchUserWeeklyLimit(it)
+        if (userId != null && userId != -1) {
+            if (userBookings !is FetchUserBookingsState.Success) {
+                userViewModel.fetchUserBookings(userId)
+            }
+            daySessionViewModel.fetchUserWeeklyLimit(userId)
             daySessionViewModel.fetchHolidays()
         }
     }
 
     // Programar notificaciones
     LaunchedEffect(userBookings) {
-        userBookings.forEach { booking ->
-            scheduleSessionNotification(context, booking)
+        // 1. Verificamos que el estado sea Success
+        if (userBookings is FetchUserBookingsState.Success) {
+            // 2. Extraemos la lista del estado
+            val bookings = (userBookings as FetchUserBookingsState.Success).bookings
+
+            bookings.forEach { booking ->
+                scheduleSessionNotification(context, booking)
+            }
         }
     }
 
@@ -115,23 +126,35 @@ fun CalendarScreen(
 
             CalendarWeekDays()
 
+            val bookingsList = (userBookings as? FetchUserBookingsState.Success)?.bookings ?: emptyList()
+
             CalendarGrid(
                 displayedMonth = displayedMonth,
                 displayedYear = displayedYear,
                 today = today,
                 daySessionViewModel = daySessionViewModel,
-                userBookings = userBookings,
+                userBookings = bookingsList,
                 onDayClicked = onDayClicked  // ← Directamente el callback devuelto
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            UserBookingsSection(
-                userViewModel = userViewModel,
-                serviceProductViewModel = serviceProductViewModel,
-                userBookings = userBookings,
-                userId = userId
-            )
+            when (val state = userBookings) {
+                is FetchUserBookingsState.Loading -> {
+                    CircularProgressIndicator()
+                }
+                is FetchUserBookingsState.Error -> {
+                    Text("Error al cargar: ${state.message}")
+                }
+                is FetchUserBookingsState.Success -> {
+                    UserBookingsSection(
+                        userViewModel = userViewModel,
+                        serviceProductViewModel = serviceProductViewModel,
+                        userBookings = state.bookings,
+                        userId = user?.id
+                    )
+                }
+            }
         }
     }
 }

@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.humanperformcenter.app.navigation.HireProduct
-import com.humanperformcenter.shared.data.model.product_service.ServiceUiModel
+import com.humanperformcenter.shared.presentation.ui.models.ServiceUiModel
 import com.humanperformcenter.ui.components.AppCard
 
 @Composable

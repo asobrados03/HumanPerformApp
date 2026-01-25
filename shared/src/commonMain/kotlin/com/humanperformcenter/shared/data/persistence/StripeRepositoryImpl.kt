@@ -12,19 +12,24 @@ import io.ktor.http.*
 import kotlin.collections.mapOf
 
 object StripeRepositoryImpl: StripeRepository {
-    override suspend fun getConfig(): StripeConfigDto =
+    override suspend fun getConfig(): Result<StripeConfigDto> =
         ApiClient.apiClient.get("$baseUrl/stripe/mobile/config").body()
 
-    override suspend fun createPaymentIntent(CreatePaymentIntentRequest: CreatePaymentIntentRequest): CreatePiDto = ApiClient.apiClient.post("$baseUrl/stripe/mobile/create-payment-intent") {
-        contentType(ContentType.Application.Json)
-        setBody(CreatePaymentIntentRequest)
-    }.body()
+    override suspend fun createPaymentIntent(createPaymentIntentRequest: CreatePaymentIntentRequest)
+    : Result<CreatePiDto> {
+        return ApiClient.apiClient.post("$baseUrl/stripe/mobile/create-payment-intent") {
+            contentType(ContentType.Application.Json)
+            setBody(createPaymentIntentRequest)
+        }.body()
+    }
 
     override suspend fun createEphemeralKey(
         customerId: String,
         apiVersion: String
-    ): EphemeralKeyDto = ApiClient.apiClient.post("$baseUrl/stripe/mobile/ephemeral-keys") {
-        contentType(ContentType.Application.Json)
-        setBody(mapOf("customer_id" to customerId, "apiVersion" to apiVersion))
-    }.body()
+    ): Result<EphemeralKeyDto> {
+        return ApiClient.apiClient.post("$baseUrl/stripe/mobile/ephemeral-keys") {
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("customer_id" to customerId, "apiVersion" to apiVersion))
+        }.body()
+    }
 }

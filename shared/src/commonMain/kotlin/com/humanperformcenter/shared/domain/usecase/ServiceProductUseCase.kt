@@ -4,17 +4,18 @@ import com.humanperformcenter.shared.data.model.payment.Coupon
 import com.humanperformcenter.shared.data.model.product_service.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.product_service.ServiceAvailable
 import com.humanperformcenter.shared.data.model.product_service.ServiceItem
-import com.humanperformcenter.shared.domain.entities.ProductTypeFilter
+import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
+import com.humanperformcenter.shared.presentation.ui.SimpleResponse
 
 class ServiceProductUseCase(private val serviceProductRepository: ServiceProductRepository) {
-    suspend fun getAllServices(): List<ServiceAvailable> {
+    suspend fun getAllServices(): Result<List<ServiceAvailable>> {
         return serviceProductRepository.getAllServices()
     }
-    suspend fun getServiceProducts(serviceId: Int): List<ServiceItem> {
+    suspend fun getServiceProducts(serviceId: Int): Result<List<ServiceItem>> {
         return serviceProductRepository.getServiceProducts(serviceId)
     }
-    suspend fun getUserProducts(customerId: Int): List<ServiceItem> {
+    suspend fun getUserProducts(customerId: Int): Result<List<ServiceItem>> {
         return serviceProductRepository.getUserProducts(customerId)
     }
     suspend fun assignProductToUser(
@@ -22,18 +23,18 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
         productId: Int,
         paymentMethod: String,
         couponCode: String? = null,
-    ): Pair<Boolean, String?> {
+    ): Result<Int> {
         return serviceProductRepository.assignProductToUser(userId, productId, paymentMethod, couponCode)
     }
 
-    suspend fun unassignProductFromUser(userId: Int, productId: Int): Boolean {
+    suspend fun unassignProductFromUser(userId: Int, productId: Int): Result<Unit> {
         return serviceProductRepository.unassignProductFromUser(userId, productId)
     }
     suspend fun getProductDetails(userId: Int, productId: Int): Result<ProductDetailResponse> {
         return serviceProductRepository.getProductDetails(userId, productId)
     }
 
-    suspend fun applyCoupon(code: String, userId: Int, productId: Int): Boolean {
+    suspend fun applyCoupon(code: String, userId: Int, productId: Int): Result<SimpleResponse> {
         return serviceProductRepository.applyCoupon(code, userId, productId)
     }
 

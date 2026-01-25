@@ -1,5 +1,7 @@
 package com.humanperformcenter.ui.screens
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,12 +17,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
+import com.humanperformcenter.shared.presentation.ui.UnassignEvent
+import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.ui.components.ConfirmCancelDialog
+import com.humanperformcenter.ui.components.ErrorComponent
+import com.humanperformcenter.ui.components.MyProductsShimmer
 import com.humanperformcenter.ui.components.ProductCard
 import com.humanperformcenter.ui.components.ProductOptionsDialog
 import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
@@ -35,31 +43,65 @@ fun MyProductsScreen(
     daySessionViewModel: DaySessionViewModel,
     userId: Int
 ) {
-    val processedProducts by serviceProductViewModel.productsState.collectAsStateWithLifecycle(
-        initialValue = emptyList()
-    )
+    // Recolectamos el estado completo de la Sealed Class
+    val productsUiState by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
 
-    // ----- NO TENGO NI IDEA DE LO QUE HACE ESTE TROZO DE CÓDIGO
-    val userBookings by userViewModel.userBookings.collectAsStateWithLifecycle()
+    LaunchedEffect(userId) {
+        serviceProductViewModel.loadUserProducts(userId)
+    }
 
-    LaunchedEffect(userBookings) {
-        if (userBookings.isNotEmpty()) {
-            daySessionViewModel.cargarFormularioSiProcede(userBookings)
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        serviceProductViewModel.unassignEvent.collect { event ->
+            when (event) {
+                is UnassignEvent.Success -> {
+                    Toast.makeText(context, "Producto eliminado", Toast.LENGTH_SHORT).show()
+                    // Aquí no solemos navegar, la lista se actualiza sola por el loadUserProducts
+                }
+                is UnassignEvent.Error -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                }
+            }
         }
     }
-    // ------------------------------------
 
-    // El contenido puro de la UI
-    MyProductsContent(
-        productos = processedProducts,
-        onProductClick = { product ->
-            serviceProductViewModel.productoSeleccionado = product
-            navController.navigate(ProductDetail(product.id))
-        },
-        onConfirmCancel = { targetId ->
-            serviceProductViewModel.unassignProductFromUser(targetId, userId)
+    // --- El bloque de Bookings se queda igual (está bien corregido) ---
+    val userBookingsState by userViewModel.userBookings.collectAsStateWithLifecycle()
+    LaunchedEffect(userBookingsState) {
+        if (userBookingsState is FetchUserBookingsState.Success) {
+            val bookings = (userBookingsState as FetchUserBookingsState.Success).bookings
+            if (bookings.isNotEmpty()) {
+                daySessionViewModel.cargarFormularioSiProcede(bookings)
+            }
         }
-    )
+    }
+
+    // --- Gestión de la UI según el estado ---
+    when (val state = productsUiState) {
+        is UserProductsUiState.Loading -> {
+            // Reutilizamos el Shimmer que creamos antes
+            MyProductsShimmer()
+        }
+        is UserProductsUiState.Error -> {
+            ErrorComponent(
+                message = state.message,
+                onRetry = { serviceProductViewModel.loadUserProducts(userId) }
+            )
+        }
+        is UserProductsUiState.Success -> {
+            MyProductsContent(
+                productos = state.products, // Pasamos la lista real extraída del Success
+                onProductClick = { product ->
+                    serviceProductViewModel.productoSeleccionado = product
+                    navController.navigate(ProductDetail(product.id))
+                },
+                onConfirmCancel = { targetId ->
+                    serviceProductViewModel.unassignProductFromUser(targetId, userId)
+                }
+            )
+        }
+    }
 }
 
 @Composable
@@ -84,6 +126,8 @@ fun MyProductsContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(items = productos, key = { it.id }) { product ->
+                    product.image?.let { Log.d("IMAGEN", it) }
+
                     ProductCard(
                         product = product,
                         onClick = {
