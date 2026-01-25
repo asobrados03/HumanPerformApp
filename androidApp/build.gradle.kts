@@ -1,11 +1,8 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlinxSerialization)
-    id("com.google.devtools.ksp") version "2.2.0-2.0.2"
+    id("com.google.devtools.ksp") version "2.3.1"
 }
 
 android {
@@ -15,7 +12,7 @@ android {
     defaultConfig {
         applicationId = "com.humanperformcenter"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -41,21 +38,12 @@ android {
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
-    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
     buildToolsVersion = "35.0.0"
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.fromTarget("17")
-    }
 }
 
 dependencies {
@@ -70,21 +58,12 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.material.icons.extended)
-    implementation(libs.androidx.room.runtime){
-        exclude(group = "com.intellij", module = "annotations")
-    }
-    implementation(libs.androidx.room.ktx){
-        exclude(group = "com.intellij", module = "annotations")
-    }
-    implementation(libs.androidx.room.compiler){
-        exclude(group = "com.intellij", module = "annotations")
-    }
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.coil.compose)
     implementation(project(":shared"))
     implementation(libs.core.ktx)
-    implementation("com.stripe:stripe-android:21.22.2") // o la última
+    implementation(libs.stripe.android)
     implementation(libs.datastore.preferences)
     implementation(libs.datastore)
 
@@ -96,7 +75,6 @@ dependencies {
     implementation(libs.material)
 
     testImplementation(libs.junit.jupiter)
-    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.material)
     implementation(libs.ui)
     implementation(libs.ui.tooling.preview)
