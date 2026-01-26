@@ -36,8 +36,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humanperformcenter.shared.data.model.booking.DaySession
-import com.humanperformcenter.shared.data.model.product_service.ServiceItem
 import com.humanperformcenter.shared.data.model.booking.SharedPool
+import com.humanperformcenter.shared.data.model.product_service.ServiceItem
 import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
@@ -47,16 +47,11 @@ import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.minus
-import kotlinx.datetime.plus
-import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.todayIn
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+// Importa ambas clases con alias para evitar confusión
+import java.time.LocalDate as JavaLocalDate
+import kotlinx.datetime.LocalDate as KotlinLocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 private val SuccessColor = Color(0xFF4CAF50)
 private val WarningColor = Color(0xFFFFA000)
@@ -76,22 +71,21 @@ private class ReservationFlowState(
     val unlimitedSessions: Map<Int, Int>,
     val sharedSessions: List<SharedPool>,
     val serviceToPrimary: Map<Int, Int>,
-    private val timeZone: TimeZone = TimeZone.of("Europe/Madrid")
+    private val zoneId: ZoneId = ZoneId.of("Europe/Madrid")
 ) {
     var dialog by mutableStateOf<Dialog>(Dialog.Hidden)
         private set
 
     var selectedService by mutableStateOf<ServiceItem?>(null)
 
-    // Tiempo actual en KMM
-    @OptIn(ExperimentalTime::class)
-    val now: LocalDateTime get() = Clock.System.now().toLocalDateTime(timeZone)
-    @OptIn(ExperimentalTime::class)
-    val today: LocalDate = Clock.System.todayIn(timeZone)
+    // Tiempo actual en java.time
+    val now: LocalDateTime get() = LocalDateTime.now(zoneId)
+    val today: JavaLocalDate = JavaLocalDate.now(zoneId)
 
+    // Parseo seguro usando java.time
     private val reservedDates = userBookings.mapNotNull { it.date.toLocalDate() }.toSet()
 
-    fun onDayClicked(date: LocalDate) {
+    fun onDayClicked(date: JavaLocalDate) {
         if (reservedDates.contains(date)) {
             dialog = Dialog.ConfirmContinue(date)
         } else {
@@ -99,26 +93,26 @@ private class ReservationFlowState(
         }
     }
 
-    fun startReservationFlow(date: LocalDate) {
+    fun startReservationFlow(date: JavaLocalDate) {
         resetStateForNewDate()
         daySessionViewModel.clearSessions()
         dialog = Dialog.Reservation(date)
     }
 
-    fun onServiceSelected(service: ServiceItem, date: LocalDate) {
+    fun onServiceSelected(service: ServiceItem, date: JavaLocalDate) { // 'date' es java.time
         selectedService = service
         daySessionViewModel.clearCoachesForHour()
-        daySessionViewModel.fetchAvailableSessions(service.id, date)
+        daySessionViewModel.fetchAvailableSessions(service.id, date.toKotlinLocalDate())
     }
 
-    fun onHourClicked(hour: String, date: LocalDate) {
+    fun onHourClicked(hour: String, date: JavaLocalDate) {
         val serviceId = selectedService?.id ?: return
 
-        // Validación de hora pasada (KMM no tiene LocalTime, construimos LocalDateTime)
+        // Validación de hora pasada
         val currentNow = now
         val slotDateTime = hour.toLocalDateTimeOnDate(date)
 
-        if (slotDateTime < currentNow) return
+        if (slotDateTime.isBefore(currentNow)) return // isBefore es de java.time
 
         if (userBookings.any { it.date.toLocalDate() == date && it.hour.take(5) == hour.take(5) }) {
             dialog = Dialog.HourOccupied
@@ -134,7 +128,13 @@ private class ReservationFlowState(
             }
 
             val canOnlyChange = daySessionViewModel.seSuperoLimiteReserva(
-                serviceId, date, weeklyLimits, unlimitedSessions, sharedSessions, userBookings, serviceToPrimary
+                serviceId,
+                date.toKotlinLocalDate(),
+                weeklyLimits,
+                unlimitedSessions,
+                sharedSessions,
+                userBookings,
+                serviceToPrimary
             )
 
             val preferredId = daySessionViewModel.getPreferredCoachId(userId, serviceId)
@@ -144,7 +144,7 @@ private class ReservationFlowState(
         }
     }
 
-    fun bookSession(date: LocalDate, hour: String, coach: DaySession) {
+    fun bookSession(date: JavaLocalDate, hour: String, coach: DaySession) {
         val serviceId = selectedService?.id ?: return
         scope.launch(Dispatchers.IO) {
             daySessionViewModel.realizarReserva(
@@ -152,7 +152,7 @@ private class ReservationFlowState(
                 coachId = coach.coachId,
                 serviceId = serviceId,
                 centerId = 1,
-                selectedDate = date.toString(),
+                selectedDate = date.toString(), // java.time usa ISO-8601 por defecto
                 hour = hour
             )
             userViewModel.fetchUserBookings(userId)
@@ -160,7 +160,7 @@ private class ReservationFlowState(
         }
     }
 
-    fun changeSession(bookingToChange: UserBooking, newDate: LocalDate, newHour: String, newCoach: DaySession) {
+    fun changeSession(bookingToChange: UserBooking, newDate: JavaLocalDate, newHour: String, newCoach: DaySession) {
         val serviceId = selectedService?.id ?: return
         scope.launch(Dispatchers.IO) {
             daySessionViewModel.cambiarReservaSesion(
@@ -176,7 +176,7 @@ private class ReservationFlowState(
         }
     }
 
-    fun showChangeSelector(date: LocalDate, hour: String, coach: DaySession) {
+    fun showChangeSelector(date: JavaLocalDate, hour: String, coach: DaySession) {
         dialog = Dialog.ChangeExisting(date, hour, coach)
     }
 
@@ -194,12 +194,12 @@ private class ReservationFlowState(
 
     sealed class Dialog {
         object Hidden : Dialog()
-        data class ConfirmContinue(val date: LocalDate) : Dialog()
-        data class Reservation(val date: LocalDate) : Dialog()
+        data class ConfirmContinue(val date: JavaLocalDate) : Dialog()
+        data class Reservation(val date: JavaLocalDate) : Dialog()
         object HourOccupied : Dialog()
         object NoCoachesAvailable : Dialog()
-        data class Confirm(val date: LocalDate, val hour: String, val coach: DaySession, val canOnlyChange: Boolean) : Dialog()
-        data class ChangeExisting(val date: LocalDate, val hour: String, val coach: DaySession) : Dialog()
+        data class Confirm(val date: JavaLocalDate, val hour: String, val coach: DaySession, val canOnlyChange: Boolean) : Dialog()
+        data class ChangeExisting(val date: JavaLocalDate, val hour: String, val coach: DaySession) : Dialog()
     }
 }
 
@@ -210,12 +210,11 @@ fun reservationFlowDialogs(
     daySessionViewModel: DaySessionViewModel,
     serviceProductViewModel: ServiceProductViewModel,
     userViewModel: UserViewModel
-): (LocalDate) -> Unit {
+): (JavaLocalDate) -> Unit {
     val user by userViewModel.userData.collectAsStateWithLifecycle()
     val userId = user?.id ?: return {}
     val scope = rememberCoroutineScope()
 
-    // --- Recolección de estados ---
     val userBookings by userViewModel.userBookings.collectAsStateWithLifecycle()
     val bookingsList = (userBookings as? FetchUserBookingsState.Success)?.bookings ?: emptyList()
 
@@ -225,17 +224,13 @@ fun reservationFlowDialogs(
     val sharedSessions by daySessionViewModel.sharedSessions.collectAsStateWithLifecycle()
     val serviceToPrimary by daySessionViewModel.serviceToPrimary.collectAsStateWithLifecycle()
 
-    // --- CORRECCIÓN: Estado de Productos ---
     val userProductsState by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
 
-    // Extraemos la lista limpia para el diálogo
     val listaProductosValidos = remember(userProductsState) {
         (userProductsState as? UserProductsUiState.Success)?.products ?: emptyList()
     }
 
-    // --- CORRECCIÓN DE REACTIVIDAD ---
-    // Si usas 'remember' simple, el objeto ReservationFlowState no se enterará de
-    // los cambios en 'bookingsList' o 'sessions' después de crearse.
+    // Se mantiene igual, el cambio es interno en la clase
     val state = remember(userId) {
         ReservationFlowState(
             daySessionViewModel, userViewModel, scope, userId, bookingsList,
@@ -243,13 +238,12 @@ fun reservationFlowDialogs(
         )
     }
 
-    // --- Renderizado de Diálogos ---
     when (val dialog = state.dialog) {
         is ReservationFlowState.Dialog.Reservation -> {
             ReservationDialog(
                 state = state,
                 date = dialog.date,
-                allowedServices = listaProductosValidos // Ahora pasamos List<ServiceItem>
+                allowedServices = listaProductosValidos
             )
         }
         is ReservationFlowState.Dialog.Confirm -> ConfirmDialog(state, dialog)
@@ -267,7 +261,7 @@ fun reservationFlowDialogs(
 }
 
 @Composable
-private fun ReservationDialog(state: ReservationFlowState, date: LocalDate, allowedServices: List<ServiceItem>) {
+private fun ReservationDialog(state: ReservationFlowState, date: JavaLocalDate, allowedServices: List<ServiceItem>) {
     AlertDialog(
         onDismissRequest = state::dismiss,
         title = {
@@ -284,7 +278,7 @@ private fun ReservationDialog(state: ReservationFlowState, date: LocalDate, allo
 }
 
 @Composable
-private fun HourSelector(state: ReservationFlowState, hours: List<String>, selectedDate: LocalDate) {
+private fun HourSelector(state: ReservationFlowState, hours: List<String>, selectedDate: JavaLocalDate) {
     val currentNow = state.now
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         hours.chunked(3).forEach { row ->
@@ -298,9 +292,9 @@ private fun HourSelector(state: ReservationFlowState, hours: List<String>, selec
 }
 
 @Composable
-private fun HourChip(hour: String, sessions: List<DaySession>, selectedDate: LocalDate, now: LocalDateTime, onClick: () -> Unit) {
+private fun HourChip(hour: String, sessions: List<DaySession>, selectedDate: JavaLocalDate, now: LocalDateTime, onClick: () -> Unit) {
     val isPast = remember(selectedDate, hour, now) {
-        hour.toLocalDateTimeOnDate(selectedDate) < now
+        hour.toLocalDateTimeOnDate(selectedDate).isBefore(now)
     }
 
     val hourSessions = remember(sessions, hour) { sessions.filter { it.hour == hour } }
@@ -327,19 +321,23 @@ private fun HourChip(hour: String, sessions: List<DaySession>, selectedDate: Loc
     }
 }
 
-// HELPERS Y OTROS DIÁLOGOS
-
 @Composable
 private fun ChangeExistingDialog(state: ReservationFlowState, dialog: ReservationFlowState.Dialog.ChangeExisting) {
     val serviceId = state.selectedService?.id ?: return
-    // Cálculo de semana en KMM
-    val startOfWeek = dialog.date.minus(dialog.date.dayOfWeek.ordinal, DateTimeUnit.DAY)
-    val endOfWeek = startOfWeek.plus(6, DateTimeUnit.DAY)
+
+    // Cálculo de semana usando java.time
+    // Asumimos que la semana empieza el Lunes (ordinal 0 en array, pero 1 en java.time DayOfWeek)
+    // dayOfWeek.ordinal en java.time devuelve 0 para lunes, 6 para domingo.
+    val startOfWeek = dialog.date.minusDays(dialog.date.dayOfWeek.ordinal.toLong())
+    val endOfWeek = startOfWeek.plusDays(6)
 
     val weeklyBookings = remember(state.userBookings, serviceId) {
         state.userBookings.filter {
             val d = it.date.toLocalDate()
-            it.service_id == serviceId && d != null && d >= state.today && d in startOfWeek..endOfWeek
+            // Comparación de fechas en java.time (>= y <= funcionan por Comparable, pero isAfter/isBefore son más explícitos)
+            it.service_id == serviceId && d != null && !d.isBefore(state.today) &&
+                    (d.isEqual(startOfWeek) || d.isAfter(startOfWeek)) &&
+                    (d.isEqual(endOfWeek) || d.isBefore(endOfWeek))
         }
     }
 
@@ -362,7 +360,8 @@ private fun ChangeExistingDialog(state: ReservationFlowState, dialog: Reservatio
     )
 }
 
-// ... Resto de diálogos (ConfirmDialog, ServiceSelector, etc) se mantienen similares ...
+// ... Resto de diálogos (ServiceSelector, ConfirmDialog, etc) iguales ...
+// Solo asegúrate de que ConfirmDialog use la nueva firma si usas LocalDate en otros sitios.
 
 @Composable
 private fun ServiceSelector(services: List<ServiceItem>, selected: ServiceItem?, onSelect: (ServiceItem) -> Unit) {
@@ -402,12 +401,26 @@ private fun InfoDialog(title: String, text: String, onDismiss: () -> Unit) {
     AlertDialog(onDismissRequest = onDismiss, title = { Text(title) }, text = { Text(text) }, confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } })
 }
 
-// EXTENSIONES DE KMM
-private fun String.toLocalDate(): LocalDate? = runCatching { LocalDate.parse(this.take(10)) }.getOrNull()
+// ------------------------------------------
+// EXTENSIONES JAVA.TIME
+// ------------------------------------------
 
-private fun String.toLocalDateTimeOnDate(date: LocalDate): LocalDateTime {
-    val h = this.take(2).toInt()
-    val m = this.substring(3, 5).toInt()
-    return LocalDateTime(date.year, date.month, date.day, h, m)
+// Parsea "YYYY-MM-DD" a java.time.LocalDate
+private fun String.toLocalDate(): JavaLocalDate? = try {
+    JavaLocalDate.parse(this.take(10))
+} catch (_: Exception) {
+    null
 }
 
+// Extensión para convertir de Java (Android) a Kotlin (KMM)
+fun JavaLocalDate.toKotlinLocalDate(): KotlinLocalDate {
+    return KotlinLocalDate(this.year, this.monthValue, this.dayOfMonth)
+}
+
+// Construye LocalDateTime desde "HH:mm" y una fecha dada
+private fun String.toLocalDateTimeOnDate(date: JavaLocalDate): LocalDateTime {
+    val h = this.take(2).toInt()
+    val m = this.substring(3, 5).toInt()
+    // java.time tiene el método atTime para combinar fecha y hora limpiamente
+    return date.atTime(h, m)
+}

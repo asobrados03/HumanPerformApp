@@ -43,25 +43,23 @@ import com.humanperformcenter.ui.util.createICSFile
 import com.humanperformcenter.ui.util.shareICS
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeParseException
 
-@OptIn(ExperimentalTime::class)
 @Composable
 fun UserBookingsSection(
     userViewModel: UserViewModel,
     serviceProductViewModel: ServiceProductViewModel,
-    userBookings: List<UserBooking>, // Recibimos la lista limpia (Success.bookings)
+    userBookings: List<UserBooking>,
     userId: Int?
 ) {
     val productosState by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
     var servicioFiltro by remember { mutableStateOf<ServiceItem?>(null) }
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+    // CAMBIO 1: Obtener fecha actual con java.time
+    val today = remember { LocalDate.now() }
 
     val listaParaDropdown = remember(productosState) {
         if (productosState is UserProductsUiState.Success) {
@@ -71,14 +69,17 @@ fun UserBookingsSection(
         }
     }
 
-    // La lógica de filtrado se mantiene igual, ya que userBookings vuelve a ser una List
     val reservasFiltradas = remember(userBookings, servicioFiltro, today) {
         userBookings.filter { booking ->
+            // CAMBIO 2: Parseo seguro usando java.time.LocalDate
             val fecha = try {
+                // Asume formato ISO-8601 (yyyy-MM-dd) al tomar los primeros 10 chars
                 LocalDate.parse(booking.date.take(10))
-            } catch (_: Exception) { null }
+            } catch (_: DateTimeParseException) {
+                null
+            }
 
-            val pasaFecha = fecha != null && fecha >= today
+            val pasaFecha = fecha != null && (fecha.isEqual(today) || fecha.isAfter(today))
             val pasaServicio = servicioFiltro == null || booking.service_id == servicioFiltro!!.id
             pasaFecha && pasaServicio
         }
@@ -92,6 +93,7 @@ fun UserBookingsSection(
     )
 
     val context = LocalContext.current
+    // Usamos remember para mantener el estado de expansión por ID
     val menuExpandedMap = remember { mutableStateMapOf<Int, Boolean>() }
 
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -116,7 +118,6 @@ fun UserBookingsSection(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else {
-            // Importante: Usar heightIn o Modifier.weight si está dentro de un Column con scroll
             LazyColumn(modifier = Modifier.heightIn(max = 1000.dp)) {
                 items(
                     items = reservasFiltradas,
@@ -166,13 +167,25 @@ fun UserBookingsSection(
                                     text = { Text("Descargar evento") },
                                     onClick = {
                                         menuExpandedMap[booking.id] = false
-                                        val startDateTimeStr = LocalDateTime.parse("${dateFormateada}T${horaFormateada}:00")
-                                        val instant = startDateTimeStr.toInstant(TimeZone.currentSystemDefault())
-                                        val icsContent = createICSFile(
-                                            eventTitle = booking.service,
-                                            startDateTime = instant
-                                        )
-                                        shareICS(context, icsContent)
+                                        try {
+                                            // CAMBIO 3: Creación del Instant con java.time
+                                            val startDateTime = LocalDateTime.parse("${dateFormateada}T${horaFormateada}:00")
+
+                                            // Combinamos fecha/hora con la zona horaria del sistema para obtener el instante
+                                            val instant = startDateTime
+                                                .atZone(ZoneId.systemDefault())
+                                                .toInstant()
+
+                                            // Asegúrate que createICSFile acepte java.time.Instant o long (toEpochMilli())
+                                            val icsContent = createICSFile(
+                                                eventTitle = booking.service,
+                                                startDateTime = instant
+                                            )
+                                            shareICS(context, icsContent)
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                            // Opcional: Mostrar Toast de error
+                                        }
                                     }
                                 )
                                 DropdownMenuItem(

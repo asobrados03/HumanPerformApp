@@ -1,5 +1,8 @@
 package com.humanperformcenter.ui.components
 
+import java.time.Month
+import java.time.format.TextStyle
+import java.util.Locale
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -11,12 +14,12 @@ import androidx.compose.material.icons.filled.KeyboardDoubleArrowRight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.datetime.Month
 
 @Composable
 fun CalendarHeader(
@@ -25,12 +28,10 @@ fun CalendarHeader(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit
 ) {
-    val monthNames = mapOf(
-        Month.JANUARY to "Enero", Month.FEBRUARY to "Febrero", Month.MARCH to "Marzo",
-        Month.APRIL to "Abril", Month.MAY to "Mayo", Month.JUNE to "Junio",
-        Month.JULY to "Julio", Month.AUGUST to "Agosto", Month.SEPTEMBER to "Septiembre",
-        Month.OCTOBER to "Octubre", Month.NOVEMBER to "Noviembre", Month.DECEMBER to "Diciembre"
-    )
+    val monthName = remember(displayedMonth) {
+        displayedMonth.getDisplayName(TextStyle.FULL, Locale.forLanguageTag("es-ES"))
+            .replaceFirstChar { it.titlecase() }
+    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -43,11 +44,11 @@ fun CalendarHeader(
             modifier = Modifier
                 .size(32.dp)
                 .clickable(onClick = onPreviousMonth)
-                .padding(end = 8.dp)
+                .padding(4.dp)
         )
 
         Text(
-            text = "${monthNames[displayedMonth]} $displayedYear",
+            text = "$monthName $displayedYear",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.Center
@@ -60,7 +61,7 @@ fun CalendarHeader(
             modifier = Modifier
                 .size(32.dp)
                 .clickable(onClick = onNextMonth)
-                .padding(start = 8.dp)
+                .padding(4.dp)
         )
     }
 }

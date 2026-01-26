@@ -4,30 +4,24 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.number
-import kotlinx.datetime.plus
-import kotlinx.datetime.toLocalDateTime
 import java.io.File
-import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
-@OptIn(ExperimentalTime::class)
 fun createICSFile(eventTitle: String, startDateTime: Instant, durationMinutes: Int = 60): String {
-    val start = startDateTime.toLocalDateTime(TimeZone.currentSystemDefault())
-    // start is LocalDateTime here, so we use plus(DateTimePeriod)
-    val endInstant = startDateTime.plus(durationMinutes.toLong() * 60, DateTimeUnit.SECOND)
-    val end = endInstant.toLocalDateTime(TimeZone.currentSystemDefault())
+    // 1. Definimos el formato exacto que requiere el archivo .ics (yyyyMMddTHHmmss)
+    val formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss")
+    val zoneId = ZoneId.systemDefault()
 
-    val dtStart = "%04d%02d%02dT%02d%02d%02d".format(
-        start.year, start.month.number, start.day,
-        start.hour, start.minute, start.second
-    )
-    val dtEnd = "%04d%02d%02dT%02d%02d%02d".format(
-        end.year, end.month.number, end.day,
-        end.hour, end.minute, end.second
-    )
+    // 2. Calculamos el instante final sumando los minutos
+    val endDateTime = startDateTime.plus(durationMinutes.toLong(), ChronoUnit.MINUTES)
+
+    // 3. Formateamos a String aplicando la zona horaria del usuario
+    // .atZone convierte el Instant (UTC) a ZonedDateTime con la hora local
+    val dtStart = formatter.format(startDateTime.atZone(zoneId))
+    val dtEnd = formatter.format(endDateTime.atZone(zoneId))
 
     return """
         BEGIN:VCALENDAR
@@ -42,22 +36,28 @@ fun createICSFile(eventTitle: String, startDateTime: Instant, durationMinutes: I
     """.trimIndent()
 }
 
-
+// Esta función se mantiene igual, ya usa librerías estándar de Android
 fun shareICS(context: Context, fileContent: String, fileName: String = "evento.ics") {
-    val file = File(context.cacheDir, fileName)
-    file.writeText(fileContent)
+    try {
+        val file = File(context.cacheDir, fileName)
+        file.writeText(fileContent)
 
-    val uri: Uri = FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.provider",
-        file
-    )
+        // Asegúrate de tener configurado el FileProvider en el AndroidManifest
+        val uri: Uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider", // Debe coincidir con authorities en Manifest
+            file
+        )
 
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/calendar"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/calendar"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        context.startActivity(Intent.createChooser(intent, "Añadir al calendario"))
+    } catch (e: Exception) {
+        e.printStackTrace()
+        // Aquí podrías loguear el error o mostrar un Toast si falla la escritura/intent
     }
-
-    context.startActivity(Intent.createChooser(intent, "Añadir al calendario"))
 }

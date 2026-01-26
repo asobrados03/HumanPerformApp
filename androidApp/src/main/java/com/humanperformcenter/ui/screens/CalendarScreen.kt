@@ -1,12 +1,14 @@
 package com.humanperformcenter.ui.screens
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,12 +18,16 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
+import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.ui.components.CalendarGrid
 import com.humanperformcenter.ui.components.CalendarHeader
 import com.humanperformcenter.ui.components.CalendarWeekDays
@@ -29,17 +35,10 @@ import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.components.UserBookingsSection
 import com.humanperformcenter.ui.components.reservationFlowDialogs
-import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
-import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.worker.scheduleSessionNotification
-import kotlinx.datetime.Month
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+import java.time.LocalDate
+import java.time.Month
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun CalendarScreen(
     navController: NavHostController,
@@ -48,7 +47,10 @@ fun CalendarScreen(
     userViewModel: UserViewModel,
     onPlaySound: (Int) -> Unit
 ) {
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    // 1. Fecha actual usando java.time
+    val today = remember { LocalDate.now() }
+
+    // Estados de navegación
     var displayedMonth by remember { mutableStateOf(today.month) }
     var displayedYear by remember { mutableIntStateOf(today.year) }
 
@@ -58,7 +60,7 @@ fun CalendarScreen(
 
     val context = LocalContext.current
 
-    // Carga inicial de datos
+    // Carga inicial (Sin cambios en lógica, solo triggers)
     LaunchedEffect(userId) {
         if (userId != null && userId != -1) {
             if (userBookings !is FetchUserBookingsState.Success) {
@@ -71,18 +73,15 @@ fun CalendarScreen(
 
     // Programar notificaciones
     LaunchedEffect(userBookings) {
-        // 1. Verificamos que el estado sea Success
         if (userBookings is FetchUserBookingsState.Success) {
-            // 2. Extraemos la lista del estado
             val bookings = (userBookings as FetchUserBookingsState.Success).bookings
-
             bookings.forEach { booking ->
+                // Asegúrate que esta función interna use java.time para parsear
                 scheduleSessionNotification(context, booking)
             }
         }
     }
 
-    // Obtenemos el callback que maneja todo el flujo de reserva
     val onDayClicked = reservationFlowDialogs(
         daySessionViewModel = daySessionViewModel,
         serviceProductViewModel = serviceProductViewModel,
@@ -103,24 +102,22 @@ fun CalendarScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // 2. Cabecera con lógica de meses simplificada
             CalendarHeader(
                 displayedMonth = displayedMonth,
                 displayedYear = displayedYear,
                 onPreviousMonth = {
                     if (displayedMonth == Month.JANUARY) {
-                        displayedMonth = Month.DECEMBER
                         displayedYear -= 1
-                    } else {
-                        displayedMonth = Month.entries[displayedMonth.ordinal - 1]
                     }
+                    // minus(1) de java.time.Month maneja el ciclo de forma segura
+                    displayedMonth = displayedMonth.minus(1)
                 },
                 onNextMonth = {
                     if (displayedMonth == Month.DECEMBER) {
-                        displayedMonth = Month.JANUARY
                         displayedYear += 1
-                    } else {
-                        displayedMonth = Month.entries[displayedMonth.ordinal + 1]
                     }
+                    displayedMonth = displayedMonth.plus(1)
                 }
             )
 
@@ -128,31 +125,38 @@ fun CalendarScreen(
 
             val bookingsList = (userBookings as? FetchUserBookingsState.Success)?.bookings ?: emptyList()
 
+            // 3. Grid con tipos de datos java.time
             CalendarGrid(
                 displayedMonth = displayedMonth,
                 displayedYear = displayedYear,
-                today = today,
+                today = today, // LocalDate (java.time)
                 daySessionViewModel = daySessionViewModel,
                 userBookings = bookingsList,
-                onDayClicked = onDayClicked  // ← Directamente el callback devuelto
+                onDayClicked = onDayClicked
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            when (val state = userBookings) {
-                is FetchUserBookingsState.Loading -> {
-                    CircularProgressIndicator()
-                }
-                is FetchUserBookingsState.Error -> {
-                    Text("Error al cargar: ${state.message}")
-                }
-                is FetchUserBookingsState.Success -> {
-                    UserBookingsSection(
-                        userViewModel = userViewModel,
-                        serviceProductViewModel = serviceProductViewModel,
-                        userBookings = state.bookings,
-                        userId = user?.id
-                    )
+            // 4. Sección inferior de estados
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                when (val state = userBookings) {
+                    is FetchUserBookingsState.Loading -> {
+                        CircularProgressIndicator()
+                    }
+                    is FetchUserBookingsState.Error -> {
+                        Text(
+                            text = "Error al cargar: ${state.message}",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    is FetchUserBookingsState.Success -> {
+                        UserBookingsSection(
+                            userViewModel = userViewModel,
+                            serviceProductViewModel = serviceProductViewModel,
+                            userBookings = state.bookings,
+                            userId = userId
+                        )
+                    }
                 }
             }
         }
