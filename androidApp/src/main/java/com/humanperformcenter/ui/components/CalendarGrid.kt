@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.humanperformcenter.shared.data.model.user.UserBooking
-import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone

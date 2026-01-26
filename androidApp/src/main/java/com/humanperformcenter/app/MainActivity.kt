@@ -6,22 +6,22 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.navigation.compose.rememberNavController
 import com.humanperformcenter.app.navigation.Navigation
 import com.humanperformcenter.shared.data.persistence.GooglePayRepository
 import com.humanperformcenter.shared.domain.storage.DataStoreProvider
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.ui.theme.HumanPerformAppTheme
-import com.humanperformcenter.ui.viewmodel.PaymentViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
 import com.stripe.android.PaymentConfiguration
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheet.Builder
 import com.stripe.android.paymentsheet.PaymentSheetResult
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
     private lateinit var paymentSheet: PaymentSheet
-    val viewModel: PaymentViewModel by viewModels()
+    val viewModel: PaymentViewModel by viewModel()
     private var onPaymentSheetResult: (PaymentSheetResult) -> Unit = {}
 
     override fun onCreate(savedInstanceState: Bundle?) {

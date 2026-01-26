@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.ui.components.PaymentWebView
-import com.humanperformcenter.ui.viewmodel.PaymentViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
 
 @Composable
 fun PaymentScreen(viewModel: PaymentViewModel, navController: NavHostController) {

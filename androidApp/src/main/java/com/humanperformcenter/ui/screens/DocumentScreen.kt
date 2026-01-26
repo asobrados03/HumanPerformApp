@@ -35,7 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.ui.components.DocumentsSheet
 import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.shared.presentation.ui.UploadState
 import java.io.File
 

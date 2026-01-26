@@ -44,7 +44,7 @@ import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
 import com.humanperformcenter.ui.components.ErrorComponent
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.rememberShimmerBrush
-import com.humanperformcenter.ui.viewmodel.PaymentViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
 
 @Composable
 fun ViewPaymentMethodScreen(

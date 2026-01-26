@@ -2,8 +2,8 @@ package com.humanperformcenter.ui.screens
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
-import com.humanperformcenter.ui.viewmodel.PaymentViewModel
-import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
 

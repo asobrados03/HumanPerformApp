@@ -31,9 +31,9 @@ import com.humanperformcenter.ui.components.ErrorComponent
 import com.humanperformcenter.ui.components.MyProductsShimmer
 import com.humanperformcenter.ui.components.ProductCard
 import com.humanperformcenter.ui.components.ProductOptionsDialog
-import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
-import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 
 @Composable
 fun MyProductsScreen(

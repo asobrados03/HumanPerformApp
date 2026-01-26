@@ -36,7 +36,7 @@ import com.humanperformcenter.shared.data.model.payment.EwalletTransaction
 import com.humanperformcenter.shared.presentation.ui.EwalletUiState
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 
 @Composable
 fun ElectronicWalletScreen(

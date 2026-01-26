@@ -75,20 +75,18 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.humanperformcenter.R
 import com.humanperformcenter.data.SexOption
-import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.model.auth.RegisterRequest
 import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult.RegisterField
+import com.humanperformcenter.shared.presentation.ui.RegisterState
+import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
 import com.humanperformcenter.ui.components.EditableUserProfileImage
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.ProfilePhotoSheet
-import com.humanperformcenter.ui.viewmodel.AuthViewModel
-import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
-import com.humanperformcenter.shared.presentation.ui.RegisterState
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -102,9 +100,7 @@ fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     navController: NavHostController
 ) {
-    val viewModel: AuthViewModel = viewModel(
-        factory = AuthViewModelFactory(AppModule.authUseCase)
-    )
+    val viewModel: AuthViewModel = koinViewModel()
 
     val registerState by viewModel.registerState.collectAsStateWithLifecycle()
 

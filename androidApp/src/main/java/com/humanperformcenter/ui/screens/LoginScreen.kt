@@ -35,14 +35,12 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.EnterEmail
-import com.humanperformcenter.di.AppModule
-import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.ui.viewmodel.AuthViewModel
-import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
 import com.humanperformcenter.shared.presentation.ui.LoginState
+import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
+import com.humanperformcenter.ui.components.LogoAppBar
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,9 +55,7 @@ fun LoginScreen(
     var localErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
     // 3) ViewModel de autenticación
-    val viewModel: AuthViewModel = viewModel(
-        factory = AuthViewModelFactory(AppModule.authUseCase)
-    )
+    val viewModel: AuthViewModel = koinViewModel()
     val loginState by viewModel.loginState.collectAsStateWithLifecycle()
 
     Scaffold(

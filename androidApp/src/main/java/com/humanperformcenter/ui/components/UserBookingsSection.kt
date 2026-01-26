@@ -41,8 +41,8 @@ import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.ui.util.createICSFile
 import com.humanperformcenter.ui.util.shareICS
-import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -180,7 +180,7 @@ fun UserBookingsSection(
                                     onClick = {
                                         menuExpandedMap[booking.id] = false
                                         userId?.let {
-                                            userViewModel.cancelUserBooking(booking.id, context)
+                                            userViewModel.cancelUserBooking(booking.id)
                                             userViewModel.fetchUserBookings(it)
                                         }
                                     }

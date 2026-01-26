@@ -13,7 +13,7 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.components.FullScreenTextLoading
 import com.humanperformcenter.ui.screens.FavoriteScreen
-import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.shared.presentation.ui.CoachState
 import com.humanperformcenter.shared.presentation.ui.GetPreferredCoachState
 

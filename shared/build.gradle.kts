@@ -84,6 +84,12 @@ kotlin {
 
                 implementation(libs.kmp.nativecoroutines.core)
                 implementation(libs.kmp.observableviewmodel.core)
+                api("com.rickclephas.kmp:kmp-observableviewmodel-core:1.0.1")
+                api("androidx.lifecycle:lifecycle-viewmodel:2.10.0")
+
+                implementation(project.dependencies.platform(libs.koin.bom))
+                implementation(libs.koin.core)
+                implementation(libs.koin.core.viewmodel)
 
                 implementation(libs.logging)
                 api(libs.datastore.preferences)
@@ -106,6 +112,7 @@ kotlin {
                 implementation(libs.androidx.security.crypto)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.play.services.wallet)
+                implementation(libs.androidx.work.runtime.ktx)
             }
         }
 

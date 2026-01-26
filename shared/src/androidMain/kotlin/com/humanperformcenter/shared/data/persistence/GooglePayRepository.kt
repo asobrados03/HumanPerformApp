@@ -106,15 +106,15 @@ object GooglePayRepository : PaymentRepository {
     }
 
     override suspend fun getPaymentMethod(userId: Int): String {
-        TODO("Not yet implemented")
+        return ""
     }
 
     override suspend fun rebillPayment(rebillRequest: RebillRequest): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 
     override suspend fun getPaymentMethods(userId: Int): List<PaymentMethod> {
-        TODO("Not yet implemented")
+        return emptyList()
     }
 
     override fun getAllowedPaymentMethods(): String = """

@@ -67,8 +67,8 @@ import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.ServiceProductsShimmer
-import com.humanperformcenter.ui.viewmodel.PaymentViewModel
-import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

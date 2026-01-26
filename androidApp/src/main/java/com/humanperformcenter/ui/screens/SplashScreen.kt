@@ -15,7 +15,7 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.Service
 import com.humanperformcenter.app.navigation.Splash
 import com.humanperformcenter.app.navigation.Welcome
-import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 
 @Composable
 fun SplashScreen(

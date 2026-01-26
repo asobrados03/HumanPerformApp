@@ -29,9 +29,9 @@ import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.components.UserBookingsSection
 import com.humanperformcenter.ui.components.reservationFlowDialogs
-import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
-import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.worker.scheduleSessionNotification
 import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone

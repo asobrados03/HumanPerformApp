@@ -13,14 +13,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.humanperformcenter.app.SetStatusBarColor
-import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.screens.AddCouponScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
@@ -43,20 +47,9 @@ import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.UserStatsScreen
 import com.humanperformcenter.ui.screens.ViewPaymentMethodScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
-import com.humanperformcenter.ui.viewmodel.AuthViewModel
-import com.humanperformcenter.ui.viewmodel.AuthViewModelFactory
-import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
-import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
-import com.humanperformcenter.ui.viewmodel.PaymentViewModel
-import com.humanperformcenter.ui.viewmodel.PaymentViewModelFactory
-import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.ui.viewmodel.ServiceProductViewModelFactory
-import com.humanperformcenter.ui.viewmodel.UserStatsViewModel
-import com.humanperformcenter.ui.viewmodel.UserStatsViewModelFactory
-import com.humanperformcenter.ui.viewmodel.UserViewModel
-import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun Navigation(
@@ -70,21 +63,13 @@ fun Navigation(
         navigationBarColor = Color(0xFFB71C1C)
     )
 
-    val paymentViewModel: PaymentViewModel = viewModel(
-        factory = PaymentViewModelFactory(AppModule.googlePayUseCase, AppModule.paymentUseCase, AppModule.stripeUseCase)
-    )
+    val paymentViewModel: PaymentViewModel = koinViewModel()
 
-    val userViewModel: UserViewModel = viewModel(
-        factory = UserViewModelFactory(AppModule.userUseCase)
-    )
+    val userViewModel: UserViewModel = koinViewModel()
 
-    val authViewModel: AuthViewModel = viewModel(
-        factory = AuthViewModelFactory(AppModule.authUseCase)
-    )
+    val authViewModel: AuthViewModel = koinViewModel()
 
-    val serviceProductViewModel: ServiceProductViewModel =  viewModel(
-        factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
-    )
+    val serviceProductViewModel: ServiceProductViewModel = koinViewModel()
 
     val isLoggedIn by userViewModel.isLoggedInFlow.collectAsStateWithLifecycle(initialValue = null)
 
@@ -179,9 +164,7 @@ fun Navigation(
                     HireProductScreen(
                         serviceId     = route.serviceId,
                         navController = navController,
-                        serviceProductViewModel     = viewModel(
-                            factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
-                        ),
+                        serviceProductViewModel = serviceProductViewModel,
                         paymentViewModel = paymentViewModel,
                         userData = userData
                     )
@@ -306,8 +289,7 @@ fun Navigation(
                 PaymentSuccessScreen(navController = navController)
             }
             composable<StripeCheckout> {
-                StripeCheckoutScreen(navController, paymentViewModel,
-                    viewModel(factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)) ,
+                StripeCheckoutScreen(navController, paymentViewModel, serviceProductViewModel,
                     userId = userData?.id ?: 0 ,paymentSheet,registerPaymentSheetResult)
             }
 
@@ -350,9 +332,7 @@ fun Navigation(
             }
 
             composable<Calendar> {
-                val daySessionViewModel: DaySessionViewModel = viewModel(
-                    factory = DaySessionViewModelFactory(AppModule.daySessionUseCase)
-                )
+                val daySessionViewModel: DaySessionViewModel = koinViewModel()
 
                 CalendarScreen(
                     navController = navController,
@@ -363,9 +343,7 @@ fun Navigation(
                 )
             }
             composable<Stats> {
-                val statsViewModel: UserStatsViewModel = viewModel(
-                    factory = UserStatsViewModelFactory(AppModule.userUseCase)
-                )
+                val statsViewModel: UserStatsViewModel = koinViewModel()
                 val userId = userData?.id
 
                 LaunchedEffect(userId) {
@@ -383,10 +361,8 @@ fun Navigation(
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry(Service)
                 }
-
-                val viewModel: ServiceProductViewModel = viewModel(
-                    parentEntry,
-                    factory = ServiceProductViewModelFactory(AppModule.serviceProductUseCase)
+                val viewModel: ServiceProductViewModel = koinViewModel(
+                    viewModelStoreOwner = parentEntry
                 )
                 val userId = userData?.id
 

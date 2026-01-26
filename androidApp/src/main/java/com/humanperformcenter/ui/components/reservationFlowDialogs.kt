@@ -41,9 +41,9 @@ import com.humanperformcenter.shared.data.model.booking.SharedPool
 import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
-import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
-import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

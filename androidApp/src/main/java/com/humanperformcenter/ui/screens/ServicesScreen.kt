@@ -16,19 +16,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.humanperformcenter.di.AppModule
 import com.humanperformcenter.shared.presentation.ui.ServiceUiState
+import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.components.ErrorComponent
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.components.ServicesShimmer
-import com.humanperformcenter.ui.viewmodel.DaySessionViewModel
-import com.humanperformcenter.ui.viewmodel.DaySessionViewModelFactory
-import com.humanperformcenter.ui.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ServicesScreen(
@@ -39,9 +37,7 @@ fun ServicesScreen(
     val user by userViewModel.userData.collectAsStateWithLifecycle()
     val availableServicesState by serviceProductViewModel.serviceUiState.collectAsStateWithLifecycle()
 
-    val daySessionViewModel: DaySessionViewModel = viewModel(
-        factory = DaySessionViewModelFactory(AppModule.daySessionUseCase)
-    )
+    val daySessionViewModel: DaySessionViewModel = koinViewModel()
 
     // Configuramos el estado del Pager (controla las páginas y la animación)
     val tabs = listOf("Mis productos", "Contratar")

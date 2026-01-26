@@ -9,18 +9,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.humanperformcenter.di.AppModule
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.ui.screens.EditProfileScreen
-import com.humanperformcenter.ui.viewmodel.UserViewModel
-import com.humanperformcenter.ui.viewmodel.UserViewModelFactory
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun EditProfileRoute(navController: NavHostController) {
-    val userViewModel: UserViewModel = viewModel(
-        factory = UserViewModelFactory(AppModule.userUseCase)
-    )
+    val userViewModel: UserViewModel = koinViewModel()
     val loading by userViewModel.isLoading.collectAsState()
     val userState by userViewModel.userData.collectAsState()
 

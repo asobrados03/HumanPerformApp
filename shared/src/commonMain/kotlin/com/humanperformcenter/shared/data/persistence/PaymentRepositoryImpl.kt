@@ -43,11 +43,11 @@ object PaymentRepositoryImpl: PaymentRepository{
         }.body()
 
     override fun getAllowedPaymentMethods(): String {
-        TODO("Not yet implemented")
+        return ""
     }
 
     override fun buildPaymentRequestJson(precio: Double): String {
-        TODO("Not yet implemented")
+        return ""
     }
 
     override suspend fun getPaymentMethod(userId: Int): String? {
@@ -76,10 +76,10 @@ object PaymentRepositoryImpl: PaymentRepository{
         return response.body()
     }
     override suspend fun requestGooglePay(requestJson: String): String {
-        TODO("Not yet implemented")
+        return ""
     }
 
     override suspend fun sendTokenToBackend(token: String, amount: Int, currency: String): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 }

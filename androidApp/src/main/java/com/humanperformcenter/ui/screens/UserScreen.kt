@@ -49,7 +49,7 @@ import com.humanperformcenter.ui.components.FullScreenLoading
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.NavigationBar
 import com.humanperformcenter.ui.components.UserProfileImage
-import com.humanperformcenter.ui.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 
 @Composable
 fun UserScreen(
