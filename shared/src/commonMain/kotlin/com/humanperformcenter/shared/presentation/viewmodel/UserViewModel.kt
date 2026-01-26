@@ -17,6 +17,7 @@ import com.humanperformcenter.shared.presentation.ui.GetPreferredCoachState
 import com.humanperformcenter.shared.presentation.ui.MarkFavoriteState
 import com.humanperformcenter.shared.presentation.ui.UpdateState
 import com.humanperformcenter.shared.presentation.ui.UploadState
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import kotlinx.coroutines.Dispatchers
@@ -41,19 +42,24 @@ class UserViewModel(
         .distinctUntilChanged()
 
     private val _userData = MutableStateFlow<User?>(null)
+    @NativeCoroutinesState
     val userData: StateFlow<User?> = _userData
 
     private val _userBookings = MutableStateFlow<FetchUserBookingsState>(FetchUserBookingsState.Loading)
+    @NativeCoroutinesState
     val userBookings: StateFlow<FetchUserBookingsState> = _userBookings.asStateFlow()
 
     private val _couponUiState = MutableStateFlow(CouponUiState())
+    @NativeCoroutinesState
     val couponUiState: StateFlow<CouponUiState> = _couponUiState.asStateFlow()
 
     private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
+    @NativeCoroutinesState
     val uploadState: StateFlow<UploadState> = _uploadState
 
     // 2) Flag de carga
     private val _isLoading = MutableStateFlow(true)
+    @NativeCoroutinesState
     val isLoading: StateFlow<Boolean> = _isLoading
 
     init {
@@ -67,32 +73,41 @@ class UserViewModel(
 
     // 2) StateFlow para exponer el estado de la operación de update
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
+    @NativeCoroutinesState
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
     private val _deleteState = MutableStateFlow<DeleteUserState>(DeleteUserState.Idle)
+    @NativeCoroutinesState
     val deleteState: StateFlow<DeleteUserState> = _deleteState
 
     private val _isLoggingOut = MutableStateFlow(false)
+    @NativeCoroutinesState
     val isLoggingOut: StateFlow<Boolean> = _isLoggingOut.asStateFlow()
 
     private val _coachesState = MutableStateFlow<CoachState>(CoachState.Idle)
+    @NativeCoroutinesState
     val coachesState: StateFlow<CoachState> = _coachesState
 
     private val _markFavoriteState = MutableStateFlow<MarkFavoriteState>(MarkFavoriteState.Idle)
+    @NativeCoroutinesState
     val markFavoriteState: StateFlow<MarkFavoriteState> = _markFavoriteState
 
     private val _deleteProfilePicState = MutableStateFlow<DeleteProfilePicState>(
         DeleteProfilePicState.Idle)
+    @NativeCoroutinesState
     val deleteProfilePicState: StateFlow<DeleteProfilePicState> = _deleteProfilePicState
 
     private val _getPreferredCoachState = MutableStateFlow<GetPreferredCoachState>(
         GetPreferredCoachState.Idle)
+    @NativeCoroutinesState
     val getPreferredCoachState: StateFlow<GetPreferredCoachState> = _getPreferredCoachState
 
     private val _balance = MutableStateFlow<Double?>(null)
+    @NativeCoroutinesState
     val balance: StateFlow<Double?> = _balance
 
     private val _ewalletTransactions = MutableStateFlow<EwalletUiState>(EwalletUiState.Loading)
+    @NativeCoroutinesState
     val ewalletTransactions: StateFlow<EwalletUiState> = _ewalletTransactions.asStateFlow()
 
     /**

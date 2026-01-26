@@ -12,6 +12,7 @@ import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
 import com.humanperformcenter.shared.presentation.ui.PaymentState
 import com.humanperformcenter.shared.presentation.ui.StripeUiState
 import com.humanperformcenter.shared.presentation.ui.models.BillingPrefill
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import kotlinx.coroutines.Dispatchers
@@ -27,22 +28,26 @@ class PaymentViewModel(
 ): ViewModel() {
 
     private val _paymentUrl = MutableStateFlow<String?>(null)
+    @NativeCoroutinesState
     val paymentUrl: StateFlow<String?> = _paymentUrl.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
+    @NativeCoroutinesState
     val error: StateFlow<String?> = _error.asStateFlow()
 
     private val _paymentState = MutableStateFlow<PaymentState>(PaymentState.Idle)
+    @NativeCoroutinesState
     val paymentState: StateFlow<PaymentState> = _paymentState
 
     private val _paymentMethod = MutableStateFlow<String?>(null)
+    @NativeCoroutinesState
     val paymentMethod: StateFlow<String?> = _paymentMethod.asStateFlow()
 
     private val _viewPaymentMethodsUiState = MutableStateFlow<PaymentMethodsUiState>(
         PaymentMethodsUiState.Empty
     )
 
-    // StateFlow público de solo lectura para observar desde Compose
+    @NativeCoroutinesState
     val viewPaymentMethodsUiState: StateFlow<PaymentMethodsUiState> = _viewPaymentMethodsUiState.asStateFlow()
 
 

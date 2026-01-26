@@ -58,7 +58,6 @@ fun UserBookingsSection(
     val productosState by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
     var servicioFiltro by remember { mutableStateOf<ServiceItem?>(null) }
 
-    // CAMBIO 1: Obtener fecha actual con java.time
     val today = remember { LocalDate.now() }
 
     val listaParaDropdown = remember(productosState) {
@@ -93,7 +92,6 @@ fun UserBookingsSection(
     )
 
     val context = LocalContext.current
-    // Usamos remember para mantener el estado de expansión por ID
     val menuExpandedMap = remember { mutableStateMapOf<Int, Boolean>() }
 
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {

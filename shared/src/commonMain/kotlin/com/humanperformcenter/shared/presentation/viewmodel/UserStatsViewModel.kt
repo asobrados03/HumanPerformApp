@@ -2,6 +2,7 @@ package com.humanperformcenter.shared.presentation.viewmodel
 
 import com.humanperformcenter.shared.data.model.user.UserStatistics
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import kotlinx.coroutines.Dispatchers
@@ -14,6 +15,7 @@ class UserStatsViewModel(
     private val userUseCase: UserUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(UserStatistics())
+    @NativeCoroutinesState
     val uiState: StateFlow<UserStatistics> = _uiState.asStateFlow()
 
     fun loadStatistics(userId: Int) {

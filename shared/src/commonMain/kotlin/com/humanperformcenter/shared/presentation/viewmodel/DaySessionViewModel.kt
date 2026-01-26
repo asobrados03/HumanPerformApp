@@ -7,6 +7,7 @@ import com.humanperformcenter.shared.data.model.booking.SharedPool
 import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
 import com.humanperformcenter.shared.presentation.ui.DailySessionsUiState
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import kotlinx.coroutines.Dispatchers
@@ -27,30 +28,39 @@ class DaySessionViewModel(
     private val useCase: DaySessionUseCase
 ) : ViewModel() {
     private val _sessions = MutableStateFlow<List<DaySession>>(emptyList())
+    @NativeCoroutinesState
     val sessions: StateFlow<List<DaySession>> get() = _sessions
 
     private val _mensajeErrorReserva = MutableStateFlow<String?>(null)
+    @NativeCoroutinesState
     val mensajeErrorReserva: StateFlow<String?> = _mensajeErrorReserva
 
     private val _weeklyLimits = MutableStateFlow<Map<Int, Int>>(emptyMap())
+    @NativeCoroutinesState
     val weeklyLimits: StateFlow<Map<Int, Int>> = _weeklyLimits
 
     private val _unlimitedSessions = MutableStateFlow<Map<Int, Int>>(emptyMap())
+    @NativeCoroutinesState
     val unlimitedSessions: StateFlow<Map<Int, Int>> get() = _unlimitedSessions
 
     private val _sharedSessions = MutableStateFlow<List<SharedPool>>(emptyList())
+    @NativeCoroutinesState
     val sharedSessions: StateFlow<List<SharedPool>> get() = _sharedSessions
 
     private val _serviceToPrimary = MutableStateFlow<Map<Int, Int>>(emptyMap())
+    @NativeCoroutinesState
     val serviceToPrimary: StateFlow<Map<Int, Int>> get() = _serviceToPrimary
 
     private val _validFromByPrimary = MutableStateFlow<Map<Int, String>>(emptyMap())
+    @NativeCoroutinesState
     val validFromByPrimary: StateFlow<Map<Int, String>> get() = _validFromByPrimary
 
     private val _cuestionarioActivo = MutableStateFlow(false)
+    @NativeCoroutinesState
     val cuestionarioActivo: StateFlow<Boolean> = _cuestionarioActivo
 
     private val _preguntaActual = MutableStateFlow(0)
+    @NativeCoroutinesState
     val preguntaActual: StateFlow<Int> = _preguntaActual
 
     private val sesionesOmitidas = mutableListOf<Int>()
@@ -58,12 +68,15 @@ class DaySessionViewModel(
     private var bookingIdPendiente: Int? = null
 
     private val _coachesForHour = MutableStateFlow<List<DaySession>>(emptyList())
+    @NativeCoroutinesState
     val coachesForHour: StateFlow<List<DaySession>> = _coachesForHour.asStateFlow()
 
     private val _dailySessionsState = MutableStateFlow<DailySessionsUiState>(DailySessionsUiState.Loading)
+    @NativeCoroutinesState
     val dailySessionsState = _dailySessionsState.asStateFlow()
 
     private val _holidays = MutableStateFlow<List<LocalDate>>(emptyList())
+    @NativeCoroutinesState
     val holidays: StateFlow<List<LocalDate>> get() = _holidays
 
     fun fetchAvailableSessions(serviceId: Int, date: LocalDate) {

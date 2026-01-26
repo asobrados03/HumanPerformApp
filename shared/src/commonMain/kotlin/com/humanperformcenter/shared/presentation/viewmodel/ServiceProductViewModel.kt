@@ -13,6 +13,7 @@ import com.humanperformcenter.shared.presentation.ui.UnassignEvent
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.shared.presentation.ui.models.ServiceUiModel
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import kotlinx.coroutines.Dispatchers
@@ -30,29 +31,37 @@ class ServiceProductViewModel(
 ) : ViewModel() {
 
     private val _serviceUiState = MutableStateFlow<ServiceUiState>(ServiceUiState.Loading)
+    @NativeCoroutinesState
     val serviceUiState: StateFlow<ServiceUiState> = _serviceUiState.asStateFlow()
 
     private val _serviceProducts = MutableStateFlow<Map<Int, ServiceProductUiState>>(emptyMap())
+    @NativeCoroutinesState
     val serviceProducts: StateFlow<Map<Int, ServiceProductUiState>> = _serviceProducts.asStateFlow()
 
     private val _userProductsState = MutableStateFlow<UserProductsUiState>(UserProductsUiState.Loading)
+    @NativeCoroutinesState
     val userProductsState: StateFlow<UserProductsUiState> = _userProductsState.asStateFlow()
 
     private val _productDetailsState = MutableStateFlow<ProductDetailState>(ProductDetailState.Loading)
+    @NativeCoroutinesState
     val productDetailsState: StateFlow<ProductDetailState> get() = _productDetailsState
 
     private val _userCoupons = MutableStateFlow<List<Coupon>>(emptyList())
+    @NativeCoroutinesState
     val userCoupons: StateFlow<List<Coupon>> = _userCoupons
 
     private val _assignEvent = Channel<AssignEvent>()
+    @NativeCoroutinesState
     val assignEvent = _assignEvent.receiveAsFlow()
 
     private val _unassignEvent = Channel<UnassignEvent>()
+    @NativeCoroutinesState
     val unassignEvent = _unassignEvent.receiveAsFlow()
 
     var productoSeleccionado: ServiceItem? = null
 
     private val _couponEvent = Channel<CouponEvent>()
+    @NativeCoroutinesState
     val couponEvent = _couponEvent.receiveAsFlow()
 
     fun loadServiceProducts(serviceId: Int) {

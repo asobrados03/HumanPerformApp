@@ -54,7 +54,6 @@ fun LoginScreen(
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     var localErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
-    // 3) ViewModel de autenticación
     val viewModel: AuthViewModel = koinViewModel()
     val loginState by viewModel.loginState.collectAsStateWithLifecycle()
 

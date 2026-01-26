@@ -47,7 +47,6 @@ import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-// Importa ambas clases con alias para evitar confusión
 import java.time.LocalDate as JavaLocalDate
 import kotlinx.datetime.LocalDate as KotlinLocalDate
 import java.time.LocalDateTime
