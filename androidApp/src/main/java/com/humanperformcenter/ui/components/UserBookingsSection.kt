@@ -148,8 +148,9 @@ fun UserBookingsSection(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text("📅 $dateFormateada - 🕒 $horaFormateada")
-                            Text("🧘 Servicio: ${booking.service}")
-                            Text("🏋️ Entrenador: ${booking.coachName}")
+                            Text("🏢 Servicio: ${booking.service}")
+                            Text("✨ Producto: ${booking.product}")
+                            Text("👟 Profesional: ${booking.coachName}")
                         }
 
                         Box {

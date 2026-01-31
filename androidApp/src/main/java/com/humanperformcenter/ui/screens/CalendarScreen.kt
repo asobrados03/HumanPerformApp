@@ -47,10 +47,8 @@ fun CalendarScreen(
     userViewModel: UserViewModel,
     onPlaySound: (Int) -> Unit
 ) {
-    // 1. Fecha actual usando java.time
     val today = remember { LocalDate.now() }
 
-    // Estados de navegación
     var displayedMonth by remember { mutableStateOf(today.month) }
     var displayedYear by remember { mutableIntStateOf(today.year) }
 

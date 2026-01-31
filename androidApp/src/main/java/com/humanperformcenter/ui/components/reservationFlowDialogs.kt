@@ -1,5 +1,6 @@
 package com.humanperformcenter.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -203,6 +204,7 @@ private class ReservationFlowState(
 
     fun dismiss() {
         dialog = Dialog.Hidden
+        daySessionViewModel.clearBookingErrorMessage()
         if (dialog !is Dialog.Reservation) {
             resetStateForNewDate()
         }
@@ -263,13 +265,13 @@ fun reservationFlowDialogs(
         (userProductsState as? UserProductsUiState.Success)?.products ?: emptyList()
     }
 
-    // ✅ AÑADIR ESTO: Cargar límites al entrar en la pantalla
+    val bookingError by daySessionViewModel.bookingErrorMessage.collectAsStateWithLifecycle()
+
     LaunchedEffect(userId) {
-        println("📱 APP DEBUG: Solicitando límites para usuario: $userId")
+        Log.d("📱 APP DEBUG: ","Solicitando límites para usuario: $userId")
         daySessionViewModel.fetchUserWeeklyLimit(userId)
     }
 
-    // SOLO recuerda por userId para que el objeto 'state' sea persistente
     val state = remember(userId) {
         ReservationFlowState(
             daySessionViewModel, userViewModel, scope, userId, bookingsList
@@ -278,6 +280,14 @@ fun reservationFlowDialogs(
 
     val currentLimit = userBookingLimits.find { it.productId == state.selectedProduct?.id }
     val canBook = (currentLimit?.remaining ?: 0) > 0
+
+    if (bookingError != null) {
+        InfoDialog(
+            title = "Ups, algo ha fallado",
+            text = bookingError!!,
+            onDismiss = { daySessionViewModel.clearBookingErrorMessage() }
+        )
+    }
 
     when (val dialog = state.dialog) {
         is ReservationFlowState.Dialog.Reservation -> {

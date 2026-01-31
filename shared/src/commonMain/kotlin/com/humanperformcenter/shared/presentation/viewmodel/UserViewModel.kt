@@ -38,7 +38,7 @@ class UserViewModel(
     private val notificationManager: SessionNotificationManager
 ) : ViewModel() {
     companion object {
-        val log = logging() // Uses class name as tag
+        val log = logging()
     }
 
     val isLoggedInFlow: Flow<Boolean> = SecureStorage.accessTokenFlow()

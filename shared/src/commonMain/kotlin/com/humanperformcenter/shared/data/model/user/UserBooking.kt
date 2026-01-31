@@ -9,6 +9,7 @@ data class UserBooking(
     val date: String,
     val hour: String,
     val service: String,
+    val product: String,
     @SerialName("service_id")
     val serviceId: Int?,
     @SerialName("product_id")

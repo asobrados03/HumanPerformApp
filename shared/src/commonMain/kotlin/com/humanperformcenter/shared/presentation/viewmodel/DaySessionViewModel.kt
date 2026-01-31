@@ -21,16 +21,16 @@ class DaySessionViewModel(
     private val useCase: DaySessionUseCase
 ) : ViewModel() {
     companion object {
-        val log = logging() // Uses class name as tag
+        val log = logging()
     }
 
     private val _sessions = MutableStateFlow<DailySessionsUiState>(DailySessionsUiState.Idle)
     @NativeCoroutinesState
     val sessions: StateFlow<DailySessionsUiState> = _sessions.asStateFlow()
 
-    private val _mensajeErrorReserva = MutableStateFlow<String?>(null)
+    private val _bookingErrorMessage = MutableStateFlow<String?>(null)
     @NativeCoroutinesState
-    val mensajeErrorReserva: StateFlow<String?> = _mensajeErrorReserva.asStateFlow()
+    val bookingErrorMessage: StateFlow<String?> = _bookingErrorMessage.asStateFlow()
 
     private val _userBookingLimits = MutableStateFlow<List<ProductLimit>>(emptyList())
     @NativeCoroutinesState
@@ -99,12 +99,12 @@ class DaySessionViewModel(
     ) {
         useCase.getTimeslotId(serviceId, dayOfWeek, hour).onFailure { error ->
             log.error { "❌ Error obteniendo timeslotId: ${error.message}" }
-            _mensajeErrorReserva.value = error.message
+            _bookingErrorMessage.value = error.message
             return
         }.onSuccess { timeslotId ->
-            println("🎯 Realizando reserva exacta:")
-            println("→ Service ID (Tabla Services): $serviceId")
-            println("→ Product ID (Tabla Products): $productId")
+            log.info { "🎯 Realizando reserva exacta:" }
+            log.debug { "→ Service ID (Tabla Services): $serviceId" }
+            log.debug { "→ Product ID (Tabla Products): $productId" }
 
             val bookingRequest = BookingRequest(
                 customerId = customerId,
@@ -118,10 +118,10 @@ class DaySessionViewModel(
 
             useCase.makeBooking(bookingRequest).onSuccess {
                 log.info { "✅ Reserva enviada correctamente" }
-                _mensajeErrorReserva.value = null
+                _bookingErrorMessage.value = null
             }.onFailure { error ->
                 log.error { "❌ Error al reservar: ${error.message}" }
-                _mensajeErrorReserva.value = error.message
+                _bookingErrorMessage.value = error.message
             }
         }
     }
@@ -143,7 +143,7 @@ class DaySessionViewModel(
             log.debug { "🕒 Buscando Timeslot para: Service=$newServiceId, Dia=$newDayOfWeek, Hora='$hour'" }
             useCase.getTimeslotId(newServiceId, newDayOfWeek, hour).onFailure { error ->
                 log.error { "❌ Error obteniendo timeslotId: ${error.message}" }
-                _mensajeErrorReserva.value = error.message
+                _bookingErrorMessage.value = error.message
                 return@launch
             }.onSuccess { timeslotId ->
                 val request = ReserveUpdateRequest(
@@ -157,10 +157,10 @@ class DaySessionViewModel(
 
                 useCase.modifyBookingSession(request).onSuccess {
                     log.info { "✅ Reserva actualizada correctamente" }
-                    _mensajeErrorReserva.value = null
+                    _bookingErrorMessage.value = null
                 }.onFailure { error ->
                     log.error { "❌ Error al actualizar reserva: ${error.message}" }
-                    _mensajeErrorReserva.value = error.message
+                    _bookingErrorMessage.value = error.message
                 }
             }
         }
@@ -193,5 +193,9 @@ class DaySessionViewModel(
                 log.error { "❌ Error al cargar límites semanales: ${it.message}" }
             }
         }
+    }
+
+    fun clearBookingErrorMessage() {
+        _bookingErrorMessage.value = null
     }
 }
