@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.payment.Coupon
 import com.humanperformcenter.shared.data.model.payment.EwalletResponse
@@ -44,6 +45,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 object UserRepositoryImpl: UserRepository {
+    private val log = logging()
 
     /**
      * Envía un PUT a "/user" con el objeto LoginResponse completo (excepto token, que no cambia).
@@ -236,11 +238,13 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun getUserBookings(customerId: Int): Result<List<UserBooking>> {
-        require(customerId > 0) { "customerId debe ser mayor que 0" }
+    override suspend fun getUserBookings(userId: Int): Result<List<UserBooking>> {
+        require(userId > 0) { "customerId debe ser mayor que 0" }
 
         return try {
-            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-bookings/$customerId")
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-bookings") {
+                parameter("user_id", userId)
+            }
 
             when (response.status.value) {
                 200 -> {
@@ -255,15 +259,15 @@ object UserRepositoryImpl: UserRepository {
                 }
                 404 -> Result.success(emptyList()) // Usuario sin reservas
                 else -> {
-                    println("getUserBookings failed for customerId=$customerId: $response")
+                    log.error { "getUserBookings failed for customerId=$userId: $response" }
                     Result.failure(Exception("Error ${response.status.value}: $response"))
                 }
             }
         } catch (e: IOException) {
-            println("Network error for customerId=$customerId")
+            log.error { "Network error for customerId=$userId" }
             Result.failure(Exception("Error de red: ${e.message}", e))
         } catch (e: Exception) {
-            println("Unexpected error for customerId=$customerId")
+            log.error { "Unexpected error for customerId=$userId" }
             Result.failure(e)
         }
     }
@@ -432,7 +436,7 @@ object UserRepositoryImpl: UserRepository {
             val balance = json["balance"]?.jsonPrimitive?.doubleOrNull
             Result.success(balance)
         } catch (e: Exception) {
-            println("❌ Error al obtener saldo: ${e.message}")
+            log.error { "❌ Error al obtener saldo e-wallet para userId=$userId: ${e.message}" }
             Result.failure(e)
         }
     }

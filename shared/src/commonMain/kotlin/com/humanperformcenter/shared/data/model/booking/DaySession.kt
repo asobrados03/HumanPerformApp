@@ -5,8 +5,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class DaySession(
-    @SerialName("service_id")
-    val serviceId: Int,
+    @SerialName("product_id")
+    val productId: Int,
     val date: String,
     val hour: String,
     @SerialName("coach_id")

@@ -3,7 +3,7 @@ package com.humanperformcenter.shared.domain.usecase
 import com.humanperformcenter.shared.data.model.payment.Coupon
 import com.humanperformcenter.shared.data.model.product_service.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.product_service.ServiceAvailable
-import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
 import com.humanperformcenter.shared.presentation.ui.SimpleResponse
@@ -12,10 +12,10 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
     suspend fun getAllServices(): Result<List<ServiceAvailable>> {
         return serviceProductRepository.getAllServices()
     }
-    suspend fun getServiceProducts(serviceId: Int): Result<List<ServiceItem>> {
+    suspend fun getServiceProducts(serviceId: Int): Result<List<Product>> {
         return serviceProductRepository.getServiceProducts(serviceId)
     }
-    suspend fun getUserProducts(customerId: Int): Result<List<ServiceItem>> {
+    suspend fun getUserProducts(customerId: Int): Result<List<Product>> {
         return serviceProductRepository.getUserProducts(customerId)
     }
     suspend fun assignProductToUser(
@@ -39,14 +39,14 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
     }
 
     fun filterProducts(
-        list: List<ServiceItem>,
+        list: List<Product>,
         filter: ProductTypeFilter,
         sessionCount: Int
-    ): List<ServiceItem> {
+    ): List<Product> {
         return list.filter { producto ->
             val tipoOk = when (filter) {
-                ProductTypeFilter.RECURRENT -> producto.tipo_producto == "recurrent"
-                ProductTypeFilter.NON_RECURRENT -> producto.tipo_producto != "recurrent"
+                ProductTypeFilter.RECURRENT -> producto.typeOfProduct == "recurrent"
+                ProductTypeFilter.NON_RECURRENT -> producto.typeOfProduct != "recurrent"
                 ProductTypeFilter.ALL -> true
             }
             val sesionesOk = if (sessionCount == 0) true else producto.session == sessionCount

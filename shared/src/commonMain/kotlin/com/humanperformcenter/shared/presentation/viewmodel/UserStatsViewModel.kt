@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.presentation.viewmodel
 
+import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.data.model.user.UserStatistics
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
@@ -14,6 +15,10 @@ import kotlinx.coroutines.flow.asStateFlow
 class UserStatsViewModel(
     private val userUseCase: UserUseCase
 ) : ViewModel() {
+    companion object {
+        val log = logging() // Uses class name as tag
+    }
+
     private val _uiState = MutableStateFlow(UserStatistics())
     @NativeCoroutinesState
     val uiState: StateFlow<UserStatistics> = _uiState.asStateFlow()
@@ -32,12 +37,13 @@ class UserStatsViewModel(
                     isLoading = false,
                     error = null
                 )
-                println("Estadísticas cargadas con éxito")
+                log.info { "Estadísticas cargadas con éxito" }
             }.onFailure { exception ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = exception.message ?: "Error al cargar estadísticas"
                 )
+                log.error { "Error al cargar estadísticas: ${exception.message}" }
             }
         }
     }

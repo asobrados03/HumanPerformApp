@@ -107,7 +107,7 @@ fun CalendarGrid(
                     try { LocalDate.parse(it.date.take(10)).isEqual(date) } catch (_: Exception) { false }
                 }
 
-                val colorReserva = reservaEseDia?.service_id?.let { coloresPorServicio[it] }
+                val colorReserva = reservaEseDia?.serviceId?.let { coloresPorServicio[it] }
                     ?: MaterialTheme.colorScheme.tertiary
 
                 val isPast = date.isBefore(today)

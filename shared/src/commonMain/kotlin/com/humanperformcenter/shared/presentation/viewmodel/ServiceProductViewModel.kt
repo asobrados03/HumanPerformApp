@@ -1,7 +1,8 @@
 package com.humanperformcenter.shared.presentation.viewmodel
 
+import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.data.model.payment.Coupon
-import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.presentation.ui.AssignEvent
@@ -29,6 +30,9 @@ class ServiceProductViewModel(
     private val useCase: ServiceProductUseCase,
     private val userUseCase: UserUseCase
 ) : ViewModel() {
+    companion object {
+        val log = logging() // Uses class name as tag
+    }
 
     private val _serviceUiState = MutableStateFlow<ServiceUiState>(ServiceUiState.Loading)
     @NativeCoroutinesState
@@ -58,7 +62,7 @@ class ServiceProductViewModel(
     @NativeCoroutinesState
     val unassignEvent = _unassignEvent.receiveAsFlow()
 
-    var productoSeleccionado: ServiceItem? = null
+    var productoSeleccionado: Product? = null
 
     private val _couponEvent = Channel<CouponEvent>()
     @NativeCoroutinesState
@@ -94,12 +98,12 @@ class ServiceProductViewModel(
 
             result.onSuccess { products ->
                 _userProductsState.value = UserProductsUiState.Success(products)
-                println("✅ Productos cargados: ${products.size}")
+                log.debug { "✅ Productos cargados: ${products.size}" }
             }.onFailure { error ->
                 _userProductsState.value = UserProductsUiState.Error(error.message
                     ?: "Error desconocido"
                 )
-                println("❌ Error cargando productos: ${error.message}")
+                log.error { "❌ Error cargando productos: ${error.message}" }
             }
         }
     }
@@ -242,10 +246,10 @@ class ServiceProductViewModel(
     }
 
     fun filterProducts(
-        list: List<ServiceItem>,
+        list: List<Product>,
         filter: ProductTypeFilter,
         sessionCount: Int
-    ): List<ServiceItem> {
+    ): List<Product> {
         return useCase.filterProducts(list, filter, sessionCount)
     }
 

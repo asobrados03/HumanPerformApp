@@ -56,7 +56,7 @@ import com.humanperformcenter.app.navigation.ProductDetail
 import com.humanperformcenter.app.navigation.StartPayment
 import com.humanperformcenter.app.navigation.StripeCheckout
 import com.humanperformcenter.shared.data.model.payment.Coupon
-import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.presentation.ui.AssignEvent
@@ -131,7 +131,7 @@ fun HireProductScreen(
                     productoIdSeleccionado = null
 
                     navController.navigate(ProductDetail(productId = event.productId)) {
-                        popUpTo(HireProduct) { inclusive = true }
+                        popUpTo<HireProduct> { inclusive = true }
                     }
                 }
                 is AssignEvent.Error -> {
@@ -298,10 +298,10 @@ fun ProductFiltersSection(
 @Composable
 fun ProductList(
     modifier: Modifier = Modifier,
-    availableProducts: List<ServiceItem>,
+    availableProducts: List<Product>,
     idsContratados: Set<Int>,
     userCoupons: List<Coupon>,
-    onProductClick: (ServiceItem) -> Unit,
+    onProductClick: (Product) -> Unit,
     serviceProductViewModel: ServiceProductViewModel,
 ) {
     LazyColumn(
@@ -379,7 +379,7 @@ fun ProductList(
 
 @Composable
 fun PaymentSelectionContent(
-    product: ServiceItem,
+    product: Product,
     userData: User?,
     userCoupons: List<Coupon>,
     cuponTexto: String,

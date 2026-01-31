@@ -32,7 +32,7 @@ fun scheduleSessionNotification(context: Context, booking: UserBooking) {
                 .setInputData(
                     workDataOf(
                         "service" to booking.service,
-                        "coach" to booking.coach_name,
+                        "coach" to booking.coachName,
                         "date" to booking.date,
                         "hour" to booking.hour
                     )

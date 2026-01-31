@@ -35,8 +35,8 @@ class UserUseCase(private val userRepository: UserRepository) {
         return userRepository.deleteProfilePic(req)
     }
 
-    suspend fun getUserBookings(customerId: Int): Result<List<UserBooking>> {
-        return userRepository.getUserBookings(customerId)
+    suspend fun getUserBookings(userId: Int): Result<List<UserBooking>> {
+        return userRepository.getUserBookings(userId)
     }
 
     suspend fun cancelUserBooking(bookingId: Int): Result<Unit> {

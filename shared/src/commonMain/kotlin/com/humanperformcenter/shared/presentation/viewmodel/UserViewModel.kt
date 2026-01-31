@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.presentation.viewmodel
 
+import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.SessionNotificationManager
 import com.humanperformcenter.shared.data.model.user.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.user.User
@@ -36,6 +37,9 @@ class UserViewModel(
     private val userUseCase: UserUseCase,
     private val notificationManager: SessionNotificationManager
 ) : ViewModel() {
+    companion object {
+        val log = logging() // Uses class name as tag
+    }
 
     val isLoggedInFlow: Flow<Boolean> = SecureStorage.accessTokenFlow()
         .map { token -> token.isNotBlank() }
@@ -172,6 +176,7 @@ class UserViewModel(
                 SecureStorage.saveUser(updatedUser)
             }.onFailure {
                 // Manejar error si es necesario
+                log.debug { "❌ Error al refrescar perfil: ${it.message}" }
             }
         }
     }
@@ -213,7 +218,7 @@ class UserViewModel(
                 _isLoggingOut.value = true
 
                 SecureStorage.clear()
-                println("DEBUG: Almacenamiento local eliminado")
+                log.debug { "DEBUG: Almacenamiento local eliminado" }
 
                 // Esto permite que el CircularProgressIndicator se vea y la UX sea fluida
                 delay(800)
@@ -225,7 +230,7 @@ class UserViewModel(
                 }
             } catch (e: Exception) {
                 _isLoggingOut.value = false
-                println("DEBUG: Error en logout: ${e.message}")
+                log.debug { "DEBUG: Error en logout: ${e.message}" }
             }
         }
     }

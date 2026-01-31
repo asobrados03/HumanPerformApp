@@ -3,7 +3,7 @@ package com.humanperformcenter.shared.domain.usecase
 import com.humanperformcenter.shared.data.model.payment.PaymentMethod
 import com.humanperformcenter.shared.data.model.payment.PaymentRequest
 import com.humanperformcenter.shared.data.model.payment.RebillRequest
-import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.repository.PaymentRepository
 
@@ -33,7 +33,7 @@ class PaymentUseCase(private val paymentRepository: PaymentRepository) {
     }
 
     fun createHppPaymentRequest(
-        product: ServiceItem,
+        product: Product,
         user: User?,
         showStored: Boolean,
         saveCard: Boolean
@@ -55,8 +55,8 @@ class PaymentUseCase(private val paymentRepository: PaymentRepository) {
             payer_ref = user?.let { "user_${it.id}" },
             show_stored = showStored,
             product_id = product.id,
-            interval_months = if (product.tipo_producto == "recurrent") 1 else null,
-            subscribe = product.tipo_producto == "recurrent"
+            interval_months = if (product.typeOfProduct == "recurrent") 1 else null,
+            subscribe = product.typeOfProduct == "recurrent"
         )
     }
 }

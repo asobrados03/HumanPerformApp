@@ -1,55 +1,41 @@
 package com.humanperformcenter.shared.domain.usecase
 
-import com.humanperformcenter.shared.data.model.booking.BookingQuestionnaireRequest
 import com.humanperformcenter.shared.data.model.booking.DaySession
-import com.humanperformcenter.shared.data.model.booking.ReserveRequest
+import com.humanperformcenter.shared.data.model.booking.BookingRequest
 import com.humanperformcenter.shared.data.model.booking.ReserveResponse
 import com.humanperformcenter.shared.data.model.booking.ReserveUpdateRequest
 import com.humanperformcenter.shared.data.model.booking.ReserveUpdateResponse
-import com.humanperformcenter.shared.data.model.booking.UserWeeklyLimitResponse
+import com.humanperformcenter.shared.data.model.booking.WeeklyLimitsWrapper
 import com.humanperformcenter.shared.domain.repository.DaySessionRepository
 import kotlinx.datetime.LocalDate
 
 class DaySessionUseCase(private val repository: DaySessionRepository) {
 
-    suspend fun getSessionsByDay(serviceId: Int, date: LocalDate): Result<List<DaySession>> {
-        return repository.getSessionsByDay(serviceId, date)
+    suspend fun getSessionsByDay(productId: Int, date: LocalDate): Result<List<DaySession>> {
+        return repository.getSessionsByDay(productId, date)
     }
 
-    suspend fun reservarSesion(request: ReserveRequest): Result<ReserveResponse> {
-        return repository.reservarSesion(request)
+    suspend fun makeBooking(bookingRequest: BookingRequest): Result<ReserveResponse> {
+        return repository.makeBooking(bookingRequest)
     }
 
-    suspend fun cambiarReservaSesion(request: ReserveUpdateRequest): Result<ReserveUpdateResponse> {
-        return repository.cambiarReservaSesion(request)
+    suspend fun modifyBookingSession(request: ReserveUpdateRequest): Result<ReserveUpdateResponse> {
+        return repository.modifyBookingSession(request)
     }
 
-    suspend fun getUserProductId(customerId: Int): Result<Int> {
-        return repository.getUserProductId(customerId)
+    suspend fun getTimeslotId(serviceId: Int, dayOfWeek: String, hour: String): Result<Int> {
+        return repository.getTimeslotId(serviceId, dayOfWeek, hour)
     }
 
-    suspend fun getPreferredCoach(customerId: Int, serviceId: Int): Result<Int?> {
-        return repository.getPreferredCoach(customerId, serviceId)
+    suspend fun fetchServiceIdForProduct(productId: Int): Result<Int> {
+        return repository.getProductServiceInfo(productId)
     }
 
-    suspend fun getTimeslotId(hora: String): Result<Int> {
-        return repository.getTimeslotId(hora)
-    }
-
-    suspend fun getUserWeeklyLimit(customerId: Int): Result<UserWeeklyLimitResponse> {
+    suspend fun getUserWeeklyLimit(customerId: Int): Result<WeeklyLimitsWrapper> {
         return repository.getUserWeeklyLimit(customerId)
     }
 
     suspend fun getHolidays(): Result<List<String>> {
         return repository.getHolidays()
     }
-
-    suspend fun enviarCuestionarioReserva(bookingForm: BookingQuestionnaireRequest): Result<Unit> {
-        return repository.enviarCuestionarioReserva(bookingForm)
-    }
-
-    suspend fun cuestionarioEnviado(bookingId: Int): Result<Boolean> {
-        return repository.cuestionarioEnviado(bookingId)
-    }
-
 }

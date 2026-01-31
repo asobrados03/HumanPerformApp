@@ -11,11 +11,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.network.ApiClient
 
 @Composable
-fun ProductCard(product: ServiceItem, onClick: () -> Unit) {
+fun ProductCard(product: Product, onClick: () -> Unit) {
     val imageUrl = product.image?.let {
         "${ApiClient.baseUrl}/product_images/$it"
     }

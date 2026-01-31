@@ -36,13 +36,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
-import com.humanperformcenter.ui.util.createICSFile
-import com.humanperformcenter.ui.util.shareICS
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.ui.util.createICSFile
+import com.humanperformcenter.ui.util.shareICS
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -56,7 +56,7 @@ fun UserBookingsSection(
     userId: Int?
 ) {
     val productosState by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
-    var servicioFiltro by remember { mutableStateOf<ServiceItem?>(null) }
+    var servicioFiltro by remember { mutableStateOf<Product?>(null) }
 
     val today = remember { LocalDate.now() }
 
@@ -70,16 +70,16 @@ fun UserBookingsSection(
 
     val reservasFiltradas = remember(userBookings, servicioFiltro, today) {
         userBookings.filter { booking ->
-            // CAMBIO 2: Parseo seguro usando java.time.LocalDate
+            // 1. Filtro de fecha (se queda igual)
             val fecha = try {
-                // Asume formato ISO-8601 (yyyy-MM-dd) al tomar los primeros 10 chars
                 LocalDate.parse(booking.date.take(10))
-            } catch (_: DateTimeParseException) {
-                null
-            }
-
+            } catch (_: DateTimeParseException) { null }
             val pasaFecha = fecha != null && (fecha.isEqual(today) || fecha.isAfter(today))
-            val pasaServicio = servicioFiltro == null || booking.service_id == servicioFiltro!!.id
+
+            // 2. FILTRO DIRECTO POR PRODUCT_ID
+            // Comparamos el ID del dropdown (11) con el product_id de la reserva (11)
+            val pasaServicio = servicioFiltro == null || booking.productId == servicioFiltro!!.id
+
             pasaFecha && pasaServicio
         }
     }
@@ -124,7 +124,7 @@ fun UserBookingsSection(
                     val dateFormateada = booking.date.take(10)
                     val horaFormateada = booking.hour.take(5)
                     val isExpanded = menuExpandedMap[booking.id] ?: false
-                    val colorFondo = coloresPorServicio[booking.service_id] ?: Color(0xFF6B426C)
+                    val colorFondo = coloresPorServicio[booking.serviceId] ?: Color(0xFF6B426C)
 
                     Row(
                         modifier = Modifier
@@ -135,7 +135,7 @@ fun UserBookingsSection(
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        booking.coach_profile_pic?.let { url ->
+                        booking.coachProfilePic?.let { url ->
                             AsyncImage(
                                 model = url,
                                 contentDescription = "Foto del entrenador",
@@ -149,7 +149,7 @@ fun UserBookingsSection(
                         Column(modifier = Modifier.weight(1f)) {
                             Text("📅 $dateFormateada - 🕒 $horaFormateada")
                             Text("🧘 Servicio: ${booking.service}")
-                            Text("🏋️ Entrenador: ${booking.coach_name}")
+                            Text("🏋️ Entrenador: ${booking.coachName}")
                         }
 
                         Box {

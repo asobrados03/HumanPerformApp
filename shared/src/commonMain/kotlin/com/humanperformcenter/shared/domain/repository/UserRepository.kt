@@ -17,7 +17,7 @@ interface UserRepository {
     suspend fun markFavorite(coachId: Int, serviceName: String?, userId: Int?): Result<String>
     suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse>
     suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit>
-    suspend fun getUserBookings(customerId: Int): Result<List<UserBooking>>
+    suspend fun getUserBookings(userId: Int): Result<List<UserBooking>>
     suspend fun cancelUserBooking(bookingId: Int): Result<Unit>
     suspend fun getUserStats(customerId: Int): Result<UserStatistics>
     suspend fun addCouponToUser(userId: Int, couponCode: String): Result<Unit>

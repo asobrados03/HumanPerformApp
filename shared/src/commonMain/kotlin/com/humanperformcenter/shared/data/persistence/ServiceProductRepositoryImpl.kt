@@ -6,7 +6,7 @@ import com.humanperformcenter.shared.data.model.payment.CouponApplyRequest
 import com.humanperformcenter.shared.data.model.product_service.AssignProductRequest
 import com.humanperformcenter.shared.data.model.product_service.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.product_service.ServiceAvailable
-import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
 import com.humanperformcenter.shared.presentation.ui.SimpleResponse
@@ -46,7 +46,7 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
         }
     }
 
-    override suspend fun getServiceProducts(serviceId: Int): Result<List<ServiceItem>> {
+    override suspend fun getServiceProducts(serviceId: Int): Result<List<Product>> {
         return runCatching {
             // 1. Le pedimos a Ktor que deserialice la LISTA de productos
             val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/service-products") {
@@ -54,12 +54,12 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
             }
 
             // 2. Extraemos el cuerpo como la lista que realmente es
-            val products: List<ServiceItem> = response.body()
+            val products: List<Product> = response.body()
             products
         }
     }
 
-    override suspend fun getUserProducts(customerId: Int): Result<List<ServiceItem>> {
+    override suspend fun getUserProducts(customerId: Int): Result<List<Product>> {
         return runCatching {
             // 1. Hacemos la petición
             val response: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-products") {
@@ -69,7 +69,7 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
 
             if (response.status.isSuccess()) {
                 // 2. Si es 2xx, deserializamos la lista directamente
-                val products: List<ServiceItem> = response.body()
+                val products: List<Product> = response.body()
                 products
             } else {
                 // 3. Si es error (4xx/5xx), lanzamos excepción para que la capture runCatching

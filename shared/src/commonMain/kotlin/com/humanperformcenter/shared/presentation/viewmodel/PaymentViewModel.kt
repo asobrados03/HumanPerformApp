@@ -3,7 +3,7 @@ package com.humanperformcenter.shared.presentation.viewmodel
 import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
 import com.humanperformcenter.shared.data.model.payment.PaymentRequest
 import com.humanperformcenter.shared.data.model.payment.RebillRequest
-import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.usecase.GooglePayUseCase
 import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
@@ -214,7 +214,7 @@ class PaymentViewModel(
     }
 
     fun createHppPaymentRequest(
-        product: ServiceItem,
+        product: Product,
         user: User?,
         showStored:
         Boolean,

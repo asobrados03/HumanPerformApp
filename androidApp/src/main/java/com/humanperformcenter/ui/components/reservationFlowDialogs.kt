@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,14 +17,21 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,9 +44,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humanperformcenter.shared.data.model.booking.DaySession
-import com.humanperformcenter.shared.data.model.booking.SharedPool
-import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.model.user.UserBooking
+import com.humanperformcenter.shared.presentation.ui.DailySessionsUiState
 import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
@@ -51,6 +59,8 @@ import java.time.LocalDate as JavaLocalDate
 import kotlinx.datetime.LocalDate as KotlinLocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.format.TextStyle
+import java.util.Locale
 
 private val SuccessColor = Color(0xFF4CAF50)
 private val WarningColor = Color(0xFFFFA000)
@@ -65,17 +75,12 @@ private class ReservationFlowState(
     private val scope: CoroutineScope,
     private val userId: Int,
     val userBookings: List<UserBooking>,
-    val sessions: List<DaySession>,
-    val weeklyLimits: Map<Int, Int>,
-    val unlimitedSessions: Map<Int, Int>,
-    val sharedSessions: List<SharedPool>,
-    val serviceToPrimary: Map<Int, Int>,
     private val zoneId: ZoneId = ZoneId.of("Europe/Madrid")
 ) {
     var dialog by mutableStateOf<Dialog>(Dialog.Hidden)
         private set
 
-    var selectedService by mutableStateOf<ServiceItem?>(null)
+    var selectedProduct by mutableStateOf<Product?>(null)
 
     // Tiempo actual en java.time
     val now: LocalDateTime get() = LocalDateTime.now(zoneId)
@@ -98,15 +103,13 @@ private class ReservationFlowState(
         dialog = Dialog.Reservation(date)
     }
 
-    fun onServiceSelected(service: ServiceItem, date: JavaLocalDate) { // 'date' es java.time
-        selectedService = service
+    fun onServiceSelected(product: Product, date: JavaLocalDate) {
+        selectedProduct = product
         daySessionViewModel.clearCoachesForHour()
-        daySessionViewModel.fetchAvailableSessions(service.id, date.toKotlinLocalDate())
+        daySessionViewModel.fetchAvailableSessions(product.id, date.toKotlinLocalDate())
     }
 
     fun onHourClicked(hour: String, date: JavaLocalDate) {
-        val serviceId = selectedService?.id ?: return
-
         // Validación de hora pasada
         val currentNow = now
         val slotDateTime = hour.toLocalDateTimeOnDate(date)
@@ -119,58 +122,77 @@ private class ReservationFlowState(
         }
 
         scope.launch(Dispatchers.IO) {
-            daySessionViewModel.filtrarEntrenadoresPorHora(hour)
+            daySessionViewModel.filterCoachesByHour(hour)
             val availableCoaches = daySessionViewModel.coachesForHour.value.filter { it.booked < it.capacity }
             if (availableCoaches.isEmpty()) {
                 dialog = Dialog.NoCoachesAvailable
                 return@launch
             }
 
-            val canOnlyChange = daySessionViewModel.seSuperoLimiteReserva(
-                serviceId,
-                date.toKotlinLocalDate(),
-                weeklyLimits,
-                unlimitedSessions,
-                sharedSessions,
-                userBookings,
-                serviceToPrimary
-            )
-
-            val preferredId = daySessionViewModel.getPreferredCoachId(userId, serviceId)
-            val coach = availableCoaches.firstOrNull { it.coachId == preferredId } ?: availableCoaches.first()
-
-            dialog = Dialog.Confirm(date, hour, coach, canOnlyChange)
+            // CAMBIO: Si hay más de 1 entrenador, mostramos selector.
+            // Si solo hay 1, podríamos autoseleccionar o mostrar también el selector (a tu gusto).
+            // Aquí forzamos el selector siempre para que veas quién te toca.
+            dialog = Dialog.SelectCoach(date, hour, availableCoaches)
         }
+    }
+    // NUEVA FUNCIÓN: Se llama cuando el usuario hace clic en un entrenador
+    fun onCoachSelected(coach: DaySession, date: JavaLocalDate, hour: String, canBook: Boolean) {
+        dialog = Dialog.Confirm(date, hour, coach, canBooking = canBook)
     }
 
     fun bookSession(date: JavaLocalDate, hour: String, coach: DaySession) {
-        val serviceId = selectedService?.id ?: return
+        // 1. Obtenemos el ID del producto que el usuario seleccionó en el dropdown
+        val selectedProductId = selectedProduct?.id ?: return
+
         scope.launch(Dispatchers.IO) {
-            daySessionViewModel.realizarReserva(
+            // Traducimos ese Producto al Servicio real (Base de datos)
+            val realServiceId = daySessionViewModel.fetchServiceIdForProduct(selectedProductId)
+
+            daySessionViewModel.makeBooking(
                 customerId = userId,
                 coachId = coach.coachId,
-                serviceId = serviceId,
+                serviceId = realServiceId ?: -1,
+                productId = selectedProductId,
                 centerId = 1,
-                selectedDate = date.toString(), // java.time usa ISO-8601 por defecto
-                hour = hour
+                selectedDate = date.toString(),
+                hour = hour,
+                dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
             )
             userViewModel.fetchUserBookings(userId)
+
+            // Importante: Refrescar los límites después de reservar para actualizar el saldo
+            daySessionViewModel.fetchUserWeeklyLimit(userId)
             dismiss()
         }
     }
 
-    fun changeSession(bookingToChange: UserBooking, newDate: JavaLocalDate, newHour: String, newCoach: DaySession) {
-        val serviceId = selectedService?.id ?: return
+    fun changeSession(
+        bookingToChange: UserBooking,
+        newDate: JavaLocalDate,
+        newHour: String,
+        newCoach: DaySession
+    ) {
+        // 1. Extraemos el ID del producto seleccionado actualmente en la UI
+        val selectedProductId = selectedProduct?.id ?: return
+
         scope.launch(Dispatchers.IO) {
-            daySessionViewModel.cambiarReservaSesion(
-                customerId = userId,
+            // 2. Opcional: Si necesitas el serviceId real para la lógica de horarios
+            val realServiceId = daySessionViewModel.fetchServiceIdForProduct(selectedProductId) ?: -1
+
+            // 3. Llamamos al ViewModel pasando explícitamente el productId seleccionado
+            daySessionViewModel.modifyBookingSession(
                 bookingId = bookingToChange.id,
                 newCoachId = newCoach.coachId,
-                newServiceId = serviceId,
+                newServiceId = realServiceId,
+                newProductId = selectedProductId, // <--- Aquí está el cambio clave
+                newDayOfWeek = newDate.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH),
                 newStartDate = newDate.toString(),
                 hour = newHour
             )
+
+            // 4. Refrescamos datos globales para que la UI se actualice
             userViewModel.fetchUserBookings(userId)
+            daySessionViewModel.fetchUserWeeklyLimit(userId)
             dismiss()
         }
     }
@@ -187,7 +209,7 @@ private class ReservationFlowState(
     }
 
     private fun resetStateForNewDate() {
-        selectedService = null
+        selectedProduct = null
         daySessionViewModel.clearCoachesForHour()
     }
 
@@ -197,8 +219,22 @@ private class ReservationFlowState(
         data class Reservation(val date: JavaLocalDate) : Dialog()
         object HourOccupied : Dialog()
         object NoCoachesAvailable : Dialog()
-        data class Confirm(val date: JavaLocalDate, val hour: String, val coach: DaySession, val canOnlyChange: Boolean) : Dialog()
-        data class ChangeExisting(val date: JavaLocalDate, val hour: String, val coach: DaySession) : Dialog()
+        data class SelectCoach(
+            val date: JavaLocalDate,
+            val hour: String,
+            val coaches: List<DaySession>
+        ) : Dialog()
+        data class Confirm(
+            val date: JavaLocalDate,
+            val hour: String,
+            val coach: DaySession,
+            val canBooking: Boolean
+        ) : Dialog()
+        data class ChangeExisting(
+            val date: JavaLocalDate,
+            val hour: String,
+            val coach: DaySession
+        ) : Dialog()
     }
 }
 
@@ -217,42 +253,76 @@ fun reservationFlowDialogs(
     val userBookings by userViewModel.userBookings.collectAsStateWithLifecycle()
     val bookingsList = (userBookings as? FetchUserBookingsState.Success)?.bookings ?: emptyList()
 
-    val sessions by daySessionViewModel.sessions.collectAsStateWithLifecycle()
-    val weeklyLimits by daySessionViewModel.weeklyLimits.collectAsStateWithLifecycle()
-    val unlimitedSessions by daySessionViewModel.unlimitedSessions.collectAsStateWithLifecycle()
-    val sharedSessions by daySessionViewModel.sharedSessions.collectAsStateWithLifecycle()
-    val serviceToPrimary by daySessionViewModel.serviceToPrimary.collectAsStateWithLifecycle()
+    // Ahora 'sessionsState' contiene Success, Loading, Error o Empty
+    val sessionsState by daySessionViewModel.sessions.collectAsStateWithLifecycle()
+    val userBookingLimits by daySessionViewModel.userBookingLimits.collectAsStateWithLifecycle()
 
     val userProductsState by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
 
-    val listaProductosValidos = remember(userProductsState) {
+    val availableProducts = remember(userProductsState) {
         (userProductsState as? UserProductsUiState.Success)?.products ?: emptyList()
     }
 
-    // Se mantiene igual, el cambio es interno en la clase
+    // ✅ AÑADIR ESTO: Cargar límites al entrar en la pantalla
+    LaunchedEffect(userId) {
+        println("📱 APP DEBUG: Solicitando límites para usuario: $userId")
+        daySessionViewModel.fetchUserWeeklyLimit(userId)
+    }
+
+    // SOLO recuerda por userId para que el objeto 'state' sea persistente
     val state = remember(userId) {
         ReservationFlowState(
-            daySessionViewModel, userViewModel, scope, userId, bookingsList,
-            sessions, weeklyLimits, unlimitedSessions, sharedSessions, serviceToPrimary
+            daySessionViewModel, userViewModel, scope, userId, bookingsList
         )
     }
+
+    val currentLimit = userBookingLimits.find { it.productId == state.selectedProduct?.id }
+    val canBook = (currentLimit?.remaining ?: 0) > 0
 
     when (val dialog = state.dialog) {
         is ReservationFlowState.Dialog.Reservation -> {
             ReservationDialog(
                 state = state,
                 date = dialog.date,
-                allowedServices = listaProductosValidos
+                availableProducts = availableProducts,
+                sessionsState = sessionsState
             )
         }
-        is ReservationFlowState.Dialog.Confirm -> ConfirmDialog(state, dialog)
+        is ReservationFlowState.Dialog.SelectCoach -> {
+            CoachSelectionDialog(state, dialog, canBook)
+        }
+        is ReservationFlowState.Dialog.Confirm -> {
+            // Buscamos el límite
+            val currentLimit = userBookingLimits.find { it.productId == state.selectedProduct?.id }
+
+            // LÓGICA CORREGIDA:
+            // 1. Si currentLimit es null -> No tiene el producto -> false
+            // 2. Si remaining es null -> Es ilimitado -> true
+            // 3. Si remaining > 0 -> Tiene saldo -> true
+            val canBook = currentLimit != null && (
+                currentLimit.remaining == null || currentLimit.remaining!! > 0
+            )
+
+            ConfirmDialog(
+                state = state,
+                dialog = dialog.copy(canBooking = canBook)
+            )
+        }
         is ReservationFlowState.Dialog.ConfirmContinue -> ConfirmContinueDialog(
             onConfirm = { state.startReservationFlow(dialog.date) },
             onDismiss = state::dismiss
         )
         is ReservationFlowState.Dialog.ChangeExisting -> ChangeExistingDialog(state, dialog)
-        is ReservationFlowState.Dialog.HourOccupied -> InfoDialog("Reserva existente", "Ya tienes una reserva a esa hora.", state::dismiss)
-        is ReservationFlowState.Dialog.NoCoachesAvailable -> InfoDialog("Sin disponibilidad", "No hay entrenadores disponibles.", state::dismiss)
+        is ReservationFlowState.Dialog.HourOccupied -> InfoDialog(
+            "Reserva existente",
+            "Ya tienes una reserva a esa hora.",
+            state::dismiss
+        )
+        is ReservationFlowState.Dialog.NoCoachesAvailable -> InfoDialog(
+            "Sin disponibilidad",
+            "No hay entrenadores disponibles.",
+            state::dismiss
+        )
         else -> Unit
     }
 
@@ -260,30 +330,78 @@ fun reservationFlowDialogs(
 }
 
 @Composable
-private fun ReservationDialog(state: ReservationFlowState, date: JavaLocalDate, allowedServices: List<ServiceItem>) {
+private fun ReservationDialog(
+    state: ReservationFlowState,
+    date: JavaLocalDate,
+    availableProducts: List<Product>,
+    sessionsState: DailySessionsUiState // Pásale el estado completo
+) {
     AlertDialog(
         onDismissRequest = state::dismiss,
         title = {
-            ServiceSelector(allowedServices, state.selectedService) { state.onServiceSelected(it, date) }
+            ProductPicker(availableProducts, state.selectedProduct) {
+                state.onServiceSelected(it, date)
+            }
         },
         text = {
-            val hours = remember(state.sessions, state.selectedService) {
-                state.sessions.filter { it.serviceId == state.selectedService?.id }.map { it.hour }.distinct().sorted()
+            when (sessionsState) {
+                is DailySessionsUiState.Loading -> {
+                    Box(Modifier.fillMaxWidth().height(150.dp),
+                        contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is DailySessionsUiState.Success -> {
+                    val sessions = sessionsState.sessions
+                    val hours = remember(sessions) {
+                        sessions.map { it.hour }.distinct().sorted()
+                    }
+                    HourSelector(state, hours, date, sessions)
+                }
+                is DailySessionsUiState.Empty -> {
+                    Box(Modifier.fillMaxWidth().padding(24.dp),
+                        contentAlignment = Alignment.Center) {
+                        Text("No hay horarios disponibles.", color = Color.Gray)
+                    }
+                }
+                is DailySessionsUiState.Error -> {
+                    Text("Error: ${sessionsState.message}", color = Color.Red)
+                }
+                else -> Unit
             }
-            HourSelector(state, hours, date)
         },
         confirmButton = { TextButton(onClick = state::dismiss) { Text("Cerrar") } }
     )
 }
 
 @Composable
-private fun HourSelector(state: ReservationFlowState, hours: List<String>, selectedDate: JavaLocalDate) {
+private fun HourSelector(
+    state: ReservationFlowState,
+    hours: List<String>,
+    selectedDate: JavaLocalDate,
+    currentSessions: List<DaySession>
+) {
     val currentNow = state.now
-    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        hours.chunked(3).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { hour ->
-                    HourChip(hour, state.sessions, selectedDate, currentNow) { state.onHourClicked(hour, selectedDate) }
+
+    if (hours.isEmpty()) {
+        Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+            Text("No hay horarios disponibles para este día.", color = Color.Gray)
+        }
+    } else {
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+            hours.chunked(3).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement
+                    .spacedBy(8.dp)) {
+                    row.forEach { hour ->
+                        HourChip(
+                            hour = hour,
+                            sessions = currentSessions, // Usamos la lista fresca
+                            selectedDate = selectedDate,
+                            now = currentNow
+                        ) {
+                            state.onHourClicked(hour, selectedDate)
+                        }
+                    }
                 }
             }
         }
@@ -291,7 +409,13 @@ private fun HourSelector(state: ReservationFlowState, hours: List<String>, selec
 }
 
 @Composable
-private fun HourChip(hour: String, sessions: List<DaySession>, selectedDate: JavaLocalDate, now: LocalDateTime, onClick: () -> Unit) {
+private fun HourChip(
+    hour: String,
+    sessions: List<DaySession>,
+    selectedDate: JavaLocalDate,
+    now: LocalDateTime,
+    onClick: () -> Unit
+) {
     val isPast = remember(selectedDate, hour, now) {
         hour.toLocalDateTimeOnDate(selectedDate).isBefore(now)
     }
@@ -310,8 +434,12 @@ private fun HourChip(hour: String, sessions: List<DaySession>, selectedDate: Jav
 
     Box(
         modifier = Modifier
-            .padding(vertical = 4.dp).size(80.dp, 40.dp)
-            .background(if (isPast) DisabledColor else Color.White, RoundedCornerShape(8.dp))
+            .padding(vertical = 4.dp)
+            .size(80.dp, 40.dp)
+            .background(
+                if (isPast) DisabledColor else Color.White,
+                RoundedCornerShape(8.dp)
+            )
             .border(1.dp, color, RoundedCornerShape(8.dp))
             .clickable(enabled = !isPast) { onClick() },
         contentAlignment = Alignment.Center
@@ -321,36 +449,46 @@ private fun HourChip(hour: String, sessions: List<DaySession>, selectedDate: Jav
 }
 
 @Composable
-private fun ChangeExistingDialog(state: ReservationFlowState, dialog: ReservationFlowState.Dialog.ChangeExisting) {
-    val serviceId = state.selectedService?.id ?: return
+private fun ChangeExistingDialog(
+    state: ReservationFlowState,
+    dialog: ReservationFlowState.Dialog.ChangeExisting
+) {
+    // 1. Obtenemos el ID del producto que el usuario tiene seleccionado actualmente
+    val selectedProductId = state.selectedProduct?.id
 
-    // Cálculo de semana usando java.time
-    // Asumimos que la semana empieza el Lunes (ordinal 0 en array, pero 1 en java.time DayOfWeek)
-    // dayOfWeek.ordinal en java.time devuelve 0 para lunes, 6 para domingo.
-    val startOfWeek = dialog.date.minusDays(dialog.date.dayOfWeek.ordinal.toLong())
-    val endOfWeek = startOfWeek.plusDays(6)
+    // 2. Filtramos las reservas del usuario que coincidan con ese producto
+    val availableToChange = remember(state.userBookings, selectedProductId) {
+        state.userBookings.filter { booking ->
+            val bookingDate = booking.date.toLocalDate()
 
-    val weeklyBookings = remember(state.userBookings, serviceId) {
-        state.userBookings.filter {
-            val d = it.date.toLocalDate()
-            // Comparación de fechas en java.time (>= y <= funcionan por Comparable, pero isAfter/isBefore son más explícitos)
-            it.service_id == serviceId && d != null && !d.isBefore(state.today) &&
-                    (d.isEqual(startOfWeek) || d.isAfter(startOfWeek)) &&
-                    (d.isEqual(endOfWeek) || d.isBefore(endOfWeek))
+            // FILTRO:
+            // - Que la fecha sea válida y futura (o hoy)
+            // - Que el productId de la reserva sea igual al seleccionado
+            bookingDate != null &&
+                    !bookingDate.isBefore(state.today) &&
+                    booking.productId == selectedProductId // <--- ESTO ES LA CLAVE
         }
     }
 
+    // 3. El resto del diálogo se mantiene igual, usando 'availableToChange'
     AlertDialog(
         onDismissRequest = state::dismiss,
         title = { Text("Cambiar reserva") },
         text = {
-            if (weeklyBookings.isEmpty()) Text("No hay reservas para cambiar.")
-            else LazyColumn(Modifier.heightIn(max = 300.dp)) {
-                items(weeklyBookings) { booking ->
-                    Card(Modifier.fillMaxWidth().padding(4.dp).clickable {
-                        state.changeSession(booking, dialog.date, dialog.hour, dialog.coach)
-                    }) {
-                        Text(booking.date.take(10) + " " + booking.hour.take(5), Modifier.padding(8.dp))
+            if (availableToChange.isEmpty()) {
+                Text("No hay reservas de este producto para cambiar.")
+            } else {
+                LazyColumn(Modifier.heightIn(max = 300.dp)) {
+                    items(availableToChange) { booking ->
+                        Card(
+                            Modifier.fillMaxWidth().padding(4.dp)
+                                .clickable {
+                                    // Aquí llamamos a la función del State que lanzará el proceso
+                                    state.changeSession(booking, dialog.date, dialog.hour, dialog.coach)
+                                }
+                        ) {
+                            Text("${booking.date.take(10)} ${booking.hour.take(5)}", Modifier.padding(12.dp))
+                        }
                     }
                 }
             }
@@ -359,45 +497,128 @@ private fun ChangeExistingDialog(state: ReservationFlowState, dialog: Reservatio
     )
 }
 
-// ... Resto de diálogos (ServiceSelector, ConfirmDialog, etc) iguales ...
-// Solo asegúrate de que ConfirmDialog use la nueva firma si usas LocalDate en otros sitios.
-
 @Composable
-private fun ServiceSelector(services: List<ServiceItem>, selected: ServiceItem?, onSelect: (ServiceItem) -> Unit) {
+private fun ProductPicker(
+    availableProducts: List<Product>,
+    selected: Product?,
+    onSelect: (Product) -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        Text(selected?.name ?: "Seleccionar servicio", Modifier.clickable { expanded = true }.background(ErrorColor, RoundedCornerShape(8.dp)).padding(16.dp), color = Color.White)
+        Text(
+            text = selected?.name ?: "Seleccionar servicio",
+            modifier = Modifier
+                .clickable { expanded = true }
+                .background(ErrorColor, RoundedCornerShape(8.dp))
+                .padding(16.dp),
+            color = Color.White)
         DropdownMenu(expanded, { expanded = false }) {
-            services.forEach { s -> DropdownMenuItem(text = { Text(s.name) }, onClick = { onSelect(s); expanded = false }) }
+            availableProducts.forEach { s -> DropdownMenuItem(text = { Text(s.name) },
+                onClick = { onSelect(s); expanded = false })
+            }
         }
     }
+}
+
+@Composable
+private fun CoachSelectionDialog(
+    state: ReservationFlowState,
+    dialog: ReservationFlowState.Dialog.SelectCoach,
+    canBook: Boolean // Pasamos esto para propagarlo luego
+) {
+    AlertDialog(
+        onDismissRequest = state::dismiss,
+        title = { Text("Selecciona profesional") },
+        text = {
+            LazyColumn {
+                items(dialog.coaches) { coach ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                // Al hacer click, avanzamos al Confirm
+                                state.onCoachSelected(coach, dialog.date, dialog.hour, canBook)
+                            }
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            coach.coachName?.let { Text(
+                                text = it,
+                                style = MaterialTheme.typography.titleMedium
+                            ) }
+                            // Opcional: Mostrar ocupación
+                            Text(
+                                text = "${coach.booked}/${coach.capacity} ocupado",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                        Icon(Icons.Default.ChevronRight, contentDescription = null)
+                    }
+                    HorizontalDivider()
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = state::dismiss) { Text("Cancelar") }
+        }
+    )
 }
 
 @Composable
 private fun ConfirmDialog(state: ReservationFlowState, dialog: ReservationFlowState.Dialog.Confirm) {
     AlertDialog(
         onDismissRequest = state::dismiss,
-        title = { Text("Confirmar") },
-        text = { Text("Reserva con ${dialog.coach.coachName} a las ${dialog.hour.take(5)}") },
+        title = { Text("Confirmar Reserva") },
+        text = {
+            Text("¿Deseas confirmar tu sesión con ${dialog.coach.coachName} a las " +
+                    "${dialog.hour.take(5)}?"
+            )
+        },
         confirmButton = {
-            Row {
-                if (!dialog.canOnlyChange) Button(onClick = { state.bookSession(dialog.date, dialog.hour, dialog.coach) }) { Text("Reservar") }
-                TextButton(onClick = { state.showChangeSelector(dialog.date, dialog.hour, dialog.coach) }) { Text("Cambiar") }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // SI TIENE SALDO: Mostramos Reservar
+                if (dialog.canBooking) {
+                    Button(onClick = { state.bookSession(dialog.date, dialog.hour, dialog.coach) }) {
+                        Text("Reservar")
+                    }
+                }
+
+                // SIEMPRE mostramos Cambiar (o solo si no tiene saldo, según tu regla)
+                TextButton(onClick = {
+                    state.showChangeSelector(dialog.date, dialog.hour, dialog.coach)
+                }) {
+                    Text("Cambiar")
+                }
             }
         },
-        dismissButton = { TextButton(onClick = state::dismiss) { Text("Cancelar") } }
+        dismissButton = {
+            TextButton(onClick = state::dismiss) { Text("Cancelar") }
+        }
     )
 }
 
 @Composable
 private fun ConfirmContinueDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Aviso") }, text = { Text("Ya tienes una reserva hoy. ¿Continuar?") },
-        confirmButton = { TextButton(onClick = onConfirm) { Text("Sí") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("No") } })
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Aviso") },
+        text = { Text("Ya tienes una reserva hoy. ¿Continuar?") },
+        confirmButton = { TextButton(onClick = onConfirm) { Text("Sí") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("No") } }
+    )
 }
 
 @Composable
 private fun InfoDialog(title: String, text: String, onDismiss: () -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(title) }, text = { Text(text) }, confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } })
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(text) },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } }
+    )
 }
 
 // ------------------------------------------
@@ -418,8 +639,7 @@ fun JavaLocalDate.toKotlinLocalDate(): KotlinLocalDate {
 
 // Construye LocalDateTime desde "HH:mm" y una fecha dada
 private fun String.toLocalDateTimeOnDate(date: JavaLocalDate): LocalDateTime {
-    val h = this.take(2).toInt()
-    val m = this.substring(3, 5).toInt()
-    // java.time tiene el método atTime para combinar fecha y hora limpiamente
-    return date.atTime(h, m)
+    val hour = this.take(2).toInt()
+    val minute = this.substring(3, 5).toInt()
+    return date.atTime(hour, minute)
 }

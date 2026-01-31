@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.ProductDetail
-import com.humanperformcenter.shared.data.model.product_service.ServiceItem
+import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
 import com.humanperformcenter.shared.presentation.ui.UnassignEvent
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
@@ -66,17 +66,6 @@ fun MyProductsScreen(
         }
     }
 
-    // --- El bloque de Bookings se queda igual (está bien corregido) ---
-    val userBookingsState by userViewModel.userBookings.collectAsStateWithLifecycle()
-    LaunchedEffect(userBookingsState) {
-        if (userBookingsState is FetchUserBookingsState.Success) {
-            val bookings = (userBookingsState as FetchUserBookingsState.Success).bookings
-            if (bookings.isNotEmpty()) {
-                daySessionViewModel.cargarFormularioSiProcede(bookings)
-            }
-        }
-    }
-
     // --- Gestión de la UI según el estado ---
     when (val state = productsUiState) {
         is UserProductsUiState.Loading -> {
@@ -106,11 +95,11 @@ fun MyProductsScreen(
 
 @Composable
 fun MyProductsContent(
-    productos: List<ServiceItem>,
-    onProductClick: (ServiceItem) -> Unit,
+    productos: List<Product>,
+    onProductClick: (Product) -> Unit,
     onConfirmCancel: (Int) -> Unit
 ) {
-    var selectedProduct by remember { mutableStateOf<ServiceItem?>(null) }
+    var selectedProduct by remember { mutableStateOf<Product?>(null) }
     var showOptionsDialog by remember { mutableStateOf(false) }
     var showCancelConfirmation by remember { mutableStateOf(false) }
 

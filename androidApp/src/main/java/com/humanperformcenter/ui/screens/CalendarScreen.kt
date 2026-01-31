@@ -125,11 +125,10 @@ fun CalendarScreen(
 
             val bookingsList = (userBookings as? FetchUserBookingsState.Success)?.bookings ?: emptyList()
 
-            // 3. Grid con tipos de datos java.time
             CalendarGrid(
                 displayedMonth = displayedMonth,
                 displayedYear = displayedYear,
-                today = today, // LocalDate (java.time)
+                today = today,
                 daySessionViewModel = daySessionViewModel,
                 userBookings = bookingsList,
                 onDayClicked = onDayClicked
