@@ -13,11 +13,11 @@ import kotlin.collections.mapOf
 
 object StripeRepositoryImpl: StripeRepository {
     override suspend fun getConfig(): Result<StripeConfigDto> =
-        ApiClient.apiClient.get("$baseUrl/stripe/mobile/config").body()
+        ApiClient.apiClient.get("$baseUrl/stripe/config").body()
 
     override suspend fun createPaymentIntent(createPaymentIntentRequest: CreatePaymentIntentRequest)
     : Result<CreatePiDto> {
-        return ApiClient.apiClient.post("$baseUrl/stripe/mobile/create-payment-intent") {
+        return ApiClient.apiClient.post("$baseUrl/stripe/payment-intent") {
             contentType(ContentType.Application.Json)
             setBody(createPaymentIntentRequest)
         }.body()
@@ -27,7 +27,7 @@ object StripeRepositoryImpl: StripeRepository {
         customerId: String,
         apiVersion: String
     ): Result<EphemeralKeyDto> {
-        return ApiClient.apiClient.post("$baseUrl/stripe/mobile/ephemeral-keys") {
+        return ApiClient.apiClient.post("$baseUrl/stripe/ephemeral-keys") {
             contentType(ContentType.Application.Json)
             setBody(mapOf("customer_id" to customerId, "apiVersion" to apiVersion))
         }.body()
