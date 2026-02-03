@@ -55,7 +55,6 @@ import org.koin.androidx.compose.koinViewModel
 fun Navigation(
     navController: NavHostController,
     paymentSheet: PaymentSheet,
-    registerPaymentSheetResult: ((PaymentSheetResult) -> Unit) -> Unit,
     onPlaySound: (Int) -> Unit
 ) {
     SetStatusBarColor(
@@ -290,7 +289,8 @@ fun Navigation(
             }
             composable<StripeCheckout> {
                 StripeCheckoutScreen(navController, paymentViewModel, serviceProductViewModel,
-                    userId = userData?.id ?: 0 ,paymentSheet,registerPaymentSheetResult)
+                    userId = userData?.id ?: 0 , paymentSheet = paymentSheet
+                )
             }
 
             composable<EditProfile> {

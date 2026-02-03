@@ -89,7 +89,6 @@ fun HireProductScreen(
 
     val productosContratados by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
     val userCoupons by serviceProductViewModel.userCoupons.collectAsStateWithLifecycle()
-    val gpayState by paymentViewModel.paymentState.collectAsStateWithLifecycle()
 
     // Extraemos la lista de forma segura solo si el estado es Success
     val listaBase = remember(estadoProductos) {
@@ -406,37 +405,6 @@ fun PaymentSelectionContent(
             product.price ?: 0.0,
             userCoupons
         )
-
-        // 1. Google Pay
-        PayButton(
-            modifier = Modifier.fillMaxWidth(),
-            type = ButtonType.Pay,
-            allowedPaymentMethods = paymentViewModel.allowedPaymentMethods,
-            onClick = {
-                paymentViewModel.ejecutarPagoGPay(precioFinal)
-            }
-        )
-        Spacer(Modifier.height(8.dp))
-
-        // 2. Tarjeta HPP
-        Button(
-            onClick = {
-                val paymentRequest = paymentViewModel
-                    .createHppPaymentRequest(product, userData, showStored = true, saveCard = false)
-
-                navController.currentBackStackEntry?.savedStateHandle?.apply {
-                    set("selected_product_id", product.id)
-                    set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
-                }
-                paymentViewModel.generatePaymentURL(paymentRequest)
-                navController.navigate(StartPayment)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5))
-        ) {
-            Text("Pagar con tarjeta 💳")
-        }
-        Spacer(Modifier.height(8.dp))
 
         // 3. Stripe
         Button(

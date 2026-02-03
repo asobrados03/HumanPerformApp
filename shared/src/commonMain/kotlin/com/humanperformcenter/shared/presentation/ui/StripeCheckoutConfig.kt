@@ -1,5 +1,8 @@
 package com.humanperformcenter.shared.presentation.ui
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class StripeCheckoutConfig(
     val merchantDisplayName: String,
     val allowsDelayedPaymentMethods: Boolean = true,

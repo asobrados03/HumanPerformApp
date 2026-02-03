@@ -83,11 +83,9 @@ private class ReservationFlowState(
 
     var selectedProduct by mutableStateOf<Product?>(null)
 
-    // Tiempo actual en java.time
     val now: LocalDateTime get() = LocalDateTime.now(zoneId)
     val today: JavaLocalDate = JavaLocalDate.now(zoneId)
 
-    // Parseo seguro usando java.time
     private val reservedDates = userBookings.mapNotNull { it.date.toLocalDate() }.toSet()
 
     fun onDayClicked(date: JavaLocalDate) {
