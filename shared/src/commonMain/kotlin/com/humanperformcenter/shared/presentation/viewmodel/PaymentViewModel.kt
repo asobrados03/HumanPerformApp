@@ -10,6 +10,7 @@ import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
 import com.humanperformcenter.shared.domain.usecase.StripeUseCase
 import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
 import com.humanperformcenter.shared.presentation.ui.PaymentState
+import com.humanperformcenter.shared.presentation.ui.StripeCheckoutConfig
 import com.humanperformcenter.shared.presentation.ui.StripeUiState
 import com.humanperformcenter.shared.presentation.ui.models.BillingPrefill
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
@@ -114,8 +115,6 @@ class PaymentViewModel(
                 println("$couponCode")
                 println("$billing")
 
-                val cfg = stripeUseCase.getConfig()
-
                 val createPaymentIntentRequest = CreatePaymentIntentRequest(
                     amount = amountInCents,
                     currency = currency,
@@ -134,36 +133,22 @@ class PaymentViewModel(
                 val pi = stripeUseCase.createPaymentIntent(createPaymentIntentRequest).getOrThrow()
 
                 // 3) (Opcional) Customer para métodos guardados
-                var customerConfig: Any? = null
-                /*if (!pi.customerId.isNullOrBlank()) {
-                    // Usa la versión del SDK actual
-                    val apiVersion = ""
-                    val ek = stripeUseCase.createEphemeralKey(pi.customerId!!, apiVersion).getOrThrow()
-                    customerConfig = Any.CustomerConfiguration(
-                        id = pi.customerId!!,
-                        ephemeralKeySecret = ek.secret
-                    )
-                }
-
-                // 4) Config de PaymentSheet
-                val paymentConfig = PaymentSheet.Configuration(
+                val customerConfig = StripeCheckoutConfig(
                     merchantDisplayName = "HumanPerformCenter",
-                    customer = customerConfig,
                     allowsDelayedPaymentMethods = true,
-                    defaultBillingDetails = PaymentSheet.BillingDetails(
-                        name = billing?.name,
-                        email = billing?.email,
-                        address = PaymentSheet.Address(
-                            line1 = billing?.addressLine1,
-                            postalCode = billing?.postalCode,
-                            city = billing?.city
-                        )
-                    )
-                )*/
+                    googlePayEnabled = true,
+                    googlePayCountryCode = "ES",
+                    googlePayCurrencyCode = currency,
+                    billingName = billing?.name,
+                    billingEmail = billing?.email,
+                    billingAddressLine1 = billing?.addressLine1,
+                    billingPostalCode = billing?.postalCode,
+                    billingCity = billing?.city
+                )
 
                 _stripeUi.value = StripeUiState.Ready(
                     clientSecret = pi.clientSecret,
-                    config = null
+                    config = customerConfig
                 )
             } catch (t: Throwable) {
                 _stripeUi.value = StripeUiState.Error(t.message ?: "Error iniciando pago")
