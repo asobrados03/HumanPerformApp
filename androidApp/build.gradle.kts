@@ -78,6 +78,7 @@ dependencies {
     implementation(project.dependencies.platform(libs.koin.bom))
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
+    implementation(libs.financial.connections)
 
     testImplementation(libs.junit.jupiter)
     implementation(libs.androidx.material)

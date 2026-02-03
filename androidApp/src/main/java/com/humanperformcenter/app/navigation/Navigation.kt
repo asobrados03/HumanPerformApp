@@ -36,7 +36,6 @@ import com.humanperformcenter.ui.screens.HireProductScreen
 import com.humanperformcenter.ui.screens.LoginScreen
 import com.humanperformcenter.ui.screens.MyProfileScreen
 import com.humanperformcenter.ui.screens.PasswordResetInfoScreen
-import com.humanperformcenter.ui.screens.PaymentScreen
 import com.humanperformcenter.ui.screens.PaymentSuccessScreen
 import com.humanperformcenter.ui.screens.ProductDetailScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
@@ -48,7 +47,6 @@ import com.humanperformcenter.ui.screens.UserStatsScreen
 import com.humanperformcenter.ui.screens.ViewPaymentMethodScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
 import com.stripe.android.paymentsheet.PaymentSheet
-import com.stripe.android.paymentsheet.PaymentSheetResult
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -280,9 +278,6 @@ fun Navigation(
                     userViewModel = userViewModel,
                     userId = userData?.id ?: 0
                 )
-            }
-            composable<StartPayment> {
-                PaymentScreen(viewModel = paymentViewModel, navController = navController)
             }
             composable<PaymentSuccess> {
                 PaymentSuccessScreen(navController = navController)

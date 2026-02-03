@@ -26,6 +26,5 @@ data class ProductDetail(val productId: Int)
 @Serializable object Document
 @Serializable object ViewPaymentMethod
 @Serializable object ElectronicWallet
-@Serializable object StartPayment
 @Serializable object PaymentSuccess
 @Serializable object StripeCheckout

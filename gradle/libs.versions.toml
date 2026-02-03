@@ -15,7 +15,7 @@ playServicesWallet = "19.5.0"
 runtimeLivedata = "1.10.2"
 materialIconsExtended = "1.7.8"
 material = "1.10.2"
-stripeAndroid = "22.6.1"
+stripeAndroid = "22.7.0"
 ui = "1.10.2"
 uiToolingPreview = "1.10.2"
 kotlinxDatetime = "0.7.1"
@@ -105,6 +105,7 @@ koin-core = { group = "io.insert-koin", name = "koin-core" }
 koin-core-viewmodel = { group = "io.insert-koin", name = "koin-core-viewmodel" }
 koin-android = { group = "io.insert-koin", name = "koin-android" }
 koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compose" }
+financial-connections = { group = "com.stripe", name = "financial-connections", version.ref = "stripeAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

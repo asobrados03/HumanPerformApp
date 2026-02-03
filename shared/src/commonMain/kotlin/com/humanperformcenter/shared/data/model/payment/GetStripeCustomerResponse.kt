@@ -1,0 +1,48 @@
+package com.humanperformcenter.shared.data.model.payment
+
+import kotlinx.serialization.SerialName
+
+data class GetStripeCustomerResponse(
+    val success: Boolean,
+    val data: StripeCustomer
+)
+
+data class StripeCustomer(
+    val id: String,
+    val `object`: String = "customer",
+    val address: Any? = null,
+    val balance: Long = 0,
+    val created: Long,
+    val currency: String? = null,
+    @SerialName("default_source")
+    val defaultSource: Any? = null,
+    val delinquent: Boolean = false,
+    val description: String? = null,
+    val discount: Any? = null,
+    val email: String? = null,
+    @SerialName("invoice_prefix")
+    val invoicePrefix: String? = null,
+    @SerialName("invoice_settings")
+    val invoiceSettings: InvoiceSettings = InvoiceSettings(),
+    val livemode: Boolean = false,
+    val metadata: Map<String, String> = emptyMap(),
+    val name: String? = null,
+    val phone: String? = null,
+    @SerialName("preferred_locales")
+    val preferredLocales: List<String> = emptyList(),
+    val shipping: Any? = null,
+    @SerialName("tax_exempt")
+    val taxExempt: String = "none",    // "none" | "exempt" | "reverse"
+    @SerialName("test_clock")
+    val testClock: Any? = null
+)
+
+data class InvoiceSettings(
+    @SerialName("custom_fields")
+    val customFields: Any? = null,
+    @SerialName("default_payment_method")
+    val defaultPaymentMethod: String? = null,
+    val footer: String? = null,
+    @SerialName("rendering_options")
+    val renderingOptions: Any? = null
+)

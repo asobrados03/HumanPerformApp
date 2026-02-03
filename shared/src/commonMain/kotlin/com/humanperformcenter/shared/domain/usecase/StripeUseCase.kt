@@ -7,10 +7,6 @@ import com.humanperformcenter.shared.data.model.payment.StripeConfigDto
 import com.humanperformcenter.shared.domain.repository.StripeRepository
 
 class StripeUseCase (private val stripeRepository: StripeRepository) {
-    suspend fun getConfig (): Result<StripeConfigDto> {
-        return stripeRepository.getConfig()
-    }
-
     suspend fun createPaymentIntent (createPaymentIntentRequest: CreatePaymentIntentRequest)
     : Result<CreatePiDto> {
         return stripeRepository.createPaymentIntent(createPaymentIntentRequest)

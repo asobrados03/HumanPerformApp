@@ -1,6 +1,5 @@
 package com.humanperformcenter.app
 
-import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,12 +7,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.rememberNavController
 import com.humanperformcenter.app.navigation.Navigation
-import com.humanperformcenter.shared.data.persistence.GooglePayRepository
 import com.humanperformcenter.shared.domain.storage.DataStoreProvider
 import com.humanperformcenter.shared.domain.storage.SecureStorage
-import com.humanperformcenter.ui.theme.HumanPerformAppTheme
 import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.ui.theme.HumanPerformAppTheme
 import com.stripe.android.PaymentConfiguration
+import com.stripe.android.Stripe
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheet.Builder
 import com.stripe.android.paymentsheet.PaymentSheetResult
@@ -23,21 +22,25 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var paymentSheet: PaymentSheet
     private val paymentViewModel: PaymentViewModel by viewModel()
+    private lateinit var stripe: Stripe
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         SecureStorage.initialize(DataStoreProvider.get(applicationContext))
 
-        GooglePayRepository.init(this)
-
         PaymentConfiguration.init(
             applicationContext,
             "pk_test_51SvlGzB2ovMjVN6tdZD5PPw4F5YBwyTVBvnwnDAl7LHO56HNLlpSKXQyNBjTYBC5FrpsHGT1eddIVWnxvt7CLdWO00nAEdbtM2"
         )
 
+        stripe = Stripe(
+            applicationContext,
+            PaymentConfiguration.getInstance(applicationContext).publishableKey
+        )
+
         // ✅ PaymentSheet con traducción Android → KMM
-        paymentSheet = PaymentSheet(this) { result ->
+        paymentSheet = Builder { result ->
             when (result) {
                 is PaymentSheetResult.Completed -> {
                     paymentViewModel.onStripeCompleted()
@@ -53,7 +56,7 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
-        }
+        }.build(this)
 
         enableEdgeToEdge()
 
@@ -72,10 +75,5 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        GooglePayRepository.handleGooglePayResult(requestCode, resultCode, data)
     }
 }

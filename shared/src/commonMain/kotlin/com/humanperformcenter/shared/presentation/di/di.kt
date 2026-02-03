@@ -2,20 +2,16 @@ package com.humanperformcenter.shared.presentation.di
 
 import com.humanperformcenter.shared.data.persistence.AuthRepositoryImpl
 import com.humanperformcenter.shared.data.persistence.DaySessionRepositoryImpl
-import com.humanperformcenter.shared.data.persistence.PaymentRepositoryImpl
 import com.humanperformcenter.shared.data.persistence.ServiceProductRepositoryImpl
 import com.humanperformcenter.shared.data.persistence.StripeRepositoryImpl
 import com.humanperformcenter.shared.data.persistence.UserRepositoryImpl
 import com.humanperformcenter.shared.domain.repository.AuthRepository
 import com.humanperformcenter.shared.domain.repository.DaySessionRepository
-import com.humanperformcenter.shared.domain.repository.PaymentRepository
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
 import com.humanperformcenter.shared.domain.repository.StripeRepository
 import com.humanperformcenter.shared.domain.repository.UserRepository
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
-import com.humanperformcenter.shared.domain.usecase.GooglePayUseCase
-import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
 import com.humanperformcenter.shared.domain.usecase.StripeUseCase
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
@@ -35,7 +31,6 @@ expect val platformModule: Module
 val appModule = module {
     single<AuthRepository> { AuthRepositoryImpl }
     single<UserRepository> { UserRepositoryImpl }
-    single<PaymentRepository> { PaymentRepositoryImpl }
     single<DaySessionRepository> { DaySessionRepositoryImpl }
     single<ServiceProductRepository> { ServiceProductRepositoryImpl }
     single<StripeRepository> { StripeRepositoryImpl }
@@ -43,8 +38,6 @@ val appModule = module {
     // UseCases (Mucho más limpio con singleOf)
     singleOf(::AuthUseCase)
     singleOf(::UserUseCase)
-    singleOf(::GooglePayUseCase)
-    singleOf(::PaymentUseCase)
     singleOf(::DaySessionUseCase)
     singleOf(::ServiceProductUseCase)
     singleOf(::StripeUseCase)

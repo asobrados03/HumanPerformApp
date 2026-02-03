@@ -49,11 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.google.pay.button.ButtonType
-import com.google.pay.button.PayButton
 import com.humanperformcenter.app.navigation.HireProduct
 import com.humanperformcenter.app.navigation.ProductDetail
-import com.humanperformcenter.app.navigation.StartPayment
 import com.humanperformcenter.app.navigation.StripeCheckout
 import com.humanperformcenter.shared.data.model.payment.Coupon
 import com.humanperformcenter.shared.data.model.product_service.Product
@@ -413,7 +410,7 @@ fun PaymentSelectionContent(
                     set("selected_product_id", product.id)
                     set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
                 }
-                paymentViewModel.startStripeCheckout(
+                /*paymentViewModel.startStripeCheckout(
                     amountInCents = (precioFinal * 100).toInt(),
                     currency = "EUR",
                     userId = userData?.id ?: 0,
@@ -426,7 +423,7 @@ fun PaymentSelectionContent(
                         postalCode = userData?.postcode?.toString(),
                         city = "Segovia"
                     )
-                )
+                )*/
                 navController.navigate(StripeCheckout)
             },
             modifier = Modifier.fillMaxWidth(),

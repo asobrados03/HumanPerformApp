@@ -1,7 +1,6 @@
 package com.humanperformcenter.shared.presentation.viewmodel
 
 import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
-import com.humanperformcenter.shared.domain.usecase.PaymentUseCase
 import com.humanperformcenter.shared.domain.usecase.StripeUseCase
 import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
 import com.humanperformcenter.shared.presentation.ui.StripeCheckoutConfig
@@ -17,39 +16,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class PaymentViewModel(
-    private val paymentUseCase: PaymentUseCase,
     private val stripeUseCase: StripeUseCase
 ): ViewModel() {
-
-    private val _paymentUrl = MutableStateFlow<String?>(null)
-    @NativeCoroutinesState
-    val paymentUrl: StateFlow<String?> = _paymentUrl.asStateFlow()
-
-    private val _error = MutableStateFlow<String?>(null)
-    @NativeCoroutinesState
-    val error: StateFlow<String?> = _error.asStateFlow()
-
-    private val _paymentMethod = MutableStateFlow<String?>(null)
-    @NativeCoroutinesState
-    val paymentMethod: StateFlow<String?> = _paymentMethod.asStateFlow()
 
     private val _viewPaymentMethodsUiState = MutableStateFlow<PaymentMethodsUiState>(
         PaymentMethodsUiState.Empty
     )
-
     @NativeCoroutinesState
     val viewPaymentMethodsUiState: StateFlow<PaymentMethodsUiState> = _viewPaymentMethodsUiState.asStateFlow()
-
-
-    fun clearState() {
-        _paymentUrl.value = null
-        _error.value = null
-    }
 
     private val _stripeUi = MutableStateFlow<StripeUiState>(StripeUiState.Idle)
     val stripeUi = _stripeUi.asStateFlow()
 
-    fun startStripeCheckout(
+    /*fun startStripeCheckout(
         amountInCents: Int,
         currency: String,
         userId: Int? = null,
@@ -112,7 +91,7 @@ class PaymentViewModel(
                 )
             }
         }
-    }
+    }*/
 
     fun onStripeCompleted() {
         _stripeUi.value = StripeUiState.Completed
@@ -132,10 +111,10 @@ class PaymentViewModel(
 
     fun getPaymentMethods(userId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Loading
+            /*_viewPaymentMethodsUiState.value = PaymentMethodsUiState.Loading
 
             try {
-                val methods = paymentUseCase.getPaymentMethods(userId)
+                val methods = stripeUseCase.getPaymentMethods(userId)
                 _viewPaymentMethodsUiState.value = if (methods.isEmpty()) {
                     PaymentMethodsUiState.Empty
                 } else {
@@ -145,7 +124,7 @@ class PaymentViewModel(
                 _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error(
                     e.message ?: "Error al obtener métodos de pago"
                 )
-            }
+            }*/
         }
     }
 }
