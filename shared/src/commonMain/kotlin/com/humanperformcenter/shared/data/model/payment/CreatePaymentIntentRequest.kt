@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CreatePaymentIntentRequest(
-    val amount: Int,
+    val amount: Double,
     val currency: String,
     val customerId: String,
     val paymentMethodId: String? = null,

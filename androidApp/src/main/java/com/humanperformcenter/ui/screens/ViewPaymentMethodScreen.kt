@@ -44,17 +44,17 @@ import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
 import com.humanperformcenter.ui.components.ErrorComponent
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.rememberShimmerBrush
-import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 
 @Composable
 fun ViewPaymentMethodScreen(
     navController: NavHostController,
-    paymentViewModel: PaymentViewModel,
+    paymentViewModel: StripeViewModel,
     userId: Int
 ) {
     val uiState by paymentViewModel.viewPaymentMethodsUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(userId) { paymentViewModel.getPaymentMethods(userId) }
+    LaunchedEffect(userId) { paymentViewModel.getUserCards(userId) }
 
     Scaffold(
         topBar = {
@@ -86,7 +86,7 @@ fun ViewPaymentMethodScreen(
                 is PaymentMethodsUiState.Error -> {
                     ErrorComponent(
                         message = state.message,
-                        onRetry = { paymentViewModel.getPaymentMethods(userId) }
+                        onRetry = { paymentViewModel.getUserCards(userId) }
                     )
                 }
 

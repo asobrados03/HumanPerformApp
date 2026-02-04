@@ -59,12 +59,10 @@ import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.presentation.ui.AssignEvent
 import com.humanperformcenter.shared.presentation.ui.ServiceProductUiState
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
-import com.humanperformcenter.shared.presentation.ui.models.BillingPrefill
 import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.ui.components.AppCard
 import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.ServiceProductsShimmer
-import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,11 +71,9 @@ fun HireProductScreen(
     serviceId: Int,
     navController: NavHostController,
     serviceProductViewModel: ServiceProductViewModel,
-    paymentViewModel: PaymentViewModel,
     userData: User?
 ) {
     val context = LocalContext.current
-    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
 
     // --- State Collection ---
     val productosMap by serviceProductViewModel.serviceProducts.collectAsStateWithLifecycle()
@@ -208,15 +204,11 @@ fun HireProductScreen(
             ModalBottomSheet(onDismissRequest = { showPaymentSheet = false }) {
                 PaymentSelectionContent(
                     product = product,
-                    userData = userData,
                     userCoupons = userCoupons,
                     cuponTexto = cuponTexto,
-                    onCuponChange = { cuponTexto = it },
-                    paymentViewModel = paymentViewModel,
                     navController = navController,
                     onMonederoPay = { handleProductAssignment(product.id, "cash") },
-                    serviceProductViewModel = serviceProductViewModel,
-                    onRebillSuccess = { /* Lógica rebill */ }
+                    serviceProductViewModel = serviceProductViewModel
                 )
             }
         }
@@ -376,14 +368,10 @@ fun ProductList(
 @Composable
 fun PaymentSelectionContent(
     product: Product,
-    userData: User?,
     userCoupons: List<Coupon>,
     cuponTexto: String,
-    onCuponChange: (String) -> Unit,
-    paymentViewModel: PaymentViewModel,
     navController: NavHostController,
     onMonederoPay: () -> Unit,
-    onRebillSuccess: () -> Unit,
     serviceProductViewModel: ServiceProductViewModel,
 ) {
     var showMonederoConfirmation by remember { mutableStateOf(false) }
@@ -404,27 +392,18 @@ fun PaymentSelectionContent(
         )
 
         // 3. Stripe
+        // Cambia el Button de Stripe por este código:
         Button(
             onClick = {
-                navController.currentBackStackEntry?.savedStateHandle?.apply {
-                    set("selected_product_id", product.id)
-                    set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
-                }
-                /*paymentViewModel.startStripeCheckout(
-                    amountInCents = (precioFinal * 100).toInt(),
-                    currency = "EUR",
-                    userId = userData?.id ?: 0,
-                    productId = product.id,
-                    couponCode = cuponTexto.takeIf { it.isNotBlank() },
-                    billing = BillingPrefill(
-                        name = userData?.fullName,
-                        email = userData?.email,
-                        addressLine1 = userData?.postAddress,
-                        postalCode = userData?.postcode?.toString(),
-                        city = "Segovia"
-                    )
-                )*/
+                // 1. Navegamos primero
                 navController.navigate(StripeCheckout)
+
+                // 2. Buscamos la entrada de la pantalla a la que vamos (StripeCheckout)
+                // y le inyectamos los datos allí.
+                navController.getBackStackEntry(StripeCheckout).savedStateHandle.apply {
+                    set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
+                    set("selected_product_price", product.price)
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5))

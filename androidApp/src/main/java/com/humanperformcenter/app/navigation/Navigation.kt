@@ -21,7 +21,7 @@ import com.humanperformcenter.app.SetStatusBarColor
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
-import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
@@ -46,13 +46,11 @@ import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.UserStatsScreen
 import com.humanperformcenter.ui.screens.ViewPaymentMethodScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
-import com.stripe.android.paymentsheet.PaymentSheet
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun Navigation(
     navController: NavHostController,
-    paymentSheet: PaymentSheet,
     onPlaySound: (Int) -> Unit
 ) {
     SetStatusBarColor(
@@ -60,7 +58,7 @@ fun Navigation(
         navigationBarColor = Color(0xFFB71C1C)
     )
 
-    val paymentViewModel: PaymentViewModel = koinViewModel()
+    val paymentViewModel: StripeViewModel = koinViewModel()
 
     val userViewModel: UserViewModel = koinViewModel()
 
@@ -162,7 +160,6 @@ fun Navigation(
                         serviceId     = route.serviceId,
                         navController = navController,
                         serviceProductViewModel = serviceProductViewModel,
-                        paymentViewModel = paymentViewModel,
                         userData = userData
                     )
                 }
@@ -284,7 +281,7 @@ fun Navigation(
             }
             composable<StripeCheckout> {
                 StripeCheckoutScreen(navController, paymentViewModel, serviceProductViewModel,
-                    userId = userData?.id ?: 0 , paymentSheet = paymentSheet
+                    userId = userData?.id ?: 0
                 )
             }
 

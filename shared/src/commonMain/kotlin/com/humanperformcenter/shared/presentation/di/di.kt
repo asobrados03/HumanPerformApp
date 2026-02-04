@@ -17,7 +17,7 @@ import com.humanperformcenter.shared.domain.usecase.StripeUseCase
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
-import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
@@ -48,5 +48,5 @@ val appModule = module {
     viewModelOf(::ServiceProductViewModel)
     viewModelOf(::UserStatsViewModel)
     viewModelOf(::UserViewModel)
-    viewModelOf(::PaymentViewModel)
+    viewModelOf(::StripeViewModel)
 }

@@ -1,177 +1,193 @@
 package com.humanperformcenter.ui.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.humanperformcenter.app.navigation.PaymentSuccess
-import com.humanperformcenter.app.navigation.ProductDetail
-import com.humanperformcenter.shared.presentation.ui.AssignEvent
-import com.humanperformcenter.shared.presentation.ui.StripeCheckoutConfig
-import com.humanperformcenter.shared.presentation.ui.StripeUiState
-import com.humanperformcenter.shared.presentation.viewmodel.PaymentViewModel
+import com.humanperformcenter.shared.presentation.ui.StartStripeCheckoutState
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
+import com.stripe.android.PaymentConfiguration
 import com.stripe.android.paymentsheet.PaymentSheet
-import com.stripe.android.paymentsheet.PaymentSheet.Configuration
-import com.stripe.android.paymentsheet.PaymentSheet.CustomerConfiguration
-import com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration
+import com.stripe.android.paymentsheet.PaymentSheetResult
+
+private const val TAG = "STRIPE_DEBUG"
 
 @Composable
 fun StripeCheckoutScreen(
     navController: NavHostController,
-    paymentViewModel: PaymentViewModel,
+    stripeViewModel: StripeViewModel,
     serviceProductViewModel: ServiceProductViewModel,
-    paymentSheet: PaymentSheet,
     userId: Int
 ) {
     val context = LocalContext.current
+    val checkoutState by stripeViewModel.startStripeCheckout.collectAsStateWithLifecycle()
 
-    val stripeState by paymentViewModel.stripeUi.collectAsStateWithLifecycle()
+    val paymentSheet = remember { PaymentSheet.Builder(::onPaymentSheetResult) }.build()
 
-    // 🔹 Presentar PaymentSheet cuando el estado esté Ready
-    LaunchedEffect(stripeState) {
-        val state = stripeState
-        if (state is StripeUiState.Ready) {
-            val config = buildStripeConfig(state.config)
+    // --- 1. LÓGICA DE INICIALIZACIÓN ---
+    LaunchedEffect(Unit) {
+        val handle = navController.currentBackStackEntry?.savedStateHandle
+        val productPrice = handle?.get<Double>("selected_product_price")
+        val coupon = handle?.get<String>("selected_coupon")
 
-            paymentSheet.presentWithPaymentIntent(
-                state.clientSecret,
-                config
+        Log.d(TAG, "Lanzando Checkout -> Precio: $productPrice, Cupón: $coupon")
+
+        // Validación temprana: si no hay precio o ID, no podemos seguir
+        if (productPrice == null) {
+            Log.e(TAG, "Error: Datos insuficientes en el Navigation Handle")
+            stripeViewModel.onStripeFailed("Información de producto incompleta.")
+            return@LaunchedEffect
+        }
+
+        // 1. Obtenemos el cliente (Ya vimos en Postman que el endpoint funciona)
+        Log.d(TAG, "Pidiendo CustomerId al servidor...")
+        val customerId = stripeViewModel.createOrGetCustomer()
+
+        // 2. Verificamos que el mapeo del CustomerId haya funcionado en la App
+        if (customerId != null) {
+            Log.d(TAG, "CustomerId recibido correctamente: $customerId. Iniciando Checkout...")
+
+            // 3. Disparamos la pasarela con el precio que ya tenemos
+            stripeViewModel.startStripeCheckout(
+                amount = productPrice,
+                currency = "eur",
+                customerId = customerId,
+                couponCode = coupon
             )
-
-            // Evitar doble presentación
-            paymentViewModel.reset()
+        } else {
+            // Si aquí llega null, revisa el mapeo del JSON en tu Data Class (StripeCustomerResponse)
+            Log.e(TAG, "Error: El CustomerId llegó como null al código Kotlin")
+            stripeViewModel.onStripeFailed("Error al identificar el usuario en la pasarela.")
         }
     }
 
-    // 🔹 Reaccionar al resultado del pago
-    LaunchedEffect(stripeState) {
-        when (val state = stripeState) {
-            StripeUiState.Completed -> {
-                Toast.makeText(context, "Pago exitoso", Toast.LENGTH_SHORT).show()
+    // --- 2. MOSTRAR EL MODAL CUANDO EL VM DIGA "READY" ---
+    LaunchedEffect(checkoutState) {
+        if (checkoutState is StartStripeCheckoutState.Ready) {
+            val state = checkoutState as StartStripeCheckoutState.Ready
+            Log.d(TAG, "Estado READY detectado. Preparando PaymentSheet...")
 
-                val productId =
-                    navController.currentBackStackEntry
-                        ?.savedStateHandle
-                        ?.get<Int>("selected_product_id")
-                        ?: navController.previousBackStackEntry
-                            ?.savedStateHandle
-                            ?.get<Int>("selected_product_id")
+            // Sustituye con tu clave real de Stripe
+            PaymentConfiguration.init(context, "pk_test_51SvlGzB2ovMjVN6tdZD5PPw4F5YBwyTVBvnwnDAl7LHO56HNLlpSKXQyNBjTYBC5FrpsHGT1eddIVWnxvt7CLdWO00nAEdbtM2")
 
-                val coupon =
-                    navController.currentBackStackEntry
-                        ?.savedStateHandle
-                        ?.get<String>("selected_coupon")
-                        ?: navController.previousBackStackEntry
-                            ?.savedStateHandle
-                            ?.get<String>("selected_coupon")
-
-                if (productId == null) {
-                    navController.popBackStack()
-                    navController.navigate(PaymentSuccess)
-                    return@LaunchedEffect
-                }
-
-                // 🔹 Asignar producto en backend
-                serviceProductViewModel.assignProductToUser(
-                    userId = userId,
-                    productId = productId,
-                    paymentMethod = "card",
-                    couponCode = coupon
+            val customerConfig = state.config.customerId?.let {
+                PaymentSheet.CustomerConfiguration(
+                    id = it,
+                    ephemeralKeySecret = state.config.customerEphemeralKeySecret ?: ""
                 )
             }
 
-            StripeUiState.Canceled -> {
-                navController.popBackStack()
-            }
+            presentPaymentSheet(
+                paymentSheet = paymentSheet,
+                customerConfig = customerConfig,
+                paymentIntentClientSecret = state.clientSecret,
+                merchantName = state.config.merchantDisplayName,
+                countryCode = state.config.googlePayCountryCode ?: "ES",
+                currencyCode = state.config.googlePayCurrencyCode ?: "EUR"
+            )
 
-            is StripeUiState.Failed -> {
+            stripeViewModel.onSheetPresented()
+        }
+    }
+
+    // --- 3. MANEJAR RESULTADOS FINALES Y NAVEGACIÓN ---
+    LaunchedEffect(checkoutState) {
+        when (val state = checkoutState) {
+            is StartStripeCheckoutState.Completed -> {
+                Log.d(TAG, "Pago completado. Asignando producto...")
+                val productId = navController.currentBackStackEntry?.savedStateHandle?.get<Int>("selected_product_id")
+                val coupon = navController.currentBackStackEntry?.savedStateHandle?.get<String>("selected_coupon")
+
+                if (productId != null) {
+                    serviceProductViewModel.assignProductToUser(userId, productId, "card", coupon)
+                }
+                navController.navigate("PaymentSuccess") {
+                    popUpTo("StripeCheckout") { inclusive = true }
+                }
+            }
+            is StartStripeCheckoutState.Failed -> {
+                Log.e(TAG, "Checkout fallido: ${state.message}")
                 Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
                 navController.popBackStack()
             }
-
+            is StartStripeCheckoutState.Canceled -> {
+                Log.d(TAG, "Checkout cancelado por el usuario")
+                navController.popBackStack()
+            }
             else -> Unit
         }
     }
 
-    // 🔹 Escuchar eventos de asignación del producto
-    LaunchedEffect(Unit) {
-        serviceProductViewModel.assignEvent.collect { event ->
-            when (event) {
-                is AssignEvent.Success -> {
-                    Toast.makeText(context, "Producto asignado", Toast.LENGTH_SHORT).show()
-
-                    // Limpiar savedState
-                    navController.currentBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("selected_coupon", null)
-                    navController.currentBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("selected_product_id", null)
-
-                    navController.popBackStack()
-                    navController.navigate(ProductDetail(productId = event.productId))
-                }
-
-                is AssignEvent.Error -> {
-                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
-                    navController.popBackStack()
-                    navController.navigate(PaymentSuccess)
+    // --- 4. UI ---
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        when (checkoutState) {
+            is StartStripeCheckoutState.Loading,
+            is StartStripeCheckoutState.Processing -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Procesando pago...")
                 }
             }
+            is StartStripeCheckoutState.Idle -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(strokeWidth = 2.dp) // Spinner sutil
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Iniciando pasarela...")
+                }
+            }
+            else -> { /* Estados finalizados o Ready no muestran UI base */ }
         }
-    }
-
-    // 🔹 Loading UI
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
     }
 }
 
-private fun buildStripeConfig(config: StripeCheckoutConfig): Configuration {
-    val customerConfig = if (!config.customerId.isNullOrBlank() && !config.customerEphemeralKeySecret.isNullOrBlank()) {
-        CustomerConfiguration(
-            id = config.customerId!!,
-            ephemeralKeySecret = config.customerEphemeralKeySecret!!
-        )
-    } else {
-        null
-    }
-
-    val googlePay = if (config.googlePayEnabled && !config.googlePayCountryCode.isNullOrBlank() && !config.googlePayCurrencyCode.isNullOrBlank()) {
-        GooglePayConfiguration(
-            environment = GooglePayConfiguration.Environment.Test,
-            countryCode = config.googlePayCountryCode!!,
-            currencyCode = config.googlePayCurrencyCode
-        )
-    } else {
-        null
-    }
-
-    return Configuration(
-        merchantDisplayName = config.merchantDisplayName,
-        customer = customerConfig,
-        allowsDelayedPaymentMethods = config.allowsDelayedPaymentMethods,
-        googlePay = googlePay,
-        defaultBillingDetails = PaymentSheet.BillingDetails(
-            name = config.billingName,
-            email = config.billingEmail,
-            address = PaymentSheet.Address(
-                line1 = config.billingAddressLine1,
-                postalCode = config.billingPostalCode,
-                city = config.billingCity
-            )
-        )
+private fun presentPaymentSheet(
+    paymentSheet: PaymentSheet,
+    customerConfig: PaymentSheet.CustomerConfiguration?,
+    paymentIntentClientSecret: String,
+    merchantName: String,
+    countryCode: String = "ES", // Por defecto España
+    currencyCode: String = "EUR" // Por defecto Euro
+) {
+    // Configuración de Google Pay
+    val googlePayConfiguration = PaymentSheet.GooglePayConfiguration(
+        environment = PaymentSheet.GooglePayConfiguration.Environment.Test, // Cambiar a Production al publicar
+        countryCode = countryCode,
+        currencyCode = currencyCode
     )
+
+    val configuration = PaymentSheet.Configuration.Builder(merchantName)
+        .customer(customerConfig)
+        .allowsDelayedPaymentMethods(true)
+        .googlePay(googlePayConfiguration) // <--- Aquí activamos Google Pay
+        .build()
+
+    paymentSheet.presentWithPaymentIntent(
+        paymentIntentClientSecret,
+        configuration
+    )
+}
+
+private fun onPaymentSheetResult(paymentSheetResult: PaymentSheetResult) {
+    when(paymentSheetResult) {
+        is PaymentSheetResult.Canceled -> Log.d(TAG, "PaymentSheet: El usuario canceló")
+        is PaymentSheetResult.Failed -> Log.e(TAG, "PaymentSheet Error: ${paymentSheetResult.error.message}")
+        is PaymentSheetResult.Completed -> Log.d(TAG, "PaymentSheet: Completado con éxito")
+    }
 }

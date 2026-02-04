@@ -8,13 +8,18 @@ import io.ktor.client.request.get
 import io.ktor.http.ContentType
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 import kotlin.collections.mapOf
 
 object StripeRepositoryImpl : StripeRepository {
 
     // ==================== CLIENTES ====================
     override suspend fun createOrGetCustomer(): Result<CreateStripeCustomerResponse> = runCatching {
-        ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/customer").body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/customer").body()
+        }
     }
 
     override suspend fun getCustomer(customerId: String): Result<GetStripeCustomerResponse> = runCatching {
@@ -22,12 +27,12 @@ object StripeRepositoryImpl : StripeRepository {
     }
 
     // ==================== EPHEMERAL KEYS ====================
-    override suspend fun createEphemeralKey(customerId: String, apiVersion: String)
-    : Result<EphemeralKeyDto> = runCatching {
+    override suspend fun createEphemeralKey(customerId: String)
+    : Result<StripeEphemeralKeyResponse> = runCatching {
 
         ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/ephemeral-keys") {
             contentType(ContentType.Application.Json)
-            setBody(mapOf("customer_id" to customerId, "apiVersion" to apiVersion))
+            setBody(mapOf("customer_id" to customerId))
         }.body()
     }
 
@@ -52,11 +57,11 @@ object StripeRepositoryImpl : StripeRepository {
     }
 
     // ==================== PAYMENT INTENTS ====================
-    override suspend fun createPaymentIntent(createPaymentIntentRequest: CreatePaymentIntentRequest)
-    : Result<CreatePiDto> = runCatching {
+    override suspend fun createPaymentIntent(intentRequest: CreatePaymentIntentRequest)
+    : Result<StripePaymentIntentResponse> = runCatching {
         ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-intent") {
             contentType(ContentType.Application.Json)
-            setBody(createPaymentIntentRequest)
+            setBody(intentRequest)
         }.body()
     }
 
@@ -116,14 +121,18 @@ object StripeRepositoryImpl : StripeRepository {
 
     // ==================== TARJETAS ====================
     override suspend fun saveCard(paymentMethodId: String): Result<Unit> = runCatching {
-        ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/cards") {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("paymentMethodId" to paymentMethodId))
-        }.body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/cards") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("paymentMethodId" to paymentMethodId))
+            }.body()
+        }
     }
 
-    override suspend fun getUserCards(): Result<List<CardDto>> = runCatching {
-        ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/cards").body()
+    override suspend fun getUserCards(userId: Int): Result<List<PaymentMethod>> = runCatching {
+        ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/cards"){
+            parameter("userId", userId)
+        }.body()
     }
 
     override suspend fun deleteCard(cardId: String): Result<Unit> = runCatching {
