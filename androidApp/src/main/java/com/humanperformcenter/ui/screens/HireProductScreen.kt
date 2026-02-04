@@ -26,7 +26,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -36,7 +35,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -100,9 +98,7 @@ fun HireProductScreen(
     // --- UI State Local ---
     var selectedFilter by remember { mutableStateOf(ProductTypeFilter.ALL) }
     var selectedSessionCount by remember { mutableIntStateOf(0) }
-    var productoIdSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
     var productoDetalleSeleccionado by remember { mutableStateOf<Product?>(null) }
-    var showPaymentSheet by remember { mutableStateOf(false) }
     var cuponTexto by remember { mutableStateOf("") }
 
     // Productos filtrados a partir de la lista base del estado Success
@@ -117,9 +113,6 @@ fun HireProductScreen(
             when (event) {
                 is AssignEvent.Success -> {
                     Toast.makeText(context, "Asignado con éxito", Toast.LENGTH_SHORT).show()
-
-                    showPaymentSheet = false
-                    productoIdSeleccionado = null
 
                     navController.navigate(ProductDetail(productId = event.productId)) {
                         popUpTo<HireProduct> { inclusive = true }
@@ -203,28 +196,10 @@ fun HireProductScreen(
             isAlreadyHired = idsContratados.contains(product.id),
             serviceProductViewModel = serviceProductViewModel,
             onClose = { productoDetalleSeleccionado = null },
-            onBuyClick = {
-                productoIdSeleccionado = product.id
-                showPaymentSheet = true
-                productoDetalleSeleccionado = null
-            }
+            cuponTexto = cuponTexto,
+            navController = navController,
+            onMonederoPay = { handleProductAssignment(product.id, "cash") }
         )
-    }
-
-    // Diálogos y Sheets (Se mantienen igual, usando listaBase)
-    if (showPaymentSheet && productoIdSeleccionado != null) {
-        listaBase.firstOrNull { it.id == productoIdSeleccionado }?.let { product ->
-            ModalBottomSheet(onDismissRequest = { showPaymentSheet = false }) {
-                PaymentSelectionContent(
-                    product = product,
-                    userCoupons = userCoupons,
-                    cuponTexto = cuponTexto,
-                    navController = navController,
-                    onMonederoPay = { handleProductAssignment(product.id, "cash") },
-                    serviceProductViewModel = serviceProductViewModel
-                )
-            }
-        }
     }
 }
 
