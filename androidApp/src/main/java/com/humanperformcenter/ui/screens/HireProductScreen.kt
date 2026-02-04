@@ -103,6 +103,7 @@ fun HireProductScreen(
     var selectedFilter by remember { mutableStateOf(ProductTypeFilter.ALL) }
     var selectedSessionCount by remember { mutableIntStateOf(0) }
     var productoIdSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
+    var productoDetalleSeleccionado by remember { mutableStateOf<Product?>(null) }
     var showPaymentSheet by remember { mutableStateOf(false) }
     var cuponTexto by remember { mutableStateOf("") }
 
@@ -189,12 +190,27 @@ fun HireProductScreen(
                     idsContratados = idsContratados,
                     userCoupons = userCoupons,
                     onProductClick = { product ->
-                        productoIdSeleccionado = product.id
-                        showPaymentSheet = true
+                        productoDetalleSeleccionado = product
                     },
                     serviceProductViewModel = serviceProductViewModel
                 )
             }
+        }
+    }
+
+    productoDetalleSeleccionado?.let { product ->
+        ModalBottomSheet(onDismissRequest = { productoDetalleSeleccionado = null }) {
+            ProductDetailContent(
+                product = product,
+                userCoupons = userCoupons,
+                isAlreadyHired = idsContratados.contains(product.id),
+                serviceProductViewModel = serviceProductViewModel,
+                onBuyClick = {
+                    productoIdSeleccionado = product.id
+                    showPaymentSheet = true
+                    productoDetalleSeleccionado = null
+                }
+            )
         }
     }
 
@@ -319,11 +335,7 @@ fun ProductList(
                 }
 
                 AppCard(
-                    onClick = {
-                        if (!contratado) {
-                            onProductClick(availableProduct)
-                        }
-                    }
+                    onClick = { onProductClick(availableProduct) }
                 ) {
                     Row(
                         modifier = Modifier
@@ -361,6 +373,79 @@ fun ProductList(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ProductDetailContent(
+    product: Product,
+    userCoupons: List<Coupon>,
+    isAlreadyHired: Boolean,
+    serviceProductViewModel: ServiceProductViewModel,
+    onBuyClick: () -> Unit,
+) {
+    val precioFinal = remember(product, userCoupons) {
+        serviceProductViewModel.calcularPrecioConDescuento(
+            product.id,
+            product.price ?: 0.0,
+            userCoupons
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        product.image?.let { imagePath ->
+            AsyncImage(
+                model = "${ApiClient.baseUrl}/product_images/$imagePath",
+                contentDescription = product.name,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+                    .clip(RoundedCornerShape(12.dp))
+            )
+        }
+
+        Text(product.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+
+        Text(
+            text = product.description ?: "No hay descripción disponible.",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            product.session?.let { sesiones ->
+                Text("Sesiones: $sesiones", style = MaterialTheme.typography.bodyMedium)
+            }
+            product.typeOfProduct?.let { tipo ->
+                Text("Tipo: ${tipo.replaceFirstChar { it.uppercase() }}", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+
+        Text(
+            text = "Precio: ${precioFinal.toInt()}€",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.error
+        )
+
+        if (isAlreadyHired) {
+            Text(
+                text = "Ya has contratado este producto.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Button(
+            onClick = onBuyClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Comprar")
         }
     }
 }
