@@ -27,7 +27,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -61,7 +60,6 @@ import com.humanperformcenter.shared.presentation.ui.ServiceProductUiState
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.ui.components.AppCard
-import com.humanperformcenter.ui.components.LogoAppBar
 import com.humanperformcenter.ui.components.ServiceProductsShimmer
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 
@@ -199,19 +197,18 @@ fun HireProductScreen(
     }
 
     productoDetalleSeleccionado?.let { product ->
-        ModalBottomSheet(onDismissRequest = { productoDetalleSeleccionado = null }) {
-            ProductDetailContent(
-                product = product,
-                userCoupons = userCoupons,
-                isAlreadyHired = idsContratados.contains(product.id),
-                serviceProductViewModel = serviceProductViewModel,
-                onBuyClick = {
-                    productoIdSeleccionado = product.id
-                    showPaymentSheet = true
-                    productoDetalleSeleccionado = null
-                }
-            )
-        }
+        ProductDetailFullScreen(
+            product = product,
+            userCoupons = userCoupons,
+            isAlreadyHired = idsContratados.contains(product.id),
+            serviceProductViewModel = serviceProductViewModel,
+            onClose = { productoDetalleSeleccionado = null },
+            onBuyClick = {
+                productoIdSeleccionado = product.id
+                showPaymentSheet = true
+                productoDetalleSeleccionado = null
+            }
+        )
     }
 
     // Diálogos y Sheets (Se mantienen igual, usando listaBase)
@@ -373,79 +370,6 @@ fun ProductList(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun ProductDetailContent(
-    product: Product,
-    userCoupons: List<Coupon>,
-    isAlreadyHired: Boolean,
-    serviceProductViewModel: ServiceProductViewModel,
-    onBuyClick: () -> Unit,
-) {
-    val precioFinal = remember(product, userCoupons) {
-        serviceProductViewModel.calcularPrecioConDescuento(
-            product.id,
-            product.price ?: 0.0,
-            userCoupons
-        )
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        product.image?.let { imagePath ->
-            AsyncImage(
-                model = "${ApiClient.baseUrl}/product_images/$imagePath",
-                contentDescription = product.name,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
-                    .clip(RoundedCornerShape(12.dp))
-            )
-        }
-
-        Text(product.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-
-        Text(
-            text = product.description ?: "No hay descripción disponible.",
-            style = MaterialTheme.typography.bodyMedium
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            product.session?.let { sesiones ->
-                Text("Sesiones: $sesiones", style = MaterialTheme.typography.bodyMedium)
-            }
-            product.typeOfProduct?.let { tipo ->
-                Text("Tipo: ${tipo.replaceFirstChar { it.uppercase() }}", style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-
-        Text(
-            text = "Precio: ${precioFinal.toInt()}€",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.error
-        )
-
-        if (isAlreadyHired) {
-            Text(
-                text = "Ya has contratado este producto.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Button(
-            onClick = onBuyClick,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Comprar")
         }
     }
 }
