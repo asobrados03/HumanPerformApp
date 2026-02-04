@@ -11,15 +11,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.model.payment.Coupon
 import com.humanperformcenter.shared.data.model.product_service.Product
@@ -27,15 +33,19 @@ import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.components.LogoAppBar
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductDetailFullScreen(
     product: Product,
     userCoupons: List<Coupon>,
+    cuponTexto: String,
+    navController: NavHostController,
     isAlreadyHired: Boolean,
     serviceProductViewModel: ServiceProductViewModel,
     onClose: () -> Unit,
-    onBuyClick: () -> Unit,
+    onMonederoPay: () -> Unit,
 ) {
+    var showPaymentSheet by remember { mutableStateOf(false) }
     val precioFinal = remember(product, userCoupons) {
         serviceProductViewModel.calcularPrecioConDescuento(
             product.id,
@@ -100,11 +110,24 @@ fun ProductDetailFullScreen(
             }
 
             Button(
-                onClick = onBuyClick,
+                onClick = { showPaymentSheet = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Comprar")
             }
+        }
+    }
+
+    if (showPaymentSheet) {
+        ModalBottomSheet(onDismissRequest = { showPaymentSheet = false }) {
+            PaymentSelectionContent(
+                product = product,
+                userCoupons = userCoupons,
+                cuponTexto = cuponTexto,
+                navController = navController,
+                onMonederoPay = onMonederoPay,
+                serviceProductViewModel = serviceProductViewModel
+            )
         }
     }
 }
