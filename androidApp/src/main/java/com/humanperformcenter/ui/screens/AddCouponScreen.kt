@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 
 @Composable

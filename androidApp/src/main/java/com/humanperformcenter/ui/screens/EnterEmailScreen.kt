@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.util.PatternsCompat.EMAIL_ADDRESS
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.PasswordResetInfo
-import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.shared.presentation.ui.ResetPasswordState
 
 @Composable

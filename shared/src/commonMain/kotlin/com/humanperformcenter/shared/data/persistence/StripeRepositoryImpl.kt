@@ -14,8 +14,16 @@ import kotlinx.coroutines.withContext
 import kotlin.collections.mapOf
 
 object StripeRepositoryImpl : StripeRepository {
+    override suspend fun getPublishableKey(): Result<String> = runCatching {
+        withContext(Dispatchers.IO) {
+            val response = ApiClient.apiClient
+                .get("${ApiClient.baseUrl}/stripe/publishable-key")
+                .body<PublishableKeyResponse>()
 
-    // ==================== CLIENTES ====================
+            response.publishableKey.trim()
+        }
+    }
+
     override suspend fun createOrGetCustomer(): Result<CreateStripeCustomerResponse> = runCatching {
         withContext(Dispatchers.IO) {
             ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/customer").body()
@@ -23,103 +31,112 @@ object StripeRepositoryImpl : StripeRepository {
     }
 
     override suspend fun getCustomer(customerId: String): Result<GetStripeCustomerResponse> = runCatching {
-        ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/customer/$customerId").body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/customer/$customerId").body()
+        }
     }
 
-    // ==================== EPHEMERAL KEYS ====================
     override suspend fun createEphemeralKey(customerId: String)
     : Result<StripeEphemeralKeyResponse> = runCatching {
-
-        ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/ephemeral-keys") {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("customer_id" to customerId))
-        }.body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/ephemeral-keys") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("customer_id" to customerId))
+            }.body()
+        }
     }
 
-    // ==================== PAYMENT METHODS ====================
     override suspend fun attachPaymentMethod(paymentMethodId: String, customerId: String)
     : Result<Unit> = runCatching {
-        ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-method/attach") {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("paymentMethodId" to paymentMethodId, "customerId" to customerId))
-        }.body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-method/attach") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("paymentMethodId" to paymentMethodId, "customerId" to customerId))
+            }.body()
+        }
     }
 
     override suspend fun listPaymentMethods(customerId: String)
     : Result<List<PaymentMethodDto>> = runCatching {
-        ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/payment-methods/$customerId").body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.get(
+                "${ApiClient.baseUrl}/stripe/payment-methods/$customerId"
+            ).body()
+        }
     }
 
     override suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit> = runCatching {
-        ApiClient.apiClient.delete(
-            "${ApiClient.baseUrl}/stripe/payment-method/$paymentMethodId"
-        ).body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.delete(
+                "${ApiClient.baseUrl}/stripe/payment-method/$paymentMethodId"
+            ).body()
+        }
     }
 
-    // ==================== PAYMENT INTENTS ====================
     override suspend fun createPaymentIntent(intentRequest: CreatePaymentIntentRequest)
     : Result<StripePaymentIntentResponse> = runCatching {
-        ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-intent") {
-            contentType(ContentType.Application.Json)
-            setBody(intentRequest)
-        }.body()
-    }
-
-    override suspend fun confirmPaymentIntent(id: String): Result<Unit> = runCatching {
-        ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-intent/$id/confirm")
-            .body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-intent") {
+                contentType(ContentType.Application.Json)
+                setBody(intentRequest)
+            }.body()
+        }
     }
 
     override suspend fun cancelPaymentIntent(id: String): Result<Unit> = runCatching {
-        ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-intent/$id/cancel")
-            .body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.post(
+                "${ApiClient.baseUrl}/stripe/payment-intent/$id/cancel"
+            ).body()
+        }
     }
 
-    override suspend fun getPaymentIntent(id: String): Result<CreatePiDto> {
-        TODO("Not yet implemented")
+    override suspend fun getPaymentIntent(id: String): Result<CreatePiDto> = runCatching {
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/payment-intent/$id")
+                .body()
+        }
     }
 
-    // ==================== COMPRA DE PRODUCTO ====================
-    override suspend fun purchaseProduct(productId: Int, paymentMethodId: String)
-    : Result<Unit> = runCatching {
-        ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/purchase") {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("product_id" to productId, "paymentMethodId" to paymentMethodId))
-        }.body()
-    }
-
-    // ==================== REEMBOLSOS ====================
     override suspend fun createRefund(paymentIntentId: String, amount: Int?)
     : Result<Unit> = runCatching {
-        ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/refund") {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("paymentIntentId" to paymentIntentId, "amount" to amount))
-        }.body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/refund") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("paymentIntentId" to paymentIntentId, "amount" to amount))
+            }.body()
+        }
     }
 
-    // ==================== SUSCRIPCIONES ====================
     override suspend fun createSubscription(priceId: String)
     : Result<SubscriptionDto> = runCatching {
-        ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/subscription") {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("priceId" to priceId))
-        }.body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/subscription") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("priceId" to priceId))
+            }.body()
+        }
     }
 
     override suspend fun cancelSubscription(id: String): Result<Unit> = runCatching {
-        ApiClient.apiClient.delete("${ApiClient.baseUrl}/stripe/subscription/$id").body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.delete("${ApiClient.baseUrl}/stripe/subscription/$id")
+                .body()
+        }
     }
 
     override suspend fun getSubscription(id: String): Result<SubscriptionDto> = runCatching {
-        ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/subscription/$id").body()
+        withContext(Dispatchers.IO)  {
+            ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/subscription/$id").body()
+        }
     }
 
-    // ==================== TRANSACCIONES ====================
     override suspend fun getUserTransactions(): Result<List<TransactionDto>> = runCatching {
-        ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/transactions").body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/transactions").body()
+        }
     }
 
-    // ==================== TARJETAS ====================
     override suspend fun saveCard(paymentMethodId: String): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
             ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/cards") {
@@ -130,16 +147,23 @@ object StripeRepositoryImpl : StripeRepository {
     }
 
     override suspend fun getUserCards(userId: Int): Result<List<PaymentMethod>> = runCatching {
-        ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/cards"){
-            parameter("userId", userId)
-        }.body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/cards") {
+                parameter("userId", userId)
+            }.body()
+        }
     }
 
     override suspend fun deleteCard(cardId: String): Result<Unit> = runCatching {
-        ApiClient.apiClient.delete("${ApiClient.baseUrl}/stripe/cards/$cardId").body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.delete("${ApiClient.baseUrl}/stripe/cards/$cardId").body()
+        }
     }
 
     override suspend fun setDefaultCard(cardId: String): Result<Unit> = runCatching {
-        ApiClient.apiClient.put("${ApiClient.baseUrl}/stripe/cards/$cardId/default").body()
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.put("${ApiClient.baseUrl}/stripe/cards/$cardId/default")
+                .body()
+        }
     }
 }

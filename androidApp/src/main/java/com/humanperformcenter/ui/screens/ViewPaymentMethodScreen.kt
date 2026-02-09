@@ -41,9 +41,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.payment.PaymentMethod
 import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
-import com.humanperformcenter.ui.components.ErrorComponent
-import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.ui.components.rememberShimmerBrush
+import com.humanperformcenter.ui.components.app.ErrorComponent
+import com.humanperformcenter.ui.components.app.LogoAppBar
+import com.humanperformcenter.ui.components.app.rememberShimmerBrush
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 
 @Composable

@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.payment.AssignProductResponse
 import com.humanperformcenter.shared.data.model.payment.CouponApplyRequest
@@ -27,6 +28,8 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.json.Json
 
 object ServiceProductRepositoryImpl: ServiceProductRepository {
+    private val log = logging()
+
     override suspend fun getAllServices(): Result<List<ServiceAvailable>> {
         return runCatching {
             val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/services")
@@ -74,7 +77,7 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
             } else {
                 // 3. Si es error (4xx/5xx), lanzamos excepción para que la capture runCatching
                 val errorBody = response.bodyAsText()
-                println("🔴 Error API ${response.status}: $errorBody")
+                log.error { "🔴 Error API ${response.status}: $errorBody" }
                 throw Exception("Error del servidor: ${response.status.value}")
             }
         }
@@ -132,15 +135,15 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
             }
         } catch (e: Exception) {
             // Errores de conexión, timeout, serialización, etc.
-            println("❌ Excepción en unassignProduct: ${e.message}")
+            log.error { "❌ Excepción en unassignProduct: ${e.message}" }
             Result.failure(e)
         }
     }
 
-    override suspend fun getProductDetails(userId: Int, productId: Int): Result<ProductDetailResponse> {
+    override suspend fun getActiveProductDetail(userId: Int, productId: Int): Result<ProductDetailResponse> {
         return try {
             val resp: HttpResponse = ApiClient.apiClient.get(
-                "${ApiClient.baseUrl}/mobile/product-details"
+                "${ApiClient.baseUrl}/mobile/active-product-detail"
             ) {
                 parameter("user_id", userId)
                 parameter("product_id", productId)
@@ -150,7 +153,7 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
             when (resp.status) {
                 HttpStatusCode.OK -> {
                     val data: ProductDetailResponse = resp.body()
-                    println("📦 Producto obtenido: ${data.name}")
+                    log.info { "📦 Producto obtenido: ${data.name}" }
                     Result.success(data)
                 }
                 HttpStatusCode.NotFound -> {
@@ -165,7 +168,7 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
                 }
             }
         } catch (err: Throwable) {
-            println("❌ Excepción en getProductDetails: ${err.message}")
+            log.error { "❌ Excepción en getProductDetails: ${err.message}" }
             Result.failure(err)
         }
     }
@@ -187,6 +190,23 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    override suspend fun getProductDetailHireProduct(productId: Int): Result<Product> {
+        return runCatching {
+            val response: HttpResponse =
+                ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/products/$productId") {
+                    accept(ContentType.Application.Json)
+                }
+
+            if (response.status.isSuccess()) {
+                response.body<Product>()
+            } else {
+                val errorBody = response.bodyAsText()
+                log.error { "🔴 Error API ${response.status}: $errorBody" }
+                throw Exception("Error del servidor: ${response.status.value}")
+            }
         }
     }
 }

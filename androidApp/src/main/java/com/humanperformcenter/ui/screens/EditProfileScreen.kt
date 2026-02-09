@@ -72,9 +72,9 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.R
 import com.humanperformcenter.data.SexOption
 import com.humanperformcenter.shared.data.model.user.User
-import com.humanperformcenter.ui.components.EditableUserProfileImage
-import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.ui.components.ProfilePhotoSheet
+import com.humanperformcenter.ui.components.user.EditableUserProfileImage
+import com.humanperformcenter.ui.components.app.LogoAppBar
+import com.humanperformcenter.ui.components.user.ProfilePhotoSheet
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.shared.presentation.ui.DeleteProfilePicState
 import com.humanperformcenter.shared.presentation.ui.UpdateState

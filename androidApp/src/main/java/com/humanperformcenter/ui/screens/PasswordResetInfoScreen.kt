@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.components.app.LogoAppBar
 
 @Composable
 fun PasswordResetInfoScreen(navController: NavHostController) {

@@ -82,9 +82,9 @@ import com.humanperformcenter.shared.data.model.auth.RegisterRequest
 import com.humanperformcenter.shared.domain.usecase.validation.RegisterValidationResult.RegisterField
 import com.humanperformcenter.shared.presentation.ui.RegisterState
 import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
-import com.humanperformcenter.ui.components.EditableUserProfileImage
-import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.ui.components.ProfilePhotoSheet
+import com.humanperformcenter.ui.components.user.EditableUserProfileImage
+import com.humanperformcenter.ui.components.app.LogoAppBar
+import com.humanperformcenter.ui.components.user.ProfilePhotoSheet
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import java.io.File

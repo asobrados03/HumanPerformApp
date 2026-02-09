@@ -39,7 +39,7 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.EnterEmail
 import com.humanperformcenter.shared.presentation.ui.LoginState
 import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
-import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.components.app.LogoAppBar
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

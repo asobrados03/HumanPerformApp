@@ -29,9 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.humanperformcenter.ui.components.AppCard
-import com.humanperformcenter.ui.components.LogoAppBar
-import com.humanperformcenter.ui.components.NavigationBar
+import com.humanperformcenter.ui.components.app.AppCard
+import com.humanperformcenter.ui.components.app.LogoAppBar
+import com.humanperformcenter.ui.components.app.NavigationBar
 import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -40,7 +40,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.model.user.Professional
 import com.humanperformcenter.shared.data.network.ApiClient
-import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.shared.presentation.ui.MarkFavoriteState
 import kotlinx.coroutines.launch

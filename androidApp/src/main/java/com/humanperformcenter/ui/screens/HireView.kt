@@ -30,7 +30,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.humanperformcenter.app.navigation.HireProduct
 import com.humanperformcenter.shared.presentation.ui.models.ServiceUiModel
-import com.humanperformcenter.ui.components.AppCard
+import com.humanperformcenter.ui.components.app.AppCard
 
 @Composable
 fun HireView(

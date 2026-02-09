@@ -16,6 +16,7 @@ interface ServiceProductRepository {
         couponCode: String? = null,
     ): Result<Int>
     suspend fun unassignProductFromUser(userId: Int, productId: Int): Result<Unit>
-    suspend fun getProductDetails(userId: Int, productId: Int): Result<ProductDetailResponse>
+    suspend fun getActiveProductDetail(userId: Int, productId: Int): Result<ProductDetailResponse>
     suspend fun applyCoupon(code: String, userId: Int, productId: Int): Result<SimpleResponse>
+    suspend fun getProductDetailHireProduct(productId: Int): Result<Product>
 }

@@ -25,7 +25,7 @@ import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
-import com.humanperformcenter.ui.components.FullScreenLoading
+import com.humanperformcenter.ui.components.app.FullScreenLoading
 import com.humanperformcenter.ui.screens.AddCouponScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
 import com.humanperformcenter.ui.screens.ChangePasswordScreen
@@ -36,12 +36,13 @@ import com.humanperformcenter.ui.screens.HireProductScreen
 import com.humanperformcenter.ui.screens.LoginScreen
 import com.humanperformcenter.ui.screens.MyProfileScreen
 import com.humanperformcenter.ui.screens.PasswordResetInfoScreen
-import com.humanperformcenter.ui.screens.PaymentSuccessScreen
 import com.humanperformcenter.ui.screens.ProductDetailScreen
+import com.humanperformcenter.ui.screens.ActiveProductDetailScreen
+import com.humanperformcenter.ui.screens.PaymentSuccessScreen
 import com.humanperformcenter.ui.screens.RegisterScreen
 import com.humanperformcenter.ui.screens.ServicesScreen
 import com.humanperformcenter.ui.screens.SplashScreen
-import com.humanperformcenter.ui.screens.StripeCheckoutScreen
+import com.humanperformcenter.ui.screens.StripeSinglePaymentScreen
 import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.UserStatsScreen
 import com.humanperformcenter.ui.screens.ViewPaymentMethodScreen
@@ -58,7 +59,7 @@ fun Navigation(
         navigationBarColor = Color(0xFFB71C1C)
     )
 
-    val paymentViewModel: StripeViewModel = koinViewModel()
+    val stripeViewModel: StripeViewModel = koinViewModel()
 
     val userViewModel: UserViewModel = koinViewModel()
 
@@ -199,7 +200,7 @@ fun Navigation(
 
                 ViewPaymentMethodScreen(
                     navController = navController,
-                    paymentViewModel = paymentViewModel,
+                    paymentViewModel = stripeViewModel,
                     userId = userId
                 )
             }
@@ -276,12 +277,30 @@ fun Navigation(
                     userId = userData?.id ?: 0
                 )
             }
-            composable<PaymentSuccess> {
-                PaymentSuccessScreen(navController = navController)
+            composable<StripeSinglePayment> {
+                StripeSinglePaymentScreen(
+                    navController,
+                    stripeViewModel,
+                    userData?.id ?: 0,
+                    onClose = {
+                        navController.popBackStack()
+                    }
+                )
             }
-            composable<StripeCheckout> {
-                StripeCheckoutScreen(navController, paymentViewModel, serviceProductViewModel,
-                    userId = userData?.id ?: 0
+            composable<PaymentSuccess> {
+                PaymentSuccessScreen(
+                    onContinueShopping = {
+                        navController.navigate(Service) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable<ProductDetail> {
+                ProductDetailScreen(
+                    navController = navController,
+                    serviceProductViewModel = serviceProductViewModel,
+                    userId = userData?.id ?: -1
                 )
             }
 
@@ -348,8 +367,8 @@ fun Navigation(
                     onRetry = { statsViewModel.loadStatistics(userId ?: 0) }
                 )
             }
-            composable<ProductDetail> { backStackEntry ->
-                val productDetail = backStackEntry.toRoute<ProductDetail>()
+            composable<ActiveProductDetail> { backStackEntry ->
+                val activeProductDetail = backStackEntry.toRoute<ActiveProductDetail>()
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry(Service)
                 }
@@ -359,8 +378,8 @@ fun Navigation(
                 val userId = userData?.id
 
                 if (userId != null) {
-                    ProductDetailScreen(
-                        productId = productDetail.productId,
+                    ActiveProductDetailScreen(
+                        productId = activeProductDetail.productId,
                         userId = userId,
                         viewModel = viewModel,
                         navController = navController

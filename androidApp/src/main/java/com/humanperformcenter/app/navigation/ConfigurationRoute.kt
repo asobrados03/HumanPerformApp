@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.humanperformcenter.ui.components.FullScreenLoading
+import com.humanperformcenter.ui.components.app.FullScreenLoading
 import com.humanperformcenter.ui.screens.ConfigurationScreen
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.shared.presentation.ui.DeleteUserState

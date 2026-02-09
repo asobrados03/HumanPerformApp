@@ -12,10 +12,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class HireProduct(val serviceId: Int)
 @Serializable object Calendar
 @Serializable object Stats
-
-@Serializable
-data class ProductDetail(val productId: Int)
-
+@Serializable data class ActiveProductDetail(val productId: Int)
+@Serializable data class ProductDetail(val productId: Int)
 @Serializable object User
 @Serializable object AddCoupon
 @Serializable object Configuration
@@ -26,5 +24,6 @@ data class ProductDetail(val productId: Int)
 @Serializable object Document
 @Serializable object ViewPaymentMethod
 @Serializable object ElectronicWallet
+@Serializable object StripeSinglePayment
+@Serializable object StripeSubscription
 @Serializable object PaymentSuccess
-@Serializable object StripeCheckout

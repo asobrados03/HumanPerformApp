@@ -30,12 +30,16 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
     suspend fun unassignProductFromUser(userId: Int, productId: Int): Result<Unit> {
         return serviceProductRepository.unassignProductFromUser(userId, productId)
     }
-    suspend fun getProductDetails(userId: Int, productId: Int): Result<ProductDetailResponse> {
-        return serviceProductRepository.getProductDetails(userId, productId)
+    suspend fun getActiveProductDetail(userId: Int, productId: Int): Result<ProductDetailResponse> {
+        return serviceProductRepository.getActiveProductDetail(userId, productId)
     }
 
     suspend fun applyCoupon(code: String, userId: Int, productId: Int): Result<SimpleResponse> {
         return serviceProductRepository.applyCoupon(code, userId, productId)
+    }
+
+    suspend fun getProductDetailHireProduct(productId: Int): Result<Product> {
+        return serviceProductRepository.getProductDetailHireProduct(productId)
     }
 
     fun filterProducts(

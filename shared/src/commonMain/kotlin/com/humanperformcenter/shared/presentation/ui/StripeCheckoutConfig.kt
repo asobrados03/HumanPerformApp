@@ -15,5 +15,6 @@ data class StripeCheckoutConfig(
     val billingEmail: String? = null,
     val billingAddressLine1: String? = null,
     val billingPostalCode: String? = null,
-    val billingCity: String? = null
+    val billingCity: String? = null,
+    val publishableKey: String
 )

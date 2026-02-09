@@ -2,7 +2,6 @@ package com.humanperformcenter.shared.presentation.viewmodel
 
 import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
-import com.humanperformcenter.shared.data.model.payment.SharedPaymentResult
 import com.humanperformcenter.shared.domain.usecase.StripeUseCase
 import com.humanperformcenter.shared.presentation.ui.ActionUiState
 import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
@@ -25,24 +24,19 @@ class StripeViewModel(
         val log = logging()
     }
 
-    // --- STATES ---
-
-    // 1. Estado de la lista de tarjetas
     private val _viewPaymentMethodsUiState = MutableStateFlow<PaymentMethodsUiState>(PaymentMethodsUiState.Empty)
     @NativeCoroutinesState
     val viewPaymentMethodsUiState: StateFlow<PaymentMethodsUiState> = _viewPaymentMethodsUiState.asStateFlow()
 
-    // 2. Estado del Checkout (PaymentSheet)
     private val _startStripeCheckout = MutableStateFlow<StartStripeCheckoutState>(StartStripeCheckoutState.Idle)
     @NativeCoroutinesState
     val startStripeCheckout: StateFlow<StartStripeCheckoutState> = _startStripeCheckout.asStateFlow()
 
-    // 3. Estado para acciones puntuales (Borrar carta, guardar carta, cancelar sub, refund)
+    // Estado para acciones puntuales (Borrar tarjeta, guardar tarjeta, cancelar sub, refund)
     private val _actionUiState = MutableStateFlow<ActionUiState>(ActionUiState.Idle)
     @NativeCoroutinesState
     val actionUiState = _actionUiState.asStateFlow()
 
-    // 4. Estado para Suscripciones
     private val _subscriptionUiState = MutableStateFlow<SubscriptionUiState>(SubscriptionUiState.Idle)
     @NativeCoroutinesState
     val subscriptionUiState = _subscriptionUiState.asStateFlow()
@@ -51,6 +45,8 @@ class StripeViewModel(
         amount: Double,
         currency: String,
         customerId: String,
+        productId: Int? = null,
+        userId: Int? = null,
         paymentMethodId: String? = null,
         couponCode: String? = null,
         billing: BillingPrefill? = null
@@ -66,6 +62,8 @@ class StripeViewModel(
                     paymentMethodId = paymentMethodId,
                     metadata = mapOf(
                         "coupon_code" to (couponCode ?: ""),
+                        "product_id" to productId.toString(),
+                        "user_id" to userId.toString(),
                         "billing_name" to (billing?.name ?: ""),
                         "billing_email" to (billing?.email ?: ""),
                         "billing_address" to (billing?.addressLine1 ?: ""),
@@ -80,6 +78,8 @@ class StripeViewModel(
                 }
                 val ephemeralKeyDeferred = async { stripeUseCase.createEphemeralKey(customerId) }
 
+                val publishableKeyDeferred = async { stripeUseCase.getPublishableKey() }
+
                 // En StripeViewModel -> startStripeCheckout
                 val piResult = paymentIntentDeferred.await()
                 log.debug{ "STRIPE_DEBUG Resultado PI: $piResult" }
@@ -89,10 +89,18 @@ class StripeViewModel(
                 }
                 val ekResult = ephemeralKeyDeferred.await()
 
+                val publishableKeyResult = publishableKeyDeferred.await()
+                if (publishableKeyResult.isFailure) {
+                    log.error { "STRIPE_DEBUG  Error detallado Publishable Key: " +
+                            "${publishableKeyResult.exceptionOrNull()}"
+                    }
+                }
+
                 // 2. Evaluamos los resultados
                 if (piResult.isSuccess && ekResult.isSuccess) {
                     val paymentIntent = piResult.getOrThrow().data
                     val ephemeralKey = ekResult.getOrThrow().data
+                    val publishableKey = publishableKeyResult.getOrThrow()
 
                     val checkoutConfig = StripeCheckoutConfig(
                         merchantDisplayName = "HumanPerformCenter",
@@ -106,7 +114,8 @@ class StripeViewModel(
                         billingEmail = billing?.email,
                         billingAddressLine1 = billing?.addressLine1,
                         billingPostalCode = billing?.postalCode,
-                        billingCity = billing?.city
+                        billingCity = billing?.city,
+                        publishableKey = publishableKey
                     )
 
                     _startStripeCheckout.value = StartStripeCheckoutState.Ready(
@@ -129,29 +138,20 @@ class StripeViewModel(
         }
     }
 
-    /**
-     * Procesa el resultado final de la pasarela de Stripe.
-     * @param result El resultado traducido desde la UI (Completed, Canceled, Failed).
-     */
-    fun onPaymentResult(result: SharedPaymentResult) {
-        when (result) {
-            is SharedPaymentResult.Completed -> {
-                // El pago fue exitoso en los servidores de Stripe
-                _startStripeCheckout.value = StartStripeCheckoutState.Completed
-            }
+    fun onCheckoutCanceled() {
+        _startStripeCheckout.value = StartStripeCheckoutState.Canceled
+    }
 
-            is SharedPaymentResult.Canceled -> {
-                // El usuario cerró el modal sin completar el pago
-                _startStripeCheckout.value = StartStripeCheckoutState.Canceled
-            }
+    fun onCheckoutCompleted() {
+        _startStripeCheckout.value = StartStripeCheckoutState.Completed
+    }
 
-            is SharedPaymentResult.Failed -> {
-                // Ocurrió un error (tarjeta rechazada, error de red, etc.)
-                _startStripeCheckout.value = StartStripeCheckoutState.Failed(
-                    result.message ?: "El pago no pudo procesarse"
-                )
-            }
-        }
+    fun onCheckoutFailed(message: String) {
+        _startStripeCheckout.value = StartStripeCheckoutState.Failed(message)
+    }
+
+    fun resetStartCheckoutState() {
+        _startStripeCheckout.value = StartStripeCheckoutState.Idle
     }
 
     // --- GESTIÓN DE TARJETAS (CARD MANAGEMENT) ---
@@ -273,20 +273,6 @@ class StripeViewModel(
                 }
             )
         }
-    }
-
-    // --- RESET STATES ---
-
-    fun resetActionState() {
-        _actionUiState.value = ActionUiState.Idle
-    }
-
-    fun onStripeCompleted() {
-        _startStripeCheckout.value = StartStripeCheckoutState.Completed
-    }
-
-    fun onStripeCanceled() {
-        _startStripeCheckout.value = StartStripeCheckoutState.Canceled
     }
 
     fun onStripeFailed(message: String) {

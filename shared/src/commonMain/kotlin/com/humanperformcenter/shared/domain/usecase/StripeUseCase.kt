@@ -41,10 +41,6 @@ class StripeUseCase (private val stripeRepository: StripeRepository) {
         return stripeRepository.createPaymentIntent(createPaymentIntentRequest)
     }
 
-    suspend fun confirmPaymentIntent(id: String): Result<Unit> {
-        return stripeRepository.confirmPaymentIntent(id)
-    }
-
     suspend fun cancelPaymentIntent(id: String): Result<Unit> {
         return stripeRepository.cancelPaymentIntent(id)
     }
@@ -83,5 +79,9 @@ class StripeUseCase (private val stripeRepository: StripeRepository) {
 
     suspend fun setDefaultCard(cardId: String): Result<Unit> {
         return stripeRepository.setDefaultCard(cardId)
+    }
+
+    suspend fun getPublishableKey(): Result<String> {
+        return stripeRepository.getPublishableKey()
     }
 }

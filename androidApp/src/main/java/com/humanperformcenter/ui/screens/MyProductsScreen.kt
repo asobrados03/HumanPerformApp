@@ -21,16 +21,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.humanperformcenter.app.navigation.ProductDetail
+import com.humanperformcenter.app.navigation.ActiveProductDetail
 import com.humanperformcenter.shared.data.model.product_service.Product
-import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
 import com.humanperformcenter.shared.presentation.ui.UnassignEvent
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
-import com.humanperformcenter.ui.components.ConfirmCancelDialog
-import com.humanperformcenter.ui.components.ErrorComponent
-import com.humanperformcenter.ui.components.MyProductsShimmer
-import com.humanperformcenter.ui.components.ProductCard
-import com.humanperformcenter.ui.components.ProductOptionsDialog
+import com.humanperformcenter.ui.components.product.ConfirmCancelDialog
+import com.humanperformcenter.ui.components.app.ErrorComponent
+import com.humanperformcenter.ui.components.product.MyProductsShimmer
+import com.humanperformcenter.ui.components.product.ProductCard
+import com.humanperformcenter.ui.components.product.ProductOptionsDialog
 import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
@@ -39,8 +38,6 @@ import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 fun MyProductsScreen(
     serviceProductViewModel: ServiceProductViewModel,
     navController: NavHostController,
-    userViewModel: UserViewModel,
-    daySessionViewModel: DaySessionViewModel,
     userId: Int
 ) {
     // Recolectamos el estado completo de la Sealed Class
@@ -83,7 +80,7 @@ fun MyProductsScreen(
                 productos = state.products, // Pasamos la lista real extraída del Success
                 onProductClick = { product ->
                     serviceProductViewModel.productoSeleccionado = product
-                    navController.navigate(ProductDetail(product.id))
+                    navController.navigate(ActiveProductDetail(product.id))
                 },
                 onConfirmCancel = { targetId ->
                     serviceProductViewModel.unassignProductFromUser(targetId, userId)

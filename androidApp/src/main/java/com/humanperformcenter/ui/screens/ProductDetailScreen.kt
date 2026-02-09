@@ -1,8 +1,10 @@
 package com.humanperformcenter.ui.screens
 
+import android.widget.Toast
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,36 +14,76 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.network.ApiClient
-import com.humanperformcenter.ui.components.LogoAppBar
+import com.humanperformcenter.shared.presentation.ui.ProductDetailUiState
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.shared.presentation.ui.ProductDetailState
+import com.humanperformcenter.ui.components.app.LogoAppBar
+import com.humanperformcenter.ui.components.hire_product.ErrorView
+import com.humanperformcenter.ui.components.hire_product.PaymentSelectionContent
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductDetailScreen(
-    productId: Int,
-    userId: Int,
-    viewModel: ServiceProductViewModel,
-    navController: NavHostController
+    navController: NavHostController,
+    serviceProductViewModel: ServiceProductViewModel,
+    userId: Int
 ) {
-    val detailState = viewModel.productDetailsState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
+    // --- Args de navegación ---
+    val backStackEntry = remember(navController) {
+        navController.currentBackStackEntry
+    }
+    val productId = backStackEntry?.arguments?.getInt("productId") ?: return
+
+    // --- State (Observando la "Fuente de Verdad" del ViewModel) ---
+    val productState by serviceProductViewModel.productDetailState.collectAsStateWithLifecycle()
+    val userCoupons by serviceProductViewModel.userCoupons.collectAsStateWithLifecycle()
+
+    // Aquí recibimos el booleano mágico que ya sabe si está contratado o no
+    val isAlreadyHired by serviceProductViewModel.isAlreadyHired.collectAsStateWithLifecycle()
+
+    var showPaymentSheet by remember { mutableStateOf(false) }
+    var couponCode by remember { mutableStateOf("") }
+
+    fun handleProductAssignment(productId: Int, method: String) {
+        if (userId != -1) {
+            serviceProductViewModel.assignProductToUser(
+                userId = userId,
+                productId = productId,
+                paymentMethod = method,
+                couponCode = couponCode.takeIf { it.isNotBlank() }
+            )
+        } else {
+            Toast.makeText(context, "Debes iniciar sesión", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // --- Cargas ---
     LaunchedEffect(productId, userId) {
-        viewModel.fetchProductDetails(userId, productId)
+        serviceProductViewModel.loadProductDetail(productId)
+        serviceProductViewModel.loadUserCoupons(userId)
+        serviceProductViewModel.loadUserProducts(userId)
     }
 
     Scaffold(
@@ -52,110 +94,123 @@ fun ProductDetailScreen(
             )
         }
     ) { padding ->
-        when (val state = detailState.value) {
-            is ProductDetailState.Loading -> {
+
+        when (val state = productState) {
+            is ProductDetailUiState.Loading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
             }
 
-            is ProductDetailState.Error -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "Error: ${state.message}",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = {
-                            viewModel.fetchProductDetails(userId, productId)
-                        }) {
-                            Text("Reintentar")
-                        }
-                    }
-                }
+            is ProductDetailUiState.Error -> {
+                ErrorView(
+                    message = state.message,
+                    modifier = Modifier.padding(padding),
+                    onRetry = { serviceProductViewModel.loadProductDetail(productId) }
+                )
             }
 
-            is ProductDetailState.Success -> {
-                val producto = state.product
+            is ProductDetailUiState.Success -> {
+                val product = state.product
+
+                // Ya no necesitamos el remember { ... } aquí, usamos isAlreadyHired del ViewModel
+                val finalPrice = remember(product, userCoupons) {
+                    serviceProductViewModel.calcularPrecioConDescuento(
+                        product.id,
+                        product.price ?: 0.0,
+                        userCoupons
+                    )
+                }
+
                 Column(
                     modifier = Modifier
-                        .padding(padding)
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
+                        .padding(padding)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    val imageUrl = producto.image?.let { "${ApiClient.baseUrl}/product_images/$it" }
-
-                    imageUrl?.let {
+                    // --- Imagen ---
+                    product.image?.let { imagePath ->
                         AsyncImage(
-                            model = it,
-                            contentDescription = producto.name,
-                            contentScale = ContentScale.Fit,
+                            model = "${ApiClient.baseUrl}/product_images/$imagePath",
+                            contentDescription = product.name,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(240.dp)
+                                .height(220.dp)
                                 .clip(RoundedCornerShape(12.dp))
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // --- Título y Descripción ---
+                    Text(product.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(product.description ?: "No hay descripción disponible.", style = MaterialTheme.typography.bodyMedium)
 
+                    // --- Etiquetas de Tipo ---
+                    val productTypeLabel = when (product.typeOfProduct) {
+                        "recurrent" -> "Suscripción"
+                        "multi_sessions" -> "Bono de sesiones"
+                        "single_session" -> "Sesión individual"
+                        else -> product.typeOfProduct?.replaceFirstChar(Char::uppercase)
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (product.typeOfProduct != "single_session" && product.session != null) {
+                            Text("Sesiones: ${product.session}")
+                        }
+                        productTypeLabel?.let { label ->
+                            Text(text = "Tipo: $label", fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    // --- Precio ---
                     Text(
-                        text = producto.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Text(
-                        text = producto.description ?: "No hay descripción disponible.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text("Fecha de obtención: ${producto.created_at.take(10)}", modifier = Modifier.fillMaxWidth())
-                    producto.expiry_date?.let {
-                        Text("Fecha de caducidad: ${it.substring(0, 10)}", modifier = Modifier.fillMaxWidth())
-                    }
-                    producto.amount?.let {
-                        Text("Precio: %.2f€".format(it), modifier = Modifier.fillMaxWidth())
-                    }
-                    producto.discount?.let {
-                        Text("Descuento: %.2f€".format(it), modifier = Modifier.fillMaxWidth())
-                    }
-                    producto.total_amount?.let {
-                        Text("Total pagado: %.2f€".format(it), modifier = Modifier.fillMaxWidth())
-                    }
-                    producto.payment_method?.let {
-                        Text("Pago con: ${it.replaceFirstChar { c -> c.uppercase() }}", modifier = Modifier.fillMaxWidth())
-                    }
-                    producto.payment_status?.let {
-                        Text("Estado de pago: ${it.replaceFirstChar { c -> c.uppercase() }}", modifier = Modifier.fillMaxWidth())
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Text(
-                        text = "Servicios incluidos:",
+                        text = "Precio: ${finalPrice.toInt()}€",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.fillMaxWidth()
+                        color = MaterialTheme.colorScheme.error
                     )
 
-                    if (producto.services.isNotEmpty()) {
-                        producto.services.forEach { servicio ->
-                            Text("• ${servicio.name}", modifier = Modifier.fillMaxWidth())
+                    // --- Lógica del Botón y Mensaje ---
+                    if (isAlreadyHired) {
+                        Text(
+                            text = "Ya has contratado este producto.",
+                            color = MaterialTheme.colorScheme.secondary, // Cambiado a secondary para resaltar
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Button(
+                            onClick = { showPaymentSheet = true },
+                            enabled = !isAlreadyHired // Reactivo al combine del ViewModel
+                        ) {
+                            Text(if (isAlreadyHired) "Producto adquirido" else "Comprar")
                         }
-                    } else {
-                        Text("No hay servicios asociados.", modifier = Modifier.fillMaxWidth())
                     }
                 }
             }
+            else -> {}
+        }
+    }
+
+    // --- Payment sheet ---
+    if (showPaymentSheet && productState is ProductDetailUiState.Success) {
+        ModalBottomSheet(onDismissRequest = { showPaymentSheet = false }) {
+            PaymentSelectionContent(
+                product = (productState as ProductDetailUiState.Success).product,
+                userCoupons = userCoupons,
+                cuponTexto = couponCode,
+                navController = navController,
+                serviceProductViewModel = serviceProductViewModel,
+                onElectronicWalletPayment = {
+                    handleProductAssignment((productState as ProductDetailUiState.Success).product.id, "cash")
+                },
+            )
         }
     }
 }

@@ -10,8 +10,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.humanperformcenter.ui.components.FullScreenLoading
-import com.humanperformcenter.ui.components.FullScreenTextLoading
+import com.humanperformcenter.ui.components.app.FullScreenLoading
+import com.humanperformcenter.ui.components.app.FullScreenTextLoading
 import com.humanperformcenter.ui.screens.FavoriteScreen
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.shared.presentation.ui.CoachState
