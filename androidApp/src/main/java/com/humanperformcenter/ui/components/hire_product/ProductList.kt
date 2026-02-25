@@ -48,11 +48,11 @@ fun ProductList(
                 items = availableProducts,
                 key = { it.id }
             ) { availableProduct ->
-                val contratado = idsContratados.contains(availableProduct.id)
+                val isHired = idsContratados.contains(availableProduct.id)
 
                 // Calculamos el precio aquí para usarlo en la tarjeta
-                val precioFinal = remember(availableProduct, userCoupons) {
-                    serviceProductViewModel.calcularPrecioConDescuento(
+                val finalPrice = remember(availableProduct, userCoupons) {
+                    serviceProductViewModel.calculateDiscountedPrice(
                         availableProduct.id,
                         availableProduct.price ?: 0.0,
                         userCoupons
@@ -81,7 +81,7 @@ fun ProductList(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(availableProduct.name, style = MaterialTheme.typography.titleMedium)
-                            if (contratado) {
+                            if (isHired) {
                                 Text(
                                     "Ya contratado",
                                     style = MaterialTheme.typography.bodyMedium,
@@ -91,9 +91,9 @@ fun ProductList(
                         }
 
                         Text(
-                            text = "${precioFinal.toInt()}€",
-                            fontWeight = if (contratado) FontWeight.Normal else FontWeight.Bold,
-                            color = if (contratado) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
+                            text = "${finalPrice.toInt()}€",
+                            fontWeight = if (isHired) FontWeight.Normal else FontWeight.Bold,
+                            color = if (isHired) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
                         )
                     }
                 }

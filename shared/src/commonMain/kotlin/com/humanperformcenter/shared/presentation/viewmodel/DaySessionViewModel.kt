@@ -10,8 +10,6 @@ import com.humanperformcenter.shared.presentation.ui.DailySessionsUiState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,7 +47,7 @@ class DaySessionViewModel(
 
         log.debug { "📱 APP DEBUG: Llamando a fetch para ID: $productId en fecha: $date" }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = useCase.getSessionsByDay(productId, date)
 
             result.fold(
@@ -139,7 +137,7 @@ class DaySessionViewModel(
         newStartDate: String,
         hour: String
     ) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             log.debug { "🕒 Buscando Timeslot para: Service=$newServiceId, Dia=$newDayOfWeek, Hora='$hour'" }
             useCase.getTimeslotId(newServiceId, newDayOfWeek, hour).onFailure { error ->
                 log.error { "❌ Error obteniendo timeslotId: ${error.message}" }
@@ -171,7 +169,7 @@ class DaySessionViewModel(
     }
 
     fun fetchHolidays() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             useCase.getHolidays().onSuccess { result ->
                 _holidays.value = result.map { LocalDate.parse(it) }
             }.onFailure { error ->
@@ -182,7 +180,7 @@ class DaySessionViewModel(
     }
 
     fun fetchUserWeeklyLimit(userId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             log.info { "📡 Iniciando petición de límites..." }
 
             useCase.getUserWeeklyLimit(userId).onSuccess { response ->

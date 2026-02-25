@@ -26,46 +26,53 @@ import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 
 object AuthRepositoryImpl : AuthRepository {
-    override suspend fun login(email: String, password: String): Result<LoginResponse> = try {
-        val resp: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/login") {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("email" to email, "password" to password))
-            expectSuccess = false
-        }
+    override suspend fun login(email: String, password: String)
+    : Result<LoginResponse> = withContext(Dispatchers.IO) {
+        try {
+            val resp: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/login") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("email" to email, "password" to password))
+                expectSuccess = false
+            }
 
-        when (resp.status) {
-            HttpStatusCode.OK -> {
-                val data: LoginResponse = resp.body()
-                val userData = User(
-                    id = data.id,
-                    fullName = data.fullName,
-                    email = data.email,
-                    phone = data.phone,
-                    sex = data.sex,
-                    dateOfBirth = data.dateOfBirth,
-                    postcode = data.postcode,
-                    postAddress = data.postAddress,
-                    dni = data.dni,
-                    profilePictureName = data.profilePictureName
-                )
-                SecureStorage.saveTokens(data.accessToken, data.refreshToken)
-                SecureStorage.saveUser(userData)
-                Result.success(data)
+            when (resp.status) {
+                HttpStatusCode.OK -> {
+                    val data: LoginResponse = resp.body()
+                    val userData = User(
+                        id = data.id,
+                        fullName = data.fullName,
+                        email = data.email,
+                        phone = data.phone,
+                        sex = data.sex,
+                        dateOfBirth = data.dateOfBirth,
+                        postcode = data.postcode,
+                        postAddress = data.postAddress,
+                        dni = data.dni,
+                        profilePictureName = data.profilePictureName
+                    )
+                    SecureStorage.saveTokens(data.accessToken, data.refreshToken)
+                    SecureStorage.saveUser(userData)
+                    Result.success(data)
+                }
+                HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized -> {
+                    val err: ErrorResponse = resp.body() ?: ErrorResponse("Credenciales inválidas")
+                    Result.failure(Exception(err.error))
+                }
+                else -> Result.failure(Exception("Error al iniciar sesión"))
             }
-            HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized -> {
-                val err: ErrorResponse = resp.body() ?: ErrorResponse("Credenciales inválidas")
-                Result.failure(Exception(err.error))
-            }
-            else -> Result.failure(Exception("Error al iniciar sesión"))
+        } catch (err: Throwable) {
+            Result.failure(err)
         }
-    } catch (err: Throwable) {
-        Result.failure(err)
     }
 
-    override suspend fun register(data: RegisterRequest): Result<RegisterResponse> {
-        return try {
+    override suspend fun register(data: RegisterRequest)
+    : Result<RegisterResponse> = withContext(Dispatchers.IO) {
+        return@withContext try {
             // 1) Construye la lista de partes
             val parts = formData {
                 data.profilePicBytes?.let { bytes ->
@@ -111,8 +118,8 @@ object AuthRepositoryImpl : AuthRepository {
         }
     }
 
-    override suspend fun resetPassword(email: String): Result<Unit> {
-        return try {
+    override suspend fun resetPassword(email: String): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val resp: HttpResponse = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/reset-password") {
                 contentType(ContentType.Application.Json)
                 setBody(ResetPasswordRequest(
@@ -156,8 +163,9 @@ object AuthRepositoryImpl : AuthRepository {
         }
     }
 
-    override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int): Result<Unit> {
-        return try {
+    override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int)
+    : Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val resp: HttpResponse = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/change-password") {
                 contentType(ContentType.Application.Json)
                 setBody(ChangePasswordRequest(

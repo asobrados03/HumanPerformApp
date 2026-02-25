@@ -7,7 +7,6 @@ import com.humanperformcenter.shared.presentation.ui.ActionUiState
 import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
 import com.humanperformcenter.shared.presentation.ui.StartStripeCheckoutState
 import com.humanperformcenter.shared.presentation.ui.StripeCheckoutConfig
-import com.humanperformcenter.shared.presentation.ui.SubscriptionUiState
 import com.humanperformcenter.shared.presentation.ui.models.BillingPrefill
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
@@ -36,10 +35,6 @@ class StripeViewModel(
     private val _actionUiState = MutableStateFlow<ActionUiState>(ActionUiState.Idle)
     @NativeCoroutinesState
     val actionUiState = _actionUiState.asStateFlow()
-
-    private val _subscriptionUiState = MutableStateFlow<SubscriptionUiState>(SubscriptionUiState.Idle)
-    @NativeCoroutinesState
-    val subscriptionUiState = _subscriptionUiState.asStateFlow()
 
     fun startStripeCheckout(
         amount: Double,
@@ -156,24 +151,43 @@ class StripeViewModel(
 
     // --- GESTIÓN DE TARJETAS (CARD MANAGEMENT) ---
 
-    // Obtener tarjetas (Corregido: quitamos Dispatchers.IO del launch para StateFlow)
-    fun getUserCards(userId: Int) {
+    fun loadPaymentMethods() {
         viewModelScope.launch {
             _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Loading
 
-            stripeUseCase.getUserCards(userId).fold(
-                onSuccess = { methods ->
-                    _viewPaymentMethodsUiState.value = if (methods.isEmpty()) {
-                        PaymentMethodsUiState.Empty
+            // 1. Obtenemos o creamos el cliente de Stripe
+            val customerResult = stripeUseCase.createOrGetCustomer()
+
+            customerResult.fold(
+                onSuccess = { customerResponse ->
+                    val customerId = customerResponse.data?.customerId
+                    if (customerId != null) {
+                        // 2. Si tenemos ID, pedimos las tarjetas
+                        fetchCards(customerId)
                     } else {
-                        PaymentMethodsUiState.Success(methods)
+                        _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error("No se pudo obtener el ID de cliente")
                     }
                 },
                 onFailure = {
-                    _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error(it.message ?: "Error al cargar tarjetas")
+                    _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error("Error al identificar usuario")
                 }
             )
         }
+    }
+
+    private suspend fun fetchCards(customerId: String) {
+        stripeUseCase.getUserCards(customerId).fold(
+            onSuccess = { methods ->
+                _viewPaymentMethodsUiState.value = if (methods.isEmpty()) {
+                    PaymentMethodsUiState.Empty
+                } else {
+                    PaymentMethodsUiState.Success(methods)
+                }
+            },
+            onFailure = {
+                _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error(it.message ?: "Error al cargar tarjetas")
+            }
+        )
     }
 
     // Guardar una nueva tarjeta
@@ -182,7 +196,7 @@ class StripeViewModel(
             action = { stripeUseCase.saveCard(paymentMethodId) },
             onSuccess = {
                 // Si pasamos el ID, refrescamos la lista automáticamente
-                if (userIdToRefresh != null) getUserCards(userIdToRefresh)
+                if (userIdToRefresh != null) loadPaymentMethods()
             }
         )
     }
@@ -192,7 +206,7 @@ class StripeViewModel(
         performAction(
             action = { stripeUseCase.deleteCard(cardId) },
             onSuccess = {
-                if (userIdToRefresh != null) getUserCards(userIdToRefresh)
+                if (userIdToRefresh != null) loadPaymentMethods()
             }
         )
     }
@@ -202,30 +216,83 @@ class StripeViewModel(
         performAction(
             action = { stripeUseCase.setDefaultCard(cardId) },
             onSuccess = {
-                if (userIdToRefresh != null) getUserCards(userIdToRefresh)
+                if (userIdToRefresh != null) loadPaymentMethods()
             }
         )
     }
 
     // --- SUSCRIPCIONES ---
 
-    fun createSubscription(priceId: String) {
+    fun startStripeSubscription(
+        priceId: String,
+        customerId: String,
+        userId: Int,
+        productId: Int,
+        couponCode: String? = null
+    ) {
         viewModelScope.launch {
-            _subscriptionUiState.value = SubscriptionUiState.Loading
-            stripeUseCase.createSubscription(priceId).fold(
-                onSuccess = {
-                    _subscriptionUiState.value = SubscriptionUiState.Success(it)
+            _startStripeCheckout.value = StartStripeCheckoutState.Loading
+
+            stripeUseCase.createSubscription(priceId, userId, productId, couponCode).fold(
+                onSuccess = { subDto ->
+                    val ephemeralKeyDeferred = async { stripeUseCase.createEphemeralKey(customerId) }
+                    val publishableKeyDeferred = async { stripeUseCase.getPublishableKey() }
+
+                    if (publishableKeyDeferred.isCancelled) {
+                        _startStripeCheckout.value = StartStripeCheckoutState.Failed(
+                            "No se pudo obtener la clave pública"
+                        )
+                        return@launch
+                    }
+
+                    if(ephemeralKeyDeferred.isCancelled) {
+                        _startStripeCheckout.value = StartStripeCheckoutState.Failed(
+                            "No se pudo obtener la clave efímera"
+                        )
+                        return@launch
+                    }
+
+                    val ephemeralKeyResult = ephemeralKeyDeferred.await()
+                    val publishableKeyResult = publishableKeyDeferred.await()
+
+                    if(ephemeralKeyResult.isSuccess && publishableKeyResult.isSuccess) {
+                        val ephemeralKey = ephemeralKeyResult.getOrThrow().data
+                        val publishableKey = publishableKeyResult.getOrThrow()
+
+                        val checkoutConfig = StripeCheckoutConfig(
+                            merchantDisplayName = "HumanPerformCenter",
+                            allowsDelayedPaymentMethods = true,
+                            customerId = customerId,
+                            customerEphemeralKeySecret = ephemeralKey?.secret,
+                            googlePayEnabled = true,
+                            googlePayCountryCode = "ES",
+                            googlePayCurrencyCode = "EUR",
+                            publishableKey = publishableKey
+                        )
+
+                        _startStripeCheckout.value = StartStripeCheckoutState.Ready(
+                            clientSecret = subDto.clientSecret,
+                            config = checkoutConfig
+                        )
+                    } else {
+                        val errorMsg = publishableKeyResult.exceptionOrNull()?.message
+                            ?: ephemeralKeyResult.exceptionOrNull()?.message
+                            ?: "Error al configurar el pago"
+                        _startStripeCheckout.value = StartStripeCheckoutState.Failed(errorMsg)
+                        log.error { errorMsg }
+                    }
                 },
                 onFailure = {
-                    _subscriptionUiState.value = SubscriptionUiState.Error(it.message ?: "Error en suscripción")
+                    _startStripeCheckout.value = StartStripeCheckoutState.Failed(it.message ?: "Error")
+                    log.error { it.message }
                 }
             )
         }
     }
 
-    fun cancelSubscription(subscriptionId: String) {
+    fun cancelSubscription(subscriptionId: String, productId: Int, userId: Int) {
         performAction(
-            action = { stripeUseCase.cancelSubscription(subscriptionId) }
+            action = { stripeUseCase.cancelSubscription(subscriptionId, productId, userId) }
         )
     }
 
@@ -250,8 +317,6 @@ class StripeViewModel(
             action = { stripeUseCase.createRefund(paymentIntentId, amount) }
         )
     }
-
-    // --- UTILIDAD PRIVADA PARA REDUCIR CÓDIGO ---
 
     /**
      * Función helper para ejecutar acciones que no devuelven datos (Unit),

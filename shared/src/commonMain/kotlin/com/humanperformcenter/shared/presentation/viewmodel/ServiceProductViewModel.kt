@@ -5,9 +5,8 @@ import com.humanperformcenter.shared.data.model.payment.Coupon
 import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
-import com.humanperformcenter.shared.presentation.ui.AssignEvent
-import com.humanperformcenter.shared.presentation.ui.CouponEvent
 import com.humanperformcenter.shared.presentation.ui.ActiveProductDetailState
+import com.humanperformcenter.shared.presentation.ui.AssignEvent
 import com.humanperformcenter.shared.presentation.ui.ProductDetailUiState
 import com.humanperformcenter.shared.presentation.ui.ServiceProductUiState
 import com.humanperformcenter.shared.presentation.ui.ServiceUiState
@@ -19,8 +18,6 @@ import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import com.rickclephas.kmp.observableviewmodel.stateIn
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -72,12 +69,9 @@ class ServiceProductViewModel(
     @NativeCoroutinesState
     val unassignEvent = _unassignEvent.receiveAsFlow()
 
-    var productoSeleccionado: Product? = null
+    var selectedProduct: Product? = null
 
-    private val _couponEvent = Channel<CouponEvent>()
     @NativeCoroutinesState
-    val couponEvent = _couponEvent.receiveAsFlow()
-
     val isAlreadyHired: StateFlow<Boolean> = combine(
         productDetailState,
         userProductsState
@@ -96,7 +90,7 @@ class ServiceProductViewModel(
     )
 
     fun loadServiceProducts(serviceId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             // 1. Estado: CARGANDO
             updateState(serviceId, ServiceProductUiState.Loading)
 
@@ -106,7 +100,9 @@ class ServiceProductViewModel(
             result.onSuccess { products ->
                 updateState(serviceId, ServiceProductUiState.Success(products))
             }.onFailure { error ->
-                updateState(serviceId, ServiceProductUiState.Error(error.message ?: "Error desconocido"))
+                updateState(serviceId, ServiceProductUiState.Error(error.message
+                    ?: "Error desconocido")
+                )
             }
         }
     }
@@ -120,7 +116,7 @@ class ServiceProductViewModel(
     fun loadUserProducts(userId: Int) {
         _userProductsState.value = UserProductsUiState.Loading
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = serviceProductUseCase.getUserProducts(userId)
 
             result.onSuccess { products ->
@@ -138,7 +134,7 @@ class ServiceProductViewModel(
     fun loadProductDetail(productId: Int) {
         _productDetailState.value = ProductDetailUiState.Loading
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = serviceProductUseCase.getProductDetailHireProduct(productId)
 
             result.onSuccess { product ->
@@ -191,7 +187,7 @@ class ServiceProductViewModel(
         paymentMethod: String,
         couponCode: String? = null
     ) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = serviceProductUseCase.assignProductToUser(
                 userId, productId, paymentMethod, couponCode
             )
@@ -209,7 +205,7 @@ class ServiceProductViewModel(
     }
 
     fun unassignProductFromUser(productId: Int, userId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = serviceProductUseCase.unassignProductFromUser(userId, productId)
 
             result.fold(
@@ -230,7 +226,7 @@ class ServiceProductViewModel(
     fun fetchActiveProductDetail(userId: Int, productId: Int) {
         _activeProductDetails.value = ActiveProductDetailState.Loading
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = serviceProductUseCase.getActiveProductDetail(userId, productId)
 
             result.onSuccess { productDetail ->
@@ -242,25 +238,8 @@ class ServiceProductViewModel(
         }
     }
 
-    fun applyCoupon(codigo: String, userId: Int, productId: Int) {
-        viewModelScope.launch {
-            val result = serviceProductUseCase.applyCoupon(codigo, userId, productId)
-
-            result.fold(
-                onSuccess = {
-                    // El cupón es válido
-                    _couponEvent.send(CouponEvent.Success)
-                },
-                onFailure = { error ->
-                    // Enviamos el mensaje de error para mostrar en el Toast/UI
-                    _couponEvent.send(CouponEvent.Error(error.message ?: "Error desconocido"))
-                }
-            )
-        }
-    }
-
     fun loadUserCoupons(userId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = userUseCase.getUserCoupons(userId)
             result.onSuccess { _userCoupons.value = it }
         }
@@ -274,8 +253,8 @@ class ServiceProductViewModel(
         return serviceProductUseCase.filterProducts(list, filter, sessionCount)
     }
 
-    fun calcularPrecioConDescuento(productoId: Int, precioOriginal: Double, cupones: List<Coupon>)
+    fun calculateDiscountedPrice(productId: Int, originalPrice: Double, coupons: List<Coupon>)
             : Double {
-        return serviceProductUseCase.calcularPrecioConDescuento(productoId, precioOriginal, cupones)
+        return serviceProductUseCase.calculateDiscountedPrice(productId, originalPrice, coupons)
     }
 }

@@ -13,7 +13,6 @@ import io.ktor.client.request.post
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 
 object ApiClient {
@@ -55,7 +54,7 @@ object ApiClient {
                         bearerAuth(oldRefresh)
                     }
                     if (resp.status == HttpStatusCode.Unauthorized) {
-                        runBlocking { storage.clear() }
+                        storage.clear()
                         return@refreshTokens null
                     } else {
                         val newTokens = resp.body<RefreshResponse>()

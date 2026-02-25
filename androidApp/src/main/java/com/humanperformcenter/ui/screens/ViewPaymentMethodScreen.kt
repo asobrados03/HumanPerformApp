@@ -1,6 +1,5 @@
 package com.humanperformcenter.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,7 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.humanperformcenter.shared.data.model.payment.PaymentMethod
+import com.humanperformcenter.shared.data.model.payment.StripePaymentMethod
 import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
 import com.humanperformcenter.ui.components.app.ErrorComponent
 import com.humanperformcenter.ui.components.app.LogoAppBar
@@ -49,12 +48,14 @@ import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 @Composable
 fun ViewPaymentMethodScreen(
     navController: NavHostController,
-    paymentViewModel: StripeViewModel,
-    userId: Int
+    stripeViewModel: StripeViewModel
 ) {
-    val uiState by paymentViewModel.viewPaymentMethodsUiState.collectAsStateWithLifecycle()
+    val uiState by stripeViewModel.viewPaymentMethodsUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(userId) { paymentViewModel.getUserCards(userId) }
+    // Disparamos la carga sin depender de parámetros externos si es posible
+    LaunchedEffect(Unit) {
+        stripeViewModel.loadPaymentMethods()
+    }
 
     Scaffold(
         topBar = {
@@ -86,15 +87,36 @@ fun ViewPaymentMethodScreen(
                 is PaymentMethodsUiState.Error -> {
                     ErrorComponent(
                         message = state.message,
-                        onRetry = { paymentViewModel.getUserCards(userId) }
+                        onRetry = { stripeViewModel.loadPaymentMethods() } // Actualizado
                     )
                 }
 
                 is PaymentMethodsUiState.Empty -> {
-                    EmptyState(
-                        title = "No hay métodos todavía",
-                        subtitle = "Añade tu primera tarjeta para pagar más rápido."
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 24.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.CreditCard,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = "No hay métodos todavía",
+                            style = MaterialTheme.typography.titleLarge)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Añade tu primera tarjeta para pagar más rápido.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
 
                 is PaymentMethodsUiState.Success -> {
@@ -118,19 +140,24 @@ fun ViewPaymentMethodScreen(
 }
 
 @Composable
-fun PaymentMethodCard(paymentMethod: PaymentMethod) {
-    val brand = (paymentMethod.brand ?: "Tarjeta").uppercase()
-    val last4 = paymentMethod.last4?.takeIf { it.isNotBlank() } ?: "••••"
-    val exp = paymentMethod.expMonth?.let { mm ->
-        val yy = paymentMethod.expYear?.toString()?.takeLast(2) ?: "—"
-        "%02d/%s".format(mm, yy)
-    } ?: "—"
+fun PaymentMethodCard(paymentMethod: StripePaymentMethod) {
+    // Accedemos a los datos a través del objeto anidado 'card'
+    val cardDetails = paymentMethod.card
+    val brand = (cardDetails.displayBrand ?: cardDetails.brand).uppercase()
+    val last4 = cardDetails.last4.takeIf { it.isNotBlank() } ?: "••••"
+
+    // Formateo de fecha de expiración
+    val expMonth = "%02d".format(cardDetails.expMonth)
+    val expYear = cardDetails.expYear.toString().takeLast(2)
+    val exp = "$expMonth/$expYear"
 
     ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp)
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -138,27 +165,29 @@ fun PaymentMethodCard(paymentMethod: PaymentMethod) {
                 .height(IntrinsicSize.Min),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar de marca
-            BrandAvatar(brand = brand)
+            // Avatar de marca (usa el brand para elegir el icono)
+            BrandAvatar(brand = cardDetails.brand)
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = brand,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "•••• $last4  ·  $exp",
+                    text = "•••• $last4  ·  Expira $exp",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            AnimatedVisibility(visible = paymentMethod.isDefault) {
+            // Nota: El JSON de Stripe no trae 'isDefault' por defecto.
+            // Si lo manejas en tu lógica local, puedes mantener esta visibilidad.
+            /*AnimatedVisibility(visible = paymentMethod.isDefault) {
                 DefaultChip()
-            }
+            }*/
         }
     }
 }
@@ -217,34 +246,6 @@ private fun DefaultChip() {
     }
 }
 
-/* ---------- Estados bonitos ---------- */
-
-@Composable
-private fun EmptyState(title: String, subtitle: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.CreditCard,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(64.dp)
-        )
-        Spacer(Modifier.height(12.dp))
-        Text(title, style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(4.dp))
-        Text(
-            subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
-}
 
 /* ---------- Shimmer Loading ---------- */
 

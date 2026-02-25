@@ -11,11 +11,20 @@ data class Product(
     val price: Double? = null,
     val image: String? = null,
     @SerialName("type_of_product")
-    val typeOfProduct: String? = null,  // "recurrent", "multi_sessions", etc.
+    val typeOfProduct: String? = null,
+    @SerialName("price_id")
+    val priceId: String? = null,
     val session: Int? = null,
 
     @SerialName("service_ids")
     val serviceIds: List<Int> = emptyList(),
 
-    val isAvailable: Boolean? = true
+    val isAvailable: Boolean? = true,
+
+    // --- NUEVOS CAMPOS DE STRIPE ---
+    @SerialName("stripe_subscription_id")
+    val stripeSubscriptionId: String? = null,
+
+    @SerialName("stripe_payment_intent_id")
+    val stripePaymentIntentId: String? = null
 )

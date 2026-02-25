@@ -45,7 +45,7 @@ fun ElectronicWalletScreen(
     userId: Int
 ) {
     val balance by userViewModel.balance.collectAsStateWithLifecycle()
-    val uiState by userViewModel.ewalletTransactions.collectAsStateWithLifecycle()
+    val uiState by userViewModel.eWalletTransactions.collectAsStateWithLifecycle()
 
     var mostrarDetalles by remember { mutableStateOf(false) }
 

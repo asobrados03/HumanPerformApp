@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.ActiveProductDetail
 import com.humanperformcenter.shared.data.model.product_service.Product
+import com.humanperformcenter.shared.presentation.ui.ActionUiState
 import com.humanperformcenter.shared.presentation.ui.UnassignEvent
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.ui.components.product.ConfirmCancelDialog
@@ -30,13 +31,13 @@ import com.humanperformcenter.ui.components.app.ErrorComponent
 import com.humanperformcenter.ui.components.product.MyProductsShimmer
 import com.humanperformcenter.ui.components.product.ProductCard
 import com.humanperformcenter.ui.components.product.ProductOptionsDialog
-import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 
 @Composable
 fun MyProductsScreen(
     serviceProductViewModel: ServiceProductViewModel,
+    stripeViewModel: StripeViewModel,
     navController: NavHostController,
     userId: Int
 ) {
@@ -63,6 +64,16 @@ fun MyProductsScreen(
         }
     }
 
+    val actionState by stripeViewModel.actionUiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(actionState) {
+        if (actionState is ActionUiState.Success) {
+            // Si Stripe confirma éxito, refrescamos la lista local
+            serviceProductViewModel.loadUserProducts(userId)
+            Toast.makeText(context, "Operación realizada con éxito", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // --- Gestión de la UI según el estado ---
     when (val state = productsUiState) {
         is UserProductsUiState.Loading -> {
@@ -76,14 +87,37 @@ fun MyProductsScreen(
             )
         }
         is UserProductsUiState.Success -> {
+            Log.d("PRODUCTOS", "Productos cargados: ${state.products}")
             MyProductsContent(
-                productos = state.products, // Pasamos la lista real extraída del Success
+                products = state.products, // Pasamos la lista real extraída del Success
                 onProductClick = { product ->
-                    serviceProductViewModel.productoSeleccionado = product
+                    serviceProductViewModel.selectedProduct = product
                     navController.navigate(ActiveProductDetail(product.id))
                 },
-                onConfirmCancel = { targetId ->
-                    serviceProductViewModel.unassignProductFromUser(targetId, userId)
+                onConfirmCancel = { product ->
+                    // LÓGICA DE DECISIÓN:
+                    when {
+                        // 1. Si es Suscripción
+                        !product.stripeSubscriptionId.isNullOrBlank() -> {
+                            stripeViewModel.cancelSubscription(
+                                product.stripeSubscriptionId!!,
+                                product.id,
+                                userId
+                            )
+                        }
+                        // 2. Si es Pago Único (Refund)
+                        !product.stripePaymentIntentId.isNullOrBlank() -> {
+                            stripeViewModel.createRefund(
+                                product.stripePaymentIntentId!!,
+                                product.price?.toInt()
+                            )
+                            serviceProductViewModel.unassignProductFromUser(product.id, userId)
+                        }
+                        // 3. Si no tiene Stripe (Baja manual/local)
+                        else -> {
+                            serviceProductViewModel.unassignProductFromUser(product.id, userId)
+                        }
+                    }
                 }
             )
         }
@@ -92,16 +126,16 @@ fun MyProductsScreen(
 
 @Composable
 fun MyProductsContent(
-    productos: List<Product>,
+    products: List<Product>,
     onProductClick: (Product) -> Unit,
-    onConfirmCancel: (Int) -> Unit
+    onConfirmCancel: (Product) -> Unit
 ) {
     var selectedProduct by remember { mutableStateOf<Product?>(null) }
     var showOptionsDialog by remember { mutableStateOf(false) }
     var showCancelConfirmation by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (productos.isEmpty()) {
+        if (products.isEmpty()) {
             Text(
                 "No tienes productos contratados.",
                 modifier = Modifier.align(Alignment.Center)
@@ -111,7 +145,7 @@ fun MyProductsContent(
                 modifier = Modifier.fillMaxSize().padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(items = productos, key = { it.id }) { product ->
+                items(items = products, key = { it.id }) { product ->
                     product.image?.let { Log.d("IMAGEN", it) }
 
                     ProductCard(
@@ -141,7 +175,7 @@ fun MyProductsContent(
         if (showCancelConfirmation && selectedProduct != null) {
             ConfirmCancelDialog(
                 onConfirm = {
-                    onConfirmCancel(selectedProduct!!.id)
+                    onConfirmCancel(selectedProduct!!)
                     showCancelConfirmation = false
                     showOptionsDialog = false
                     selectedProduct = null

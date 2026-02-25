@@ -12,7 +12,6 @@ interface StripeRepository {
     suspend fun createEphemeralKey(customerId: String): Result<StripeEphemeralKeyResponse>
 
     suspend fun attachPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit>
-    suspend fun listPaymentMethods(customerId: String): Result<List<PaymentMethodDto>>
     suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit>
 
     suspend fun createPaymentIntent(intentRequest: CreatePaymentIntentRequest)
@@ -22,14 +21,19 @@ interface StripeRepository {
 
     suspend fun createRefund(paymentIntentId: String, amount: Int?): Result<Unit>
 
-    suspend fun createSubscription(priceId: String): Result<SubscriptionDto>
-    suspend fun cancelSubscription(id: String): Result<Unit>
+    suspend fun createSubscription(
+        priceId: String,
+        userId: Int,
+        productId: Int,
+        couponCode: String? = null
+    ): Result<SubscriptionDto>
+    suspend fun cancelSubscription(subscriptionId: String, productId: Int, userId: Int): Result<Unit>
     suspend fun getSubscription(id: String): Result<SubscriptionDto>
 
     suspend fun getUserTransactions(): Result<List<TransactionDto>>
 
     suspend fun saveCard(paymentMethodId: String): Result<Unit>
-    suspend fun getUserCards(userId: Int): Result<List<PaymentMethod>>
+    suspend fun getUserCards(customerId: String): Result<List<StripePaymentMethod>>
     suspend fun deleteCard(cardId: String): Result<Unit>
     suspend fun setDefaultCard(cardId: String): Result<Unit>
 }

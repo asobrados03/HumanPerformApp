@@ -23,6 +23,7 @@ import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.ServerResponseException
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.delete
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
@@ -38,6 +39,9 @@ import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.doubleOrNull
@@ -52,7 +56,8 @@ object UserRepositoryImpl: UserRepository {
      * Si el servidor responde 200 OK, devuelve el `User` actualizado.
      * Si responde otro código o ocurre una excepción, se lanza dicho error.
      */
-    override suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User> {
+    override suspend fun updateUser(user: User, profilePicBytes: ByteArray?)
+    : Result<User> = withContext(Dispatchers.IO) {
         // 1) Serializamos el User a JSON
         val userJson = Json.encodeToString(User.serializer(), user)
 
@@ -86,15 +91,15 @@ object UserRepositoryImpl: UserRepository {
         if (resp.status == HttpStatusCode.OK) {
             val updatedUser: User = resp.body()
             SecureStorage.saveUser(updatedUser)
-            return Result.success(updatedUser)
+            return@withContext Result.success(updatedUser)
         } else {
-            return Result.failure(Exception("Error al actualizar usuario: código HTTP " +
+            return@withContext Result.failure(Exception("Error al actualizar usuario: código HTTP " +
                     "${resp.status.value}"))
         }
     }
 
-    override suspend fun getUserById(id: Int): Result<User> {
-        return try {
+    override suspend fun getUserById(id: Int): Result<User> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val resp: HttpResponse = ApiClient.apiClient.get(
                 "${ApiClient.baseUrl}/mobile/user"
             ) {
@@ -113,12 +118,13 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun deleteUser(email: String): Result<Unit> {
-        return try {
-            val resp: HttpResponse = ApiClient.apiClient.delete("${ApiClient.baseUrl}/mobile/user") {
+    override suspend fun deleteUser(email: String): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val resp: HttpResponse = ApiClient.apiClient.delete(
+                "${ApiClient.baseUrl}/mobile/user") {
                 parameter("email", email)
             }
-            return when (resp.status) {
+            return@withContext when (resp.status) {
                 HttpStatusCode.OK       -> Result.success(Unit)
                 HttpStatusCode.NotFound -> Result.failure(Exception("Usuario no encontrado"))
                 else                    -> Result.failure(
@@ -130,8 +136,8 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun getCoaches(): Result<List<Professional>> {
-        return try {
+    override suspend fun getCoaches(): Result<List<Professional>> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val resp: HttpResponse = ApiClient.apiClient.get(
                 "${ApiClient.baseUrl}/mobile/list_coaches"
             ) {
@@ -155,8 +161,8 @@ object UserRepositoryImpl: UserRepository {
         coachId: Int,
         serviceName: String?,
         userId: Int?
-    ): Result<String> {
-        return try {
+    ): Result<String> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val response: HttpResponse = ApiClient.apiClient.post(
                 "${ApiClient.baseUrl}/mobile/user/preferred-coach"
             ) {
@@ -186,8 +192,9 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse> {
-        return try {
+    override suspend fun getPreferredCoach(customerId: Int)
+    : Result<GetPreferredCoachResponse> = withContext(Dispatchers.IO) {
+        return@withContext try {
             // Llamada al endpoint, pasando el customerId como query parameter
             val response: HttpResponse = ApiClient.apiClient.get(
                 "${ApiClient.baseUrl}/mobile/user/preferred-coach"
@@ -198,11 +205,11 @@ object UserRepositoryImpl: UserRepository {
 
             if (response.status == HttpStatusCode.OK) {
                 val body: GetPreferredCoachResponse = response.body()
-                return Result.success(body)
+                Result.success(body)
             } else {
                 // parsea el mensaje de error o lanza uno genérico
                 val errorResponse = response.body<ErrorResponse>()
-                return Result.failure(RuntimeException(errorResponse.error))
+                Result.failure(RuntimeException(errorResponse.error))
             }
         } catch (e: ClientRequestException) {
             // 4xx
@@ -216,20 +223,22 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit> {
-        return try {
+    override suspend fun deleteProfilePic(req: DeleteProfilePicRequest)
+    : Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val resp: HttpResponse = ApiClient.apiClient.delete(
                 "${ApiClient.baseUrl}/mobile/user/photo"
             ) {
                 url {
-                    parameters.append("profilePictureName", req.profilePictureName.toString())
+                    parameters.append("profilePictureName", req.profilePictureName
+                        .toString())
                     parameters.append("email", req.email)
                 }
             }
-            return when (resp.status) {
-                HttpStatusCode.OK       -> Result.success(resp.body())
+            return@withContext when (resp.status) {
+                HttpStatusCode.OK -> Result.success(resp.body())
                 HttpStatusCode.NotFound -> Result.failure(Exception(resp.body<ErrorResponse>().error))
-                else                    -> Result.failure(
+                else -> Result.failure(
                     Exception("Error al eliminar la foto de perfil: código HTTP ${resp.status.value}")
                 )
             }
@@ -238,11 +247,14 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun getUserBookings(userId: Int): Result<List<UserBooking>> {
+    override suspend fun getUserBookings(userId: Int)
+    : Result<List<UserBooking>> = withContext(Dispatchers.IO) {
         require(userId > 0) { "customerId debe ser mayor que 0" }
 
-        return try {
-            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-bookings") {
+        return@withContext try {
+            val response = ApiClient.apiClient.get(
+                "${ApiClient.baseUrl}/mobile/user-bookings"
+            ) {
                 parameter("user_id", userId)
             }
 
@@ -272,22 +284,29 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun cancelUserBooking(bookingId: Int): Result<Unit> {
-        return try {
-            val response: HttpResponse = ApiClient.apiClient.delete("${ApiClient.baseUrl}/mobile/booking/$bookingId")
+    override suspend fun cancelUserBooking(bookingId: Int)
+    : Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val response: HttpResponse = ApiClient.apiClient.delete(
+                "${ApiClient.baseUrl}/mobile/booking/$bookingId"
+            )
 
             if (response.status == HttpStatusCode.OK) {
                 Result.success(Unit)
             } else {
-                Result.failure(Exception("Error al cancelar la reserva: código HTTP ${response.status.value}"))
+                Result.failure(Exception(
+                    "Error al cancelar la reserva: código HTTP ${response.status.value}")
+                )
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun getUserStats(customerId: Int): Result<UserStatistics> {
-        return try {
+
+    override suspend fun getUserStats(customerId: Int)
+    : Result<UserStatistics> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-stats") {
                 url { parameters.append("user_id", customerId.toString()) }
             }
@@ -306,36 +325,55 @@ object UserRepositoryImpl: UserRepository {
         userId: Int,
         couponCode: String
     ): Result<Unit> = runCatching {
-        val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("coupon_code" to couponCode))
-        }
+        withContext(Dispatchers.IO) {
+            val response =
+                ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
+                    contentType(ContentType.Application.Json)
+                    setBody(mapOf("coupon_code" to couponCode))
+                    expectSuccess = false
+                }
 
-        when (response.status) {
-            HttpStatusCode.NoContent,
-            HttpStatusCode.OK,
-            HttpStatusCode.Created -> Unit
+            when (response.status) {
+                HttpStatusCode.NoContent -> Unit
 
-            else -> {
-                // Intenta leer error en texto; si tu backend manda JSON, lo parseas.
-                val raw = response.bodyAsText() // no explota con 204
-                val msg = raw.ifBlank { "HTTP ${response.status.value}" }
-                throw Exception("Error al añadir el cupón: $msg")
+                else -> {
+                    val error = try {
+                        response.body<ErrorResponse>()
+                    } catch (_: Exception) {
+                        null
+                    }
+                    val message = error?.error
+                        ?: "HTTP ${response.status.value}"
+                    throw Exception(message)
+                }
             }
         }
     }
 
     override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> = runCatching {
-        val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
-            url { parameters.append("user_id", userId.toString()) } // (elige uno: path o query)
-        }
+        withContext(Dispatchers.IO) {
+            val response =
+                ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
+                    url {
+                        parameters.append(
+                            "user_id",
+                            userId.toString()
+                        )
+                    } // (elige uno: path o query)
+                }
 
-        when (response.status) {
-            HttpStatusCode.NoContent -> emptyList()                     // sin cupones
-            HttpStatusCode.OK        -> response.body<List<Coupon>>()   // hay lista
-            else -> {
-                val raw = response.bodyAsText()
-                throw Exception("Error obteniendo cupones: HTTP ${response.status.value} $raw")
+            when (response.status) {
+                HttpStatusCode.NoContent -> emptyList()                     // sin cupones
+                HttpStatusCode.OK -> response.body<List<Coupon>>()   // hay lista
+                HttpStatusCode.Forbidden -> {
+                    val errorResponse = response.body<ErrorResponse>()
+                    throw Exception(errorResponse.error)
+                }
+
+                else -> {
+                    val raw = response.bodyAsText()
+                    throw Exception("Error obteniendo cupones: HTTP ${response.status.value} $raw")
+                }
             }
         }
     }
@@ -343,89 +381,93 @@ object UserRepositoryImpl: UserRepository {
     override suspend fun uploadDocument(
         name: String,
         data: ByteArray
-    ): Result<String> = runCatching {
-        // 1) Detectar mime type de forma más robusta
-        val contentType = when (name.substringAfterLast('.', "").lowercase()) {
-            "png" -> "image/png"
-            "jpg", "jpeg" -> "image/jpeg"
-            "gif" -> "image/gif"
-            "pdf" -> "application/pdf"
-            "doc" -> "application/msword"
-            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            "txt" -> "text/plain"
-            else -> "application/octet-stream"
-        }
+    ): Result<String> =
+        runCatching {
+            withContext(Dispatchers.IO) {
 
-        // 2) Crear el formData siguiendo el patrón que funciona en register
-        val parts = formData {
-            append("file", data, Headers.build {
-                append(HttpHeaders.ContentType, contentType)
-                append(HttpHeaders.ContentDisposition, "filename=\"$name\"")
-            })
-        }
-
-        try {
-            // 3) Realizar la petición POST con el mismo patrón que funciona
-            val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/user/document") {
-                setBody(MultiPartFormDataContent(parts))
-            }
-
-            when (response.status) {
-                HttpStatusCode.OK -> {
-                    val uploadResponse = response.body<UploadResponse>()
-                    uploadResponse.message
+                val contentType = when (name.substringAfterLast('.', "").lowercase()) {
+                    "png" -> "image/png"
+                    "jpg", "jpeg" -> "image/jpeg"
+                    "gif" -> "image/gif"
+                    "pdf" -> "application/pdf"
+                    "doc" -> "application/msword"
+                    "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    "txt" -> "text/plain"
+                    else -> "application/octet-stream"
                 }
-                HttpStatusCode.BadRequest -> {
-                    val errorBody = try {
-                        response.body<ErrorResponse>()
-                    } catch (_: Exception) {
-                        ErrorResponse("Solicitud inválida: ${response.bodyAsText()}")
+
+                val parts = formData {
+                    append("file", data, Headers.build {
+                        append(HttpHeaders.ContentType, contentType)
+                        append(HttpHeaders.ContentDisposition, "filename=\"$name\"")
+                    })
+                }
+
+                val response = ApiClient.apiClient.post(
+                    "${ApiClient.baseUrl}/mobile/user/document"
+                ) {
+                    setBody(MultiPartFormDataContent(parts))
+                }
+
+                when (response.status) {
+                    HttpStatusCode.Created -> response.body<UploadResponse>().message
+
+                    HttpStatusCode.OK -> response.body<UploadResponse>().message
+
+                    HttpStatusCode.BadRequest -> {
+                        throw Exception("Error en la solicitud: ${response.safeErrorBody()}")
                     }
-                    throw Exception("Error en la solicitud: ${errorBody.error}")
-                }
-                HttpStatusCode.Unauthorized -> {
-                    throw Exception("No autorizado. Verifica tu token de autenticación")
-                }
-                HttpStatusCode.Forbidden -> {
-                    throw Exception("Acceso denegado al recurso")
-                }
-                HttpStatusCode.RequestHeaderFieldTooLarge -> {
-                    throw Exception("El archivo es demasiado grande")
-                }
-                HttpStatusCode.UnsupportedMediaType -> {
-                    throw Exception("Tipo de archivo no soportado: $contentType")
-                }
-                HttpStatusCode.InternalServerError -> {
-                    throw Exception("Error interno del servidor. Intenta nuevamente")
-                }
-                else -> {
-                    val errorBody = try {
-                        response.body<ErrorResponse>()
-                    } catch (_: Exception) {
-                        ErrorResponse("Error HTTP ${response.status.value}: ${response.bodyAsText()}")
+
+                    HttpStatusCode.Unauthorized -> {
+                        throw Exception("No autorizado. Verifica tu token")
                     }
-                    throw Exception("Error al subir archivo: HTTP ${response.status.value} → ${errorBody.error}")
+
+                    HttpStatusCode.Forbidden -> throw Exception("Acceso denegado")
+
+
+                    HttpStatusCode.RequestHeaderFieldTooLarge -> {
+                        throw Exception("El archivo es demasiado grande")
+                    }
+
+                    HttpStatusCode.UnsupportedMediaType -> {
+                        throw Exception("Tipo no soportado: $contentType")
+                    }
+
+                    HttpStatusCode.InternalServerError -> {
+                        throw Exception("Error interno del servidor")
+                    }
+
+                    else ->
+                        throw Exception(
+                            "HTTP ${response.status.value} → ${response.safeErrorBody()}"
+                        )
                 }
             }
-        } catch (e: Exception) {
+        }.recoverCatching { e ->
             when (e) {
-                is HttpRequestTimeoutException -> {
-                    throw Exception("Timeout al subir el archivo. Verifica tu conexión e intenta con un archivo más pequeño")
-                }
-                is ConnectTimeoutException -> {
-                    throw Exception("No se pudo conectar al servidor. Verifica tu conexión de internet")
-                }
-                is SocketTimeoutException -> {
-                    throw Exception("Timeout de conexión. El archivo puede ser demasiado grande")
-                }
+                is HttpRequestTimeoutException -> throw Exception("Timeout al subir el archivo")
+
+                is ConnectTimeoutException -> throw Exception("No se pudo conectar al servidor")
+
+                is SocketTimeoutException -> throw Exception("Timeout de conexión")
+
                 else -> throw e
             }
         }
-    }
 
-    override suspend fun getEwalletBalance(userId: Int): Result<Double?> {
-        return try {
-            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/e-wallet-balance") {
+    private suspend fun HttpResponse.safeErrorBody(): String =
+        try {
+            body<ErrorResponse>().error
+        } catch (_: Exception) {
+            bodyAsText()
+        }
+
+    override suspend fun getEwalletBalance(userId: Int)
+    : Result<Double?> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val response = ApiClient.apiClient.get(
+                "${ApiClient.baseUrl}/mobile/user/e-wallet-balance"
+            ) {
                 url {
                     parameters.append("user_id", userId.toString())
                 }
@@ -441,12 +483,16 @@ object UserRepositoryImpl: UserRepository {
         }
     }
 
-    override suspend fun getEwalletTransactions(userId: Int): Result<List<EwalletTransaction>> = runCatching {
-        val response: EwalletResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/transactions") {
-            parameter("user_id", userId)
-        }.body()
+    override suspend fun getEwalletTransactions(userId: Int)
+    : Result<List<EwalletTransaction>> = runCatching {
+        withContext(Dispatchers.IO) {
+            val response: EwalletResponse =
+                ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/transactions") {
+                    parameter("user_id", userId)
+                }.body()
 
-        response.transactions
+            response.transactions
+        }
     }
 
 }

@@ -56,15 +56,6 @@ object StripeRepositoryImpl : StripeRepository {
         }
     }
 
-    override suspend fun listPaymentMethods(customerId: String)
-    : Result<List<PaymentMethodDto>> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.get(
-                "${ApiClient.baseUrl}/stripe/payment-methods/$customerId"
-            ).body()
-        }
-    }
-
     override suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
             ApiClient.apiClient.delete(
@@ -108,20 +99,38 @@ object StripeRepositoryImpl : StripeRepository {
         }
     }
 
-    override suspend fun createSubscription(priceId: String)
-    : Result<SubscriptionDto> = runCatching {
+    override suspend fun createSubscription(
+        priceId: String,
+        userId: Int,
+        productId: Int,
+        couponCode: String?
+    ): Result<SubscriptionDto> = runCatching {
         withContext(Dispatchers.IO) {
             ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/subscription") {
                 contentType(ContentType.Application.Json)
-                setBody(mapOf("priceId" to priceId))
+                setBody(buildMap {
+                    put("priceId", priceId)
+                    put("userId", userId.toString())
+                    put("productId", productId.toString())
+                    if (!couponCode.isNullOrBlank()) {
+                        put("couponCode", couponCode)
+                    }
+                })
             }.body()
         }
     }
 
-    override suspend fun cancelSubscription(id: String): Result<Unit> = runCatching {
+    override suspend fun cancelSubscription(subscriptionId: String, productId: Int, userId: Int)
+    : Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
-            ApiClient.apiClient.delete("${ApiClient.baseUrl}/stripe/subscription/$id")
-                .body()
+            ApiClient.apiClient.delete(
+                "${ApiClient.baseUrl}/stripe/subscription/$subscriptionId"
+            ){
+                url {
+                    parameters.append("user_id", userId.toString())
+                    parameters.append("product_id", productId.toString())
+                }
+            }.body()
         }
     }
 
@@ -146,11 +155,13 @@ object StripeRepositoryImpl : StripeRepository {
         }
     }
 
-    override suspend fun getUserCards(userId: Int): Result<List<PaymentMethod>> = runCatching {
+    override suspend fun getUserCards(customerId: String): Result<List<StripePaymentMethod>> = runCatching {
         withContext(Dispatchers.IO) {
-            ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/cards") {
-                parameter("userId", userId)
-            }.body()
+            val response: StripePaymentMethodsResponse = ApiClient.apiClient.get(
+                "${ApiClient.baseUrl}/stripe/payment-methods/$customerId"
+            ).body()
+
+            response.data
         }
     }
 

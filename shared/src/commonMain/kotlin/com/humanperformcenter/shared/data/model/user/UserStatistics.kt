@@ -1,12 +1,14 @@
 package com.humanperformcenter.shared.data.model.user
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class UserStatistics(
-    val entrenamientosMesPasado: Int = 0,
-    val entrenadorMasUsado: String? = null,
-    val reservasPendientes: Int = 0,
-    val isLoading: Boolean = true,
-    val error: String? = null
+    @SerialName("last_month_workouts")
+    val lastMonthWorkouts: Int = 0,
+    @SerialName("most_frequent_trainer")
+    val mostFrequentTrainer: String? = null,
+    @SerialName("pending_bookings")
+    val pendingBookings: Int = 0
 )

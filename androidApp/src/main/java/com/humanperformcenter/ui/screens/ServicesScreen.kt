@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.presentation.ui.ServiceUiState
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.ui.components.app.ErrorComponent
 import com.humanperformcenter.ui.components.app.LogoAppBar
@@ -30,6 +31,7 @@ import kotlinx.coroutines.launch
 fun ServicesScreen(
     navController: NavHostController,
     userViewModel: UserViewModel,
+    stripeViewModel: StripeViewModel,
     serviceProductViewModel: ServiceProductViewModel
 ) {
     val user by userViewModel.userData.collectAsStateWithLifecycle()
@@ -80,6 +82,7 @@ fun ServicesScreen(
                 when (pageIndex) {
                     0 -> MyProductsScreen(
                         serviceProductViewModel = serviceProductViewModel,
+                        stripeViewModel = stripeViewModel,
                         navController = navController,
                         userId = user?.id ?: 0
                     )

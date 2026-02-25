@@ -1,9 +1,8 @@
 package com.humanperformcenter.shared.domain.repository
 
+import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.model.product_service.ProductDetailResponse
 import com.humanperformcenter.shared.data.model.product_service.ServiceAvailable
-import com.humanperformcenter.shared.data.model.product_service.Product
-import com.humanperformcenter.shared.presentation.ui.SimpleResponse
 
 interface ServiceProductRepository {
     suspend fun getAllServices(): Result<List<ServiceAvailable>>
@@ -17,6 +16,5 @@ interface ServiceProductRepository {
     ): Result<Int>
     suspend fun unassignProductFromUser(userId: Int, productId: Int): Result<Unit>
     suspend fun getActiveProductDetail(userId: Int, productId: Int): Result<ProductDetailResponse>
-    suspend fun applyCoupon(code: String, userId: Int, productId: Int): Result<SimpleResponse>
     suspend fun getProductDetailHireProduct(productId: Int): Result<Product>
 }

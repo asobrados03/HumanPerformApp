@@ -43,6 +43,7 @@ import com.humanperformcenter.ui.screens.RegisterScreen
 import com.humanperformcenter.ui.screens.ServicesScreen
 import com.humanperformcenter.ui.screens.SplashScreen
 import com.humanperformcenter.ui.screens.StripeSinglePaymentScreen
+import com.humanperformcenter.ui.screens.StripeSubscriptionScreen
 import com.humanperformcenter.ui.screens.UserScreen
 import com.humanperformcenter.ui.screens.UserStatsScreen
 import com.humanperformcenter.ui.screens.ViewPaymentMethodScreen
@@ -146,6 +147,7 @@ fun Navigation(
                 ServicesScreen(
                     navController = navController,
                     userViewModel = userViewModel,
+                    stripeViewModel = stripeViewModel,
                     serviceProductViewModel = serviceProductViewModel
                 )
             }
@@ -196,12 +198,9 @@ fun Navigation(
                 }
             }
             composable<ViewPaymentMethod>{
-                val userId = userData?.id ?: -1
-
                 ViewPaymentMethodScreen(
                     navController = navController,
-                    paymentViewModel = stripeViewModel,
-                    userId = userId
+                    stripeViewModel = stripeViewModel
                 )
             }
             composable<AddCoupon>{
@@ -285,6 +284,14 @@ fun Navigation(
                     onClose = {
                         navController.popBackStack()
                     }
+                )
+            }
+            composable<StripeSubscription> {
+                StripeSubscriptionScreen(
+                    navController = navController,
+                    stripeViewModel = stripeViewModel,
+                    userId = userData?.id ?: 0,
+                    onClose = { navController.popBackStack() }
                 )
             }
             composable<PaymentSuccess> {

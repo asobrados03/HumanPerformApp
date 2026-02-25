@@ -3,10 +3,13 @@ package com.humanperformcenter.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -29,10 +32,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.humanperformcenter.shared.presentation.ui.UserStatsState
+import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
 import com.humanperformcenter.ui.components.app.AppCard
 import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.ui.components.app.NavigationBar
-import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,96 +45,111 @@ fun UserStatsScreen(
     statsViewModel: UserStatsViewModel,
     onRetry: () -> Unit
 ) {
+    // Obtenemos el estado reactivo
     val uiState by statsViewModel.uiState.collectAsStateWithLifecycle()
-
-    val entrenamientosMesPasado = uiState.entrenamientosMesPasado
-    val entrenadorMasUsado= uiState.entrenadorMasUsado
-    val reservasPendientes = uiState.reservasPendientes
-    val isLoading = uiState.isLoading
-    val error = uiState.error
-
-
-    println("UserStatsScreen: Entrenamientos del mes pasado: $entrenamientosMesPasado")
-    println("UserStatsScreen: Entrenador más usado: $entrenadorMasUsado")
 
     Scaffold(
         topBar = {
-            LogoAppBar(showBackArrow = false, onBackNavClicked = { navController.popBackStack() })
+            LogoAppBar(
+                showBackArrow = false,
+                onBackNavClicked = { navController.popBackStack() }
+            )
         },
         bottomBar = { NavigationBar(navController = navController) }
     ) { paddingValues ->
-        LazyColumn(
+
+        // Usamos Box para centrar el loading o el error fácilmente
+        Box(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(horizontal = 16.dp)
         ) {
-            item {
-                // Sección de estadísticas
-                when {
-                    isLoading -> {
-                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
-                    }
+            when (val state = uiState) {
+                is UserStatsState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
 
-                    error != null -> {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.Error, null, tint = Color.Red)
-                            Text("Error: $error", color = Color.Red)
-                            Spacer(Modifier.height(12.dp))
-                            Button(onClick = onRetry) {
-                                Icon(Icons.Default.Refresh, null)
-                                Spacer(Modifier.width(8.dp))
-                                Text("Reintentar")
-                            }
-                        }
-                    }
+                is UserStatsState.Error -> {
+                    ErrorContent(
+                        message = state.message,
+                        onRetry = onRetry,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
 
-                    else -> {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "📊 Tus estadísticas",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 8.dp),
-                                textAlign = TextAlign.Start
-                            )
-
-                            AppCard(modifier = Modifier.fillMaxWidth()) {
-                                Column(Modifier.padding(16.dp)) {
-                                    Text(
-                                        "📅 Entrenamientos del mes pasado",
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text("$entrenamientosMesPasado sesiones")
-                                }
-                            }
-
-                            AppCard(modifier = Modifier.fillMaxWidth()) {
-                                Column(Modifier.padding(16.dp)) {
-                                    Text("🏋️ Entrenador más usado", fontWeight = FontWeight.Bold)
-                                    Text(entrenadorMasUsado ?: "No hay datos disponibles")
-                                }
-                            }
-
-                            AppCard(modifier = Modifier.fillMaxWidth()) {
-                                Column(Modifier.padding(16.dp)) {
-                                    Text("⏳ Reservas pendientes", fontWeight = FontWeight.Bold)
-                                    Text("$reservasPendientes sesiones pendientes")
-                                }
-                            }
-
-                        }
-                    }
+                is UserStatsState.Success -> {
+                    // Si es Success, mostramos la lista con los datos
+                    StatsContent(state = state)
                 }
             }
+        }
+    }
+}
 
+@Composable
+private fun StatsContent(state: UserStatsState.Success) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(vertical = 16.dp)
+    ) {
+        item {
+            Text(
+                text = "📊 Tus estadísticas",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
+        item {
+            StatCard(
+                title = "📅 Entrenamientos del mes pasado",
+                value = "${state.stats.lastMonthWorkouts} sesiones"
+            )
+        }
+
+        item {
+            StatCard(
+                title = "🏋️ Entrenador más usado",
+                value = state.stats.mostFrequentTrainer ?: "No hay datos disponibles"
+            )
+        }
+
+        item {
+            StatCard(
+                title = "⏳ Reservas pendientes",
+                value = "${state.stats.pendingBookings} sesiones pendientes"
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatCard(title: String, value: String) {
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text(title, fontWeight = FontWeight.Bold)
+            Text(value)
+        }
+    }
+}
+
+@Composable
+private fun ErrorContent(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(Icons.Default.Error, null, tint = Color.Red, modifier = Modifier.size(48.dp))
+        Spacer(Modifier.height(8.dp))
+        Text("Error: $message", color = Color.Red, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(16.dp))
+        Button(onClick = onRetry) {
+            Icon(Icons.Default.Refresh, null)
+            Spacer(Modifier.width(8.dp))
+            Text("Reintentar")
         }
     }
 }

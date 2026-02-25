@@ -113,9 +113,24 @@ fun ProductDetailScreen(
             is ProductDetailUiState.Success -> {
                 val product = state.product
 
+                val appliedCoupon = remember(product, userCoupons) {
+                    userCoupons
+                        // 1. Filtramos cupones válidos para este producto (misma lógica que el cálculo)
+                        .filter { it.productIds.isEmpty() || it.productIds.contains(product.id) }
+                        // 2. Buscamos el que daría el mayor descuento
+                        .maxByOrNull { coupon ->
+                            if (coupon.isPercentage) (product.price ?: 0.0) * coupon.discount / 100
+                            else coupon.discount
+                        }
+                }
+
+                LaunchedEffect(appliedCoupon) {
+                    couponCode = appliedCoupon?.code ?: ""
+                }
+
                 // Ya no necesitamos el remember { ... } aquí, usamos isAlreadyHired del ViewModel
                 val finalPrice = remember(product, userCoupons) {
-                    serviceProductViewModel.calcularPrecioConDescuento(
+                    serviceProductViewModel.calculateDiscountedPrice(
                         product.id,
                         product.price ?: 0.0,
                         userCoupons
@@ -204,7 +219,7 @@ fun ProductDetailScreen(
             PaymentSelectionContent(
                 product = (productState as ProductDetailUiState.Success).product,
                 userCoupons = userCoupons,
-                cuponTexto = couponCode,
+                couponCode = couponCode,
                 navController = navController,
                 serviceProductViewModel = serviceProductViewModel,
                 onElectronicWalletPayment = {

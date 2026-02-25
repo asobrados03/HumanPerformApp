@@ -1,5 +1,6 @@
 package com.humanperformcenter.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,8 +28,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.ui.components.app.LogoAppBar
 
 @Composable
 fun AddCouponScreen(
@@ -74,6 +75,15 @@ fun AddCouponScreen(
                 label = { Text("Código de cupón") },
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Default.LocalOffer, contentDescription = null) },
+                isError = uiState.error != null,
+                supportingText = {
+                    if (uiState.error != null) {
+                        Text(
+                            text = uiState.error ?: "Se ha producido un error desconocido",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -87,7 +97,7 @@ fun AddCouponScreen(
             }
 
             uiState.error?.let {
-                println("Error al añadir cupón: $it")
+                Log.d("DEBUG COUPON","Error al añadir cupón: $it")
             }
 
             // 🔽 Scroll solo para los cupones

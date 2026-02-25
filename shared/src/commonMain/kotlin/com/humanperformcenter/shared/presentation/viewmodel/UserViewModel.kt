@@ -21,8 +21,6 @@ import com.humanperformcenter.shared.presentation.ui.UploadState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +29,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.withContext
 
 class UserViewModel(
     private val userUseCase: UserUseCase,
@@ -106,13 +103,13 @@ class UserViewModel(
     @NativeCoroutinesState
     val getPreferredCoachState: StateFlow<GetPreferredCoachState> = _getPreferredCoachState
 
-    private val _balance = MutableStateFlow<Double?>(null)
+    private val _balance = MutableStateFlow<Double?>(0.0)
     @NativeCoroutinesState
     val balance: StateFlow<Double?> = _balance
 
-    private val _ewalletTransactions = MutableStateFlow<EwalletUiState>(EwalletUiState.Loading)
+    private val _eWalletTransactions = MutableStateFlow<EwalletUiState>(EwalletUiState.Loading)
     @NativeCoroutinesState
-    val ewalletTransactions: StateFlow<EwalletUiState> = _ewalletTransactions.asStateFlow()
+    val eWalletTransactions: StateFlow<EwalletUiState> = _eWalletTransactions.asStateFlow()
 
     /**
      * Recibe un User “candidato” (con campos fullName, dateOfBirth = "yyyy-MM-dd",
@@ -147,7 +144,7 @@ class UserViewModel(
 
         _updateState.value = UpdateState.Loading
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = userUseCase.updateUser(candidate, profilePicBytes)
 
             result.onSuccess { newUser ->
@@ -169,7 +166,7 @@ class UserViewModel(
 
     fun fetchUserProfile() {
         val currentUser = _userData.value ?: return
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = userUseCase.getUserById(currentUser.id)
             result.onSuccess { updatedUser ->
                 _userData.value = updatedUser
@@ -182,7 +179,7 @@ class UserViewModel(
     }
 
     fun deleteUser(email: String) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             _deleteState.value = DeleteUserState.Loading
 
             userUseCase.deleteUser(email).fold(
@@ -213,7 +210,7 @@ class UserViewModel(
     fun logout(onSuccess: () -> Unit) {
         if (_isLoggingOut.value) return
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
                 _isLoggingOut.value = true
 
@@ -225,9 +222,7 @@ class UserViewModel(
 
                 _isLoggingOut.value = false
 
-                withContext(Dispatchers.Main) {
-                    onSuccess()
-                }
+                onSuccess()
             } catch (e: Exception) {
                 _isLoggingOut.value = false
                 log.debug { "DEBUG: Error en logout: ${e.message}" }
@@ -237,7 +232,7 @@ class UserViewModel(
 
     fun getCoaches() {
         _coachesState.value = CoachState.Loading
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             userUseCase.getCoaches().onSuccess { professionals ->
                 _coachesState.value = CoachState.Success(professionals)
             }.onFailure { throwable ->
@@ -252,7 +247,7 @@ class UserViewModel(
 
     fun deleteProfilePic(user: User) {
         _deleteProfilePicState.value = DeleteProfilePicState.Loading
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             userUseCase.deleteProfilePic(
                 DeleteProfilePicRequest(
                     email = user.email,
@@ -280,7 +275,7 @@ class UserViewModel(
 
     fun markFavorite(coachId: Int, serviceName: String?, userId: Int?) {
         _markFavoriteState.value = MarkFavoriteState.Loading
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             userUseCase.markFavorite(coachId, serviceName, userId).onSuccess { message ->
                 _markFavoriteState.value = MarkFavoriteState.Success(message)
             }.onFailure { throwable ->
@@ -300,7 +295,7 @@ class UserViewModel(
     fun getPreferredCoach(userId: Int?) {
         if (userId == null) return
         _getPreferredCoachState.value = GetPreferredCoachState.Loading
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
                 // Asume que getPreferredCoach devuelve un objeto con coachId
                 userUseCase.getPreferredCoach(
@@ -328,26 +323,40 @@ class UserViewModel(
         _getPreferredCoachState.value = GetPreferredCoachState.Idle
     }
 
-    fun loadUserCoupon(userId: Int) = viewModelScope.launch(Dispatchers.IO) {
-        userUseCase.getUserCoupons(userId)
-            .onSuccess { coupons ->
-                _couponUiState.update { it.copy(currentCoupons = coupons) }
+    fun loadUserCoupon(userId: Int) = viewModelScope.launch {
+        _couponUiState.update {
+            it.copy(
+                isLoading = true,
+                error = null
+            )
+        }
+        userUseCase.getUserCoupons(userId).onSuccess { coupons ->
+            _couponUiState.update {
+                it.copy(
+                    isLoading = false,
+                    currentCoupons = coupons
+                )
             }
-            .onFailure { ex ->
-                _couponUiState.update { it.copy(error = ex.message) }
+        }.onFailure { ex ->
+            _couponUiState.update {
+                it.copy(
+                    isLoading = false,
+                    error = ex.message
+                )
             }
+        }
     }
 
     fun onCouponCodeChanged(code: String) {
         _couponUiState.update { it.copy(code = code, error = null) }
     }
 
-    fun addCouponToUser(userId: Int, code: String) = viewModelScope.launch(Dispatchers.IO) {
+    fun addCouponToUser(userId: Int, code: String) = viewModelScope.launch {
         _couponUiState.update { it.copy(isLoading = true, error = null) }
 
-        userUseCase.addCouponToUser(userId, code)
-            .onSuccess {
-                val updatedCoupons = userUseCase.getUserCoupons(userId).getOrElse { emptyList() }
+        userUseCase.addCouponToUser(userId, code).onSuccess {
+
+            userUseCase.getUserCoupons(userId).onSuccess { updatedCoupons ->
                 _couponUiState.update {
                     it.copy(
                         isLoading = false,
@@ -355,15 +364,28 @@ class UserViewModel(
                         code = ""
                     )
                 }
+            }.onFailure { ex ->
+                _couponUiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = ex.message
+                    )
+                }
             }
-            .onFailure { ex ->
-                _couponUiState.update { it.copy(isLoading = false, error = ex.message) }
+        }.onFailure { ex ->
+            _couponUiState.update {
+                it.copy(
+                    isLoading = false,
+                    error = ex.message
+                )
             }
+        }
     }
+
 
     fun uploadDocument(name: String, data: ByteArray) {
         _uploadState.value = UploadState.Loading
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             userUseCase.uploadDocument(name, data)
                 .onSuccess { message ->
                     _uploadState.value = UploadState.Success(message)
@@ -383,7 +405,7 @@ class UserViewModel(
     }
 
     fun fetchUserBookings(userId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             _userBookings.value = FetchUserBookingsState.Loading
 
             userUseCase.getUserBookings(userId).onSuccess { bookings ->
@@ -403,7 +425,7 @@ class UserViewModel(
     }
 
     fun cancelUserBooking(bookingId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             userUseCase.cancelUserBooking(bookingId).fold(
                 onSuccess = {
                     notificationManager.cancelNotification(bookingId)
@@ -422,7 +444,7 @@ class UserViewModel(
             return
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             userUseCase.getEwalletBalance(userId).fold(
                 onSuccess = { nuevoBalance ->
                     _balance.value = nuevoBalance ?: 0.0
@@ -437,14 +459,14 @@ class UserViewModel(
 
     fun loadEwalletTransactions(userId: Int) {
         viewModelScope.launch {
-            _ewalletTransactions.value = EwalletUiState.Loading
+            _eWalletTransactions.value = EwalletUiState.Loading
 
             userUseCase.getEwalletTransactions(userId)
                 .onSuccess { list ->
-                    _ewalletTransactions.value = EwalletUiState.Success(list)
+                    _eWalletTransactions.value = EwalletUiState.Success(list)
                 }
                 .onFailure { e ->
-                    _ewalletTransactions.value = EwalletUiState.Error(e.message ?:
+                    _eWalletTransactions.value = EwalletUiState.Error(e.message ?:
                     "Error desconocido")
                 }
         }

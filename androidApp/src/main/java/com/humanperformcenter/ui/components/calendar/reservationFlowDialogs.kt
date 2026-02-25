@@ -54,7 +54,6 @@ import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDate as JavaLocalDate
 import kotlinx.datetime.LocalDate as KotlinLocalDate
@@ -120,7 +119,7 @@ private class ReservationFlowState(
             return
         }
 
-        scope.launch(Dispatchers.IO) {
+        scope.launch {
             daySessionViewModel.filterCoachesByHour(hour)
             val availableCoaches = daySessionViewModel.coachesForHour.value.filter { it.booked < it.capacity }
             if (availableCoaches.isEmpty()) {
@@ -143,7 +142,7 @@ private class ReservationFlowState(
         // 1. Obtenemos el ID del producto que el usuario seleccionó en el dropdown
         val selectedProductId = selectedProduct?.id ?: return
 
-        scope.launch(Dispatchers.IO) {
+        scope.launch {
             // Traducimos ese Producto al Servicio real (Base de datos)
             val realServiceId = daySessionViewModel.fetchServiceIdForProduct(selectedProductId)
 
@@ -174,7 +173,7 @@ private class ReservationFlowState(
         // 1. Extraemos el ID del producto seleccionado actualmente en la UI
         val selectedProductId = selectedProduct?.id ?: return
 
-        scope.launch(Dispatchers.IO) {
+        scope.launch {
             // 2. Opcional: Si necesitas el serviceId real para la lógica de horarios
             val realServiceId = daySessionViewModel.fetchServiceIdForProduct(selectedProductId) ?: -1
 

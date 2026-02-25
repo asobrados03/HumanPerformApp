@@ -11,8 +11,6 @@ import com.humanperformcenter.shared.presentation.ui.ResetPasswordState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,7 +39,7 @@ class AuthViewModel(
     fun login(email: String, password: String) {
         _loginState.value = LoginState.Loading
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = authUseCase.login(email, password)
 
             // StateFlow permite actualizar .value desde cualquier hilo (Dispatchers.IO es seguro aquí)
@@ -75,7 +73,7 @@ class AuthViewModel(
 
         _registerState.value = RegisterState.Loading
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = authUseCase.register(data)
             _registerState.value = result
                 .map { RegisterState.Success(it) }
@@ -86,7 +84,7 @@ class AuthViewModel(
     fun resetPassword(email: String) {
         _isResettingPassword.value = ResetPasswordState.Loading
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = authUseCase.resetPassword(email)
             _isResettingPassword.value = result
                 .map { ResetPasswordState.Success("Contraseña restablecida exitosamente") }
@@ -102,7 +100,7 @@ class AuthViewModel(
     ) {
         _isChangingPassword.value = ChangePasswordState.Loading
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             val result = authUseCase.changePassword(currentPassword, newPassword, confirmPassword, userId)
             _isChangingPassword.value = result
                 .map { ChangePasswordState.Success("Contraseña cambiada exitosamente") }

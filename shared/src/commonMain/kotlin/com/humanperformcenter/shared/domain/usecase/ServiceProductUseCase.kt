@@ -6,7 +6,6 @@ import com.humanperformcenter.shared.data.model.product_service.ServiceAvailable
 import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
-import com.humanperformcenter.shared.presentation.ui.SimpleResponse
 
 class ServiceProductUseCase(private val serviceProductRepository: ServiceProductRepository) {
     suspend fun getAllServices(): Result<List<ServiceAvailable>> {
@@ -34,10 +33,6 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
         return serviceProductRepository.getActiveProductDetail(userId, productId)
     }
 
-    suspend fun applyCoupon(code: String, userId: Int, productId: Int): Result<SimpleResponse> {
-        return serviceProductRepository.applyCoupon(code, userId, productId)
-    }
-
     suspend fun getProductDetailHireProduct(productId: Int): Result<Product> {
         return serviceProductRepository.getProductDetailHireProduct(productId)
     }
@@ -47,23 +42,23 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
         filter: ProductTypeFilter,
         sessionCount: Int
     ): List<Product> {
-        return list.filter { producto ->
-            val tipoOk = when (filter) {
-                ProductTypeFilter.RECURRENT -> producto.typeOfProduct == "recurrent"
-                ProductTypeFilter.NON_RECURRENT -> producto.typeOfProduct != "recurrent"
+        return list.filter { product ->
+            val typeMatches = when (filter) {
+                ProductTypeFilter.RECURRENT -> product.typeOfProduct == "recurrent"
+                ProductTypeFilter.NON_RECURRENT -> product.typeOfProduct != "recurrent"
                 ProductTypeFilter.ALL -> true
             }
-            val sesionesOk = if (sessionCount == 0) true else producto.session == sessionCount
-            tipoOk && sesionesOk
+            val sessionMatches = if (sessionCount == 0) true else product.session == sessionCount
+            typeMatches && sessionMatches
         }
     }
 
-    fun calcularPrecioConDescuento(productoId: Int, precioOriginal: Double, cupones: List<Coupon>)
+    fun calculateDiscountedPrice(productId: Int, originalPrice: Double, coupons: List<Coupon>)
     : Double {
-        val descuentos = cupones
-            .filter { it.productIds.isEmpty() || it.productIds.contains(productoId) }
-            .map { if (it.isPercentage) precioOriginal * it.discount / 100 else it.discount }
-        val mayorDescuento = descuentos.maxOrNull() ?: 0.0
-        return (precioOriginal - mayorDescuento).coerceAtLeast(0.0)
+        val availableDiscounts = coupons
+            .filter { it.productIds.isEmpty() || it.productIds.contains(productId) }
+            .map { if (it.isPercentage) originalPrice * it.discount / 100 else it.discount }
+        val highestDiscount = availableDiscounts.maxOrNull() ?: 0.0
+        return (originalPrice - highestDiscount).coerceAtLeast(0.0)
     }
 }

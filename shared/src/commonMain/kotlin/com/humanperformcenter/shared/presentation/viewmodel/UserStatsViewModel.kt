@@ -1,13 +1,11 @@
 package com.humanperformcenter.shared.presentation.viewmodel
 
 import com.diamondedge.logging.logging
-import com.humanperformcenter.shared.data.model.user.UserStatistics
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
+import com.humanperformcenter.shared.presentation.ui.UserStatsState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,32 +17,24 @@ class UserStatsViewModel(
         val log = logging() // Uses class name as tag
     }
 
-    private val _uiState = MutableStateFlow(UserStatistics())
+    private val _uiState = MutableStateFlow<UserStatsState>(UserStatsState.Loading)
     @NativeCoroutinesState
-    val uiState: StateFlow<UserStatistics> = _uiState.asStateFlow()
+    val uiState: StateFlow<UserStatsState> = _uiState.asStateFlow()
 
     fun loadStatistics(userId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+        log.debug { "📊 Cargando estadísticas para userId: $userId" }
+        viewModelScope.launch {
+            _uiState.value = UserStatsState.Loading
 
-            val result = userUseCase.getUserStats(userId)
-
-            result.onSuccess { stats ->
-                _uiState.value = _uiState.value.copy(
-                    entrenamientosMesPasado = stats.entrenamientosMesPasado,
-                    entrenadorMasUsado = stats.entrenadorMasUsado,
-                    reservasPendientes = stats.reservasPendientes,
-                    isLoading = false,
-                    error = null
-                )
-                log.info { "Estadísticas cargadas con éxito" }
-            }.onFailure { exception ->
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = exception.message ?: "Error al cargar estadísticas"
-                )
-                log.error { "Error al cargar estadísticas: ${exception.message}" }
-            }
+            userUseCase.getUserStats(userId)
+                .onSuccess { stats ->
+                    log.info { "✅ Estadísticas cargadas correctamente para userId: $userId" }
+                    _uiState.value = UserStatsState.Success(stats)
+                }
+                .onFailure { exception ->
+                    log.error { "❌ Error al cargar estadísticas: ${exception.message}" }
+                    _uiState.value = UserStatsState.Error(exception.message ?: "Error desconocido")
+                }
         }
     }
 }

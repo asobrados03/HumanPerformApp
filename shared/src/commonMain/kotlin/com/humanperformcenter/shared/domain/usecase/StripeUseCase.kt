@@ -4,10 +4,9 @@ import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentReque
 import com.humanperformcenter.shared.data.model.payment.CreatePiDto
 import com.humanperformcenter.shared.data.model.payment.CreateStripeCustomerResponse
 import com.humanperformcenter.shared.data.model.payment.GetStripeCustomerResponse
-import com.humanperformcenter.shared.data.model.payment.PaymentMethod
-import com.humanperformcenter.shared.data.model.payment.PaymentMethodDto
 import com.humanperformcenter.shared.data.model.payment.StripeEphemeralKeyResponse
 import com.humanperformcenter.shared.data.model.payment.StripePaymentIntentResponse
+import com.humanperformcenter.shared.data.model.payment.StripePaymentMethod
 import com.humanperformcenter.shared.data.model.payment.SubscriptionDto
 import com.humanperformcenter.shared.domain.repository.StripeRepository
 
@@ -20,16 +19,12 @@ class StripeUseCase (private val stripeRepository: StripeRepository) {
         return stripeRepository.getCustomer(customerId)
     }
 
-    suspend fun createEphemeralKey (customerId: String): Result<StripeEphemeralKeyResponse> {
+    suspend fun createEphemeralKey(customerId: String): Result<StripeEphemeralKeyResponse> {
         return stripeRepository.createEphemeralKey(customerId)
     }
 
     suspend fun attachPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit> {
         return stripeRepository.attachPaymentMethod(paymentMethodId, customerId)
-    }
-
-    suspend fun listPaymentMethods(customerId: String): Result<List<PaymentMethodDto>> {
-        return stripeRepository.listPaymentMethods(customerId)
     }
 
     suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit> {
@@ -53,12 +48,17 @@ class StripeUseCase (private val stripeRepository: StripeRepository) {
         return stripeRepository.createRefund(paymentIntentId, amount)
     }
 
-    suspend fun createSubscription(priceId: String): Result<SubscriptionDto> {
-        return stripeRepository.createSubscription(priceId)
+    suspend fun createSubscription(
+        priceId: String,
+        userId: Int,
+        productId: Int,
+        couponCode: String? = null
+    ): Result<SubscriptionDto> {
+        return stripeRepository.createSubscription(priceId, userId, productId, couponCode)
     }
 
-    suspend fun cancelSubscription(id: String): Result<Unit> {
-        return stripeRepository.cancelSubscription(id)
+    suspend fun cancelSubscription(subscriptionId: String, productId: Int, userId: Int): Result<Unit> {
+        return stripeRepository.cancelSubscription(subscriptionId, productId, userId)
     }
 
     suspend fun getSubscription(id: String): Result<SubscriptionDto> {
@@ -69,8 +69,8 @@ class StripeUseCase (private val stripeRepository: StripeRepository) {
         return stripeRepository.saveCard(paymentMethodId)
     }
 
-    suspend fun getUserCards(userId: Int): Result<List<PaymentMethod>> {
-        return stripeRepository.getUserCards(userId)
+    suspend fun getUserCards(customerId: String): Result<List<StripePaymentMethod>> {
+        return stripeRepository.getUserCards(customerId)
     }
 
     suspend fun deleteCard(cardId: String): Result<Unit> {

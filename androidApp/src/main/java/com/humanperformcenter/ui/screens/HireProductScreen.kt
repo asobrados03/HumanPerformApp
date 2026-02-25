@@ -43,27 +43,27 @@ fun HireProductScreen(
     val context = LocalContext.current
 
     // --- State Collection ---
-    val productosMap by serviceProductViewModel.serviceProducts.collectAsStateWithLifecycle()
+    val productsMap by serviceProductViewModel.serviceProducts.collectAsStateWithLifecycle()
     // Si no hay estado en el mapa para este ID, asumimos Loading
-    val estadoProductos = productosMap[serviceId] ?: ServiceProductUiState.Loading
+    val productsState = productsMap[serviceId] ?: ServiceProductUiState.Loading
 
-    val productosContratados by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
+    val hiredProductsState by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
     val userCoupons by serviceProductViewModel.userCoupons.collectAsStateWithLifecycle()
 
     // Extraemos la lista de forma segura solo si el estado es Success
-    val listaBase = remember(estadoProductos) {
-        (estadoProductos as? ServiceProductUiState.Success)?.services ?: emptyList()
+    val serviceList = remember(productsState) {
+        (productsState as? ServiceProductUiState.Success)?.services ?: emptyList()
     }
 
-    val idsContratados = remember(productosContratados) {
-        if (productosContratados is UserProductsUiState.Success) {
-            (productosContratados as UserProductsUiState.Success).products.map { it.id }.toSet()
+    val hiredIds = remember(hiredProductsState) {
+        if (hiredProductsState is UserProductsUiState.Success) {
+            (hiredProductsState as UserProductsUiState.Success).products.map { it.id }.toSet()
         } else {
             emptySet()
         }
     }
-    val sesionesDisponibles = remember(listaBase) {
-        listaBase.mapNotNull { it.session }.distinct().sorted()
+    val availableSessions = remember(serviceList) {
+        serviceList.mapNotNull { it.session }.distinct().sorted()
     }
 
     // --- UI State Local ---
@@ -71,9 +71,9 @@ fun HireProductScreen(
     var selectedSessionCount by remember { mutableIntStateOf(0) }
 
     // Productos filtrados a partir de la lista base del estado Success
-    val productosFiltrados by remember(listaBase, selectedFilter, selectedSessionCount) {
+    val filteredProducts by remember(serviceList, selectedFilter, selectedSessionCount) {
         derivedStateOf {
-            serviceProductViewModel.filterProducts(listaBase, selectedFilter, selectedSessionCount)
+            serviceProductViewModel.filterProducts(serviceList, selectedFilter, selectedSessionCount)
         }
     }
 
@@ -111,19 +111,19 @@ fun HireProductScreen(
                     onFilterChange = { selectedFilter = it },
                     selectedSessionCount = selectedSessionCount,
                     onSessionChange = { selectedSessionCount = it },
-                    sesionesDisponibles = sesionesDisponibles
+                    sesionesDisponibles = availableSessions
                 )
             }
         }
     ) { padding ->
         // Gestión de la navegación de estados
-        when (estadoProductos) {
+        when (productsState) {
             is ServiceProductUiState.Loading -> {
                 ServiceProductsShimmer(Modifier.padding(padding))
             }
             is ServiceProductUiState.Error -> {
                 ErrorView(
-                    message = estadoProductos.message,
+                    message = productsState.message,
                     modifier = Modifier.padding(padding),
                     onRetry = { serviceProductViewModel.loadServiceProducts(serviceId) }
                 )
@@ -131,8 +131,8 @@ fun HireProductScreen(
             is ServiceProductUiState.Success -> {
                 ProductList(
                     modifier = Modifier.padding(padding),
-                    availableProducts = productosFiltrados,
-                    idsContratados = idsContratados,
+                    availableProducts = filteredProducts,
+                    idsContratados = hiredIds,
                     userCoupons = userCoupons,
                     onProductClick = { product ->
                         navController.navigate(ProductDetail(productId = product.id))

@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.Service
 import com.humanperformcenter.app.navigation.StripeSinglePayment
+import com.humanperformcenter.app.navigation.StripeSubscription
 import com.humanperformcenter.shared.data.model.payment.Coupon
 import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.presentation.ui.AssignEvent
@@ -38,7 +39,7 @@ import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewMo
 fun PaymentSelectionContent(
     product: Product,
     userCoupons: List<Coupon>,
-    cuponTexto: String,
+    couponCode: String,
     navController: NavHostController,
     onElectronicWalletPayment: () -> Unit,
     serviceProductViewModel: ServiceProductViewModel,
@@ -80,14 +81,11 @@ fun PaymentSelectionContent(
         Text("Selecciona método de pago", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(16.dp))
 
-        // Input cupón podría ir aquí
-        // OutlinedTextField(value = cuponTexto, onValueChange = onCuponChange, label = { Text("Cupón") })
-
-        /*val precioFinal = serviceProductViewModel.calcularPrecioConDescuento(
+        val totalAmount = serviceProductViewModel.calculateDiscountedPrice(
             product.id,
             product.price ?: 0.0,
             userCoupons
-        )*/
+        )
 
         // 🔵 Botón principal — Stripe
         Column(
@@ -101,17 +99,24 @@ fun PaymentSelectionContent(
             // 🔵 Botón principal — Stripe
             Button(
                 onClick = {
-                    Log.d("NAVIGATION_DEBUG", "Guardando datos: price=${product.price}, id=${product.id}, coupon=$cuponTexto")
+                    Log.d("NAVIGATION_DEBUG", "Guardando datos: price=${product.price}, id=${product.id}, coupon=$couponCode")
 
                     navController.currentBackStackEntry?.savedStateHandle?.apply {
-                        set("selected_coupon", cuponTexto.takeIf { it.isNotBlank() })
-                        set("selected_product_price", product.price)
+                        set("selected_coupon", couponCode.takeIf { it.isNotBlank() })
+                        set("selected_product_price", totalAmount)
                         set("selected_product_id", product.id)
+                        set("selected_price_id", product.priceId)
 
                         Log.d("NAVIGATION_DEBUG", "Datos guardados. Navegando...")
                     } ?: Log.e("NAVIGATION_DEBUG", "currentBackStackEntry es NULL!")
 
-                    navController.navigate(StripeSinglePayment)
+                    if (product.typeOfProduct == "recurrent") {
+                        // Nueva ruta para suscripciones
+                        navController.navigate(StripeSubscription)
+                    } else {
+                        // Tu ruta actual para pagos únicos
+                        navController.navigate(StripeSinglePayment)
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
@@ -120,7 +125,7 @@ fun PaymentSelectionContent(
                 )
             ) {
                 Text(
-                    text = "Pagar ${product.price} €",
+                    text = "Pagar $totalAmount €",
                     style = MaterialTheme.typography.titleMedium
                 )
             }
