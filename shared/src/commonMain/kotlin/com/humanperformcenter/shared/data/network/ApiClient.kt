@@ -48,13 +48,18 @@ object ApiClient {
                 }
                 refreshTokens {
                     val oldRefresh = storage.getRefreshToken()
-                        ?: throw IllegalStateException("No hay refresh token")
+                    if (oldRefresh.isNullOrBlank()) {
+                        storage.clear()
+                        logoutEvents.tryEmit(Unit)
+                        return@refreshTokens null
+                    }
                     val resp = authClient.post("$BASE/mobile/refresh") {
                         markAsRefreshTokenRequest()
                         bearerAuth(oldRefresh)
                     }
                     if (resp.status == HttpStatusCode.Unauthorized) {
                         storage.clear()
+                        logoutEvents.tryEmit(Unit)
                         return@refreshTokens null
                     } else {
                         val newTokens = resp.body<RefreshResponse>()
