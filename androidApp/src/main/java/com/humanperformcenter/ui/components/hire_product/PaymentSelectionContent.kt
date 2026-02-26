@@ -99,23 +99,40 @@ fun PaymentSelectionContent(
             // 🔵 Botón principal — Stripe
             Button(
                 onClick = {
-                    Log.d("NAVIGATION_DEBUG", "Guardando datos: price=${product.price}, id=${product.id}, coupon=$couponCode")
+                    val normalizedCouponCode = couponCode.takeIf { it.isNotBlank() }
 
-                    navController.currentBackStackEntry?.savedStateHandle?.apply {
-                        set("selected_coupon", couponCode.takeIf { it.isNotBlank() })
-                        set("selected_product_price", totalAmount)
-                        set("selected_product_id", product.id)
-                        set("selected_price_id", product.priceId)
-
-                        Log.d("NAVIGATION_DEBUG", "Datos guardados. Navegando...")
-                    } ?: Log.e("NAVIGATION_DEBUG", "currentBackStackEntry es NULL!")
+                    Log.d(
+                        "NAVIGATION_DEBUG",
+                        "Navegando a pago: price=$totalAmount, id=${product.id}, coupon=$normalizedCouponCode"
+                    )
 
                     if (product.typeOfProduct == "recurrent") {
-                        // Nueva ruta para suscripciones
-                        navController.navigate(StripeSubscription)
+                        val priceId = product.priceId
+                        if (priceId.isNullOrBlank()) {
+                            Toast.makeText(
+                                context,
+                                "No se ha podido iniciar la suscripción.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            return@Button
+                        }
+
+                        navController.navigate(
+                            StripeSubscription(
+                                productPrice = totalAmount,
+                                productId = product.id,
+                                priceId = priceId,
+                                couponCode = normalizedCouponCode
+                            )
+                        )
                     } else {
-                        // Tu ruta actual para pagos únicos
-                        navController.navigate(StripeSinglePayment)
+                        navController.navigate(
+                            StripeSinglePayment(
+                                productPrice = totalAmount,
+                                productId = product.id,
+                                couponCode = normalizedCouponCode
+                            )
+                        )
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),

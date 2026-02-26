@@ -24,6 +24,15 @@ import kotlinx.serialization.Serializable
 @Serializable object Document
 @Serializable object ViewPaymentMethod
 @Serializable object ElectronicWallet
-@Serializable object StripeSinglePayment
-@Serializable object StripeSubscription
+@Serializable data class StripeSinglePayment(
+    val productPrice: Double,
+    val productId: Int,
+    val couponCode: String? = null
+)
+@Serializable data class StripeSubscription(
+    val productPrice: Double,
+    val productId: Int,
+    val priceId: String,
+    val couponCode: String? = null
+)
 @Serializable object PaymentSuccess
