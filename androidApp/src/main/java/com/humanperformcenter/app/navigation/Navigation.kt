@@ -276,21 +276,30 @@ fun Navigation(
                     userId = userData?.id ?: 0
                 )
             }
-            composable<StripeSinglePayment> {
+            composable<StripeSinglePayment> { backStackEntry ->
+                val route = backStackEntry.toRoute<StripeSinglePayment>()
                 StripeSinglePaymentScreen(
-                    navController,
-                    stripeViewModel,
-                    userData?.id ?: 0,
+                    navController = navController,
+                    stripeViewModel = stripeViewModel,
+                    userId = userData?.id ?: 0,
+                    productPrice = route.productPrice,
+                    productId = route.productId,
+                    couponCode = route.couponCode,
                     onClose = {
                         navController.popBackStack()
                     }
                 )
             }
-            composable<StripeSubscription> {
+            composable<StripeSubscription> { backStackEntry ->
+                val route = backStackEntry.toRoute<StripeSubscription>()
                 StripeSubscriptionScreen(
                     navController = navController,
                     stripeViewModel = stripeViewModel,
                     userId = userData?.id ?: 0,
+                    productPrice = route.productPrice,
+                    productId = route.productId,
+                    priceId = route.priceId,
+                    couponCode = route.couponCode,
                     onClose = { navController.popBackStack() }
                 )
             }

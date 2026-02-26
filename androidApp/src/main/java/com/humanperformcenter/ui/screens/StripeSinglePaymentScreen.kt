@@ -16,34 +16,16 @@ fun StripeSinglePaymentScreen(
     navController: NavHostController,
     stripeViewModel: StripeViewModel,
     userId: Int,
+    productPrice: Double,
+    productId: Int,
+    couponCode: String?,
     onClose: () -> Unit
 ) {
     val checkoutState by stripeViewModel.startStripeCheckout.collectAsStateWithLifecycle()
 
     // LÓGICA DE INICIALIZACIÓN
-    LaunchedEffect(Unit) {
-        Log.d(TAG, "BackStack actual: ${navController.currentBackStackEntry?.destination?.route}")
-        Log.d(TAG, "BackStack anterior: ${navController.previousBackStackEntry?.destination?.route}")
-
-        val handle = navController.previousBackStackEntry?.savedStateHandle
-
-        if (handle == null) {
-            Log.e(TAG, "previousBackStackEntry.savedStateHandle es NULL!")
-        } else {
-            Log.d(TAG, "savedStateHandle encontrado, leyendo datos...")
-        }
-
-        val productPrice = handle?.get<Double>("selected_product_price")
-        val coupon = handle?.get<String>("selected_coupon")
-        val productId = handle?.get<Int>("selected_product_id")
-
-        Log.d(TAG, "Lanzando Checkout -> Precio: $productPrice, Cupón: $coupon, ID: $productId")
-
-        if (productPrice == null) {
-            Log.e(TAG, "Error: Datos insuficientes en el Navigation Handle")
-            stripeViewModel.onStripeFailed("Información de producto incompleta.")
-            return@LaunchedEffect
-        }
+    LaunchedEffect(productPrice, productId, couponCode) {
+        Log.d(TAG, "Lanzando Checkout -> Precio: $productPrice, Cupón: $couponCode, ID: $productId")
 
         // 1. Obtenemos el cliente (Ya vimos en Postman que el endpoint funciona)
         Log.d(TAG, "Pidiendo CustomerId al servidor...")
@@ -58,7 +40,7 @@ fun StripeSinglePaymentScreen(
                 amount = productPrice,
                 currency = "eur",
                 customerId = customerId,
-                couponCode = coupon,
+                couponCode = couponCode,
                 productId = productId,
                 userId = userId
             )
