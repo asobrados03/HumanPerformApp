@@ -6,7 +6,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.humanperformcenter.app.navigation.PaymentSuccess
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 
 private const val TAG = "STRIPE_DEBUG"
@@ -56,7 +55,6 @@ fun StripeSinglePaymentScreen(
         stripeViewModel,
         navController,
         onClose,
-        PaymentSuccess,
         isSubscription = false
     )
 }

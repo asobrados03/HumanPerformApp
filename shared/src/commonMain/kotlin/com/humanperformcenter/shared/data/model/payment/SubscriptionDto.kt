@@ -8,7 +8,7 @@ data class SubscriptionDto(
     @SerialName("subscription_id")
     val subscriptionId: String,
     @SerialName("client_secret")
-    val clientSecret: String,
+    val clientSecret: String?,
     @SerialName("customer_id")
     val customerId: String
 )

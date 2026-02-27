@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
+import com.humanperformcenter.app.navigation.PaymentSuccess
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.presentation.ui.StartStripeCheckoutState
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
@@ -39,7 +40,6 @@ fun StripeCheckoutGate(
     stripeViewModel: StripeViewModel,
     navController: NavHostController,
     onClose: () -> Unit,
-    successRoute: Any, // El destino (PaymentSuccess)
     isSubscription: Boolean,
     price: Double? = null
 ) {
@@ -134,7 +134,7 @@ fun StripeCheckoutGate(
                 Log.d(TAG, "Pago completado. Navegando a success...")
                 stripeViewModel.onCheckoutCompleted()
                 delay(500) // Pequeña pausa para mostrar feedback
-                navController.navigate(successRoute) {
+                navController.navigate(PaymentSuccess) {
                     popUpTo(navController.currentBackStackEntry?.destination?.route ?: "")
                     { inclusive = true }
                 }

@@ -104,9 +104,10 @@ private fun StatsContent(state: UserStatsState.Success) {
         }
 
         item {
+            val workouts = state.stats.lastMonthWorkouts
             StatCard(
                 title = "📅 Entrenamientos del mes pasado",
-                value = "${state.stats.lastMonthWorkouts} sesiones"
+                value = if (workouts == 1) "1 sesión" else "$workouts sesiones"
             )
         }
 
@@ -118,9 +119,10 @@ private fun StatsContent(state: UserStatsState.Success) {
         }
 
         item {
+            val bookings = state.stats.pendingBookings
             StatCard(
                 title = "⏳ Reservas pendientes",
-                value = "${state.stats.pendingBookings} sesiones pendientes"
+                value = if (bookings == 1) "1 sesión pendiente" else "$bookings sesiones pendientes"
             )
         }
     }

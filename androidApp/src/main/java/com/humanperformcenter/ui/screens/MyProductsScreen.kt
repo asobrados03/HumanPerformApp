@@ -95,7 +95,6 @@ fun MyProductsScreen(
                     navController.navigate(ActiveProductDetail(product.id))
                 },
                 onConfirmCancel = { product ->
-                    // LÓGICA DE DECISIÓN:
                     when {
                         // 1. Si es Suscripción
                         !product.stripeSubscriptionId.isNullOrBlank() -> {

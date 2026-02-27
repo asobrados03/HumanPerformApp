@@ -271,7 +271,7 @@ class StripeViewModel(
                         )
 
                         _startStripeCheckout.value = StartStripeCheckoutState.Ready(
-                            clientSecret = subDto.clientSecret,
+                            clientSecret = subDto.clientSecret ?: "",
                             config = checkoutConfig
                         )
                     } else {
