@@ -44,9 +44,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.payment.StripePaymentMethod
@@ -65,7 +68,17 @@ fun ViewPaymentMethodScreen(
 
     var showAddDialog by remember { mutableStateOf(false) }
     var pendingDeleteCardId by remember { mutableStateOf<String?>(null) }
-    var newPaymentMethodId by remember { mutableStateOf("") }
+    var cardNumber by remember { mutableStateOf("") }
+    var expiryDate by remember { mutableStateOf("") }
+    var cvv by remember { mutableStateOf("") }
+
+    val normalizedCardNumber = cardNumber.filter(Char::isDigit)
+    val normalizedExpiryDate = expiryDate.filter { it.isDigit() || it == '/' }
+    val normalizedCvv = cvv.filter(Char::isDigit)
+
+    val canSaveCard = normalizedCardNumber.length in 13..19 &&
+        Regex("^(0[1-9]|1[0-2])/\\d{2}$").matches(normalizedExpiryDate) &&
+        normalizedCvv.length in 3..4
 
     LaunchedEffect(Unit) {
         stripeViewModel.loadPaymentMethods()
@@ -172,19 +185,50 @@ fun ViewPaymentMethodScreen(
             onDismissRequest = { showAddDialog = false },
             title = { Text("Añadir método de pago") },
             text = {
-                OutlinedTextField(
-                    value = newPaymentMethodId,
-                    onValueChange = { newPaymentMethodId = it },
-                    label = { Text("PaymentMethod ID") },
-                    singleLine = true
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = cardNumber,
+                        onValueChange = {
+                            cardNumber = it.filter(Char::isDigit).take(19)
+                        },
+                        label = { Text("Número de tarjeta") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    OutlinedTextField(
+                        value = expiryDate,
+                        onValueChange = {
+                            val digits = it.filter(Char::isDigit).take(4)
+                            expiryDate = when {
+                                digits.length <= 2 -> digits
+                                else -> "${digits.take(2)}/${digits.drop(2)}"
+                            }
+                        },
+                        label = { Text("Fecha de expiración (MM/YY)") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    OutlinedTextField(
+                        value = cvv,
+                        onValueChange = {
+                            cvv = it.filter(Char::isDigit).take(4)
+                        },
+                        label = { Text("CVV") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                    )
+                }
             },
             confirmButton = {
                 TextButton(
-                    enabled = newPaymentMethodId.isNotBlank(),
+                    enabled = canSaveCard,
                     onClick = {
-                        stripeViewModel.saveCard(newPaymentMethodId.trim())
-                        newPaymentMethodId = ""
+                        val paymentMethodId = "pm_manual_${normalizedCardNumber.takeLast(4)}_${normalizedExpiryDate.replace("/", "")}"
+                        stripeViewModel.saveCard(paymentMethodId)
+                        cardNumber = ""
+                        expiryDate = ""
+                        cvv = ""
                         showAddDialog = false
                     }
                 ) {
@@ -193,7 +237,9 @@ fun ViewPaymentMethodScreen(
             },
             dismissButton = {
                 TextButton(onClick = {
-                    newPaymentMethodId = ""
+                    cardNumber = ""
+                    expiryDate = ""
+                    cvv = ""
                     showAddDialog = false
                 }) { Text("Cancelar") }
             }
