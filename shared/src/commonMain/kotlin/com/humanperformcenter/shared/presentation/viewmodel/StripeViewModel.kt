@@ -155,15 +155,20 @@ class StripeViewModel(
         viewModelScope.launch {
             _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Loading
 
-            // 1. Obtenemos o creamos el cliente de Stripe
             val customerResult = stripeUseCase.createOrGetCustomer()
 
             customerResult.fold(
                 onSuccess = { customerResponse ->
                     val customerId = customerResponse.data?.customerId
                     if (customerId != null) {
-                        // 2. Si tenemos ID, pedimos las tarjetas
-                        fetchCards(customerId)
+                        val defaultPaymentMethodId = stripeUseCase
+                            .getCustomer(customerId)
+                            .getOrNull()
+                            ?.data
+                            ?.invoiceSettings
+                            ?.defaultPaymentMethod
+
+                        fetchCards(customerId, defaultPaymentMethodId)
                     } else {
                         _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error("No se pudo obtener el ID de cliente")
                     }
@@ -175,13 +180,13 @@ class StripeViewModel(
         }
     }
 
-    private suspend fun fetchCards(customerId: String) {
+    private suspend fun fetchCards(customerId: String, defaultPaymentMethodId: String? = null) {
         stripeUseCase.getUserCards(customerId).fold(
             onSuccess = { methods ->
                 _viewPaymentMethodsUiState.value = if (methods.isEmpty()) {
                     PaymentMethodsUiState.Empty
                 } else {
-                    PaymentMethodsUiState.Success(methods)
+                    PaymentMethodsUiState.Success(methods, defaultPaymentMethodId)
                 }
             },
             onFailure = {
@@ -191,33 +196,24 @@ class StripeViewModel(
     }
 
     // Guardar una nueva tarjeta
-    fun saveCard(paymentMethodId: String, userIdToRefresh: Int? = null) {
+    fun saveCard(paymentMethodId: String) {
         performAction(
             action = { stripeUseCase.saveCard(paymentMethodId) },
-            onSuccess = {
-                // Si pasamos el ID, refrescamos la lista automáticamente
-                if (userIdToRefresh != null) loadPaymentMethods()
-            }
+            onSuccess = { loadPaymentMethods() }
         )
     }
 
-    // Borrar una tarjeta
-    fun deleteCard(cardId: String, userIdToRefresh: Int? = null) {
+    fun deleteCard(cardId: String) {
         performAction(
             action = { stripeUseCase.deleteCard(cardId) },
-            onSuccess = {
-                if (userIdToRefresh != null) loadPaymentMethods()
-            }
+            onSuccess = { loadPaymentMethods() }
         )
     }
 
-    // Establecer tarjeta por defecto
-    fun setDefaultCard(cardId: String, userIdToRefresh: Int? = null) {
+    fun setDefaultCard(cardId: String) {
         performAction(
             action = { stripeUseCase.setDefaultCard(cardId) },
-            onSuccess = {
-                if (userIdToRefresh != null) loadPaymentMethods()
-            }
+            onSuccess = { loadPaymentMethods() }
         )
     }
 
