@@ -1,4 +1,5 @@
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 // Enum de estados posibles del proceso de login
@@ -11,7 +12,7 @@ enum LoginState: Equatable {
 }
 
 struct LoginView: View {
-    @StateObject var vm = AuthViewModel()
+    @StateViewModel var vm = makeAuthViewModel()
 
     var onSuccess: (() -> Void)? = nil
     var onForgot: (() -> Void)? = nil

@@ -3,7 +3,7 @@ import shared
 
 /// Pantalla de configuración del usuario.
 struct ConfigurationView: View {
-    @EnvironmentObject var userVM: UserViewModel
+    @EnvironmentObject var userVM: shared.UserViewModel
     @EnvironmentObject var appState: AppState
 
     @State private var showLogoutAlert = false
@@ -86,6 +86,6 @@ struct ConfigurationView: View {
 
 #Preview {
     NavigationStack {
-        ConfigurationView().environmentObject(UserViewModel()).environmentObject(AppState())
+        ConfigurationView().environmentObject(makeUserViewModel()).environmentObject(AppState())
     }
 }

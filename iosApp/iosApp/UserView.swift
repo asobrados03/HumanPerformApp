@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 /// Opciones del menú de usuario mostradas en esta pantalla.
@@ -25,7 +26,7 @@ private enum UserMenuOption: String, CaseIterable, Identifiable {
 /// Muestra la información básica del usuario y un listado de opciones
 /// de navegación similares a las presentes en la versión Android.
 struct UserView: View {
-    @StateObject private var vm = UserViewModel()
+    @StateViewModel private var vm = makeUserViewModel()
 
     var body: some View {
         Group {

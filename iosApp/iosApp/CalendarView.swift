@@ -6,6 +6,7 @@
 //  Copyright © 2025 orgName. All rights reserved.
 //
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 /// Lista de sesiones disponibles para la fecha seleccionada.
@@ -30,13 +31,13 @@ struct CalendarView: View {
     @State private var selectedDate: Date = Date()
 
     /// ViewModel encargado de consultar las sesiones disponibles para cada día.
-    @StateObject private var daySessionViewModel = DaySessionViewModel()
+    @StateViewModel private var daySessionViewModel = makeDaySessionViewModel()
 
     /// Maneja los datos de sesión del usuario, incluyendo servicios permitidos.
-    @StateObject private var sessionViewModel = SessionViewModel()
+    @StateViewModel private var sessionViewModel = makeUserViewModel()
 
     /// ViewModel del usuario para acciones sobre reservas.
-    @StateObject private var userViewModel = UserViewModel()
+    @StateViewModel private var userViewModel = makeUserViewModel()
 
     /// Servicio seleccionado por el usuario para filtrar las sesiones.
     @State private var selectedServiceId: Int32? = nil

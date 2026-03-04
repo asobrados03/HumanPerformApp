@@ -4,7 +4,7 @@ import shared
 
 /// Permite editar campos del perfil de usuario y la foto.
 struct EditProfileView: View {
-    @EnvironmentObject var vm: UserViewModel
+    @EnvironmentObject var vm: shared.UserViewModel
     
     @Environment(\.dismiss) private var dismiss
     @State private var pendingDismiss = false

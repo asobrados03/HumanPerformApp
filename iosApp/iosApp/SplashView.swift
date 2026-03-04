@@ -6,9 +6,11 @@
 //  Copyright © 2025 orgName. All rights reserved.
 //
 import SwiftUI
+import shared
+import KMPObservableViewModelSwiftUI
 
 struct SplashView: View {
-    @StateObject private var vm = SessionViewModel()
+    @StateViewModel private var vm = makeUserViewModel()
     let onResolved: (_ isLoggedIn: Bool) -> Void
 
     var body: some View {

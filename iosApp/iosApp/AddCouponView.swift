@@ -10,7 +10,7 @@ import shared
 
 /// Pantalla para añadir un cupón promocional replicando la versión de Android.
 struct AddCouponView: View {
-    @EnvironmentObject var userVM: UserViewModel
+    @EnvironmentObject var userVM: shared.UserViewModel
 
     var body: some View {
         VStack(spacing: 12) {
