@@ -1,4 +1,6 @@
 import SwiftUI
+import shared
+import KMPObservableViewModelSwiftUI
 import PhotosUI
 
 // MARK: - Modelos equivalentes
@@ -84,7 +86,7 @@ struct RegisterView: View {
     @Environment(\.dismiss) private var dismiss
 
     // VM
-    @StateObject private var vm = AuthViewModel()
+    @StateViewModel private var vm = makeAuthViewModel()
     
     // Inicializador por defecto (sin parámetros)
     init(onNavigateToLogin: @escaping () -> Void = {}) {

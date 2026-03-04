@@ -1,8 +1,10 @@
 import SwiftUI
+import shared
+import KMPObservableViewModelSwiftUI
 
 struct ChangePasswordView: View {
-    @EnvironmentObject var userVM: UserViewModel
-    @StateObject private var authVM = AuthViewModel()
+    @EnvironmentObject var userVM: shared.UserViewModel
+    @StateViewModel private var authVM = makeAuthViewModel()
 
     @State private var currentPassword = ""
     @State private var newPassword = ""
@@ -92,6 +94,6 @@ struct ChangePasswordView: View {
 
 #Preview {
     NavigationStack {
-        ChangePasswordView().environmentObject(UserViewModel())
+        ChangePasswordView().environmentObject(makeUserViewModel())
     }
 }

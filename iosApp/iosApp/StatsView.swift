@@ -7,11 +7,12 @@
 //
 
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 struct StatsView: View {
-    @StateObject private var userViewModel = UserViewModel()
-    @StateObject private var statsViewModel = StatsViewModel()
+    @StateViewModel private var userViewModel = makeUserViewModel()
+    @StateViewModel private var statsViewModel = makeUserStatsViewModel()
 
     var body: some View {
         ScrollView {

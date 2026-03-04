@@ -6,14 +6,15 @@
 //
 
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 extension PaymentMethod: Identifiable {}
 
 /// Pantalla para visualizar los métodos de pago del usuario.
 struct PaymentMethodsView: View {
-    @EnvironmentObject var userVM: UserViewModel
-    @StateObject private var vm = PaymentMethodsViewModel()
+    @EnvironmentObject var userVM: shared.UserViewModel
+    @StateViewModel private var vm = makeStripeViewModel()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

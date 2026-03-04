@@ -10,7 +10,7 @@ import shared
 
 /// Muestra la información personal del usuario actual.
 struct MyProfileView: View {
-    @EnvironmentObject var vm: UserViewModel
+    @EnvironmentObject var vm: shared.UserViewModel
 
     var body: some View {
         Group {

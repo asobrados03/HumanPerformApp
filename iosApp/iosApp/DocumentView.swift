@@ -6,10 +6,11 @@
 //
 
 import SwiftUI
+import shared
 
 /// Pantalla para la gestión de documentos del usuario, replicando la versión de Android.
 struct DocumentView: View {
-    @EnvironmentObject var userVM: UserViewModel
+    @EnvironmentObject var userVM: shared.UserViewModel
     @Environment(\.dismiss) private var dismiss
 
     @State private var showOptions = false

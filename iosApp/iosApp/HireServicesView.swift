@@ -7,10 +7,12 @@
 //
 
 import SwiftUI
+import shared
+import KMPObservableViewModelSwiftUI
 
 struct HireServicesView: View {
-    @StateObject var viewModel: ServiceProductViewModel = ServiceProductViewModel()
-    @StateObject var sessionViewModel: SessionViewModel = SessionViewModel()
+    @StateViewModel var viewModel: shared.ServiceProductViewModel = makeServiceProductViewModel()
+    @StateViewModel var sessionViewModel: shared.UserViewModel = makeUserViewModel()
     
     var body: some View {
         ScrollView {

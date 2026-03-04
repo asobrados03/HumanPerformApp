@@ -6,12 +6,13 @@
 //
 
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 /// Pantalla que muestra la lista de entrenadores y permite marcar un favorito.
 struct FavoritesView: View {
-    @EnvironmentObject var userVM: UserViewModel
-    @StateObject private var vm = FavoritesViewModel()
+    @EnvironmentObject var userVM: shared.UserViewModel
+    @StateViewModel private var vm = makeUserViewModel()
 
     /// Color de fondo para el entrenador seleccionado (0xAAF683).
     private let selectedColor = Color(red: 170/255, green: 246/255, blue: 131/255)

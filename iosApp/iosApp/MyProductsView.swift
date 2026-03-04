@@ -6,11 +6,12 @@
 //  Copyright © 2025 orgName. All rights reserved.
 //
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 struct MyProductsView: View {
-    @StateObject var serviceProductViewModel: ServiceProductViewModel = ServiceProductViewModel()
-    @StateObject var userViewModel: UserViewModel = UserViewModel()
+    @StateViewModel var serviceProductViewModel: shared.ServiceProductViewModel = makeServiceProductViewModel()
+    @StateViewModel var userViewModel: shared.UserViewModel = makeUserViewModel()
     @State private var selectedProduct: ServiceItem? = nil
     @State private var showProductOptions = false
     @State private var showUnsubscribeConfirm = false
