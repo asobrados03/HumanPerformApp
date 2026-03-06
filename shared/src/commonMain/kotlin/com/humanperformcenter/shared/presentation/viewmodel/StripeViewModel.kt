@@ -17,10 +17,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.contentOrNull
 
 class StripeViewModel(
     private val stripeUseCase: StripeUseCase
@@ -243,16 +239,8 @@ class StripeViewModel(
                 onSuccess = { customerResponse ->
                     val customerId = customerResponse.data?.customerId
                     if (customerId != null) {
-                        val defaultPaymentMethodId = stripeUseCase
-                            .getCustomer(customerId)
-                            .getOrNull()
-                            ?.data
-                            ?.let { customer ->
-                                extractPaymentMethodId(customer.invoiceSettings.defaultPaymentMethod)
-                                    ?: extractPaymentMethodId(customer.defaultSource)
-                            }
-
-                        fetchCards(customerId, defaultPaymentMethodId)
+                        // 2. Llamamos a la nueva función del repositorio que trae TODO junto
+                        fetchCards(customerId)
                     } else {
                         _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error("No se pudo obtener el ID de cliente")
                     }
@@ -264,28 +252,26 @@ class StripeViewModel(
         }
     }
 
-    private suspend fun fetchCards(customerId: String, defaultPaymentMethodId: String? = null) {
+    private suspend fun fetchCards(customerId: String) {
         stripeUseCase.getUserCards(customerId).fold(
-            onSuccess = { methods ->
-                _viewPaymentMethodsUiState.value = if (methods.isEmpty()) {
-                    PaymentMethodsUiState.Empty
+            onSuccess = { container ->
+                // Si no hay tarjetas, mostramos estado Empty
+                if (container.methods.isEmpty()) {
+                    _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Empty
                 } else {
-                    PaymentMethodsUiState.Success(methods, defaultPaymentMethodId)
+                    // Si hay, pasamos la lista y el ID predeterminado directamente
+                    _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Success(
+                        paymentMethods = container.methods,
+                        defaultPaymentMethodId = container.defaultPaymentMethodId
+                    )
                 }
             },
-            onFailure = {
-                _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error(it.message ?: "Error al cargar tarjetas")
+            onFailure = { error ->
+                _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error(
+                    error.message ?: "Error desconocido al cargar métodos de pago"
+                )
             }
         )
-    }
-
-    private fun extractPaymentMethodId(defaultPaymentMethod: JsonElement?): String? {
-        return when (defaultPaymentMethod) {
-            is JsonPrimitive -> defaultPaymentMethod.contentOrNull
-            is JsonObject -> defaultPaymentMethod["id"]
-                ?.let { id -> (id as? JsonPrimitive)?.contentOrNull }
-            else -> null
-        }
     }
 
     // --- SUSCRIPCIONES ---

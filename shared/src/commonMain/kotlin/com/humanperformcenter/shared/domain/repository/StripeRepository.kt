@@ -11,7 +11,6 @@ interface StripeRepository {
 
     suspend fun createEphemeralKey(customerId: String): Result<StripeEphemeralKeyResponse>
 
-    suspend fun attachPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit>
     suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit>
     suspend fun setDefaultPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit>
 
@@ -32,5 +31,5 @@ interface StripeRepository {
 
     suspend fun getUserTransactions(): Result<List<TransactionDto>>
 
-    suspend fun getUserCards(customerId: String): Result<List<StripePaymentMethod>>
+    suspend fun getUserCards(customerId: String): Result<StripePaymentMethodsContainer>
 }

@@ -1,12 +1,11 @@
 package com.humanperformcenter.shared.domain.usecase
 
 import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
-import com.humanperformcenter.shared.data.model.payment.CreatePiDto
 import com.humanperformcenter.shared.data.model.payment.CreateStripeCustomerResponse
 import com.humanperformcenter.shared.data.model.payment.GetStripeCustomerResponse
 import com.humanperformcenter.shared.data.model.payment.StripeEphemeralKeyResponse
 import com.humanperformcenter.shared.data.model.payment.StripePaymentIntentResponse
-import com.humanperformcenter.shared.data.model.payment.StripePaymentMethod
+import com.humanperformcenter.shared.data.model.payment.StripePaymentMethodsContainer
 import com.humanperformcenter.shared.data.model.payment.StripeSetupConfigResponse
 import com.humanperformcenter.shared.data.model.payment.SubscriptionDto
 import com.humanperformcenter.shared.domain.repository.StripeRepository
@@ -22,10 +21,6 @@ class StripeUseCase (private val stripeRepository: StripeRepository) {
 
     suspend fun createEphemeralKey(customerId: String): Result<StripeEphemeralKeyResponse> {
         return stripeRepository.createEphemeralKey(customerId)
-    }
-
-    suspend fun attachPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit> {
-        return stripeRepository.attachPaymentMethod(paymentMethodId, customerId)
     }
 
     suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit> {
@@ -67,7 +62,7 @@ class StripeUseCase (private val stripeRepository: StripeRepository) {
         return stripeRepository.getSubscription(id)
     }
 
-    suspend fun getUserCards(customerId: String): Result<List<StripePaymentMethod>> {
+    suspend fun getUserCards(customerId: String): Result<StripePaymentMethodsContainer> {
         return stripeRepository.getUserCards(customerId)
     }
 

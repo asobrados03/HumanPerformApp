@@ -46,16 +46,6 @@ object StripeRepositoryImpl : StripeRepository {
         }
     }
 
-    override suspend fun attachPaymentMethod(paymentMethodId: String, customerId: String)
-    : Result<Unit> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-method/attach") {
-                contentType(ContentType.Application.Json)
-                setBody(mapOf("paymentMethodId" to paymentMethodId, "customerId" to customerId))
-            }.body()
-        }
-    }
-
     override suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
             ApiClient.apiClient.delete(
@@ -155,13 +145,13 @@ object StripeRepositoryImpl : StripeRepository {
         }
     }
 
-    override suspend fun getUserCards(customerId: String): Result<List<StripePaymentMethod>> = runCatching {
+    override suspend fun getUserCards(customerId: String): Result<StripePaymentMethodsContainer> = runCatching {
         withContext(Dispatchers.IO) {
             val response: StripePaymentMethodsResponse = ApiClient.apiClient.get(
                 "${ApiClient.baseUrl}/stripe/payment-methods/$customerId"
             ).body()
 
-            response.data
+            response.data // Esto ahora devuelve el objeto StripePaymentMethodsContainer
         }
     }
 }

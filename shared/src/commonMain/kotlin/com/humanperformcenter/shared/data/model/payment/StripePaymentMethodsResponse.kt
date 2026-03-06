@@ -6,7 +6,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class StripePaymentMethodsResponse(
     val success: Boolean,
-    val data: List<StripePaymentMethod>
+    val data: StripePaymentMethodsContainer // El "objeto" intermedio
+)
+
+@Serializable
+data class StripePaymentMethodsContainer(
+    val methods: List<StripePaymentMethod>, // La lista de tarjetas
+    val defaultPaymentMethodId: String? = null // El ID que extraes del cliente
 )
 
 @Serializable
