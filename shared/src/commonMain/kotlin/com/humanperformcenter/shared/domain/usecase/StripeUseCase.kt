@@ -7,6 +7,7 @@ import com.humanperformcenter.shared.data.model.payment.GetStripeCustomerRespons
 import com.humanperformcenter.shared.data.model.payment.StripeEphemeralKeyResponse
 import com.humanperformcenter.shared.data.model.payment.StripePaymentIntentResponse
 import com.humanperformcenter.shared.data.model.payment.StripePaymentMethod
+import com.humanperformcenter.shared.data.model.payment.StripeSetupConfigResponse
 import com.humanperformcenter.shared.data.model.payment.SubscriptionDto
 import com.humanperformcenter.shared.domain.repository.StripeRepository
 
@@ -34,6 +35,11 @@ class StripeUseCase (private val stripeRepository: StripeRepository) {
     suspend fun createPaymentIntent (createPaymentIntentRequest: CreatePaymentIntentRequest)
     : Result<StripePaymentIntentResponse> {
         return stripeRepository.createPaymentIntent(createPaymentIntentRequest)
+    }
+
+
+    suspend fun createSetupConfig(userId: Int): Result<StripeSetupConfigResponse> {
+        return stripeRepository.createSetupConfig(userId)
     }
 
     suspend fun cancelPaymentIntent(id: String): Result<Unit> {

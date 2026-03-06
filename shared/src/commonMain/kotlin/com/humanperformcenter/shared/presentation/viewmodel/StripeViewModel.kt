@@ -4,6 +4,8 @@ import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
 import com.humanperformcenter.shared.domain.usecase.StripeUseCase
 import com.humanperformcenter.shared.presentation.ui.ActionUiState
+import com.humanperformcenter.shared.presentation.ui.AddPaymentMethodSheetData
+import com.humanperformcenter.shared.presentation.ui.AddPaymentMethodUiState
 import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
 import com.humanperformcenter.shared.presentation.ui.StartStripeCheckoutState
 import com.humanperformcenter.shared.presentation.ui.StripeCheckoutConfig
@@ -35,6 +37,10 @@ class StripeViewModel(
     private val _actionUiState = MutableStateFlow<ActionUiState>(ActionUiState.Idle)
     @NativeCoroutinesState
     val actionUiState = _actionUiState.asStateFlow()
+
+    private val _addPaymentMethodUiState = MutableStateFlow<AddPaymentMethodUiState>(AddPaymentMethodUiState.Idle)
+    @NativeCoroutinesState
+    val addPaymentMethodUiState: StateFlow<AddPaymentMethodUiState> = _addPaymentMethodUiState.asStateFlow()
 
     fun startStripeCheckout(
         amount: Double,
@@ -147,6 +153,65 @@ class StripeViewModel(
 
     fun resetStartCheckoutState() {
         _startStripeCheckout.value = StartStripeCheckoutState.Idle
+    }
+
+    fun prepareAddPaymentMethod(userId: Int) {
+        viewModelScope.launch {
+            _addPaymentMethodUiState.value = AddPaymentMethodUiState.Loading
+
+            val setupConfigResult = stripeUseCase.createSetupConfig(userId)
+            setupConfigResult.fold(
+                onSuccess = { response ->
+                    val data = response.data
+                    val customerId = data?.resolvedCustomerId
+                    val clientSecret = data?.resolvedClientSecret
+                    val ephemeralKey = data?.resolvedEphemeralKey
+                    val publishableKey = data?.resolvedPublishableKey
+
+                    if (customerId.isNullOrBlank() ||
+                        clientSecret.isNullOrBlank() ||
+                        ephemeralKey.isNullOrBlank() ||
+                        publishableKey.isNullOrBlank()
+                    ) {
+                        _addPaymentMethodUiState.value = AddPaymentMethodUiState.Failed(
+                            "Respuesta inválida en setup-config"
+                        )
+                        return@fold
+                    }
+
+                    _addPaymentMethodUiState.value = AddPaymentMethodUiState.Ready(
+                        AddPaymentMethodSheetData(
+                            setupIntentClientSecret = clientSecret,
+                            ephemeralKeySecret = ephemeralKey,
+                            customerId = customerId,
+                            publishableKey = publishableKey
+                        )
+                    )
+                },
+                onFailure = {
+                    _addPaymentMethodUiState.value = AddPaymentMethodUiState.Failed(
+                        it.message ?: "Error al preparar el formulario de tarjeta"
+                    )
+                }
+            )
+        }
+    }
+
+    fun onAddPaymentMethodCompleted() {
+        _addPaymentMethodUiState.value = AddPaymentMethodUiState.Completed
+        loadPaymentMethods()
+    }
+
+    fun onAddPaymentMethodCanceled() {
+        _addPaymentMethodUiState.value = AddPaymentMethodUiState.Canceled
+    }
+
+    fun onAddPaymentMethodFailed(message: String) {
+        _addPaymentMethodUiState.value = AddPaymentMethodUiState.Failed(message)
+    }
+
+    fun resetAddPaymentMethodState() {
+        _addPaymentMethodUiState.value = AddPaymentMethodUiState.Idle
     }
 
     // --- GESTIÓN DE TARJETAS (CARD MANAGEMENT) ---
