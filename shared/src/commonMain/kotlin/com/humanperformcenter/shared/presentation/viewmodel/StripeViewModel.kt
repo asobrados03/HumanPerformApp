@@ -249,7 +249,7 @@ class StripeViewModel(
                             ?.let { defaultPaymentMethod ->
                                 when {
                                     defaultPaymentMethod is JsonPrimitive && defaultPaymentMethod.isString -> {
-                                        defaultPaymentMethod.contentOrNull
+                                        defaultPaymentMethod.content
                                     }
                                     else -> null
                                 }
