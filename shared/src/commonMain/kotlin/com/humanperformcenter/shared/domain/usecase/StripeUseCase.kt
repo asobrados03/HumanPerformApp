@@ -32,6 +32,10 @@ class StripeUseCase (private val stripeRepository: StripeRepository) {
         return stripeRepository.detachPaymentMethod(paymentMethodId)
     }
 
+    suspend fun setDefaultPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit> {
+        return stripeRepository.setDefaultPaymentMethod(paymentMethodId, customerId)
+    }
+
     suspend fun createPaymentIntent (createPaymentIntentRequest: CreatePaymentIntentRequest)
     : Result<StripePaymentIntentResponse> {
         return stripeRepository.createPaymentIntent(createPaymentIntentRequest)
