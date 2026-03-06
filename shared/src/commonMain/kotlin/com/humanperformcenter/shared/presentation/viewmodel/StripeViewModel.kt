@@ -247,9 +247,10 @@ class StripeViewModel(
                             .getCustomer(customerId)
                             .getOrNull()
                             ?.data
-                            ?.invoiceSettings
-                            ?.defaultPaymentMethod
-                            ?.let(::extractPaymentMethodId)
+                            ?.let { customer ->
+                                extractPaymentMethodId(customer.invoiceSettings.defaultPaymentMethod)
+                                    ?: extractPaymentMethodId(customer.defaultSource)
+                            }
 
                         fetchCards(customerId, defaultPaymentMethodId)
                     } else {
@@ -278,7 +279,7 @@ class StripeViewModel(
         )
     }
 
-    private fun extractPaymentMethodId(defaultPaymentMethod: JsonElement): String? {
+    private fun extractPaymentMethodId(defaultPaymentMethod: JsonElement?): String? {
         return when (defaultPaymentMethod) {
             is JsonPrimitive -> defaultPaymentMethod.contentOrNull
             is JsonObject -> defaultPaymentMethod["id"]
