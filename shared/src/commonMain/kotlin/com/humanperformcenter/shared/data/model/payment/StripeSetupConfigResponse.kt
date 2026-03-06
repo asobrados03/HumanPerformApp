@@ -18,6 +18,8 @@ data class StripeSetupConfigData(
     val clientSecret: String? = null,
     @SerialName("ephemeral_key")
     val ephemeralKey: String? = null,
+    @SerialName("setup_intent_id")
+    val setupIntentId: String? = null,
     @SerialName("publishable_key")
     val publishableKey: String? = null
 )

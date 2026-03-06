@@ -163,18 +163,31 @@ class StripeViewModel(
             setupConfigResult.fold(
                 onSuccess = { response ->
                     val data = response.data
-                    val customerId = data?.resolvedCustomerId
-                    val clientSecret = data?.resolvedClientSecret
-                    val ephemeralKey = data?.resolvedEphemeralKey
-                    val publishableKey = data?.resolvedPublishableKey
+                    val customerId = data?.customerId
+                    val clientSecret = data?.clientSecret
+                    val ephemeralKey = data?.ephemeralKey
 
-                    if (customerId.isNullOrBlank() ||
-                        clientSecret.isNullOrBlank() ||
-                        ephemeralKey.isNullOrBlank() ||
-                        publishableKey.isNullOrBlank()
-                    ) {
+                    if (customerId.isNullOrBlank() || clientSecret.isNullOrBlank() || ephemeralKey.isNullOrBlank()) {
                         _addPaymentMethodUiState.value = AddPaymentMethodUiState.Failed(
                             "Respuesta inválida en setup-config"
+                        )
+                        return@fold
+                    }
+
+                    val publishableKeyResult = stripeUseCase.getPublishableKey()
+                    if (publishableKeyResult.isFailure) {
+                        _addPaymentMethodUiState.value = AddPaymentMethodUiState.Failed(
+                            publishableKeyResult.exceptionOrNull()?.message
+                                ?: "Error al preparar el formulario de tarjeta"
+                        )
+                        return@fold
+                    }
+
+                    val publishableKey = publishableKeyResult.getOrThrow()
+
+                    if (publishableKey.isBlank()) {
+                        _addPaymentMethodUiState.value = AddPaymentMethodUiState.Failed(
+                            "Respuesta inválida al crear credenciales de Stripe"
                         )
                         return@fold
                     }
