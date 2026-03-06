@@ -17,6 +17,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 class StripeViewModel(
@@ -246,14 +248,7 @@ class StripeViewModel(
                             ?.data
                             ?.invoiceSettings
                             ?.defaultPaymentMethod
-                            ?.let { defaultPaymentMethod ->
-                                when {
-                                    defaultPaymentMethod is JsonPrimitive && defaultPaymentMethod.isString -> {
-                                        defaultPaymentMethod.content
-                                    }
-                                    else -> null
-                                }
-                            }
+                            ?.let(::extractPaymentMethodId)
 
                         fetchCards(customerId, defaultPaymentMethodId)
                     } else {
@@ -280,6 +275,15 @@ class StripeViewModel(
                 _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error(it.message ?: "Error al cargar tarjetas")
             }
         )
+    }
+
+    private fun extractPaymentMethodId(defaultPaymentMethod: JsonElement): String? {
+        return when (defaultPaymentMethod) {
+            is JsonPrimitive -> defaultPaymentMethod.contentOrNull
+            is JsonObject -> defaultPaymentMethod["id"]
+                ?.let { id -> (id as? JsonPrimitive)?.contentOrNull }
+            else -> null
+        }
     }
 
     // --- SUSCRIPCIONES ---
