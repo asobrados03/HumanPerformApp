@@ -370,6 +370,46 @@ class StripeViewModel(
         )
     }
 
+    fun detachPaymentMethod(paymentMethodId: String) {
+        performAction(
+            action = { stripeUseCase.detachPaymentMethod(paymentMethodId) },
+            onSuccess = { loadPaymentMethods() }
+        )
+    }
+
+    fun setDefaultPaymentMethod(paymentMethodId: String) {
+        viewModelScope.launch {
+            _actionUiState.value = ActionUiState.Loading
+
+            val customerId = stripeUseCase
+                .createOrGetCustomer()
+                .getOrNull()
+                ?.data
+                ?.customerId
+
+            if (customerId.isNullOrBlank()) {
+                _actionUiState.value = ActionUiState.Error("No se pudo obtener el cliente de Stripe")
+                return@launch
+            }
+
+            stripeUseCase.setDefaultPaymentMethod(paymentMethodId, customerId).fold(
+                onSuccess = {
+                    _actionUiState.value = ActionUiState.Success
+                    loadPaymentMethods()
+                },
+                onFailure = {
+                    _actionUiState.value = ActionUiState.Error(
+                        it.message ?: "No se pudo establecer el método predeterminado"
+                    )
+                }
+            )
+        }
+    }
+
+    fun resetActionState() {
+        _actionUiState.value = ActionUiState.Idle
+    }
+
     /**
      * Función helper para ejecutar acciones que no devuelven datos (Unit),
      * solo Éxito o Fallo (como borrar, guardar, cancelar, setear default).

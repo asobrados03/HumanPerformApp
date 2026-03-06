@@ -70,7 +70,7 @@ object StripeRepositoryImpl : StripeRepository {
     ): Result<Unit> {
         return runCatching {
             withContext(Dispatchers.IO) {
-                ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-method/default") {
+                ApiClient.apiClient.put("${ApiClient.baseUrl}/stripe/payment-method/default") {
                     contentType(ContentType.Application.Json)
                     setBody(mapOf("paymentMethodId" to paymentMethodId, "customerId" to customerId))
                 }.body()

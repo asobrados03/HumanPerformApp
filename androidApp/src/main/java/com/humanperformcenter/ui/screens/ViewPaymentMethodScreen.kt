@@ -52,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.payment.StripePaymentMethod
 import com.humanperformcenter.shared.domain.storage.SecureStorage
+import com.humanperformcenter.shared.presentation.ui.ActionUiState
 import com.humanperformcenter.shared.presentation.ui.AddPaymentMethodUiState
 import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
@@ -70,6 +71,7 @@ fun ViewPaymentMethodScreen(
 ) {
     val uiState by stripeViewModel.viewPaymentMethodsUiState.collectAsStateWithLifecycle()
     val addPaymentMethodState by stripeViewModel.addPaymentMethodUiState.collectAsStateWithLifecycle()
+    val actionState by stripeViewModel.actionUiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val user by SecureStorage.userFlow().collectAsStateWithLifecycle(initialValue = null)
 
@@ -126,6 +128,23 @@ fun ViewPaymentMethodScreen(
             is AddPaymentMethodUiState.Canceled,
             is AddPaymentMethodUiState.Failed -> {
                 stripeViewModel.resetAddPaymentMethodState()
+            }
+
+            else -> Unit
+        }
+    }
+
+
+    LaunchedEffect(actionState) {
+        when (val state = actionState) {
+            is ActionUiState.Success -> {
+                Toast.makeText(context, "Operación realizada con éxito", Toast.LENGTH_SHORT).show()
+                stripeViewModel.resetActionState()
+            }
+
+            is ActionUiState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                stripeViewModel.resetActionState()
             }
 
             else -> Unit
@@ -211,10 +230,7 @@ fun ViewPaymentMethodScreen(
                                 paymentMethod = pm,
                                 isDefault = pm.id == state.defaultPaymentMethodId,
                                 onDelete = { pendingDeleteCardId = pm.id },
-                                onSetDefault = {
-                                // llamada directa al ViewModel para establecer la tarjeta como
-                                // predeterminada sin necesidad de un estado adicional
-                                }
+                                onSetDefault = { stripeViewModel.setDefaultPaymentMethod(pm.id) }
                             )
                         }
                         item {
@@ -256,7 +272,7 @@ fun ViewPaymentMethodScreen(
             text = { Text("¿Seguro que deseas eliminar este método de pago?") },
             confirmButton = {
                 TextButton(onClick = {
-                    // llamada directa al ViewModel para eliminar la tarjeta sin necesidad de un estado adicional
+                    stripeViewModel.detachPaymentMethod(cardId)
                     pendingDeleteCardId = null
                 }) {
                     Text("Eliminar")
