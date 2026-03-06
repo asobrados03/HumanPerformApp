@@ -42,14 +42,6 @@ class StripeUseCase (private val stripeRepository: StripeRepository) {
         return stripeRepository.createSetupConfig(userId)
     }
 
-    suspend fun cancelPaymentIntent(id: String): Result<Unit> {
-        return stripeRepository.cancelPaymentIntent(id)
-    }
-
-    suspend fun getPaymentIntent(id: String): Result<CreatePiDto> {
-        return stripeRepository.getPaymentIntent(id)
-    }
-
     suspend fun createRefund(paymentIntentId: String, amount: Int?): Result<Unit> {
         return stripeRepository.createRefund(paymentIntentId, amount)
     }

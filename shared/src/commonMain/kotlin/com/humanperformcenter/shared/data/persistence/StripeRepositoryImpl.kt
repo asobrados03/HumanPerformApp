@@ -64,6 +64,20 @@ object StripeRepositoryImpl : StripeRepository {
         }
     }
 
+    override suspend fun setDefaultPaymentMethod(
+        paymentMethodId: String,
+        customerId: String
+    ): Result<Unit> {
+        return runCatching {
+            withContext(Dispatchers.IO) {
+                ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-method/default") {
+                    contentType(ContentType.Application.Json)
+                    setBody(mapOf("paymentMethodId" to paymentMethodId, "customerId" to customerId))
+                }.body()
+            }
+        }
+    }
+
     override suspend fun createPaymentIntent(intentRequest: CreatePaymentIntentRequest)
     : Result<StripePaymentIntentResponse> = runCatching {
         withContext(Dispatchers.IO) {
@@ -81,21 +95,6 @@ object StripeRepositoryImpl : StripeRepository {
                 contentType(ContentType.Application.Json)
                 setBody(mapOf("user_id" to userId))
             }.body()
-        }
-    }
-
-    override suspend fun cancelPaymentIntent(id: String): Result<Unit> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.post(
-                "${ApiClient.baseUrl}/stripe/payment-intent/$id/cancel"
-            ).body()
-        }
-    }
-
-    override suspend fun getPaymentIntent(id: String): Result<CreatePiDto> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/payment-intent/$id")
-                .body()
         }
     }
 

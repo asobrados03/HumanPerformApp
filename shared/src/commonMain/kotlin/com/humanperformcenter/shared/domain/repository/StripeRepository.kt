@@ -13,12 +13,11 @@ interface StripeRepository {
 
     suspend fun attachPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit>
     suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit>
+    suspend fun setDefaultPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit>
 
     suspend fun createPaymentIntent(intentRequest: CreatePaymentIntentRequest)
     : Result<StripePaymentIntentResponse>
     suspend fun createSetupConfig(userId: Int): Result<StripeSetupConfigResponse>
-    suspend fun cancelPaymentIntent(id: String): Result<Unit>
-    suspend fun getPaymentIntent(id: String): Result<CreatePiDto>
 
     suspend fun createRefund(paymentIntentId: String, amount: Int?): Result<Unit>
 
