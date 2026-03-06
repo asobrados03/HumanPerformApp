@@ -32,8 +32,5 @@ interface StripeRepository {
 
     suspend fun getUserTransactions(): Result<List<TransactionDto>>
 
-    suspend fun saveCard(paymentMethodId: String): Result<Unit>
     suspend fun getUserCards(customerId: String): Result<List<StripePaymentMethod>>
-    suspend fun deleteCard(cardId: String): Result<Unit>
-    suspend fun setDefaultCard(cardId: String): Result<Unit>
 }

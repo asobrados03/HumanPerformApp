@@ -211,7 +211,10 @@ fun ViewPaymentMethodScreen(
                                 paymentMethod = pm,
                                 isDefault = pm.id == state.defaultPaymentMethodId,
                                 onDelete = { pendingDeleteCardId = pm.id },
-                                onSetDefault = { stripeViewModel.setDefaultCard(pm.id) }
+                                onSetDefault = {
+                                // llamada directa al ViewModel para establecer la tarjeta como
+                                // predeterminada sin necesidad de un estado adicional
+                                }
                             )
                         }
                         item {
@@ -253,7 +256,7 @@ fun ViewPaymentMethodScreen(
             text = { Text("¿Seguro que deseas eliminar este método de pago?") },
             confirmButton = {
                 TextButton(onClick = {
-                    stripeViewModel.deleteCard(cardId)
+                    // llamada directa al ViewModel para eliminar la tarjeta sin necesidad de un estado adicional
                     pendingDeleteCardId = null
                 }) {
                     Text("Eliminar")

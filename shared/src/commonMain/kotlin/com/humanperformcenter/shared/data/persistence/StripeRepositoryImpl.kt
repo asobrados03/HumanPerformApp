@@ -155,15 +155,6 @@ object StripeRepositoryImpl : StripeRepository {
         }
     }
 
-    override suspend fun saveCard(paymentMethodId: String): Result<Unit> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/cards") {
-                contentType(ContentType.Application.Json)
-                setBody(mapOf("paymentMethodId" to paymentMethodId))
-            }.body()
-        }
-    }
-
     override suspend fun getUserCards(customerId: String): Result<List<StripePaymentMethod>> = runCatching {
         withContext(Dispatchers.IO) {
             val response: StripePaymentMethodsResponse = ApiClient.apiClient.get(
@@ -171,19 +162,6 @@ object StripeRepositoryImpl : StripeRepository {
             ).body()
 
             response.data
-        }
-    }
-
-    override suspend fun deleteCard(cardId: String): Result<Unit> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.delete("${ApiClient.baseUrl}/stripe/cards/$cardId").body()
-        }
-    }
-
-    override suspend fun setDefaultCard(cardId: String): Result<Unit> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.put("${ApiClient.baseUrl}/stripe/cards/$cardId/default")
-                .body()
         }
     }
 }

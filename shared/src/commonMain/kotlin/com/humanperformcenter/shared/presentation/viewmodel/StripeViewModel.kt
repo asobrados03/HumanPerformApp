@@ -273,28 +273,6 @@ class StripeViewModel(
         )
     }
 
-    // Guardar una nueva tarjeta
-    fun saveCard(paymentMethodId: String) {
-        performAction(
-            action = { stripeUseCase.saveCard(paymentMethodId) },
-            onSuccess = { loadPaymentMethods() }
-        )
-    }
-
-    fun deleteCard(cardId: String) {
-        performAction(
-            action = { stripeUseCase.deleteCard(cardId) },
-            onSuccess = { loadPaymentMethods() }
-        )
-    }
-
-    fun setDefaultCard(cardId: String) {
-        performAction(
-            action = { stripeUseCase.setDefaultCard(cardId) },
-            onSuccess = { loadPaymentMethods() }
-        )
-    }
-
     // --- SUSCRIPCIONES ---
 
     fun startStripeSubscription(

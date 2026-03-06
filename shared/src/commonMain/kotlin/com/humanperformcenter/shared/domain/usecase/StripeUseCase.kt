@@ -63,20 +63,8 @@ class StripeUseCase (private val stripeRepository: StripeRepository) {
         return stripeRepository.getSubscription(id)
     }
 
-    suspend fun saveCard(paymentMethodId: String): Result<Unit> {
-        return stripeRepository.saveCard(paymentMethodId)
-    }
-
     suspend fun getUserCards(customerId: String): Result<List<StripePaymentMethod>> {
         return stripeRepository.getUserCards(customerId)
-    }
-
-    suspend fun deleteCard(cardId: String): Result<Unit> {
-        return stripeRepository.deleteCard(cardId)
-    }
-
-    suspend fun setDefaultCard(cardId: String): Result<Unit> {
-        return stripeRepository.setDefaultCard(cardId)
     }
 
     suspend fun getPublishableKey(): Result<String> {
