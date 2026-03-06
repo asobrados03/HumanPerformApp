@@ -17,6 +17,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.serialization.json.JsonPrimitive
 
 class StripeViewModel(
     private val stripeUseCase: StripeUseCase
@@ -245,6 +246,14 @@ class StripeViewModel(
                             ?.data
                             ?.invoiceSettings
                             ?.defaultPaymentMethod
+                            ?.let { defaultPaymentMethod ->
+                                when {
+                                    defaultPaymentMethod is JsonPrimitive && defaultPaymentMethod.isString -> {
+                                        defaultPaymentMethod.contentOrNull
+                                    }
+                                    else -> null
+                                }
+                            }
 
                         fetchCards(customerId, defaultPaymentMethodId)
                     } else {

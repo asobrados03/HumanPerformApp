@@ -1,12 +1,16 @@
 package com.humanperformcenter.shared.data.model.payment
 
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
+@Serializable
 data class GetStripeCustomerResponse(
     val success: Boolean,
     val data: StripeCustomer
 )
 
+@Serializable
 data class StripeCustomer(
     val id: String,
     val `object`: String = "customer",
@@ -15,7 +19,7 @@ data class StripeCustomer(
     val created: Long,
     val currency: String? = null,
     @SerialName("default_source")
-    val defaultSource: Any? = null,
+    val defaultSource: JsonElement? = null,
     val delinquent: Boolean = false,
     val description: String? = null,
     val discount: Any? = null,
@@ -37,11 +41,12 @@ data class StripeCustomer(
     val testClock: Any? = null
 )
 
+@Serializable
 data class InvoiceSettings(
     @SerialName("custom_fields")
     val customFields: Any? = null,
     @SerialName("default_payment_method")
-    val defaultPaymentMethod: String? = null,
+    val defaultPaymentMethod: JsonElement? = null,
     val footer: String? = null,
     @SerialName("rendering_options")
     val renderingOptions: Any? = null
