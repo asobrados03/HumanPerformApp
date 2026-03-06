@@ -16,6 +16,7 @@ interface StripeRepository {
 
     suspend fun createPaymentIntent(intentRequest: CreatePaymentIntentRequest)
     : Result<StripePaymentIntentResponse>
+    suspend fun createSetupConfig(userId: Int): Result<StripeSetupConfigResponse>
     suspend fun cancelPaymentIntent(id: String): Result<Unit>
     suspend fun getPaymentIntent(id: String): Result<CreatePiDto>
 

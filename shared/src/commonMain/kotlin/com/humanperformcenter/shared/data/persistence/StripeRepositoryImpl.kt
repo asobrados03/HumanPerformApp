@@ -74,6 +74,16 @@ object StripeRepositoryImpl : StripeRepository {
         }
     }
 
+    override suspend fun createSetupConfig(userId: Int)
+    : Result<StripeSetupConfigResponse> = runCatching {
+        withContext(Dispatchers.IO) {
+            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payments/setup-config") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("user_id" to userId))
+            }.body()
+        }
+    }
+
     override suspend fun cancelPaymentIntent(id: String): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
             ApiClient.apiClient.post(

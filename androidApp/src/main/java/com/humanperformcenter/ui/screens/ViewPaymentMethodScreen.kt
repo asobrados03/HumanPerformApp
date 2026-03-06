@@ -1,5 +1,6 @@
 package com.humanperformcenter.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,8 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
@@ -31,7 +32,6 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,20 +44,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.payment.StripePaymentMethod
+import com.humanperformcenter.shared.domain.storage.SecureStorage
+import com.humanperformcenter.shared.presentation.ui.AddPaymentMethodUiState
 import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import com.humanperformcenter.ui.components.app.ErrorComponent
 import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.ui.components.app.rememberShimmerBrush
+import com.stripe.android.PaymentConfiguration
+import com.stripe.android.paymentsheet.PaymentSheet
+import com.stripe.android.paymentsheet.PaymentSheetResult
+import com.stripe.android.paymentsheet.rememberPaymentSheet
 
 @Composable
 fun ViewPaymentMethodScreen(
@@ -65,23 +69,67 @@ fun ViewPaymentMethodScreen(
     stripeViewModel: StripeViewModel
 ) {
     val uiState by stripeViewModel.viewPaymentMethodsUiState.collectAsStateWithLifecycle()
+    val addPaymentMethodState by stripeViewModel.addPaymentMethodUiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val user by SecureStorage.userFlow().collectAsStateWithLifecycle(initialValue = null)
 
-    var showAddDialog by remember { mutableStateOf(false) }
     var pendingDeleteCardId by remember { mutableStateOf<String?>(null) }
-    var cardNumber by remember { mutableStateOf("") }
-    var expiryDate by remember { mutableStateOf("") }
-    var cvv by remember { mutableStateOf("") }
 
-    val normalizedCardNumber = cardNumber.filter(Char::isDigit)
-    val normalizedExpiryDate = expiryDate.filter { it.isDigit() || it == '/' }
-    val normalizedCvv = cvv.filter(Char::isDigit)
+    val paymentSheet = rememberPaymentSheet { paymentSheetResult ->
+        when (paymentSheetResult) {
+            is PaymentSheetResult.Completed -> {
+                stripeViewModel.onAddPaymentMethodCompleted()
+                Toast.makeText(context, "Tarjeta guardada correctamente", Toast.LENGTH_LONG).show()
+            }
 
-    val canSaveCard = normalizedCardNumber.length in 13..19 &&
-        Regex("^(0[1-9]|1[0-2])/\\d{2}$").matches(normalizedExpiryDate) &&
-        normalizedCvv.length in 3..4
+            is PaymentSheetResult.Canceled -> {
+                stripeViewModel.onAddPaymentMethodCanceled()
+                Toast.makeText(context, "Operación cancelada", Toast.LENGTH_SHORT).show()
+            }
+
+            is PaymentSheetResult.Failed -> {
+                val message = paymentSheetResult.error.message ?: "Error al guardar la tarjeta"
+                stripeViewModel.onAddPaymentMethodFailed(message)
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         stripeViewModel.loadPaymentMethods()
+    }
+
+    LaunchedEffect(addPaymentMethodState) {
+        when (val state = addPaymentMethodState) {
+            is AddPaymentMethodUiState.Ready -> {
+                PaymentConfiguration.init(context, state.sheetData.publishableKey)
+
+                val configuration = PaymentSheet.Configuration.Builder(
+                    state.sheetData.merchantDisplayName
+                )
+                    .customer(
+                        PaymentSheet.CustomerConfiguration(
+                            id = state.sheetData.customerId,
+                            ephemeralKeySecret = state.sheetData.ephemeralKeySecret
+                        )
+                    )
+                    .allowsDelayedPaymentMethods(false)
+                    .build()
+
+                paymentSheet.presentWithSetupIntent(
+                    setupIntentClientSecret = state.sheetData.setupIntentClientSecret,
+                    configuration = configuration
+                )
+            }
+
+            is AddPaymentMethodUiState.Completed,
+            is AddPaymentMethodUiState.Canceled,
+            is AddPaymentMethodUiState.Failed -> {
+                stripeViewModel.resetAddPaymentMethodState()
+            }
+
+            else -> Unit
+        }
     }
 
     Scaffold(
@@ -141,7 +189,10 @@ fun ViewPaymentMethodScreen(
                             textAlign = TextAlign.Center
                         )
                         Spacer(Modifier.height(16.dp))
-                        Button(onClick = { showAddDialog = true }) {
+                        Button(
+                            enabled = user != null,
+                            onClick = { user?.id?.let(stripeViewModel::prepareAddPaymentMethod) }
+                        ) {
                             Icon(Icons.Outlined.AddCircle, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text("Añadir método de pago")
@@ -165,7 +216,8 @@ fun ViewPaymentMethodScreen(
                         }
                         item {
                             Button(
-                                onClick = { showAddDialog = true },
+                                enabled = user != null,
+                                onClick = { user?.id?.let(stripeViewModel::prepareAddPaymentMethod) },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Icon(Icons.Outlined.AddCircle, contentDescription = null)
@@ -178,72 +230,20 @@ fun ViewPaymentMethodScreen(
                 }
             }
         }
-    }
 
-    if (showAddDialog) {
-        AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = { Text("Añadir método de pago") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = cardNumber,
-                        onValueChange = {
-                            cardNumber = it.filter(Char::isDigit).take(19)
-                        },
-                        label = { Text("Número de tarjeta") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
-                    OutlinedTextField(
-                        value = expiryDate,
-                        onValueChange = {
-                            val digits = it.filter(Char::isDigit).take(4)
-                            expiryDate = when {
-                                digits.length <= 2 -> digits
-                                else -> "${digits.take(2)}/${digits.drop(2)}"
-                            }
-                        },
-                        label = { Text("Fecha de expiración (MM/YY)") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
-                    OutlinedTextField(
-                        value = cvv,
-                        onValueChange = {
-                            cvv = it.filter(Char::isDigit).take(4)
-                        },
-                        label = { Text("CVV") },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = canSaveCard,
-                    onClick = {
-                        val paymentMethodId = "pm_manual_${normalizedCardNumber.takeLast(4)}_${normalizedExpiryDate.replace("/", "")}"
-                        stripeViewModel.saveCard(paymentMethodId)
-                        cardNumber = ""
-                        expiryDate = ""
-                        cvv = ""
-                        showAddDialog = false
-                    }
-                ) {
-                    Text("Guardar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    cardNumber = ""
-                    expiryDate = ""
-                    cvv = ""
-                    showAddDialog = false
-                }) { Text("Cancelar") }
+        if (addPaymentMethodState is AddPaymentMethodUiState.Loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Cargando pasarela de pago...",
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
-        )
+        }
     }
 
     pendingDeleteCardId?.let { cardId ->
