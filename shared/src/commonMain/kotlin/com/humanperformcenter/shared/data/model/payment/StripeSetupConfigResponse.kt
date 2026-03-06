@@ -6,29 +6,18 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class StripeSetupConfigResponse(
     val success: Boolean,
+    val message: String? = null,
     val data: StripeSetupConfigData? = null
 )
 
 @Serializable
 data class StripeSetupConfigData(
+    @SerialName("customer_id")
     val customerId: String? = null,
-    @SerialName("customer_id") val customerIdSnake: String? = null,
+    @SerialName("setup_intent_client_secret")
     val clientSecret: String? = null,
-    @SerialName("client_secret") val clientSecretSnake: String? = null,
+    @SerialName("ephemeral_key")
     val ephemeralKey: String? = null,
-    @SerialName("ephemeral_key") val ephemeralKeySnake: String? = null,
-    val publishableKey: String? = null,
-    @SerialName("publishable_key") val publishableKeySnake: String? = null
-) {
-    val resolvedCustomerId: String?
-        get() = customerId ?: customerIdSnake
-
-    val resolvedClientSecret: String?
-        get() = clientSecret ?: clientSecretSnake
-
-    val resolvedEphemeralKey: String?
-        get() = ephemeralKey ?: ephemeralKeySnake
-
-    val resolvedPublishableKey: String?
-        get() = publishableKey ?: publishableKeySnake
-}
+    @SerialName("publishable_key")
+    val publishableKey: String? = null
+)
