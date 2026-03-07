@@ -26,11 +26,16 @@ class StripeViewModel(
         val log = logging()
     }
 
-    private val _viewPaymentMethodsUiState = MutableStateFlow<PaymentMethodsUiState>(PaymentMethodsUiState.Empty)
+    private val _viewPaymentMethodsUiState = MutableStateFlow<PaymentMethodsUiState>(
+        PaymentMethodsUiState.Empty
+    )
     @NativeCoroutinesState
-    val viewPaymentMethodsUiState: StateFlow<PaymentMethodsUiState> = _viewPaymentMethodsUiState.asStateFlow()
+    val viewPaymentMethodsUiState: StateFlow<PaymentMethodsUiState> = _viewPaymentMethodsUiState
+        .asStateFlow()
 
-    private val _startStripeCheckout = MutableStateFlow<StartStripeCheckoutState>(StartStripeCheckoutState.Idle)
+    private val _startStripeCheckout = MutableStateFlow<StartStripeCheckoutState>(
+        StartStripeCheckoutState.Idle
+    )
     @NativeCoroutinesState
     val startStripeCheckout: StateFlow<StartStripeCheckoutState> = _startStripeCheckout.asStateFlow()
 
@@ -39,9 +44,12 @@ class StripeViewModel(
     @NativeCoroutinesState
     val actionUiState = _actionUiState.asStateFlow()
 
-    private val _addPaymentMethodUiState = MutableStateFlow<AddPaymentMethodUiState>(AddPaymentMethodUiState.Idle)
+    private val _addPaymentMethodUiState = MutableStateFlow<AddPaymentMethodUiState>(
+        AddPaymentMethodUiState.Idle
+    )
     @NativeCoroutinesState
-    val addPaymentMethodUiState: StateFlow<AddPaymentMethodUiState> = _addPaymentMethodUiState.asStateFlow()
+    val addPaymentMethodUiState: StateFlow<AddPaymentMethodUiState> = _addPaymentMethodUiState
+        .asStateFlow()
 
     private val _refundUiState = MutableStateFlow<RefundUiState>(RefundUiState.Idle)
     @NativeCoroutinesState
@@ -172,7 +180,8 @@ class StripeViewModel(
                     val clientSecret = data?.clientSecret
                     val ephemeralKey = data?.ephemeralKey
 
-                    if (customerId.isNullOrBlank() || clientSecret.isNullOrBlank() || ephemeralKey.isNullOrBlank()) {
+                    if (customerId.isNullOrBlank() || clientSecret.isNullOrBlank() || ephemeralKey
+                        .isNullOrBlank()) {
                         _addPaymentMethodUiState.value = AddPaymentMethodUiState.Failed(
                             "Respuesta inválida en setup-config"
                         )
@@ -247,11 +256,15 @@ class StripeViewModel(
                         // 2. Llamamos a la nueva función del repositorio que trae TODO junto
                         fetchCards(customerId)
                     } else {
-                        _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error("No se pudo obtener el ID de cliente")
+                        _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error(
+                            "No se pudo obtener el ID de cliente"
+                        )
                     }
                 },
                 onFailure = {
-                    _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error("Error al identificar usuario")
+                    _viewPaymentMethodsUiState.value = PaymentMethodsUiState.Error(
+                        "Error al identificar usuario"
+                    )
                 }
             )
         }
@@ -341,7 +354,8 @@ class StripeViewModel(
                     }
                 },
                 onFailure = {
-                    _startStripeCheckout.value = StartStripeCheckoutState.Failed(it.message ?: "Error")
+                    _startStripeCheckout.value = StartStripeCheckoutState.Failed(it.message ?:
+                    "Error")
                     log.error { it.message }
                 }
             )

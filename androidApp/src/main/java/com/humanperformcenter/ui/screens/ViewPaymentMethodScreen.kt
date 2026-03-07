@@ -61,8 +61,8 @@ import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.ui.components.app.rememberShimmerBrush
 import com.stripe.android.PaymentConfiguration
 import com.stripe.android.paymentsheet.PaymentSheet
+import com.stripe.android.paymentsheet.PaymentSheet.Builder
 import com.stripe.android.paymentsheet.PaymentSheetResult
-import com.stripe.android.paymentsheet.rememberPaymentSheet
 
 @Composable
 fun ViewPaymentMethodScreen(
@@ -77,7 +77,7 @@ fun ViewPaymentMethodScreen(
 
     var pendingDeleteCardId by remember { mutableStateOf<String?>(null) }
 
-    val paymentSheet = rememberPaymentSheet { paymentSheetResult ->
+    val paymentResultCallback: (PaymentSheetResult) -> Unit = { paymentSheetResult ->
         when (paymentSheetResult) {
             is PaymentSheetResult.Completed -> {
                 stripeViewModel.onAddPaymentMethodCompleted()
@@ -96,6 +96,9 @@ fun ViewPaymentMethodScreen(
             }
         }
     }
+
+    val paymentSheet = remember(paymentResultCallback) { Builder(paymentResultCallback) }
+        .build()
 
     LaunchedEffect(Unit) {
         stripeViewModel.loadPaymentMethods()
@@ -335,12 +338,12 @@ fun PaymentMethodCard(
             }
 
             Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!isDefault) {
                     OutlinedButton(onClick = onSetDefault) {
                         Icon(Icons.Filled.Star, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
-                        Text("Predeterminada")
+                        Text("Marcar como predeterminado")
                     }
                 }
                 OutlinedButton(onClick = onDelete) {
