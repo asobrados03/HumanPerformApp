@@ -88,12 +88,19 @@ object StripeRepositoryImpl : StripeRepository {
         }
     }
 
-    override suspend fun createRefund(paymentIntentId: String, amount: Int?)
+    override suspend fun createRefund(paymentIntentId: String, amount: Double?)
     : Result<Unit> = runCatching {
+        require(amount == null || amount > 0.0) {
+            "Refund amount must be a positive amount"
+        }
+
         withContext(Dispatchers.IO) {
             ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/refund") {
                 contentType(ContentType.Application.Json)
-                setBody(mapOf("paymentIntentId" to paymentIntentId, "amount" to amount))
+                setBody(buildMap {
+                    put("paymentIntentId", paymentIntentId)
+                    amount?.let { put("amount", it) }
+                })
             }.body()
         }
     }

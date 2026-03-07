@@ -370,9 +370,16 @@ class StripeViewModel(
         )
     }
 
-    fun createRefund(paymentIntentId: String, productId: Int, amount: Int? = null) {
+    fun createRefund(paymentIntentId: String, productId: Int, amount: Double? = null) {
         viewModelScope.launch {
             _refundUiState.value = RefundUiState.Loading
+            if (amount != null && amount <= 0.0) {
+                _refundUiState.value = RefundUiState.Error(
+                    "El importe del reembolso debe ser mayor que cero"
+                )
+                return@launch
+            }
+
             stripeUseCase.createRefund(paymentIntentId, amount).fold(
                 onSuccess = {
                     _refundUiState.value = RefundUiState.Success(productId)

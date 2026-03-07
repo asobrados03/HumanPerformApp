@@ -18,7 +18,11 @@ interface StripeRepository {
     : Result<StripePaymentIntentResponse>
     suspend fun createSetupConfig(userId: Int): Result<StripeSetupConfigResponse>
 
-    suspend fun createRefund(paymentIntentId: String, amount: Int?): Result<Unit>
+    /**
+     * `amount` viaja en unidad mayor (p. ej. euros) y el backend la convierte a céntimos.
+     * Si es `null`, el backend decide el importe (full refund).
+     */
+    suspend fun createRefund(paymentIntentId: String, amount: Double?): Result<Unit>
 
     suspend fun createSubscription(
         priceId: String,
