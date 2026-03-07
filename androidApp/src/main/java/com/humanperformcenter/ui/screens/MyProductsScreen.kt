@@ -24,6 +24,7 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.ActiveProductDetail
 import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.presentation.ui.ActionUiState
+import com.humanperformcenter.shared.presentation.ui.RefundUiState
 import com.humanperformcenter.shared.presentation.ui.UnassignEvent
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.ui.components.product.ConfirmCancelDialog
@@ -65,12 +66,37 @@ fun MyProductsScreen(
     }
 
     val actionState by stripeViewModel.actionUiState.collectAsStateWithLifecycle()
+    val refundState by stripeViewModel.refundUiState.collectAsStateWithLifecycle()
+    var pendingRefundProductId by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(actionState) {
         if (actionState is ActionUiState.Success) {
             // Si Stripe confirma éxito, refrescamos la lista local
             serviceProductViewModel.loadUserProducts(userId)
             Toast.makeText(context, "Operación realizada con éxito", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(refundState) {
+        when (val state = refundState) {
+            is RefundUiState.Success -> {
+                val pendingId = pendingRefundProductId
+                if (pendingId != null && pendingId == state.productId) {
+                    serviceProductViewModel.unassignProductFromUser(state.productId, userId)
+                }
+                pendingRefundProductId = null
+                stripeViewModel.resetRefundState()
+            }
+            is RefundUiState.Error -> {
+                Toast.makeText(
+                    context,
+                    state.message,
+                    Toast.LENGTH_LONG
+                ).show()
+                pendingRefundProductId = null
+                stripeViewModel.resetRefundState()
+            }
+            else -> Unit
         }
     }
 
@@ -106,11 +132,12 @@ fun MyProductsScreen(
                         }
                         // 2. Si es Pago Único (Refund)
                         !product.stripePaymentIntentId.isNullOrBlank() -> {
+                            pendingRefundProductId = product.id
                             stripeViewModel.createRefund(
                                 product.stripePaymentIntentId!!,
+                                product.id,
                                 product.price?.toInt()
                             )
-                            serviceProductViewModel.unassignProductFromUser(product.id, userId)
                         }
                         // 3. Si no tiene Stripe (Baja manual/local)
                         else -> {
