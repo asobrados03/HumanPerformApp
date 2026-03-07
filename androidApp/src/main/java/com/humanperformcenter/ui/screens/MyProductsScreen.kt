@@ -136,7 +136,7 @@ fun MyProductsScreen(
                             stripeViewModel.createRefund(
                                 product.stripePaymentIntentId!!,
                                 product.id,
-                                product.price?.toInt()
+                                product.price
                             )
                         }
                         // 3. Si no tiene Stripe (Baja manual/local)
