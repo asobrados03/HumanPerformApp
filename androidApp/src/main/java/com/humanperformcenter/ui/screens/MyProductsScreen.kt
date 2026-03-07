@@ -70,10 +70,18 @@ fun MyProductsScreen(
     var pendingRefundProductId by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(actionState) {
-        if (actionState is ActionUiState.Success) {
-            // Si Stripe confirma éxito, refrescamos la lista local
-            serviceProductViewModel.loadUserProducts(userId)
-            Toast.makeText(context, "Operación realizada con éxito", Toast.LENGTH_SHORT).show()
+        when (val state = actionState) {
+            is ActionUiState.Success -> {
+                // Si Stripe confirma éxito, refrescamos la lista local
+                serviceProductViewModel.loadUserProducts(userId)
+                Toast.makeText(context, "Operación realizada con éxito", Toast.LENGTH_SHORT).show()
+                stripeViewModel.resetActionState()
+            }
+            is ActionUiState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                stripeViewModel.resetActionState()
+            }
+            else -> Unit
         }
     }
 
