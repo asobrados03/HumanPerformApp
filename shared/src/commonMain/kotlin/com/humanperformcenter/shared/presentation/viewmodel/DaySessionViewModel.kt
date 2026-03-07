@@ -5,6 +5,7 @@ import com.humanperformcenter.shared.data.model.booking.DaySession
 import com.humanperformcenter.shared.data.model.booking.ProductLimit
 import com.humanperformcenter.shared.data.model.booking.BookingRequest
 import com.humanperformcenter.shared.data.model.booking.ReserveUpdateRequest
+import com.humanperformcenter.shared.domain.booking.BookingDomainException
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
 import com.humanperformcenter.shared.presentation.ui.DailySessionsUiState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
@@ -95,6 +96,24 @@ class DaySessionViewModel(
         selectedDate: String,
         hour: String
     ) {
+        val currentLimit = useCase.getUserWeeklyLimit(customerId).fold(
+            onSuccess = { wrapper ->
+                wrapper.weekly_limits.find { it.productId == productId }
+            },
+            onFailure = { error ->
+                log.error { "❌ Error obteniendo límites antes de reservar: ${error.message}" }
+                _bookingErrorMessage.value = error.message ?: "No se pudo validar el límite de tu producto."
+                return
+            }
+        )
+
+        val limitValidationError = validateBookingLimit(currentLimit)
+        if (limitValidationError != null) {
+            _bookingErrorMessage.value = limitValidationError.message
+            log.info { "⛔ Reserva bloqueada por límite de producto: ${limitValidationError.message}" }
+            return
+        }
+
         useCase.getTimeslotId(serviceId, dayOfWeek, hour).onFailure { error ->
             log.error { "❌ Error obteniendo timeslotId: ${error.message}" }
             _bookingErrorMessage.value = error.message
@@ -195,5 +214,34 @@ class DaySessionViewModel(
 
     fun clearBookingErrorMessage() {
         _bookingErrorMessage.value = null
+    }
+
+    private fun validateBookingLimit(limit: ProductLimit?): BookingDomainException? {
+        if (limit == null || limit.remaining == null) return null
+
+        val hasRemainingSessions = limit.remaining > 0
+        if (hasRemainingSessions) return null
+
+        return when {
+            limit.typeOfProduct.isRecurringType() && limit.weeklyLimit != null -> {
+                BookingDomainException.WeeklyLimitExceeded
+            }
+            limit.typeOfProduct.isPackType() && limit.totalLimit != null -> {
+                BookingDomainException.TotalSessionsLimitExceeded
+            }
+            limit.weeklyLimit != null -> BookingDomainException.WeeklyLimitExceeded
+            limit.totalLimit != null -> BookingDomainException.TotalSessionsLimitExceeded
+            else -> null
+        }
+    }
+
+    private fun String.isRecurringType(): Boolean {
+        val normalized = lowercase()
+        return normalized == "recurrent" || normalized == "subscription" || normalized == "suscription"
+    }
+
+    private fun String.isPackType(): Boolean {
+        val normalized = lowercase()
+        return normalized == "bonus" || normalized == "bono" || normalized == "single_session"
     }
 }

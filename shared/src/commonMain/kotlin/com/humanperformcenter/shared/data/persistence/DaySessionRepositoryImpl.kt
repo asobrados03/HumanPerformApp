@@ -1,6 +1,7 @@
 package com.humanperformcenter.shared.data.persistence
 
 import com.diamondedge.logging.logging
+import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.booking.BookingRequest
 import com.humanperformcenter.shared.data.model.booking.ReserveResponse
 import com.humanperformcenter.shared.data.model.booking.ReserveUpdateRequest
@@ -8,6 +9,7 @@ import com.humanperformcenter.shared.data.model.booking.ReserveUpdateResponse
 import com.humanperformcenter.shared.data.model.booking.DaySession
 import com.humanperformcenter.shared.data.model.booking.WeeklyLimitsWrapper
 import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.domain.booking.BookingDomainException
 import com.humanperformcenter.shared.domain.repository.DaySessionRepository
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -15,6 +17,7 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
@@ -22,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.json.Json
 
 object DaySessionRepositoryImpl : DaySessionRepository {
     private val log = logging()
@@ -49,16 +53,20 @@ object DaySessionRepositoryImpl : DaySessionRepository {
 
     override suspend fun makeBooking(bookingRequest: BookingRequest)
     : Result<ReserveResponse> = withContext(Dispatchers.IO) {
-        return@withContext runCatching {
+        return@withContext try {
             val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/reserve") {
                 contentType(ContentType.Application.Json)
                 setBody(bookingRequest)
             }
 
-            if (response.status.value == 409) return@withContext Result.failure(Exception("Ya tienes una reserva a esta hora."))
-            if (!response.status.isSuccess()) return@withContext Result.failure(Exception("Error de reserva: ${response.status}"))
+            if (!response.status.isSuccess()) {
+                return@withContext Result.failure(mapBookingError(response.status.value, response.bodyAsText()))
+            }
 
-            response.body<ReserveResponse>()
+            Result.success(response.body<ReserveResponse>())
+        } catch (e: Exception) {
+            log.error { "❌ Excepción en makeBooking: ${e.message}" }
+            Result.failure(e)
         }
     }
 
@@ -136,6 +144,39 @@ object DaySessionRepositoryImpl : DaySessionRepository {
             val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/holidays")
             if (!response.status.isSuccess()) throw Exception("Error al cargar festivos")
             response.body<List<String>>()
+        }
+    }
+
+    private fun mapBookingError(statusCode: Int, rawBody: String): Exception {
+        val message = parseBackendMessage(rawBody)
+        val normalized = (message ?: rawBody).lowercase()
+
+        val limitKeywords = listOf("limite", "límite", "maximo", "máximo", "agotad", "weekly", "semanal", "bono", "sesiones")
+        val hasLimitSignal = limitKeywords.any { normalized.contains(it) }
+
+        if (statusCode in listOf(400, 409, 422) && hasLimitSignal) {
+            return if (normalized.contains("weekly") || normalized.contains("semanal") || normalized.contains("recurrent")) {
+                BookingDomainException.WeeklyLimitExceeded
+            } else {
+                BookingDomainException.TotalSessionsLimitExceeded
+            }
+        }
+
+        if (statusCode == 409 && (normalized.contains("ya tienes una reserva") || normalized.contains("already") || normalized.contains("ocupad"))) {
+            return BookingDomainException.DuplicateBooking
+        }
+
+        val fallbackMessage = message ?: "No se pudo completar la reserva. Revisa tus límites o inténtalo más tarde."
+        return BookingDomainException.GenericBookingFailure(fallbackMessage)
+    }
+
+    private fun parseBackendMessage(rawBody: String): String? {
+        if (rawBody.isBlank()) return null
+
+        return try {
+            Json { ignoreUnknownKeys = true }.decodeFromString<ErrorResponse>(rawBody).error
+        } catch (_: Exception) {
+            rawBody
         }
     }
 }
