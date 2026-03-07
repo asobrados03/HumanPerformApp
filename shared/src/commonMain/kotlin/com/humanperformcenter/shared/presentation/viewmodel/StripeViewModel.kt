@@ -7,6 +7,7 @@ import com.humanperformcenter.shared.presentation.ui.ActionUiState
 import com.humanperformcenter.shared.presentation.ui.AddPaymentMethodSheetData
 import com.humanperformcenter.shared.presentation.ui.AddPaymentMethodUiState
 import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
+import com.humanperformcenter.shared.presentation.ui.RefundUiState
 import com.humanperformcenter.shared.presentation.ui.StartStripeCheckoutState
 import com.humanperformcenter.shared.presentation.ui.StripeCheckoutConfig
 import com.humanperformcenter.shared.presentation.ui.models.BillingPrefill
@@ -41,6 +42,10 @@ class StripeViewModel(
     private val _addPaymentMethodUiState = MutableStateFlow<AddPaymentMethodUiState>(AddPaymentMethodUiState.Idle)
     @NativeCoroutinesState
     val addPaymentMethodUiState: StateFlow<AddPaymentMethodUiState> = _addPaymentMethodUiState.asStateFlow()
+
+    private val _refundUiState = MutableStateFlow<RefundUiState>(RefundUiState.Idle)
+    @NativeCoroutinesState
+    val refundUiState: StateFlow<RefundUiState> = _refundUiState.asStateFlow()
 
     fun startStripeCheckout(
         amount: Double,
@@ -365,10 +370,24 @@ class StripeViewModel(
         )
     }
 
-    fun createRefund(paymentIntentId: String, amount: Int? = null) {
-        performAction (
-            action = { stripeUseCase.createRefund(paymentIntentId, amount) }
-        )
+    fun createRefund(paymentIntentId: String, productId: Int, amount: Int? = null) {
+        viewModelScope.launch {
+            _refundUiState.value = RefundUiState.Loading
+            stripeUseCase.createRefund(paymentIntentId, amount).fold(
+                onSuccess = {
+                    _refundUiState.value = RefundUiState.Success(productId)
+                },
+                onFailure = {
+                    _refundUiState.value = RefundUiState.Error(
+                        it.message ?: "No se pudo completar el reembolso"
+                    )
+                }
+            )
+        }
+    }
+
+    fun resetRefundState() {
+        _refundUiState.value = RefundUiState.Idle
     }
 
     fun detachPaymentMethod(paymentMethodId: String) {
