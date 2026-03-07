@@ -97,10 +97,12 @@ object StripeRepositoryImpl : StripeRepository {
         withContext(Dispatchers.IO) {
             ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/refund") {
                 contentType(ContentType.Application.Json)
-                setBody(buildMap {
-                    put("paymentIntentId", paymentIntentId)
-                    amount?.let { put("amount", it) }
-                })
+                setBody(
+                    CreateRefundRequest(
+                        paymentIntentId = paymentIntentId,
+                        amount = amount
+                    )
+                )
             }.body()
         }
     }
