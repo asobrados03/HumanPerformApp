@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humanperformcenter.shared.data.model.booking.DaySession
+import com.humanperformcenter.shared.data.model.booking.ProductLimit
 import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.presentation.ui.DailySessionsUiState
@@ -60,6 +61,7 @@ import kotlinx.datetime.LocalDate as KotlinLocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.TextStyle
+import java.time.DayOfWeek
 import java.util.Locale
 
 private val SuccessColor = Color(0xFF4CAF50)
@@ -276,7 +278,12 @@ fun reservationFlowDialogs(
     }
 
     val currentLimit = userBookingLimits.find { it.productId == state.selectedProduct?.id }
-    val canBook = (currentLimit?.remaining ?: 0) > 0
+    val canBook = canBook(
+        product = state.selectedProduct,
+        limit = currentLimit,
+        userBookings = bookingsList,
+        today = state.today
+    )
 
     if (bookingError != null) {
         InfoDialog(
@@ -299,17 +306,6 @@ fun reservationFlowDialogs(
             CoachSelectionDialog(state, dialog, canBook)
         }
         is ReservationFlowState.Dialog.Confirm -> {
-            // Buscamos el límite
-            val currentLimit = userBookingLimits.find { it.productId == state.selectedProduct?.id }
-
-            // LÓGICA CORREGIDA:
-            // 1. Si currentLimit es null -> No tiene el producto -> false
-            // 2. Si remaining es null -> Es ilimitado -> true
-            // 3. Si remaining > 0 -> Tiene saldo -> true
-            val canBook = currentLimit != null && (
-                currentLimit.remaining == null || currentLimit.remaining!! > 0
-            )
-
             ConfirmDialog(
                 state = state,
                 dialog = dialog.copy(canBooking = canBook)
@@ -649,4 +645,56 @@ private fun String.toLocalDateTimeOnDate(date: JavaLocalDate): LocalDateTime {
     val hour = this.take(2).toInt()
     val minute = this.substring(3, 5).toInt()
     return date.atTime(hour, minute)
+}
+
+private fun canBook(
+    product: Product?,
+    limit: ProductLimit?,
+    userBookings: List<UserBooking>,
+    today: JavaLocalDate
+): Boolean {
+    if (product == null || limit == null) return false
+
+    val bookingsForProduct = userBookings.filter { it.productId == product.id }
+    val normalizedType = limit.typeOfProduct.lowercase(Locale.ROOT)
+
+    return when {
+        normalizedType.isRecurringType() -> {
+            val weeklyRemaining = limit.remaining ?: limit.weeklyLimit?.let { weeklyLimit ->
+                val weekStart = today.with(DayOfWeek.MONDAY)
+                val weekEnd = weekStart.plusDays(6)
+                val currentWeekBookings = bookingsForProduct.count { booking ->
+                    val bookingDate = booking.date.toLocalDate() ?: return@count false
+                    !bookingDate.isBefore(weekStart) && !bookingDate.isAfter(weekEnd)
+                }
+                (weeklyLimit - currentWeekBookings).coerceAtLeast(0)
+            }
+
+            weeklyRemaining?.let { it > 0 } ?: true
+        }
+
+        normalizedType.isPackType() -> {
+            val totalRemaining = limit.remaining ?: limit.totalLimit?.let { totalLimit ->
+                (totalLimit - bookingsForProduct.size).coerceAtLeast(0)
+            }
+
+            totalRemaining?.let { it > 0 } ?: true
+        }
+
+        else -> {
+            val fallbackRemaining = limit.remaining
+                ?: limit.weeklyLimit?.let { (it - bookingsForProduct.size).coerceAtLeast(0) }
+                ?: limit.totalLimit?.let { (it - bookingsForProduct.size).coerceAtLeast(0) }
+
+            fallbackRemaining?.let { it > 0 } ?: true
+        }
+    }
+}
+
+private fun String.isRecurringType(): Boolean {
+    return this == "recurrent" || this == "subscription" || this == "suscription"
+}
+
+private fun String.isPackType(): Boolean {
+    return this == "bonus" || this == "bono" || this == "single_session"
 }
