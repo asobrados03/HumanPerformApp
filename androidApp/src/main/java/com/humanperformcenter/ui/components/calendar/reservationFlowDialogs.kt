@@ -653,7 +653,12 @@ private fun canBook(
     userBookings: List<UserBooking>,
     today: JavaLocalDate
 ): Boolean {
-    if (product == null || limit == null) return false
+    if (product == null) return false
+
+    // Si todavía no tenemos límites para el producto (latencia, respuesta parcial,
+    // producto recién asignado, etc.), no bloqueamos la reserva en cliente.
+    // El backend mantiene la validación definitiva.
+    if (limit == null) return true
 
     val bookingsForProduct = userBookings.filter { it.productId == product.id }
     val normalizedType = limit.typeOfProduct.lowercase(Locale.ROOT)
