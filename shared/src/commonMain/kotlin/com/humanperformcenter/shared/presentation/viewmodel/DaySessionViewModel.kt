@@ -95,7 +95,7 @@ class DaySessionViewModel(
         centerId: Int,
         selectedDate: String,
         hour: String
-    ) {
+    ): Boolean {
         val currentLimit = useCase.getUserWeeklyLimit(customerId).fold(
             onSuccess = { wrapper ->
                 wrapper.weekly_limits.find { it.productId == productId }
@@ -103,7 +103,7 @@ class DaySessionViewModel(
             onFailure = { error ->
                 log.error { "❌ Error obteniendo límites antes de reservar: ${error.message}" }
                 _bookingErrorMessage.value = error.message ?: "No se pudo validar el límite de tu producto."
-                return
+                return false
             }
         )
 
@@ -111,36 +111,44 @@ class DaySessionViewModel(
         if (limitValidationError != null) {
             _bookingErrorMessage.value = limitValidationError.message
             log.info { "⛔ Reserva bloqueada por límite de producto: ${limitValidationError.message}" }
-            return
+            return false
         }
 
-        useCase.getTimeslotId(serviceId, dayOfWeek, hour).onFailure { error ->
-            log.error { "❌ Error obteniendo timeslotId: ${error.message}" }
-            _bookingErrorMessage.value = error.message
-            return
-        }.onSuccess { timeslotId ->
-            log.info { "🎯 Realizando reserva exacta:" }
-            log.debug { "→ Service ID (Tabla Services): $serviceId" }
-            log.debug { "→ Product ID (Tabla Products): $productId" }
+        val timeslotId = useCase.getTimeslotId(serviceId, dayOfWeek, hour).fold(
+            onSuccess = { it },
+            onFailure = { error ->
+                log.error { "❌ Error obteniendo timeslotId: ${error.message}" }
+                _bookingErrorMessage.value = error.message
+                return false
+            }
+        )
 
-            val bookingRequest = BookingRequest(
-                customerId = customerId,
-                coachId = coachId,
-                sessionTimeslotId = timeslotId,
-                serviceId = serviceId,
-                productId = productId,
-                centerId = centerId,
-                startDate = selectedDate
-            )
+        log.info { "🎯 Realizando reserva exacta:" }
+        log.debug { "→ Service ID (Tabla Services): $serviceId" }
+        log.debug { "→ Product ID (Tabla Products): $productId" }
 
-            useCase.makeBooking(bookingRequest).onSuccess {
+        val bookingRequest = BookingRequest(
+            customerId = customerId,
+            coachId = coachId,
+            sessionTimeslotId = timeslotId,
+            serviceId = serviceId,
+            productId = productId,
+            centerId = centerId,
+            startDate = selectedDate
+        )
+
+        return useCase.makeBooking(bookingRequest).fold(
+            onSuccess = {
                 log.info { "✅ Reserva enviada correctamente" }
                 _bookingErrorMessage.value = null
-            }.onFailure { error ->
+                true
+            },
+            onFailure = { error ->
                 log.error { "❌ Error al reservar: ${error.message}" }
                 _bookingErrorMessage.value = error.message
+                false
             }
-        }
+        )
     }
 
     suspend fun fetchServiceIdForProduct(productId: Int): Int? {
