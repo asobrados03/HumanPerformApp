@@ -7,6 +7,7 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
+import io.ktor.client.plugins.defaultResponseValidation
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
@@ -33,6 +34,13 @@ object ApiClient {
     val apiClient = HttpClient {
         install(LogoutPlugin) {
             sink = logoutEvents
+        }
+
+        defaultResponseValidation {
+            if (status == HttpStatusCode.Unauthorized) {
+                storage.clear()
+                logoutEvents.tryEmit(Unit)
+            }
         }
 
         install(ContentNegotiation) {
