@@ -146,10 +146,39 @@ class DaySessionViewModel(
             },
             onFailure = { error ->
                 log.error { "❌ Error al reservar: ${error.message}" }
-                _bookingErrorMessage.value = error.toBookingErrorMessage()
+                _bookingErrorMessage.value = resolveBookingErrorMessage(
+                    throwable = error,
+                    customerId = customerId,
+                    productId = productId
+                )
                 false
             }
         )
+    }
+
+    private suspend fun resolveBookingErrorMessage(
+        throwable: Throwable,
+        customerId: Int,
+        productId: Int
+    ): String {
+        if (throwable is BookingDomainException && throwable !is BookingDomainException.GenericBookingFailure) {
+            return throwable.message ?: GENERIC_BOOKING_ERROR_MESSAGE
+        }
+
+        val refreshedLimit = useCase.getUserWeeklyLimit(customerId).fold(
+            onSuccess = { wrapper -> wrapper.weekly_limits.find { it.productId == productId } },
+            onFailure = {
+                log.error { "❌ No se pudieron refrescar límites tras error de reserva: ${it.message}" }
+                null
+            }
+        )
+
+        val refreshedLimitError = validateBookingLimit(refreshedLimit)
+        if (refreshedLimitError != null) {
+            return refreshedLimitError.message ?: GENERIC_BOOKING_ERROR_MESSAGE
+        }
+
+        return throwable.toBookingErrorMessage()
     }
 
     suspend fun fetchServiceIdForProduct(productId: Int): Int? {

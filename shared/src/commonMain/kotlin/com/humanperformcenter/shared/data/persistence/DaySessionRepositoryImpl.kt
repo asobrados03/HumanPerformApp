@@ -25,7 +25,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 object DaySessionRepositoryImpl : DaySessionRepository {
     private val log = logging()
@@ -174,9 +178,35 @@ object DaySessionRepositoryImpl : DaySessionRepository {
         if (rawBody.isBlank()) return null
 
         return try {
-            Json { ignoreUnknownKeys = true }.decodeFromString<ErrorResponse>(rawBody).error
+            val json = Json { ignoreUnknownKeys = true }
+
+            // 1) Formato tipado esperado: {"error":"..."}
+            json.decodeFromString<ErrorResponse>(rawBody).error
         } catch (_: Exception) {
-            rawBody
+            // 2) Fallback flexible para payloads heterogéneos:
+            // {"message":"..."}, {"detail":"..."}, {"msg":"..."}, etc.
+            runCatching {
+                val element = Json.parseToJsonElement(rawBody)
+                element.extractMessage()
+            }.getOrNull() ?: rawBody
         }
+    }
+
+    private fun JsonElement.extractMessage(): String? {
+        val obj = this as? JsonObject ?: return null
+
+        val knownKeys = listOf("error", "message", "detail", "msg", "description")
+        knownKeys.forEach { key ->
+            obj[key]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }?.let { return it }
+        }
+
+        obj["errors"]?.let { errors ->
+            val nested = errors as? JsonObject
+            nested?.values?.forEach { value ->
+                value.jsonPrimitive.contentOrNull?.takeIf { it.isNotBlank() }?.let { return it }
+            }
+        }
+
+        return null
     }
 }
