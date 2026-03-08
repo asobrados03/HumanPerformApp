@@ -148,7 +148,7 @@ private class ReservationFlowState(
             // Traducimos ese Producto al Servicio real (Base de datos)
             val realServiceId = daySessionViewModel.fetchServiceIdForProduct(selectedProductId)
 
-            daySessionViewModel.makeBooking(
+            val bookingCreated = daySessionViewModel.makeBooking(
                 customerId = userId,
                 coachId = coach.coachId,
                 serviceId = realServiceId ?: -1,
@@ -158,6 +158,11 @@ private class ReservationFlowState(
                 hour = hour,
                 dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
             )
+
+            if (!bookingCreated) {
+                return@launch
+            }
+
             userViewModel.fetchUserBookings(userId)
 
             // Importante: Refrescar los límites después de reservar para actualizar el saldo
