@@ -21,6 +21,7 @@ class DaySessionViewModel(
 ) : ViewModel() {
     companion object {
         val log = logging()
+        private const val GENERIC_BOOKING_ERROR_MESSAGE = "No se pudo completar la reserva. Inténtalo de nuevo más tarde."
     }
 
     private val _sessions = MutableStateFlow<DailySessionsUiState>(DailySessionsUiState.Idle)
@@ -102,7 +103,7 @@ class DaySessionViewModel(
             },
             onFailure = { error ->
                 log.error { "❌ Error obteniendo límites antes de reservar: ${error.message}" }
-                _bookingErrorMessage.value = error.message ?: "No se pudo validar el límite de tu producto."
+                _bookingErrorMessage.value = error.toBookingErrorMessage()
                 return false
             }
         )
@@ -118,7 +119,7 @@ class DaySessionViewModel(
             onSuccess = { it },
             onFailure = { error ->
                 log.error { "❌ Error obteniendo timeslotId: ${error.message}" }
-                _bookingErrorMessage.value = error.message
+                _bookingErrorMessage.value = error.toBookingErrorMessage()
                 return false
             }
         )
@@ -145,7 +146,7 @@ class DaySessionViewModel(
             },
             onFailure = { error ->
                 log.error { "❌ Error al reservar: ${error.message}" }
-                _bookingErrorMessage.value = error.message
+                _bookingErrorMessage.value = error.toBookingErrorMessage()
                 false
             }
         )
@@ -168,7 +169,7 @@ class DaySessionViewModel(
             log.debug { "🕒 Buscando Timeslot para: Service=$newServiceId, Dia=$newDayOfWeek, Hora='$hour'" }
             useCase.getTimeslotId(newServiceId, newDayOfWeek, hour).onFailure { error ->
                 log.error { "❌ Error obteniendo timeslotId: ${error.message}" }
-                _bookingErrorMessage.value = error.message
+                _bookingErrorMessage.value = error.toBookingErrorMessage()
                 return@launch
             }.onSuccess { timeslotId ->
                 val request = ReserveUpdateRequest(
@@ -185,7 +186,7 @@ class DaySessionViewModel(
                     _bookingErrorMessage.value = null
                 }.onFailure { error ->
                     log.error { "❌ Error al actualizar reserva: ${error.message}" }
-                    _bookingErrorMessage.value = error.message
+                    _bookingErrorMessage.value = error.toBookingErrorMessage()
                 }
             }
         }
@@ -251,5 +252,12 @@ class DaySessionViewModel(
     private fun String.isPackType(): Boolean {
         val normalized = lowercase()
         return normalized == "bonus" || normalized == "bono" || normalized == "single_session"
+    }
+
+    private fun Throwable.toBookingErrorMessage(): String {
+        return when (this) {
+            is BookingDomainException -> message ?: GENERIC_BOOKING_ERROR_MESSAGE
+            else -> GENERIC_BOOKING_ERROR_MESSAGE
+        }
     }
 }
