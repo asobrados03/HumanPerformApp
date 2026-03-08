@@ -226,27 +226,49 @@ class DaySessionViewModel(
     }
 
     private fun validateBookingLimit(limit: ProductLimit?): BookingDomainException? {
-        if (limit == null || limit.remaining == null) return null
+        if (limit == null) return null // Sin límites definidos o no se encontró el producto
 
-        val hasRemainingSessions = limit.remaining > 0
-        if (hasRemainingSessions) return null
+        val isRecurring = limit.typeOfProduct.isRecurringType()
+        val isPack = limit.typeOfProduct.isPackType()
 
-        return when {
-            limit.typeOfProduct.isRecurringType() && limit.weeklyLimit != null -> {
-                BookingDomainException.WeeklyLimitExceeded
+        // 1. Lógica para Suscripciones / Recurrentes
+        if (isRecurring && limit.weeklyLimit != null) {
+            // Si es recurrente, asumimos que 'remaining' indica lo que le queda ESTA semana.
+            limit.remaining?.let {
+                if (it <= 0) {
+                    return BookingDomainException.WeeklyLimitExceeded
+                }
             }
-            limit.typeOfProduct.isPackType() && limit.totalLimit != null -> {
-                BookingDomainException.TotalSessionsLimitExceeded
-            }
-            limit.weeklyLimit != null -> BookingDomainException.WeeklyLimitExceeded
-            limit.totalLimit != null -> BookingDomainException.TotalSessionsLimitExceeded
-            else -> null
         }
+
+        // 2. Lógica para Bonos / Packs
+        if (isPack && limit.totalLimit != null) {
+            // Si es un bono, asumimos que 'remaining' indica el total que le queda al bono.
+            limit.remaining?.let {
+                if (it <= 0) {
+                    return BookingDomainException.TotalSessionsLimitExceeded
+                }
+            }
+        }
+
+        // 3. Fallbacks de seguridad (por si el backend manda un tipo de producto raro pero sí manda límites)
+        limit.remaining?.let {
+            if (it <= 0) {
+                return when {
+                    limit.weeklyLimit != null -> BookingDomainException.WeeklyLimitExceeded
+                    limit.totalLimit != null -> BookingDomainException.TotalSessionsLimitExceeded
+                    else -> null
+                }
+            }
+        }
+
+        // 4. Si llegamos aquí, 'remaining' es mayor que 0 y no ha roto las reglas anteriores
+        return null
     }
 
     private fun String.isRecurringType(): Boolean {
         val normalized = lowercase()
-        return normalized == "recurrent" || normalized == "subscription" || normalized == "suscription"
+        return normalized in listOf("recurrent", "subscription", "suscription", "recurrente", "suscripcion", "suscripción")
     }
 
     private fun String.isPackType(): Boolean {
