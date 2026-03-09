@@ -393,6 +393,29 @@ fun reservationFlowDialogs(
     return state::onDayClicked
 }
 
+
+private fun DailySessionsUiState.matches(productId: Int?, date: JavaLocalDate): Boolean {
+    if (productId == null) return false
+
+    val stateDate = when (this) {
+        is DailySessionsUiState.Loading -> this.context.date
+        is DailySessionsUiState.Success -> this.context.date
+        is DailySessionsUiState.Empty -> this.context.date
+        is DailySessionsUiState.Error -> this.context.date
+        is DailySessionsUiState.Idle -> return false
+    }
+
+    val stateProductId = when (this) {
+        is DailySessionsUiState.Loading -> this.context.productId
+        is DailySessionsUiState.Success -> this.context.productId
+        is DailySessionsUiState.Empty -> this.context.productId
+        is DailySessionsUiState.Error -> this.context.productId
+        is DailySessionsUiState.Idle -> return false
+    }
+
+    return stateProductId == productId && stateDate == date.toKotlinLocalDate()
+}
+
 @Composable
 private fun ReservationDialog(
     state: ReservationFlowState,
@@ -408,30 +431,39 @@ private fun ReservationDialog(
             }
         },
         text = {
-            when (sessionsState) {
-                is DailySessionsUiState.Loading -> {
+            val selectedProductId = state.selectedProduct?.id
+            val isCurrentSelectionState = sessionsState.matches(selectedProductId, date)
+
+            when {
+                selectedProductId == null -> Unit
+                !isCurrentSelectionState -> {
+                    Box(Modifier.fillMaxWidth().padding(24.dp),
+                        contentAlignment = Alignment.Center) {
+                        Text("Selecciona un servicio para ver horarios.", color = Color.Gray)
+                    }
+                }
+                sessionsState is DailySessionsUiState.Loading -> {
                     Box(Modifier.fillMaxWidth().height(150.dp),
                         contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 }
-                is DailySessionsUiState.Success -> {
+                sessionsState is DailySessionsUiState.Success -> {
                     val sessions = sessionsState.sessions
                     val hours = remember(sessions) {
                         sessions.map { it.hour }.distinct().sorted()
                     }
                     HourSelector(state, hours, date, sessions)
                 }
-                is DailySessionsUiState.Empty -> {
+                sessionsState is DailySessionsUiState.Empty -> {
                     Box(Modifier.fillMaxWidth().padding(24.dp),
                         contentAlignment = Alignment.Center) {
                         Text("No hay horarios disponibles.", color = Color.Gray)
                     }
                 }
-                is DailySessionsUiState.Error -> {
+                sessionsState is DailySessionsUiState.Error -> {
                     Text("Error: ${sessionsState.message}", color = Color.Red)
                 }
-                else -> Unit
             }
         },
         confirmButton = { TextButton(onClick = state::dismiss) { Text("Cerrar") } }
