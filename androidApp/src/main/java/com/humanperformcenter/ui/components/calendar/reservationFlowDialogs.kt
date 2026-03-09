@@ -161,13 +161,18 @@ private class ReservationFlowState(
         val selectedProductId = selectedProduct?.id ?: return
 
         scope.launch {
-            // Traducimos ese Producto al Servicio real (Base de datos)
-            val realServiceId = daySessionViewModel.fetchServiceIdForProduct(selectedProductId)
+            val realServiceId = resolveServiceIdOrShowError(
+                operation = "bookSession",
+                productId = selectedProductId,
+                coachId = coach.coachId,
+                date = date,
+                hour = hour
+            ) ?: return@launch
 
             val bookingCreated = daySessionViewModel.makeBooking(
                 customerId = userId,
                 coachId = coach.coachId,
-                serviceId = realServiceId ?: -1,
+                serviceId = realServiceId,
                 productId = selectedProductId,
                 centerId = 1,
                 selectedDate = date.toString(),
@@ -197,8 +202,14 @@ private class ReservationFlowState(
         val selectedProductId = selectedProduct?.id ?: return
 
         scope.launch {
-            // 2. Opcional: Si necesitas el serviceId real para la lógica de horarios
-            val realServiceId = daySessionViewModel.fetchServiceIdForProduct(selectedProductId) ?: -1
+            val realServiceId = resolveServiceIdOrShowError(
+                operation = "changeSession",
+                productId = selectedProductId,
+                coachId = newCoach.coachId,
+                date = newDate,
+                hour = newHour,
+                bookingId = bookingToChange.id
+            ) ?: return@launch
 
             // 3. Llamamos al ViewModel pasando explícitamente el productId seleccionado
             daySessionViewModel.modifyBookingSession(
@@ -216,6 +227,39 @@ private class ReservationFlowState(
             daySessionViewModel.fetchUserWeeklyLimit(userId)
             dismiss()
         }
+    }
+
+    private suspend fun resolveServiceIdOrShowError(
+        operation: String,
+        productId: Int,
+        coachId: Int,
+        date: JavaLocalDate,
+        hour: String,
+        bookingId: Int? = null
+    ): Int? {
+        val serviceId = daySessionViewModel.fetchServiceIdForProduct(productId)
+        if (serviceId != null) {
+            return serviceId
+        }
+
+        val telemetryData = buildMap {
+            put("event", "service_id_resolution_failed")
+            put("operation", operation)
+            put("userId", userId)
+            put("productId", productId)
+            put("coachId", coachId)
+            put("date", date.toString())
+            put("hour", hour)
+            bookingId?.let { put("bookingId", it) }
+        }
+
+        Log.e("ReservationFlow", telemetryData.toString())
+
+        dialog = Dialog.ServiceResolutionError(
+            "No se pudo identificar el servicio para la sesión seleccionada. " +
+                "Por favor, vuelve a seleccionar el servicio o inténtalo más tarde."
+        )
+        return null
     }
 
     fun showChangeSelector(date: JavaLocalDate, hour: String, coach: DaySession) {
@@ -263,6 +307,7 @@ private class ReservationFlowState(
         object HourOccupied : Dialog()
         object NoCoachesAvailable : Dialog()
         data class InvalidHourFormat(val hour: String) : Dialog()
+        data class ServiceResolutionError(val message: String) : Dialog()
         data class SelectCoach(
             val date: JavaLocalDate,
             val hour: String,
@@ -385,6 +430,11 @@ fun reservationFlowDialogs(
         is ReservationFlowState.Dialog.InvalidHourFormat -> InfoDialog(
             "Formato de hora inválido",
             "No se pudo interpretar la hora '${dialog.hour}'. Inténtalo de nuevo más tarde.",
+            state::dismiss
+        )
+        is ReservationFlowState.Dialog.ServiceResolutionError -> InfoDialog(
+            "No se pudo completar la reserva",
+            dialog.message,
             state::dismiss
         )
         else -> Unit
