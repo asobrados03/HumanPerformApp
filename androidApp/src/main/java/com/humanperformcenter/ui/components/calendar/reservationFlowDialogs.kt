@@ -283,6 +283,8 @@ private class ReservationFlowState(
             is Dialog.HourOccupied,
             is Dialog.NoCoachesAvailable,
             is Dialog.InvalidHourFormat -> true
+
+            else -> false
         }
 
         if (shouldResetFlowState) {
@@ -731,11 +733,9 @@ private fun ConfirmDialog(state: ReservationFlowState, dialog: ReservationFlowSt
         },
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // SI TIENE SALDO: Mostramos Reservar
-                if (dialog.canBooking) {
-                    Button(onClick = { state.bookSession(dialog.date, dialog.hour, dialog.coach) }) {
-                        Text("Reservar")
-                    }
+                // Siempre mostramos Reservar; el backend valida límites y disponibilidad.
+                Button(onClick = { state.bookSession(dialog.date, dialog.hour, dialog.coach) }) {
+                    Text("Reservar")
                 }
 
                 // SIEMPRE mostramos Cambiar (o solo si no tiene saldo, según tu regla)
