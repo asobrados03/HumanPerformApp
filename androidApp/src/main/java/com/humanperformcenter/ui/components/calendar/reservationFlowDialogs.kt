@@ -33,11 +33,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,7 +79,7 @@ private class ReservationFlowState(
     private val userViewModel: UserViewModel,
     private val scope: CoroutineScope,
     private val userId: Int,
-    val userBookings: List<UserBooking>,
+    private val userBookingsState: State<List<UserBooking>>,
     private val zoneId: ZoneId = ZoneId.of("Europe/Madrid")
 ) {
     var dialog by mutableStateOf<Dialog>(Dialog.Hidden)
@@ -87,7 +90,11 @@ private class ReservationFlowState(
     val now: LocalDateTime get() = LocalDateTime.now(zoneId)
     val today: JavaLocalDate = JavaLocalDate.now(zoneId)
 
-    private val reservedDates = userBookings.mapNotNull { it.date.toLocalDate() }.toSet()
+    private val reservedDates by derivedStateOf {
+        currentUserBookings().mapNotNull { it.date.toLocalDate() }.toSet()
+    }
+
+    private fun currentUserBookings(): List<UserBooking> = userBookingsState.value
 
     fun onDayClicked(date: JavaLocalDate) {
         if (reservedDates.contains(date)) {
@@ -116,7 +123,7 @@ private class ReservationFlowState(
 
         if (slotDateTime.isBefore(currentNow)) return // isBefore es de java.time
 
-        if (userBookings.any { it.date.toLocalDate() == date && it.hour.take(5) == hour.take(5) }) {
+        if (currentUserBookings().any { it.date.toLocalDate() == date && it.hour.take(5) == hour.take(5) }) {
             dialog = Dialog.HourOccupied
             return
         }
@@ -258,6 +265,7 @@ fun reservationFlowDialogs(
 
     val userBookings by userViewModel.userBookings.collectAsStateWithLifecycle()
     val bookingsList = (userBookings as? FetchUserBookingsState.Success)?.bookings ?: emptyList()
+    val bookingsState = rememberUpdatedState(bookingsList)
 
     // Ahora 'sessionsState' contiene Success, Loading, Error o Empty
     val sessionsState by daySessionViewModel.sessions.collectAsStateWithLifecycle()
@@ -276,9 +284,13 @@ fun reservationFlowDialogs(
         daySessionViewModel.fetchUserWeeklyLimit(userId)
     }
 
-    val state = remember(userId) {
+    val state = remember(userId, daySessionViewModel, userViewModel, scope) {
         ReservationFlowState(
-            daySessionViewModel, userViewModel, scope, userId, bookingsList
+            daySessionViewModel = daySessionViewModel,
+            userViewModel = userViewModel,
+            scope = scope,
+            userId = userId,
+            userBookingsState = bookingsState
         )
     }
 
@@ -320,7 +332,7 @@ fun reservationFlowDialogs(
             onConfirm = { state.startReservationFlow(dialog.date) },
             onDismiss = state::dismiss
         )
-        is ReservationFlowState.Dialog.ChangeExisting -> ChangeExistingDialog(state, dialog)
+        is ReservationFlowState.Dialog.ChangeExisting -> ChangeExistingDialog(state, dialog, bookingsList)
         is ReservationFlowState.Dialog.HourOccupied -> InfoDialog(
             "Reserva existente",
             "Ya tienes una reserva a esa hora.",
@@ -459,14 +471,15 @@ private fun HourChip(
 @Composable
 private fun ChangeExistingDialog(
     state: ReservationFlowState,
-    dialog: ReservationFlowState.Dialog.ChangeExisting
+    dialog: ReservationFlowState.Dialog.ChangeExisting,
+    userBookings: List<UserBooking>
 ) {
     // 1. Obtenemos el ID del producto que el usuario tiene seleccionado actualmente
     val selectedProductId = state.selectedProduct?.id
 
     // 2. Filtramos las reservas del usuario que coincidan con ese producto
-    val availableToChange = remember(state.userBookings, selectedProductId) {
-        state.userBookings.filter { booking ->
+    val availableToChange = remember(userBookings, selectedProductId, state.today) {
+        userBookings.filter { booking ->
             val bookingDate = booking.date.toLocalDate()
 
             // FILTRO:
