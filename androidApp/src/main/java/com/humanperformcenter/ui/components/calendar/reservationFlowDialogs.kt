@@ -62,7 +62,9 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate as JavaLocalDate
 import kotlinx.datetime.LocalDate as KotlinLocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.time.DayOfWeek
 import java.util.Locale
@@ -120,6 +122,10 @@ private class ReservationFlowState(
         // Validación de hora pasada
         val currentNow = now
         val slotDateTime = hour.toLocalDateTimeOnDate(date)
+            ?: run {
+                dialog = Dialog.InvalidHourFormat(hour)
+                return
+            }
 
         if (slotDateTime.isBefore(currentNow)) return // isBefore es de java.time
 
@@ -232,6 +238,7 @@ private class ReservationFlowState(
         data class Reservation(val date: JavaLocalDate) : Dialog()
         object HourOccupied : Dialog()
         object NoCoachesAvailable : Dialog()
+        data class InvalidHourFormat(val hour: String) : Dialog()
         data class SelectCoach(
             val date: JavaLocalDate,
             val hour: String,
@@ -343,6 +350,11 @@ fun reservationFlowDialogs(
             "No hay entrenadores disponibles.",
             state::dismiss
         )
+        is ReservationFlowState.Dialog.InvalidHourFormat -> InfoDialog(
+            "Formato de hora inválido",
+            "No se pudo interpretar la hora '${dialog.hour}'. Inténtalo de nuevo más tarde.",
+            state::dismiss
+        )
         else -> Unit
     }
 
@@ -436,9 +448,13 @@ private fun HourChip(
     now: LocalDateTime,
     onClick: () -> Unit
 ) {
-    val isPast = remember(selectedDate, hour, now) {
-        hour.toLocalDateTimeOnDate(selectedDate).isBefore(now)
+    val slotDateTime = remember(selectedDate, hour) {
+        hour.toLocalDateTimeOnDate(selectedDate)
     }
+    val isPast = remember(slotDateTime, now) {
+        slotDateTime?.isBefore(now) ?: false
+    }
+    val hasInvalidFormat = slotDateTime == null
 
     val hourSessions = remember(sessions, hour) { sessions.filter { it.hour == hour } }
     val booked = hourSessions.sumOf { it.booked }
@@ -446,6 +462,7 @@ private fun HourChip(
     val ratio = if (capacity > 0) booked.toFloat() / capacity else 1f
 
     val color = when {
+        hasInvalidFormat -> DisabledTextColor
         isPast -> DisabledTextColor
         ratio < 0.5f -> SuccessColor
         ratio < 1f -> WarningColor
@@ -457,11 +474,11 @@ private fun HourChip(
             .padding(vertical = 4.dp)
             .size(80.dp, 40.dp)
             .background(
-                if (isPast) DisabledColor else Color.White,
+                if (isPast || hasInvalidFormat) DisabledColor else Color.White,
                 RoundedCornerShape(8.dp)
             )
             .border(1.dp, color, RoundedCornerShape(8.dp))
-            .clickable(enabled = !isPast) { onClick() },
+            .clickable(enabled = !isPast && !hasInvalidFormat) { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Text(hour.take(5), color = color)
@@ -658,11 +675,35 @@ fun JavaLocalDate.toKotlinLocalDate(): KotlinLocalDate {
     return KotlinLocalDate(this.year, this.monthValue, this.dayOfMonth)
 }
 
-// Construye LocalDateTime desde "HH:mm" y una fecha dada
-private fun String.toLocalDateTimeOnDate(date: JavaLocalDate): LocalDateTime {
-    val hour = this.take(2).toInt()
-    val minute = this.substring(3, 5).toInt()
-    return date.atTime(hour, minute)
+// Construye LocalDateTime desde una hora backend y una fecha dada.
+// Acepta HH:mm, HH:mm:ss y normaliza H:mm[:ss].
+private val hourFormatters = listOf(
+    DateTimeFormatter.ofPattern("HH:mm:ss"),
+    DateTimeFormatter.ofPattern("HH:mm")
+)
+
+private fun String.toLocalDateTimeOnDate(date: JavaLocalDate): LocalDateTime? {
+    val normalizedHour = normalizeBackendHour() ?: return null
+    val parsedTime = hourFormatters.firstNotNullOfOrNull { formatter ->
+        runCatching { LocalTime.parse(normalizedHour, formatter) }.getOrNull()
+    } ?: return null
+
+    return date.atTime(parsedTime)
+}
+
+private fun String.normalizeBackendHour(): String? {
+    val match = Regex("""^(\d{1,2}):(\d{2})(?::(\d{2}))?$""").matchEntire(trim()) ?: return null
+    val hour = match.groupValues[1].toIntOrNull() ?: return null
+    val minute = match.groupValues[2].toIntOrNull() ?: return null
+    val second = match.groupValues[3].takeIf { it.isNotBlank() }?.toIntOrNull()
+
+    if (hour !in 0..23 || minute !in 0..59 || (second != null && second !in 0..59)) return null
+
+    return if (second != null) {
+        String.format(Locale.ROOT, "%02d:%02d:%02d", hour, minute, second)
+    } else {
+        String.format(Locale.ROOT, "%02d:%02d", hour, minute)
+    }
 }
 
 private fun canBook(
