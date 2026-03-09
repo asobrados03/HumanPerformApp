@@ -7,7 +7,6 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
-import io.ktor.client.plugins.defaultResponseValidation
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
@@ -20,8 +19,8 @@ object ApiClient {
     private const val BASE = "https://human-app.duckdns.org/api"
     private val storage = SecureStorage
 
-    // flujo que emitirá cuando toque cerrar sesión
-    val logoutEvents = MutableSharedFlow<Unit>(replay = 0)
+    // Cambiamos a SharedFlow con buffer para que el evento no se pierda
+    val logoutEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     // 1) Cliente puro para refresh
     val authClient = HttpClient {
@@ -32,17 +31,6 @@ object ApiClient {
 
     // 2) Cliente principal sin lógica de refresh en Auth
     val apiClient = HttpClient {
-        install(LogoutPlugin) {
-            sink = logoutEvents
-        }
-
-        defaultResponseValidation {
-            if (status == HttpStatusCode.Unauthorized) {
-                storage.clear()
-                logoutEvents.tryEmit(Unit)
-            }
-        }
-
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
@@ -50,29 +38,35 @@ object ApiClient {
         install(Auth) {
             bearer {
                 loadTokens {
-                    val access = storage.getAccessToken().orEmpty()
-                    val refresh = storage.getRefreshToken().orEmpty()
-                    BearerTokens(access, refresh)
+                    val access = storage.getAccessToken()
+                    val refresh = storage.getRefreshToken()
+                    if (access == null || refresh == null) null
+                    else BearerTokens(access, refresh)
                 }
                 refreshTokens {
                     val oldRefresh = storage.getRefreshToken()
                     if (oldRefresh.isNullOrBlank()) {
-                        storage.clear()
-                        logoutEvents.tryEmit(Unit)
+                        handleLogout()
                         return@refreshTokens null
                     }
-                    val resp = authClient.post("$BASE/mobile/refresh") {
-                        markAsRefreshTokenRequest()
-                        bearerAuth(oldRefresh)
-                    }
-                    if (resp.status == HttpStatusCode.Unauthorized) {
-                        storage.clear()
-                        logoutEvents.tryEmit(Unit)
-                        return@refreshTokens null
-                    } else {
-                        val newTokens = resp.body<RefreshResponse>()
-                        storage.saveTokens(newTokens.accessToken, newTokens.refreshToken)
-                        BearerTokens(newTokens.accessToken, newTokens.refreshToken)
+
+                    try {
+                        val resp = authClient.post("$BASE/mobile/refresh") {
+                            markAsRefreshTokenRequest()
+                            bearerAuth(oldRefresh)
+                        }
+
+                        if (resp.status == HttpStatusCode.Unauthorized) {
+                            handleLogout()
+                            null
+                        } else {
+                            val newTokens = resp.body<RefreshResponse>()
+                            storage.saveTokens(newTokens.accessToken, newTokens.refreshToken)
+                            BearerTokens(newTokens.accessToken, newTokens.refreshToken)
+                        }
+                    } catch (_: Exception) {
+                        handleLogout()
+                        null
                     }
                 }
             }
@@ -80,4 +74,10 @@ object ApiClient {
     }
 
     val baseUrl get() = BASE
+
+    // Centralizamos la lógica de salida
+    private suspend fun handleLogout() {
+        storage.clear()
+        logoutEvents.emit(Unit) // .emit() espera si es necesario, asegurando que llegue
+    }
 }
