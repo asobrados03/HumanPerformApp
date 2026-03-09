@@ -8,9 +8,11 @@ import com.humanperformcenter.shared.data.model.booking.ReserveUpdateRequest
 import com.humanperformcenter.shared.domain.booking.BookingDomainException
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
 import com.humanperformcenter.shared.presentation.ui.DailySessionsUiState
+import com.humanperformcenter.shared.presentation.ui.SessionsRequestContext
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +27,8 @@ class DaySessionViewModel(
     }
 
     private val _sessions = MutableStateFlow<DailySessionsUiState>(DailySessionsUiState.Idle)
+    private var fetchSessionsRequestId: Long = 0
+    private var fetchSessionsJob: Job? = null
     @NativeCoroutinesState
     val sessions: StateFlow<DailySessionsUiState> = _sessions.asStateFlow()
 
@@ -41,27 +45,37 @@ class DaySessionViewModel(
     val holidays: StateFlow<List<LocalDate>> get() = _holidays.asStateFlow()
 
     fun fetchAvailableSessions(productId: Int, date: LocalDate) {
-        _sessions.value = DailySessionsUiState.Loading
+        val requestContext = SessionsRequestContext(productId = productId, date = date)
+        val requestId = ++fetchSessionsRequestId
 
-        log.debug { "📱 APP DEBUG: Llamando a fetch para ID: $productId en fecha: $date" }
+        fetchSessionsJob?.cancel()
+        _sessions.value = DailySessionsUiState.Loading(requestContext)
 
-        viewModelScope.launch {
+        log.debug { "📱 APP DEBUG: Llamando a fetch para ID: $productId en fecha: $date, requestId=$requestId" }
+
+        fetchSessionsJob = viewModelScope.launch {
             val result = useCase.getSessionsByDay(productId, date)
+
+            if (requestId != fetchSessionsRequestId) {
+                log.debug { "⏭️ Ignorando respuesta obsoleta de sesiones. requestId=$requestId, activo=$fetchSessionsRequestId" }
+                return@launch
+            }
 
             result.fold(
                 onSuccess = { allSessions ->
                     val filtered = allSessions.filter { it.productId == productId }
 
                     if (filtered.isEmpty()) {
-                        _sessions.value = DailySessionsUiState.Empty
+                        _sessions.value = DailySessionsUiState.Empty(requestContext)
                     } else {
-                        _sessions.value = DailySessionsUiState.Success(filtered)
+                        _sessions.value = DailySessionsUiState.Success(filtered, requestContext)
                     }
-                    log.debug { "✅ Estado actualizado: ${filtered.size} sesiones." }
+                    log.debug { "✅ Estado actualizado: ${filtered.size} sesiones. requestId=$requestId" }
                 },
                 onFailure = { error ->
                     _sessions.value = DailySessionsUiState.Error(
-                        error.message ?: "Error desconocido"
+                        message = error.message ?: "Error desconocido",
+                        context = requestContext
                     )
                 }
             )
@@ -208,6 +222,7 @@ class DaySessionViewModel(
     }
 
     fun clearSessions() {
+        fetchSessionsJob?.cancel()
         _sessions.value = DailySessionsUiState.Idle
     }
 
