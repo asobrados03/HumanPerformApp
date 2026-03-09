@@ -301,11 +301,19 @@ fun reservationFlowDialogs(
         )
     }
 
+    val selectedDate = when (val activeDialog = state.dialog) {
+        is ReservationFlowState.Dialog.Reservation -> activeDialog.date
+        is ReservationFlowState.Dialog.SelectCoach -> activeDialog.date
+        is ReservationFlowState.Dialog.Confirm -> activeDialog.date
+        else -> null
+    }
+
     val currentLimit = userBookingLimits.find { it.productId == state.selectedProduct?.id }
     val canBook = canBook(
         product = state.selectedProduct,
         limit = currentLimit,
         userBookings = bookingsList,
+        selectedDate = selectedDate,
         today = state.today
     )
 
@@ -710,6 +718,7 @@ private fun canBook(
     product: Product?,
     limit: ProductLimit?,
     userBookings: List<UserBooking>,
+    selectedDate: JavaLocalDate?,
     today: JavaLocalDate
 ): Boolean {
     if (product == null) return false
@@ -725,7 +734,9 @@ private fun canBook(
     return when {
         normalizedType.isRecurringType() -> {
             val weeklyRemaining = limit.remaining ?: limit.weeklyLimit?.let { weeklyLimit ->
-                val weekStart = today.with(DayOfWeek.MONDAY)
+                // Evaluamos la semana de la fecha de sesión para evitar falsos negativos de saldo.
+                val referenceDate = selectedDate ?: today
+                val weekStart = referenceDate.with(DayOfWeek.MONDAY)
                 val weekEnd = weekStart.plusDays(6)
                 val currentWeekBookings = bookingsForProduct.count { booking ->
                     val bookingDate = booking.date.toLocalDate() ?: return@count false
