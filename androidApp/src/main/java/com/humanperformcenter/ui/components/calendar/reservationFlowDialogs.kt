@@ -730,18 +730,22 @@ private fun canBook(
 
     val bookingsForProduct = userBookings.filter { it.productId == product.id }
     val normalizedType = limit.typeOfProduct.lowercase(Locale.ROOT)
+    val referenceDate = selectedDate ?: today
+
+    fun countBookingsInWeek(bookings: List<UserBooking>, weekDate: JavaLocalDate): Int {
+        val weekStart = weekDate.with(DayOfWeek.MONDAY)
+        val weekEnd = weekStart.plusDays(6)
+        return bookings.count { booking ->
+            val bookingDate = booking.date.toLocalDate() ?: return@count false
+            !bookingDate.isBefore(weekStart) && !bookingDate.isAfter(weekEnd)
+        }
+    }
 
     return when {
         normalizedType.isRecurringType() -> {
             val weeklyRemaining = limit.remaining ?: limit.weeklyLimit?.let { weeklyLimit ->
                 // Evaluamos la semana de la fecha de sesión para evitar falsos negativos de saldo.
-                val referenceDate = selectedDate ?: today
-                val weekStart = referenceDate.with(DayOfWeek.MONDAY)
-                val weekEnd = weekStart.plusDays(6)
-                val currentWeekBookings = bookingsForProduct.count { booking ->
-                    val bookingDate = booking.date.toLocalDate() ?: return@count false
-                    !bookingDate.isBefore(weekStart) && !bookingDate.isAfter(weekEnd)
-                }
+                val currentWeekBookings = countBookingsInWeek(bookingsForProduct, referenceDate)
                 (weeklyLimit - currentWeekBookings).coerceAtLeast(0)
             }
 
@@ -758,7 +762,10 @@ private fun canBook(
 
         else -> {
             val fallbackRemaining = limit.remaining
-                ?: limit.weeklyLimit?.let { (it - bookingsForProduct.size).coerceAtLeast(0) }
+                ?: limit.weeklyLimit?.let { weeklyLimit ->
+                    val currentWeekBookings = countBookingsInWeek(bookingsForProduct, referenceDate)
+                    (weeklyLimit - currentWeekBookings).coerceAtLeast(0)
+                }
                 ?: limit.totalLimit?.let { (it - bookingsForProduct.size).coerceAtLeast(0) }
 
             fallbackRemaining?.let { it > 0 } ?: true
@@ -767,7 +774,13 @@ private fun canBook(
 }
 
 private fun String.isRecurringType(): Boolean {
-    return this == "recurrent" || this == "subscription" || this == "suscription"
+    return this == "recurrent" ||
+        this == "recurring" ||
+        this == "recurrente" ||
+        this == "subscription" ||
+        this == "suscription" ||
+        this == "suscripcion" ||
+        this == "suscripción"
 }
 
 private fun String.isPackType(): Boolean {
