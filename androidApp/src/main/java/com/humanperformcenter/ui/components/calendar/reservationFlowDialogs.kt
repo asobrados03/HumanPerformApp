@@ -89,6 +89,8 @@ private class ReservationFlowState(
 
     var selectedProduct by mutableStateOf<Product?>(null)
 
+    private var coachSelectionRequestId: Long = 0
+
     val now: LocalDateTime get() = LocalDateTime.now(zoneId)
     val today: JavaLocalDate = JavaLocalDate.now(zoneId)
 
@@ -114,7 +116,7 @@ private class ReservationFlowState(
 
     fun onServiceSelected(product: Product, date: JavaLocalDate) {
         selectedProduct = product
-        daySessionViewModel.clearCoachesForHour()
+        invalidateCoachSelectionRequests()
         daySessionViewModel.fetchAvailableSessions(product.id, date.toKotlinLocalDate())
     }
 
@@ -134,18 +136,19 @@ private class ReservationFlowState(
             return
         }
 
+        val requestId = ++coachSelectionRequestId
         scope.launch {
-            daySessionViewModel.filterCoachesByHour(hour)
-            val availableCoaches = daySessionViewModel.coachesForHour.value.filter { it.booked < it.capacity }
-            if (availableCoaches.isEmpty()) {
-                dialog = Dialog.NoCoachesAvailable
+            val availableCoaches = daySessionViewModel.getAvailableCoachesForHour(hour)
+
+            if (requestId != coachSelectionRequestId) {
                 return@launch
             }
 
-            // CAMBIO: Si hay más de 1 entrenador, mostramos selector.
-            // Si solo hay 1, podríamos autoseleccionar o mostrar también el selector (a tu gusto).
-            // Aquí forzamos el selector siempre para que veas quién te toca.
-            dialog = Dialog.SelectCoach(date, hour, availableCoaches)
+            dialog = if (availableCoaches.isEmpty()) {
+                Dialog.NoCoachesAvailable
+            } else {
+                Dialog.SelectCoach(date, hour, availableCoaches)
+            }
         }
     }
     // NUEVA FUNCIÓN: Se llama cuando el usuario hace clic en un entrenador
@@ -245,8 +248,12 @@ private class ReservationFlowState(
 
     private fun resetStateForNewDate() {
         selectedProduct = null
-        daySessionViewModel.clearCoachesForHour()
+        invalidateCoachSelectionRequests()
         daySessionViewModel.clearSessions()
+    }
+
+    private fun invalidateCoachSelectionRequests() {
+        coachSelectionRequestId++
     }
 
     sealed class Dialog {

@@ -36,10 +36,6 @@ class DaySessionViewModel(
     @NativeCoroutinesState
     val userBookingLimits: StateFlow<List<ProductLimit>> = _userBookingLimits.asStateFlow()
 
-    private val _coachesForHour = MutableStateFlow<List<DaySession>>(emptyList())
-    @NativeCoroutinesState
-    val coachesForHour: StateFlow<List<DaySession>> = _coachesForHour.asStateFlow()
-
     private val _holidays = MutableStateFlow<List<LocalDate>>(emptyList())
     @NativeCoroutinesState
     val holidays: StateFlow<List<LocalDate>> get() = _holidays.asStateFlow()
@@ -72,19 +68,9 @@ class DaySessionViewModel(
         }
     }
 
-    fun filterCoachesByHour(hora: String) {
-        val currentStatus = _sessions.value
-        if (currentStatus is DailySessionsUiState.Success) {
-            // Extraemos la lista del objeto Success para filtrar
-            _coachesForHour.value = currentStatus.sessions.filter { it.hour == hora }
-        } else {
-            // Si no hay éxito (está cargando o hay error), la lista de coaches por hora queda vacía
-            _coachesForHour.value = emptyList()
-        }
-    }
-
-    fun clearCoachesForHour() {
-        _coachesForHour.value = emptyList()
+    fun getAvailableCoachesForHour(hour: String): List<DaySession> {
+        val currentStatus = _sessions.value as? DailySessionsUiState.Success ?: return emptyList()
+        return currentStatus.sessions.filter { it.hour == hour && it.booked < it.capacity }
     }
 
     suspend fun makeBooking(
