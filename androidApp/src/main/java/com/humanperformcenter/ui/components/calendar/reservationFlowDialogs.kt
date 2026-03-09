@@ -220,9 +220,25 @@ private class ReservationFlowState(
     }
 
     fun dismiss() {
+        val previousDialog = dialog
         dialog = Dialog.Hidden
         daySessionViewModel.clearBookingErrorMessage()
-        if (dialog !is Dialog.Reservation) {
+
+        // Evaluamos con el diálogo previo para evitar regresiones por el orden de mutación.
+        val shouldResetFlowState = when (previousDialog) {
+            is Dialog.Hidden,
+            is Dialog.ConfirmContinue -> false
+
+            is Dialog.Reservation,
+            is Dialog.SelectCoach,
+            is Dialog.Confirm,
+            is Dialog.ChangeExisting,
+            is Dialog.HourOccupied,
+            is Dialog.NoCoachesAvailable,
+            is Dialog.InvalidHourFormat -> true
+        }
+
+        if (shouldResetFlowState) {
             resetStateForNewDate()
         }
     }
@@ -230,6 +246,7 @@ private class ReservationFlowState(
     private fun resetStateForNewDate() {
         selectedProduct = null
         daySessionViewModel.clearCoachesForHour()
+        daySessionViewModel.clearSessions()
     }
 
     sealed class Dialog {
