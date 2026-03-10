@@ -346,26 +346,45 @@ classDiagram
 ```mermaid
 classDiagram
     class SecureStorage {
-      +initialize(prefs)
-      +getAccessToken() String?
-      +getRefreshToken() String?
-      +saveTokens(access, refresh)
-      +saveUser(user)
-      +userFlow() Flow~User?~
-      +clear()
+        <<singleton>>
+        -prefs: DataStore<Preferences>
+
+        +initialize(prefs: DataStore<Preferences>) Unit
+        +getAccessToken() String?
+        +getRefreshToken() String?
+        +saveTokens(access: String, refresh: String) Unit
+        +accessTokenFlow() Flow<String>
+        +saveUser(user: User) Unit
+        +userFlow() Flow<User?>
+        +clear() Unit
     }
 
     class AuthPreferences {
-      +saveTokens(...)
-      +accessTokenFlow(...)
-      +refreshTokenFlow(...)
-      +saveUser(...)
-      +userFlow(...)
-      +clear(...)
+        <<singleton>>
+
+        -KEY_ACCESS: Preferences.Key~String~
+        -KEY_REFRESH: Preferences.Key~String~
+        -KEY_USER_JSON: Preferences.Key~String~
+
+        +saveTokens(prefs: DataStore<Preferences>, access: String, refresh: String)
+        +accessTokenFlow(prefs: DataStore<Preferences>) Flow~String~
+        +refreshTokenFlow(prefs: DataStore<Preferences>) Flow~String~
+        +saveUser(prefs: DataStore<Preferences>, user: User)
+        +userFlow(prefs: DataStore<Preferences>) Flow~User?~
+        +clear(prefs: DataStore<Preferences>)
     }
 
-    class Crypto
-    class Base64
+    class Crypto {
+        <<singleton>>
+        +encrypt(plain: ByteArray) ByteArray
+        +decrypt(cipherMessage: ByteArray) ByteArray
+    }
+
+    class Base64 {
+        <<singleton>>
+        +encode(bytes: ByteArray) String
+        +decode(str: String) ByteArray
+    }
 
     SecureStorage --> AuthPreferences : fachada simplificada
     AuthPreferences --> Crypto : cifrado/descifrado
