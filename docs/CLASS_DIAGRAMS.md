@@ -1,368 +1,329 @@
 # Diagramas de clases (Mermaid)
 
-## shared
+Este documento reemplaza el volcado automático anterior por diagramas **arquitectónicos y de patrones** que reflejan la estructura real del proyecto KMM.
+
+## 1) Arquitectura general KMM (capas)
 
 ```mermaid
 classDiagram
-    class ActionUiState
-    class ActiveProductDetailState
-    class AddPaymentMethodSheetData
-    class AddPaymentMethodUiState
-    class AndroidSessionNotificationManager
-    class ApiClient
-    class AssignEvent
-    class AssignPreferredCoachRequest
-    class AssignPreferredCoachResponse
-    class AssignProductRequest
-    class AssignProductResponse
-    class AssociatedObject
-    class AuthPreferences
+    class AuthViewModel
+    class UserViewModel
+    class DaySessionViewModel
+    class ServiceProductViewModel
+    class StripeViewModel
+
+    class AuthUseCase
+    class UserUseCase
+    class DaySessionUseCase
+    class ServiceProductUseCase
+    class StripeUseCase
+
     class AuthRepository
     <<interface>> AuthRepository
-    class AuthRepositoryImpl
-    class AuthUseCase
-    class AuthViewModel
-    class Base64
-    class BillingPrefill
-    class BookingDomainException
-    class BookingEvent
-    class BookingRequest
-    class Canceled
-    class ChangePasswordException
-    class ChangePasswordRequest
-    class ChangePasswordState
-    class CoachState
-    class Completed
-    class ConfirmRequired
-    class ContainsSpace
-    class Coupon
-    class CouponApplyRequest
-    class CouponUiState
-    class CreatePaymentIntentRequest
-    class CreatePiDto
-    class CreateRefundRequest
-    class CreateStripeCustomerResponse
-    class Crypto
-    class CryptoException
-    class Crypto_Pays
-    class CurrentRequired
-    class CustomerData
-    class DailySessionsUiState
-    class DataStoreProvider
-    class DaySession
-    class DaySessionRepository
-    <<interface>> DaySessionRepository
-    class DaySessionRepositoryImpl
-    class DaySessionUseCase
-    class DaySessionViewModel
-    class DecryptionFailed
-    class DeleteProfilePicRequest
-    class DeleteProfilePicState
-    class DeleteUserState
-    class DuplicateBooking
-    class EditValidationResult
-    class Empty
-    class EncryptedResult
-    class EncryptionHandler
-    class EphemeralKeyDto
-    class EphemeralKeyUiState
-    class Error
-    class ErrorResponse
-    class EwalletResponse
-    class EwalletTransaction
-    class EwalletUiState
-    <<interface>> EwalletUiState
-    class ExampleInstrumentedTest
-    class ExampleUnitTest
-    class Failed
-    class FetchUserBookingsState
-    <<interface>> FetchUserBookingsState
-    class Field
-    <<enumeration>> Field
-    class GenericBookingFailure
-    class GetPreferredCoachResponse
-    class GetPreferredCoachState
-    class IOSSessionNotificationManager
-    class Idle
-    class Loading
-    class LoginResponse
-    class LoginState
-    class MarkFavoriteState
-    class NewRequired
-    class NoLowercase
-    class NoNumber
-    class NoUppercase
-    class NotFound
-    class NotMatching
-    class PaymentMethodsUiState
-    class PaymentState
-    class PlatformBridge
-    class ProcessedBooking
-    class Processing
-    class Product
-    class ProductDetailResponse
-    class ProductDetailUiState
-    class ProductTypeFilter
-    <<enumeration>> ProductTypeFilter
-    class Professional
-    class PublishableKeyResponse
-    class Ready
-    class RefreshResponse
-    class RefundUiState
-    class RegisterField
-    <<enumeration>> RegisterField
-    class RegisterRequest
-    class RegisterResponse
-    class RegisterState
-    class RegisterValidationResult
-    class RepoFailure
-    class ReserveResponse
-    class ReserveUpdateRequest
-    class ReserveUpdateResponse
-    class ResetPasswordRequest
-    class ResetPasswordState
-    class SameAsCurrent
-    class SecureStorage
-    class ServiceAvailable
-    class ServiceProductRepository
-    <<interface>> ServiceProductRepository
-    class ServiceProductRepositoryImpl
-    class ServiceProductUiState
-    class ServiceProductUseCase
-    class ServiceProductViewModel
-    class ServiceUiModel
-    class ServiceUiState
-    class SessionNotificationManager
-    <<interface>> SessionNotificationManager
-    class SessionsRequestContext
-    class SharedPaymentResult
-    class SharedPool
-    class SimpleResponse
-    class SimpleService
-    class StartStripeCheckoutState
-    class StripeCardDetails
-    class StripeCheckoutConfig
-    class StripeEphemeralKeyResponse
-    class StripePaymentIntentResponse
-    class StripePaymentMethod
-    class StripePaymentMethodsContainer
-    class StripePaymentMethodsResponse
-    class StripeRepository
-    <<interface>> StripeRepository
-    class StripeRepositoryImpl
-    class StripeSetupConfigData
-    class StripeSetupConfigResponse
-    class StripeUseCase
-    class StripeViewModel
-    class SubscriptionDto
-    class Success
-    class TooShort
-    class TotalSessionsLimitExceeded
-    class TransactionDto
-    class UnassignEvent
-    class UpdateState
-    class UploadResponse
-    class UploadState
-    class User
-    class UserBooking
-    class UserProductsUiState
     class UserRepository
     <<interface>> UserRepository
+    class DaySessionRepository
+    <<interface>> DaySessionRepository
+    class ServiceProductRepository
+    <<interface>> ServiceProductRepository
+    class StripeRepository
+    <<interface>> StripeRepository
+
+    class AuthRepositoryImpl
     class UserRepositoryImpl
-    class UserStatistics
-    class UserStatsState
-    <<interface>> UserStatsState
-    class UserStatsViewModel
+    class DaySessionRepositoryImpl
+    class ServiceProductRepositoryImpl
+    class StripeRepositoryImpl
+
+    class ApiClient
+
+    AuthViewModel --> AuthUseCase
+    UserViewModel --> UserUseCase
+    DaySessionViewModel --> DaySessionUseCase
+    ServiceProductViewModel --> ServiceProductUseCase
+    StripeViewModel --> StripeUseCase
+
+    AuthUseCase --> AuthRepository
+    UserUseCase --> UserRepository
+    DaySessionUseCase --> DaySessionRepository
+    ServiceProductUseCase --> ServiceProductRepository
+    StripeUseCase --> StripeRepository
+
+    AuthRepositoryImpl ..|> AuthRepository
+    UserRepositoryImpl ..|> UserRepository
+    DaySessionRepositoryImpl ..|> DaySessionRepository
+    ServiceProductRepositoryImpl ..|> ServiceProductRepository
+    StripeRepositoryImpl ..|> StripeRepository
+
+    AuthRepositoryImpl --> ApiClient
+    UserRepositoryImpl --> ApiClient
+    DaySessionRepositoryImpl --> ApiClient
+    ServiceProductRepositoryImpl --> ApiClient
+    StripeRepositoryImpl --> ApiClient
+```
+
+## 2) Patrón Singleton (componentes críticos)
+
+```mermaid
+classDiagram
+    class ApiClient {
+      <<singleton>>
+    }
+    class SecureStorage {
+      <<singleton>>
+    }
+    class AuthPreferences {
+      <<singleton>>
+    }
+    class AuthRepositoryImpl {
+      <<singleton>>
+    }
+    class UserRepositoryImpl {
+      <<singleton>>
+    }
+    class DaySessionRepositoryImpl {
+      <<singleton>>
+    }
+    class ServiceProductRepositoryImpl {
+      <<singleton>>
+    }
+    class StripeRepositoryImpl {
+      <<singleton>>
+    }
+
+    SecureStorage --> AuthPreferences
+    ApiClient --> SecureStorage
+```
+
+## 3) Patrón Facade (SecureStorage)
+
+```mermaid
+classDiagram
+    class SecureStorage {
+      +initialize(prefs)
+      +getAccessToken() String?
+      +getRefreshToken() String?
+      +saveTokens(access, refresh)
+      +saveUser(user)
+      +userFlow() Flow~User?~
+      +clear()
+    }
+
+    class AuthPreferences {
+      +saveTokens(...)
+      +accessTokenFlow(...)
+      +refreshTokenFlow(...)
+      +saveUser(...)
+      +userFlow(...)
+      +clear(...)
+    }
+
+    class Crypto
+    class Base64
+
+    SecureStorage --> AuthPreferences : fachada simplificada
+    AuthPreferences --> Crypto : cifrado/descifrado
+    AuthPreferences --> Base64 : codificación
+```
+
+## 4) Patrón Strategy (expect/actual de KMM)
+
+```mermaid
+classDiagram
+    class Crypto_Pays {
+      <<expect>>
+      +sha256(input)
+      +encryptAES(input, key)
+    }
+
+    class Crypto_Pays_Android {
+      <<actual>>
+    }
+
+    class Crypto_Pays_iOS {
+      <<actual>>
+    }
+
+    Crypto_Pays_Android ..|> Crypto_Pays
+    Crypto_Pays_iOS ..|> Crypto_Pays
+```
+
+## 5) Patrón Repository
+
+```mermaid
+classDiagram
+    class AuthUseCase
     class UserUseCase
-    class UserValidator
+    class DaySessionUseCase
+    class ServiceProductUseCase
+    class StripeUseCase
+
+    class AuthRepository
+    <<interface>> AuthRepository
+    class UserRepository
+    <<interface>> UserRepository
+    class DaySessionRepository
+    <<interface>> DaySessionRepository
+    class ServiceProductRepository
+    <<interface>> ServiceProductRepository
+    class StripeRepository
+    <<interface>> StripeRepository
+
+    class AuthRepositoryImpl
+    class UserRepositoryImpl
+    class DaySessionRepositoryImpl
+    class ServiceProductRepositoryImpl
+    class StripeRepositoryImpl
+
+    AuthUseCase --> AuthRepository
+    UserUseCase --> UserRepository
+    DaySessionUseCase --> DaySessionRepository
+    ServiceProductUseCase --> ServiceProductRepository
+    StripeUseCase --> StripeRepository
+
+    AuthRepositoryImpl ..|> AuthRepository
+    UserRepositoryImpl ..|> UserRepository
+    DaySessionRepositoryImpl ..|> DaySessionRepository
+    ServiceProductRepositoryImpl ..|> ServiceProductRepository
+    StripeRepositoryImpl ..|> StripeRepository
+```
+
+## 6) Observer + State + Command (UI reactiva)
+
+```mermaid
+classDiagram
+    class AuthViewModel
+    class DaySessionViewModel
     class UserViewModel
-    class ValidationErrors
+
+    class LoginState
+    class RegisterState
+    class ChangePasswordState
+    class ResetPasswordState
+    class DailySessionsUiState
+    class UpdateState
+    class DeleteUserState
+
+    class BookingEvent
+    class AssignEvent
+    class UnassignEvent
+
+    AuthViewModel --> LoginState
+    AuthViewModel --> RegisterState
+    AuthViewModel --> ChangePasswordState
+    AuthViewModel --> ResetPasswordState
+
+    DaySessionViewModel --> DailySessionsUiState
+    DaySessionViewModel --> BookingEvent
+
+    UserViewModel --> UpdateState
+    UserViewModel --> DeleteUserState
+    UserViewModel --> AssignEvent
+    UserViewModel --> UnassignEvent
+```
+
+## 7) Jerarquía de errores de dominio (State robusto)
+
+```mermaid
+classDiagram
+    class ChangePasswordException
+    class CurrentRequired
+    class NewRequired
+    class ConfirmRequired
+    class TooShort
+    class NotMatching
+    class NoNumber
+    class NoUppercase
+    class NoLowercase
+    class SameAsCurrent
+    class ContainsSpace
+    class RepoFailure
+
+    class BookingDomainException
     class WeeklyLimitExceeded
-    class name
-    AuthRepositoryImpl --|> AuthRepository
-    Canceled --|> AddPaymentMethodUiState
-    Canceled --|> SharedPaymentResult
-    Canceled --|> StartStripeCheckoutState
-    Completed --|> AddPaymentMethodUiState
-    Completed --|> SharedPaymentResult
-    Completed --|> StartStripeCheckoutState
-    ConfirmRequired --|> ChangePasswordException
-    ContainsSpace --|> ChangePasswordException
+    class TotalSessionsLimitExceeded
+    class DuplicateBooking
+    class GenericBookingFailure
+
+    class CryptoException
+    class DecryptionFailed
+
     CurrentRequired --|> ChangePasswordException
-    DaySessionRepositoryImpl --|> DaySessionRepository
-    DecryptionFailed --|> CryptoException
-    DuplicateBooking --|> BookingDomainException
-    Empty --|> PaymentMethodsUiState
-    IOSSessionNotificationManager --|> SessionNotificationManager
-    Idle --|> ActionUiState
-    Idle --|> AddPaymentMethodUiState
-    Idle --|> ChangePasswordState
-    Idle --|> CoachState
-    Idle --|> DailySessionsUiState
-    Idle --|> DeleteProfilePicState
-    Idle --|> DeleteUserState
-    Idle --|> EphemeralKeyUiState
-    Idle --|> GetPreferredCoachState
-    Idle --|> LoginState
-    Idle --|> MarkFavoriteState
-    Idle --|> PaymentState
-    Idle --|> ProductDetailUiState
-    Idle --|> RefundUiState
-    Idle --|> RegisterState
-    Idle --|> ResetPasswordState
-    Idle --|> StartStripeCheckoutState
-    Idle --|> UpdateState
-    Idle --|> UploadState
-    Loading --|> ActionUiState
-    Loading --|> ActiveProductDetailState
-    Loading --|> AddPaymentMethodUiState
-    Loading --|> ChangePasswordState
-    Loading --|> CoachState
-    Loading --|> DeleteProfilePicState
-    Loading --|> DeleteUserState
-    Loading --|> EphemeralKeyUiState
-    Loading --|> EwalletUiState
-    Loading --|> FetchUserBookingsState
-    Loading --|> GetPreferredCoachState
-    Loading --|> LoginState
-    Loading --|> MarkFavoriteState
-    Loading --|> PaymentMethodsUiState
-    Loading --|> PaymentState
-    Loading --|> ProductDetailUiState
-    Loading --|> RefundUiState
-    Loading --|> RegisterState
-    Loading --|> ResetPasswordState
-    Loading --|> ServiceProductUiState
-    Loading --|> ServiceUiState
-    Loading --|> StartStripeCheckoutState
-    Loading --|> UpdateState
-    Loading --|> UploadState
-    Loading --|> UserProductsUiState
-    Loading --|> UserStatsState
     NewRequired --|> ChangePasswordException
-    NoLowercase --|> ChangePasswordException
+    ConfirmRequired --|> ChangePasswordException
+    TooShort --|> ChangePasswordException
+    NotMatching --|> ChangePasswordException
     NoNumber --|> ChangePasswordException
     NoUppercase --|> ChangePasswordException
-    NotMatching --|> ChangePasswordException
-    Processing --|> StartStripeCheckoutState
+    NoLowercase --|> ChangePasswordException
     SameAsCurrent --|> ChangePasswordException
-    ServiceProductRepositoryImpl --|> ServiceProductRepository
-    StripeRepositoryImpl --|> StripeRepository
-    Success --|> DeleteProfilePicState
-    Success --|> DeleteUserState
-    Success --|> EditValidationResult
-    Success --|> RegisterValidationResult
-    Success --|> UnassignEvent
-    TooShort --|> ChangePasswordException
-    TotalSessionsLimitExceeded --|> BookingDomainException
-    UserRepositoryImpl --|> UserRepository
+    ContainsSpace --|> ChangePasswordException
+    RepoFailure --|> ChangePasswordException
+
     WeeklyLimitExceeded --|> BookingDomainException
+    TotalSessionsLimitExceeded --|> BookingDomainException
+    DuplicateBooking --|> BookingDomainException
+    GenericBookingFailure --|> BookingDomainException
+
+    DecryptionFailed --|> CryptoException
 ```
 
-## androidApp
+## 8) Composición DI con Koin
 
 ```mermaid
 classDiagram
-    class ActiveProductDetail
-    class Calendar
-    class ChangeExisting
-    class Configuration
-    class Confirm
-    class ConfirmContinue
-    class Dialog
-    class EditProfile
-    class EnterEmail
-    class ExampleInstrumentedTest
-    class ExampleUnitTest
-    class FavoriteCoach
-    class Hidden
-    class HourOccupied
-    class HumanPerformApp
-    class InvalidHourFormat
-    class Login
-    class MainActivity
-    class MenuOption
-    <<enumeration>> MenuOption
-    class NavItem
-    class NoCoachesAvailable
-    class PaymentSuccess
-    class ProductDetail
-    class Reservation
-    class ReservationFlowState
-    class SelectCoach
-    class Service
-    class ServiceResolutionError
-    class SessionReminderWorker
-    class SexOption
-    class StripeSinglePayment
-    class StripeSubscription
-    class User
-    class ViewPaymentMethod
-    class Welcome
-    Hidden --|> Dialog
-    HourOccupied --|> Dialog
-    NoCoachesAvailable --|> Dialog
-```
+    class appModule
+    class platformModule
 
-## iosApp
+    class AuthRepository
+    class UserRepository
+    class DaySessionRepository
+    class ServiceProductRepository
+    class StripeRepository
 
-```mermaid
-classDiagram
-    class AddCouponView
-    class AppState
-    class AuthFlow
-    class BrandAvatar
-    class CalendarView
-    class CameraView
-    class ChangePasswordView
-    class ConfigurationView
-    class ContentView
-    class ContentView_Previews
-    class Coordinator
-    class CryptoCallbacks
-    class DefaultChip
-    class Delegate
-    class DocumentPicker
-    class DocumentView
-    class EditProfileView
-    class EditableUserProfileImageView
-    class ElectronicWalletView
-    class EmptyStateView
-    class EnterEmailView
-    class ErrorStateView
-    class FavoritesView
-    class FieldError
-    class GradientPill
-    class HireServicesView
-    class ImagePicker
-    class LoginView
-    class MainTabs
-    class MyProductsView
-    class MyProfileView
-    class NavBarLogo
-    class PasswordResetInfoView
-    class PaymentMethodCard
-    class PaymentMethodsShimmerView
-    class PaymentMethodsView
-    class ProductRow
-    class ProfileRow
-    class RegisterFormData
-    class RegisterView
-    class RegisterView_Previews
-    class Result
-    class RootView
-    class SecureFieldIcon
-    class ServiceRow
-    class ServicesView
-    class SexOption
-    class Shimmer
-    class SplashView
-    class StatCard
-    class StatsView
-    class TextFieldIcon
-    class TxRow
-    class UserProfileImageView
-    class UserView
-    class WelcomeView
-    class iOSApp
+    class AuthRepositoryImpl
+    class UserRepositoryImpl
+    class DaySessionRepositoryImpl
+    class ServiceProductRepositoryImpl
+    class StripeRepositoryImpl
+
+    class AuthUseCase
+    class UserUseCase
+    class DaySessionUseCase
+    class ServiceProductUseCase
+    class StripeUseCase
+
+    class AuthViewModel
+    class UserViewModel
+    class DaySessionViewModel
+    class ServiceProductViewModel
+    class StripeViewModel
+    class UserStatsViewModel
+
+    appModule --> AuthRepository
+    appModule --> UserRepository
+    appModule --> DaySessionRepository
+    appModule --> ServiceProductRepository
+    appModule --> StripeRepository
+
+    AuthRepositoryImpl ..|> AuthRepository
+    UserRepositoryImpl ..|> UserRepository
+    DaySessionRepositoryImpl ..|> DaySessionRepository
+    ServiceProductRepositoryImpl ..|> ServiceProductRepository
+    StripeRepositoryImpl ..|> StripeRepository
+
+    appModule --> AuthUseCase
+    appModule --> UserUseCase
+    appModule --> DaySessionUseCase
+    appModule --> ServiceProductUseCase
+    appModule --> StripeUseCase
+
+    appModule --> AuthViewModel
+    appModule --> UserViewModel
+    appModule --> DaySessionViewModel
+    appModule --> ServiceProductViewModel
+    appModule --> StripeViewModel
+    appModule --> UserStatsViewModel
+
+    platformModule <.. appModule
 ```
