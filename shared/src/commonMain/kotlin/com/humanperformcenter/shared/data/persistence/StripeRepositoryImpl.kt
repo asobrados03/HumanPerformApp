@@ -30,12 +30,6 @@ object StripeRepositoryImpl : StripeRepository {
         }
     }
 
-    override suspend fun getCustomer(customerId: String): Result<GetStripeCustomerResponse> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/customer/$customerId").body()
-        }
-    }
-
     override suspend fun createEphemeralKey(customerId: String)
     : Result<StripeEphemeralKeyResponse> = runCatching {
         withContext(Dispatchers.IO) {
@@ -142,12 +136,6 @@ object StripeRepositoryImpl : StripeRepository {
         }
     }
 
-    override suspend fun getSubscription(id: String): Result<SubscriptionDto> = runCatching {
-        withContext(Dispatchers.IO)  {
-            ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/subscription/$id").body()
-        }
-    }
-
     override suspend fun getUserTransactions(): Result<List<TransactionDto>> = runCatching {
         withContext(Dispatchers.IO) {
             ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/transactions").body()
@@ -160,7 +148,7 @@ object StripeRepositoryImpl : StripeRepository {
                 "${ApiClient.baseUrl}/stripe/payment-methods/$customerId"
             ).body()
 
-            response.data // Esto ahora devuelve el objeto StripePaymentMethodsContainer
+            response.data
         }
     }
 }

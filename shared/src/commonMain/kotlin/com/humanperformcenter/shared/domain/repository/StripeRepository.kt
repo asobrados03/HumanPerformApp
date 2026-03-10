@@ -7,7 +7,6 @@ interface StripeRepository {
     suspend fun getPublishableKey(): Result<String>
 
     suspend fun createOrGetCustomer(): Result<CreateStripeCustomerResponse>
-    suspend fun getCustomer(customerId: String): Result<GetStripeCustomerResponse>
 
     suspend fun createEphemeralKey(customerId: String): Result<StripeEphemeralKeyResponse>
 
@@ -31,7 +30,6 @@ interface StripeRepository {
         couponCode: String? = null
     ): Result<SubscriptionDto>
     suspend fun cancelSubscription(subscriptionId: String, productId: Int, userId: Int): Result<Unit>
-    suspend fun getSubscription(id: String): Result<SubscriptionDto>
 
     suspend fun getUserTransactions(): Result<List<TransactionDto>>
 
