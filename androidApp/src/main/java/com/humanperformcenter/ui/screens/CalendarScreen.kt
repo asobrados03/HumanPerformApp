@@ -64,7 +64,6 @@ fun CalendarScreen(
             if (userBookings !is FetchUserBookingsState.Success) {
                 userViewModel.fetchUserBookings(userId)
             }
-            daySessionViewModel.fetchUserWeeklyLimit(userId)
             daySessionViewModel.fetchHolidays()
         }
     }
