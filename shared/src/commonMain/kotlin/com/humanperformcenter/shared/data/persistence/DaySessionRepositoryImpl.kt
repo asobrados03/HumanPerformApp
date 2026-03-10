@@ -3,11 +3,10 @@ package com.humanperformcenter.shared.data.persistence
 import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.booking.BookingRequest
+import com.humanperformcenter.shared.data.model.booking.DaySession
 import com.humanperformcenter.shared.data.model.booking.ReserveResponse
 import com.humanperformcenter.shared.data.model.booking.ReserveUpdateRequest
 import com.humanperformcenter.shared.data.model.booking.ReserveUpdateResponse
-import com.humanperformcenter.shared.data.model.booking.DaySession
-import com.humanperformcenter.shared.data.model.booking.WeeklyLimitsWrapper
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.booking.BookingDomainException
 import com.humanperformcenter.shared.domain.repository.DaySessionRepository
@@ -25,9 +24,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -129,17 +128,6 @@ object DaySessionRepositoryImpl : DaySessionRepository {
             }
             val json = response.body<Map<String, Int>>()
             json["session_timeslot_id"] ?: throw Exception("ID de franja horaria no válido")
-        }
-    }
-
-    override suspend fun getUserWeeklyLimit(userId: Int)
-    : Result<WeeklyLimitsWrapper> = withContext(Dispatchers.IO) {
-        return@withContext runCatching {
-            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-weekly-limit") {
-                parameter("user_id", userId)
-            }
-            if (!response.status.isSuccess()) throw Exception("Error de servidor: ${response.status}")
-            response.body<WeeklyLimitsWrapper>()
         }
     }
 

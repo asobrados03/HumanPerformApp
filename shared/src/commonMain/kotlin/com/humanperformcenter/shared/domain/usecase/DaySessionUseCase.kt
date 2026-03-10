@@ -5,7 +5,6 @@ import com.humanperformcenter.shared.data.model.booking.BookingRequest
 import com.humanperformcenter.shared.data.model.booking.ReserveResponse
 import com.humanperformcenter.shared.data.model.booking.ReserveUpdateRequest
 import com.humanperformcenter.shared.data.model.booking.ReserveUpdateResponse
-import com.humanperformcenter.shared.data.model.booking.WeeklyLimitsWrapper
 import com.humanperformcenter.shared.domain.repository.DaySessionRepository
 import kotlinx.datetime.LocalDate
 
@@ -29,10 +28,6 @@ class DaySessionUseCase(private val repository: DaySessionRepository) {
 
     suspend fun fetchServiceIdForProduct(productId: Int): Result<Int> {
         return repository.getProductServiceInfo(productId)
-    }
-
-    suspend fun getUserWeeklyLimit(customerId: Int): Result<WeeklyLimitsWrapper> {
-        return repository.getUserWeeklyLimit(customerId)
     }
 
     suspend fun getHolidays(): Result<List<String>> {

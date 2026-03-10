@@ -1,5 +1,6 @@
 package com.humanperformcenter.ui.components.calendar
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,9 +32,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,15 +57,14 @@ import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewMo
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.time.LocalDate as JavaLocalDate
-import kotlinx.datetime.LocalDate as KotlinLocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
-import java.time.DayOfWeek
 import java.util.Locale
+import kotlinx.datetime.LocalDate as KotlinLocalDate
+import java.time.LocalDate as JavaLocalDate
 
 private val SuccessColor = Color(0xFF4CAF50)
 private val WarningColor = Color(0xFFFFA000)
@@ -362,7 +361,6 @@ fun reservationFlowDialogs(
             userBookingsState = bookingsState
         )
     }
-
 
     if (bookingError != null) {
         InfoDialog(
