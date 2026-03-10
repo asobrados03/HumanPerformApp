@@ -1,6 +1,5 @@
 package com.humanperformcenter.ui.components.calendar
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -48,7 +47,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humanperformcenter.shared.data.model.booking.DaySession
-import com.humanperformcenter.shared.data.model.booking.ProductLimit
 import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.presentation.ui.DailySessionsUiState
@@ -152,8 +150,8 @@ private class ReservationFlowState(
         }
     }
     // NUEVA FUNCIÓN: Se llama cuando el usuario hace clic en un entrenador
-    fun onCoachSelected(coach: DaySession, date: JavaLocalDate, hour: String, canBook: Boolean) {
-        dialog = Dialog.Confirm(date, hour, coach, canBooking = canBook)
+    fun onCoachSelected(coach: DaySession, date: JavaLocalDate, hour: String) {
+        dialog = Dialog.Confirm(date, hour, coach)
     }
 
     fun bookSession(date: JavaLocalDate, hour: String, coach: DaySession) {
@@ -186,8 +184,6 @@ private class ReservationFlowState(
 
             userViewModel.fetchUserBookings(userId)
 
-            // Importante: Refrescar los límites después de reservar para actualizar el saldo
-            daySessionViewModel.fetchUserWeeklyLimit(userId)
             dismiss()
         }
     }
@@ -212,7 +208,7 @@ private class ReservationFlowState(
             ) ?: return@launch
 
             // 3. Llamamos al ViewModel pasando explícitamente el productId seleccionado
-            daySessionViewModel.modifyBookingSession(
+            val bookingUpdated = daySessionViewModel.modifyBookingSession(
                 bookingId = bookingToChange.id,
                 newCoachId = newCoach.coachId,
                 newServiceId = realServiceId,
@@ -222,9 +218,12 @@ private class ReservationFlowState(
                 hour = newHour
             )
 
+            if (!bookingUpdated) {
+                return@launch
+            }
+
             // 4. Refrescamos datos globales para que la UI se actualice
             userViewModel.fetchUserBookings(userId)
-            daySessionViewModel.fetchUserWeeklyLimit(userId)
             dismiss()
         }
     }
@@ -318,8 +317,7 @@ private class ReservationFlowState(
         data class Confirm(
             val date: JavaLocalDate,
             val hour: String,
-            val coach: DaySession,
-            val canBooking: Boolean
+            val coach: DaySession
         ) : Dialog()
         data class ChangeExisting(
             val date: JavaLocalDate,
@@ -347,8 +345,6 @@ fun reservationFlowDialogs(
 
     // Ahora 'sessionsState' contiene Success, Loading, Error o Empty
     val sessionsState by daySessionViewModel.sessions.collectAsStateWithLifecycle()
-    val userBookingLimits by daySessionViewModel.userBookingLimits.collectAsStateWithLifecycle()
-
     val userProductsState by serviceProductViewModel.userProductsState.collectAsStateWithLifecycle()
 
     val availableProducts = remember(userProductsState) {
@@ -356,11 +352,6 @@ fun reservationFlowDialogs(
     }
 
     val bookingError by daySessionViewModel.bookingErrorMessage.collectAsStateWithLifecycle()
-
-    LaunchedEffect(userId) {
-        Log.d("📱 APP DEBUG: ","Solicitando límites para usuario: $userId")
-        daySessionViewModel.fetchUserWeeklyLimit(userId)
-    }
 
     val state = remember(userId, daySessionViewModel, userViewModel, scope) {
         ReservationFlowState(
@@ -372,21 +363,6 @@ fun reservationFlowDialogs(
         )
     }
 
-    val selectedDate = when (val activeDialog = state.dialog) {
-        is ReservationFlowState.Dialog.Reservation -> activeDialog.date
-        is ReservationFlowState.Dialog.SelectCoach -> activeDialog.date
-        is ReservationFlowState.Dialog.Confirm -> activeDialog.date
-        else -> null
-    }
-
-    val currentLimit = userBookingLimits.find { it.productId == state.selectedProduct?.id }
-    val canBook = canBook(
-        product = state.selectedProduct,
-        limit = currentLimit,
-        userBookings = bookingsList,
-        selectedDate = selectedDate,
-        today = state.today
-    )
 
     if (bookingError != null) {
         InfoDialog(
@@ -406,12 +382,12 @@ fun reservationFlowDialogs(
             )
         }
         is ReservationFlowState.Dialog.SelectCoach -> {
-            CoachSelectionDialog(state, dialog, canBook)
+            CoachSelectionDialog(state, dialog)
         }
         is ReservationFlowState.Dialog.Confirm -> {
             ConfirmDialog(
                 state = state,
-                dialog = dialog.copy(canBooking = canBook)
+                dialog = dialog
             )
         }
         is ReservationFlowState.Dialog.ConfirmContinue -> ConfirmContinueDialog(
@@ -677,8 +653,7 @@ private fun ProductPicker(
 @Composable
 private fun CoachSelectionDialog(
     state: ReservationFlowState,
-    dialog: ReservationFlowState.Dialog.SelectCoach,
-    canBook: Boolean // Pasamos esto para propagarlo luego
+    dialog: ReservationFlowState.Dialog.SelectCoach
 ) {
     AlertDialog(
         onDismissRequest = state::dismiss,
@@ -691,7 +666,7 @@ private fun CoachSelectionDialog(
                             .fillMaxWidth()
                             .clickable {
                                 // Al hacer click, avanzamos al Confirm
-                                state.onCoachSelected(coach, dialog.date, dialog.hour, canBook)
+                                state.onCoachSelected(coach, dialog.date, dialog.hour)
                             }
                             .padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -820,75 +795,3 @@ private fun String.normalizeBackendHour(): String? {
     }
 }
 
-private fun canBook(
-    product: Product?,
-    limit: ProductLimit?,
-    userBookings: List<UserBooking>,
-    selectedDate: JavaLocalDate?,
-    today: JavaLocalDate
-): Boolean {
-    if (product == null) return false
-
-    // Si todavía no tenemos límites para el producto (latencia, respuesta parcial,
-    // producto recién asignado, etc.), no bloqueamos la reserva en cliente.
-    // El backend mantiene la validación definitiva.
-    if (limit == null) return true
-
-    val bookingsForProduct = userBookings.filter { it.productId == product.id }
-    val normalizedType = limit.typeOfProduct.lowercase(Locale.ROOT)
-    val referenceDate = selectedDate ?: today
-
-    fun countBookingsInWeek(bookings: List<UserBooking>, weekDate: JavaLocalDate): Int {
-        val weekStart = weekDate.with(DayOfWeek.MONDAY)
-        val weekEnd = weekStart.plusDays(6)
-        return bookings.count { booking ->
-            val bookingDate = booking.date.toLocalDate() ?: return@count false
-            !bookingDate.isBefore(weekStart) && !bookingDate.isAfter(weekEnd)
-        }
-    }
-
-    return when {
-        normalizedType.isRecurringType() -> {
-            val weeklyRemaining = limit.remaining ?: limit.weeklyLimit?.let { weeklyLimit ->
-                // Evaluamos la semana de la fecha de sesión para evitar falsos negativos de saldo.
-                val currentWeekBookings = countBookingsInWeek(bookingsForProduct, referenceDate)
-                (weeklyLimit - currentWeekBookings).coerceAtLeast(0)
-            }
-
-            weeklyRemaining?.let { it > 0 } ?: true
-        }
-
-        normalizedType.isPackType() -> {
-            val totalRemaining = limit.remaining ?: limit.totalLimit?.let { totalLimit ->
-                (totalLimit - bookingsForProduct.size).coerceAtLeast(0)
-            }
-
-            totalRemaining?.let { it > 0 } ?: true
-        }
-
-        else -> {
-            val fallbackRemaining = limit.remaining
-                ?: limit.weeklyLimit?.let { weeklyLimit ->
-                    val currentWeekBookings = countBookingsInWeek(bookingsForProduct, referenceDate)
-                    (weeklyLimit - currentWeekBookings).coerceAtLeast(0)
-                }
-                ?: limit.totalLimit?.let { (it - bookingsForProduct.size).coerceAtLeast(0) }
-
-            fallbackRemaining?.let { it > 0 } ?: true
-        }
-    }
-}
-
-private fun String.isRecurringType(): Boolean {
-    return this == "recurrent" ||
-        this == "recurring" ||
-        this == "recurrente" ||
-        this == "subscription" ||
-        this == "suscription" ||
-        this == "suscripcion" ||
-        this == "suscripción"
-}
-
-private fun String.isPackType(): Boolean {
-    return this == "bonus" || this == "bono" || this == "single_session"
-}
