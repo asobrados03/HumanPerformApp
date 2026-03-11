@@ -2,28 +2,24 @@
 
 > Se listan los flujos principales del proyecto **exceptuando** el proceso de autenticación con JWT.
 
+> Formato aplicado en todos los flujos: **Usuario -> App Móvil -> Servidor API -> Base de Datos**.
+
 ## 1) Carga de perfil de usuario
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant UI as Pantalla Perfil (Compose/SwiftUI)
-    participant VM as UserViewModel
-    participant UC as UserUseCase
-    participant REPO as UserRepositoryImpl
-    participant API as API REST
+    participant APP as App Móvil
+    participant API as Servidor API
+    participant DB as Base de Datos
 
-    U->>UI: Abre pantalla de perfil
-    UI->>VM: fetchUserProfile()
-    VM->>UC: getUserById(userId)
-    UC->>REPO: getUserById(userId)
-    REPO->>API: GET /users/{id}
-    API-->>REPO: 200 + User DTO
-    REPO-->>UC: Result.success(User)
-    UC-->>VM: User
-    VM-->>UI: userState = Success(User)
-    UI-->>U: Muestra datos del perfil
+    U->>APP: Abre pantalla de perfil
+    APP->>API: Solicita perfil de usuario
+    API->>DB: Consulta datos del usuario
+    DB-->>API: Retorna perfil
+    API-->>APP: Respuesta 200 + perfil
+    APP-->>U: Muestra datos del perfil
 ```
 
 ## 2) Actualización de perfil con foto
@@ -32,22 +28,16 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant UI as Pantalla Editar Perfil
-    participant VM as UserViewModel
-    participant UC as UserUseCase
-    participant REPO as UserRepositoryImpl
-    participant API as API REST
+    participant APP as App Móvil
+    participant API as Servidor API
+    participant DB as Base de Datos
 
-    U->>UI: Edita datos y selecciona foto
-    UI->>VM: updateUser(candidate, profilePicBytes)
-    VM->>UC: updateUser(user, profilePicBytes)
-    UC->>REPO: updateUser(user, profilePicBytes)
-    REPO->>API: PUT/PATCH perfil + multipart foto
-    API-->>REPO: 200 + User actualizado
-    REPO-->>UC: Result.success(User)
-    UC-->>VM: User actualizado
-    VM-->>UI: updateState = Success
-    UI-->>U: Confirma cambios
+    U->>APP: Edita datos y selecciona foto
+    APP->>API: Envía actualización de perfil + imagen
+    API->>DB: Actualiza información del usuario
+    DB-->>API: Confirmación de actualización
+    API-->>APP: Respuesta 200 + usuario actualizado
+    APP-->>U: Confirma cambios
 ```
 
 ## 3) Consulta de sesiones disponibles
@@ -56,22 +46,16 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant UI as Pantalla Reserva
-    participant VM as DaySessionViewModel
-    participant UC as DaySessionUseCase
-    participant REPO as DaySessionRepositoryImpl
-    participant API as API REST
+    participant APP as App Móvil
+    participant API as Servidor API
+    participant DB as Base de Datos
 
-    U->>UI: Selecciona producto y fecha
-    UI->>VM: fetchAvailableSessions(productId, date)
-    VM->>UC: getSessionsByDay(productId, date)
-    UC->>REPO: getSessionsByDay(productId, date)
-    REPO->>API: GET sesiones disponibles
-    API-->>REPO: 200 + lista de sesiones
-    REPO-->>UC: Result.success(List<Session>)
-    UC-->>VM: sesiones
-    VM-->>UI: dailySessionsUiState = Success
-    UI-->>U: Muestra horarios disponibles
+    U->>APP: Selecciona producto y fecha
+    APP->>API: Solicita sesiones disponibles
+    API->>DB: Consulta sesiones por día
+    DB-->>API: Lista de sesiones
+    API-->>APP: Respuesta 200 + sesiones
+    APP-->>U: Muestra horarios disponibles
 ```
 
 ## 4) Reserva de sesión
@@ -80,22 +64,16 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant UI as Pantalla Reserva
-    participant VM as DaySessionViewModel
-    participant UC as DaySessionUseCase
-    participant REPO as DaySessionRepositoryImpl
-    participant API as API REST
+    participant APP as App Móvil
+    participant API as Servidor API
+    participant DB as Base de Datos
 
-    U->>UI: Confirma reserva
-    UI->>VM: makeBooking(userId, productId, serviceId, date, hour)
-    VM->>UC: makeBooking(bookingRequest)
-    UC->>REPO: makeBooking(bookingRequest)
-    REPO->>API: POST /bookings
-    API-->>REPO: 201 + booking confirmada
-    REPO-->>UC: Result.success(Booking)
-    UC-->>VM: Booking
-    VM-->>UI: bookingEvent = Success
-    UI-->>U: Muestra confirmación
+    U->>APP: Confirma reserva
+    APP->>API: Envía solicitud de reserva
+    API->>DB: Crea reserva
+    DB-->>API: Reserva confirmada
+    API-->>APP: Respuesta 201 + detalle de reserva
+    APP-->>U: Muestra confirmación
 ```
 
 ## 5) Compra/Asignación de producto (checkout Stripe)
@@ -104,34 +82,16 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant UI as Pantalla Producto/Pago
-    participant SVM as StripeViewModel
-    participant SUC as StripeUseCase
-    participant SREPO as StripeRepositoryImpl
-    participant SPVM as ServiceProductViewModel
-    participant SPUC as ServiceProductUseCase
-    participant SPREPO as ServiceProductRepositoryImpl
-    participant API as API REST + Stripe Backend
+    participant APP as App Móvil
+    participant API as Servidor API
+    participant DB as Base de Datos
 
-    U->>UI: Inicia compra de producto
-    UI->>SVM: startStripeCheckout(userId, productId, amount, paymentMethodId)
-    SVM->>SUC: createPaymentIntent(...)
-    SUC->>SREPO: createPaymentIntent(...)
-    SREPO->>API: POST crear intent de pago
-    API-->>SREPO: clientSecret / estado
-    SREPO-->>SUC: Result.success(PaymentIntent)
-    SUC-->>SVM: PaymentIntent listo
-    SVM-->>UI: Checkout completado
-
-    UI->>SPVM: assignProductToUser(userId, productId, paymentMethod, couponCode)
-    SPVM->>SPUC: assignProductToUser(...)
-    SPUC->>SPREPO: assignProductToUser(...)
-    SPREPO->>API: POST asignar producto al usuario
-    API-->>SPREPO: 200 asignación OK
-    SPREPO-->>SPUC: Result.success
-    SPUC-->>SPVM: éxito
-    SPVM-->>UI: productsState = Success
-    UI-->>U: Producto activo en cuenta
+    U->>APP: Inicia compra de producto
+    APP->>API: Solicita crear pago y asignar producto
+    API->>DB: Registra pago y asignación del producto
+    DB-->>API: Confirmación de pago/asignación
+    API-->>APP: Respuesta 200 + producto activo
+    APP-->>U: Informa producto activo en cuenta
 ```
 
 ## 6) Carga de métodos de pago guardados
@@ -140,22 +100,16 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant UI as Pantalla Métodos de pago
-    participant VM as StripeViewModel
-    participant UC as StripeUseCase
-    participant REPO as StripeRepositoryImpl
-    participant API as API REST + Stripe Backend
+    participant APP as App Móvil
+    participant API as Servidor API
+    participant STRIPE as Stripe
 
-    U->>UI: Abre métodos de pago
-    UI->>VM: loadPaymentMethods()
-    VM->>UC: getUserCards(customerId)
-    UC->>REPO: getUserCards(customerId)
-    REPO->>API: GET tarjetas de cliente
-    API-->>REPO: 200 + cards[]
-    REPO-->>UC: Result.success(cards)
-    UC-->>VM: cards
-    VM-->>UI: estado = Success(cards)
-    UI-->>U: Lista tarjetas disponibles
+    U->>APP: Abre métodos de pago
+    APP->>API: Solicita tarjetas del usuario
+    API->>STRIPE: Consulta métodos de pago del cliente
+    STRIPE-->>API: Retorna tarjetas guardadas
+    API-->>APP: Respuesta 200 + cards[]
+    APP-->>U: Lista tarjetas disponibles
 ```
 
 ## 7) Reprogramación de una reserva
@@ -164,22 +118,16 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant UI as Pantalla Mis Reservas
-    participant VM as DaySessionViewModel
-    participant UC as DaySessionUseCase
-    participant REPO as DaySessionRepositoryImpl
-    participant API as API REST
+    participant APP as App Móvil
+    participant API as Servidor API
+    participant DB as Base de Datos
 
-    U->>UI: Selecciona reserva y nuevo horario
-    UI->>VM: modifyBookingSession(request)
-    VM->>UC: modifyBookingSession(request)
-    UC->>REPO: modifyBookingSession(request)
-    REPO->>API: PATCH /bookings/{id}
-    API-->>REPO: 200 + booking actualizada
-    REPO-->>UC: Result.success(Booking)
-    UC-->>VM: booking actualizada
-    VM-->>UI: bookingEvent = Success
-    UI-->>U: Muestra nueva fecha/hora
+    U->>APP: Selecciona reserva y nuevo horario
+    APP->>API: Solicita reprogramación
+    API->>DB: Actualiza fecha/hora de reserva
+    DB-->>API: Reserva actualizada
+    API-->>APP: Respuesta 200 + nueva reserva
+    APP-->>U: Muestra nueva fecha/hora
 ```
 
 ## 8) Carga del historial de reservas del usuario
@@ -188,22 +136,16 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant UI as Pantalla Mis Reservas
-    participant VM as UserViewModel
-    participant UC as UserUseCase
-    participant REPO as UserRepositoryImpl
-    participant API as API REST
+    participant APP as App Móvil
+    participant API as Servidor API
+    participant DB as Base de Datos
 
-    U->>UI: Abre historial de reservas
-    UI->>VM: fetchUserBookings(userId)
-    VM->>UC: getUserBookings(userId)
-    UC->>REPO: getUserBookings(userId)
-    REPO->>API: GET /users/{id}/bookings
-    API-->>REPO: 200 + bookings[]
-    REPO-->>UC: Result.success(bookings)
-    UC-->>VM: bookings
-    VM-->>UI: userState = Success(bookings)
-    UI-->>U: Renderiza reservas
+    U->>APP: Abre historial de reservas
+    APP->>API: Solicita reservas del usuario
+    API->>DB: Consulta historial de reservas
+    DB-->>API: Retorna bookings[]
+    API-->>APP: Respuesta 200 + historial
+    APP-->>U: Renderiza reservas
 ```
 
 ## 9) Cancelación de reserva
@@ -212,22 +154,16 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant UI as Pantalla Mis Reservas
-    participant VM as UserViewModel
-    participant UC as UserUseCase
-    participant REPO as UserRepositoryImpl
-    participant API as API REST
+    participant APP as App Móvil
+    participant API as Servidor API
+    participant DB as Base de Datos
 
-    U->>UI: Toca "Cancelar reserva"
-    UI->>VM: cancelUserBooking(bookingId)
-    VM->>UC: cancelUserBooking(bookingId)
-    UC->>REPO: cancelUserBooking(bookingId)
-    REPO->>API: DELETE /bookings/{id}
-    API-->>REPO: 200/204
-    REPO-->>UC: Result.success(Unit)
-    UC-->>VM: éxito
-    VM-->>UI: userState/updateState = Success
-    UI-->>U: Confirma cancelación
+    U->>APP: Toca "Cancelar reserva"
+    APP->>API: Solicita cancelación
+    API->>DB: Elimina/anula reserva
+    DB-->>API: Confirmación de cancelación
+    API-->>APP: Respuesta 200/204
+    APP-->>U: Confirma cancelación
 ```
 
 ## 10) Marcar entrenador como favorito
@@ -236,22 +172,16 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant UI as Pantalla Coaches
-    participant VM as UserViewModel
-    participant UC as UserUseCase
-    participant REPO as UserRepositoryImpl
-    participant API as API REST
+    participant APP as App Móvil
+    participant API as Servidor API
+    participant DB as Base de Datos
 
-    U->>UI: Marca coach como favorito
-    UI->>VM: markFavorite(coachId, serviceName, userId)
-    VM->>UC: markFavorite(coachId, serviceName, userId)
-    UC->>REPO: markFavorite(coachId, serviceName, userId)
-    REPO->>API: POST /favorites
-    API-->>REPO: 200 + favorito actualizado
-    REPO-->>UC: Result.success
-    UC-->>VM: éxito
-    VM-->>UI: coachesState = Success
-    UI-->>U: Coach marcado
+    U->>APP: Marca coach como favorito
+    APP->>API: Envía solicitud de favorito
+    API->>DB: Guarda favorito del usuario
+    DB-->>API: Favorito actualizado
+    API-->>APP: Respuesta 200 + estado
+    APP-->>U: Coach marcado
 ```
 
 ## 11) Aplicar cupón a usuario
@@ -260,22 +190,16 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant UI as Pantalla Cupones
-    participant VM as UserViewModel
-    participant UC as UserUseCase
-    participant REPO as UserRepositoryImpl
-    participant API as API REST
+    participant APP as App Móvil
+    participant API as Servidor API
+    participant DB as Base de Datos
 
-    U->>UI: Ingresa código de cupón
-    UI->>VM: addCouponToUser(userId, code)
-    VM->>UC: addCouponToUser(userId, couponCode)
-    UC->>REPO: addCouponToUser(userId, couponCode)
-    REPO->>API: POST /users/{id}/coupons
-    API-->>REPO: 200 + cupón aplicado
-    REPO-->>UC: Result.success(Coupon)
-    UC-->>VM: cupón aplicado
-    VM-->>UI: updateState = Success
-    UI-->>U: Muestra descuento activo
+    U->>APP: Ingresa código de cupón
+    APP->>API: Envía cupón del usuario
+    API->>DB: Valida y aplica cupón
+    DB-->>API: Cupón aplicado
+    API-->>APP: Respuesta 200 + descuento
+    APP-->>U: Muestra descuento activo
 ```
 
 ## 12) Consulta de saldo y transacciones e-wallet
@@ -284,28 +208,14 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor U as Usuario
-    participant UI as Pantalla Wallet
-    participant VM as UserViewModel
-    participant UC as UserUseCase
-    participant REPO as UserRepositoryImpl
-    participant API as API REST
+    participant APP as App Móvil
+    participant API as Servidor API
+    participant DB as Base de Datos
 
-    U->>UI: Abre wallet
-    UI->>VM: loadBalance(userId)
-    VM->>UC: getEwalletBalance(userId)
-    UC->>REPO: getEwalletBalance(userId)
-    REPO->>API: GET /wallet/balance
-    API-->>REPO: 200 + balance
-    REPO-->>UC: Result.success(balance)
-    UC-->>VM: balance
-
-    UI->>VM: loadEwalletTransactions(userId)
-    VM->>UC: getEwalletTransactions(userId)
-    UC->>REPO: getEwalletTransactions(userId)
-    REPO->>API: GET /wallet/transactions
-    API-->>REPO: 200 + transactions[]
-    REPO-->>UC: Result.success(transactions)
-    UC-->>VM: transactions
-    VM-->>UI: userState = Success(walletData)
-    UI-->>U: Muestra saldo e historial
+    U->>APP: Abre wallet
+    APP->>API: Solicita saldo y transacciones
+    API->>DB: Consulta balance y movimientos
+    DB-->>API: Retorna balance + transactions[]
+    API-->>APP: Respuesta 200 + walletData
+    APP-->>U: Muestra saldo e historial
 ```
