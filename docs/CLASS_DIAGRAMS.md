@@ -388,7 +388,7 @@ classDiagram
 
     SecureStorage --> AuthPreferences : fachada simplificada
     AuthPreferences --> Crypto : cifrado/descifrado
-    AuthPreferences --> Base64 : codificación
+    AuthPreferences --> Base64 : codificación/decodificación
 ```
 
 ## 4) Patrón Strategy (expect/actual de KMM)
