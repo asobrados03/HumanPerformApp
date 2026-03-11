@@ -347,15 +347,15 @@ classDiagram
 classDiagram
     class SecureStorage {
         <<singleton>>
-        -prefs: DataStore<Preferences>
+        -prefs: DataStore~Preferences~
 
         +initialize(prefs: DataStore<Preferences>) Unit
         +getAccessToken() String?
         +getRefreshToken() String?
         +saveTokens(access: String, refresh: String) Unit
-        +accessTokenFlow() Flow<String>
+        +accessTokenFlow() Flow~String~
         +saveUser(user: User) Unit
-        +userFlow() Flow<User?>
+        +userFlow() Flow~User?~
         +clear() Unit
     }
 
