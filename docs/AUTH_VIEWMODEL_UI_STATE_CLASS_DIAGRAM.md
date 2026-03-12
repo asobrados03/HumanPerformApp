@@ -5,16 +5,19 @@ Este diagrama muestra **solo** la relación entre `AuthViewModel` y las clases d
 ```mermaid
 classDiagram
     direction LR
-
     class AuthViewModel {
-      -_loginState: MutableStateFlow~LoginState~
-      +loginState: StateFlow~LoginState~
-      -_registerState: MutableStateFlow~RegisterState~
-      +registerState: StateFlow~RegisterState~
-      -_isChangingPassword: MutableStateFlow~ChangePasswordState~
-      +isChangingPassword: StateFlow~ChangePasswordState~
-      -_isResettingPassword: MutableStateFlow~ResetPasswordState~
-      +isResettingPassword: StateFlow~ResetPasswordState~
+          -authUseCase: AuthUseCase
+          +loginState: StateFlow~LoginState~
+          +registerState: StateFlow~RegisterState~
+          +isChangingPassword: StateFlow~ChangePasswordState~
+          +isResettingPassword: StateFlow~ResetPasswordState~
+          +login(email, password)
+          +register(data)
+          +resetPassword(email)
+          +changePassword(currentPassword, newPassword, confirmPassword, userId)
+          +resetStates()
+          +resetChangePasswordState()
+          +resetResettingPasswordState()
     }
 
     class LoginState {
