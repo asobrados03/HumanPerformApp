@@ -326,7 +326,7 @@ classDiagram
     ApiClient --> SecureStorage : bearer tokens
 ```
 
-## 6) Capa androidApp (arranque, navegación y recordatorios)
+## 6) Capa androidApp (arranque y navegación)
 
 ```mermaid
 classDiagram
@@ -344,17 +344,26 @@ classDiagram
       +Navigation(navController, onPlaySound)
     }
 
-    class SessionReminderWorker {
-      +doWork(): Result
-    }
 
-    class NotificationScheduler {
-      +scheduleSessionReminder(...)
-      +cancelSessionReminder(...)
+    class DataStoreProvider {
+        <<singleton>>
+        - INSTANCE: DataStore~Preferences~
+        + get(context: Context) DataStore~Preferences~
+        - createDataStore(context: Context) DataStore~Preferences~
     }
+    class SecureStorage {
+        <<singleton>>
+        -prefs: DataStore~Preferences~
 
-    class DataStoreProvider
-    class SecureStorage
+        +initialize(prefs: DataStore<Preferences>) Unit
+        +getAccessToken() String?
+        +getRefreshToken() String?
+        +saveTokens(access: String, refresh: String) Unit
+        +accessTokenFlow() Flow~String~
+        +saveUser(user: User) Unit
+        +userFlow() Flow~User?~
+        +clear() Unit
+    }
 
     HumanPerformApp --> MainActivity : lanza app
     HumanPerformApp ..> Navigation : flujo UI
@@ -362,9 +371,6 @@ classDiagram
     MainActivity --> DataStoreProvider : get(context)
     MainActivity --> SecureStorage : initialize()
     MainActivity --> Navigation : compose root
-
-    NotificationScheduler --> SessionReminderWorker : encola worker
-    SessionReminderWorker ..> NotificationScheduler : ciclo recordatorios
 ```
 
 ## 7) Cobertura del proyecto y lectura sugerida

@@ -347,15 +347,15 @@ classDiagram
 classDiagram
     class SecureStorage {
         <<singleton>>
-        -prefs: DataStore<Preferences>
+        -prefs: DataStore~Preferences~
 
         +initialize(prefs: DataStore<Preferences>) Unit
         +getAccessToken() String?
         +getRefreshToken() String?
         +saveTokens(access: String, refresh: String) Unit
-        +accessTokenFlow() Flow<String>
+        +accessTokenFlow() Flow~String~
         +saveUser(user: User) Unit
-        +userFlow() Flow<User?>
+        +userFlow() Flow~User?~
         +clear() Unit
     }
 
@@ -388,7 +388,7 @@ classDiagram
 
     SecureStorage --> AuthPreferences : fachada simplificada
     AuthPreferences --> Crypto : cifrado/descifrado
-    AuthPreferences --> Base64 : codificación
+    AuthPreferences --> Base64 : codificación/decodificación
 ```
 
 ## 4) Patrón Strategy (expect/actual de KMM)
