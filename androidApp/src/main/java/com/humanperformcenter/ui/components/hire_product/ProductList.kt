@@ -23,6 +23,7 @@ import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.components.app.AppCard
+import java.util.Locale
 
 @Composable
 fun ProductList(
@@ -91,7 +92,7 @@ fun ProductList(
                         }
 
                         Text(
-                            text = "${finalPrice.toInt()}€",
+                            text = String.format(Locale("es", "ES"), "%.2f€", finalPrice),
                             fontWeight = if (isHired) FontWeight.Normal else FontWeight.Bold,
                             color = if (isHired) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
                         )

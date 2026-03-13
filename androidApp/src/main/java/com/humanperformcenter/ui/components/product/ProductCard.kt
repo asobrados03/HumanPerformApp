@@ -14,6 +14,7 @@ import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.app.AppCard
+import java.util.Locale
 
 @Composable
 fun ProductCard(product: Product, onClick: () -> Unit) {
@@ -33,7 +34,7 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
             )
             Text(product.name, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             Text(
-                text = "${product.price?.toInt() ?: 0}€",
+                text = String.format(Locale("es", "ES"), "%.2f€", product.price ?: 0.0),
                 fontWeight = FontWeight.Bold,
                 color = Color.Red
             )
