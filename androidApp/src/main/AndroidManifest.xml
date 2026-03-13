@@ -9,6 +9,7 @@
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="false"
         android:name=".app.HumanPerformApp"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@drawable/ic_human_perform_app"
