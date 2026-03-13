@@ -6,6 +6,7 @@
 //  Copyright © 2025 orgName. All rights reserved.
 //
 import SwiftUI
+import Foundation
 import shared
 
 struct ProductRow: View {
@@ -29,7 +30,7 @@ struct ProductRow: View {
                 // Aquí podríamos añadir más info si hubiera
             }
             Spacer()
-            Text("\(Int(producto.price?.doubleValue ?? 0))€")
+            Text(String(format: "%.2f€", producto.price?.doubleValue ?? 0))
                 .fontWeight(.bold)
                 .foregroundColor(.red)
         }
