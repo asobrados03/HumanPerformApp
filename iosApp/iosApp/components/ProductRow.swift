@@ -10,7 +10,7 @@ import Foundation
 import shared
 
 struct ProductRow: View {
-    let producto: ServiceItem
+    let producto: Product
     var body: some View {
         HStack(alignment: .center) {
             if let imageName = producto.image {
