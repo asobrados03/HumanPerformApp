@@ -1,10 +1,3 @@
-//
-//  MyProductsView.swift
-//  iosApp
-//
-//  Created by user284952 on 8/25/25.
-//  Copyright © 2025 orgName. All rights reserved.
-//
 import SwiftUI
 import KMPObservableViewModelSwiftUI
 import shared
@@ -12,47 +5,69 @@ import shared
 struct MyProductsView: View {
     @StateViewModel var serviceProductViewModel: shared.ServiceProductViewModel = makeServiceProductViewModel()
     @StateViewModel var userViewModel: shared.UserViewModel = makeUserViewModel()
-    @State private var selectedProduct: ServiceItem? = nil
+    @State private var selectedProduct: Product? = nil
     @State private var showProductOptions = false
     @State private var showUnsubscribeConfirm = false
+
+    var onOpenProductDetail: (Int) -> Void = { _ in }
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                if serviceProductViewModel.userProducts.isEmpty {
-                    Text("No tienes productos contratados.")
-                        .foregroundColor(.secondary)
-                } else {
-                    ForEach(serviceProductViewModel.userProductsDistinct, id: \.id) { producto in
-                        ProductRow(producto: producto)
-                            .onTapGesture {
-                                selectedProduct = producto
-                                showProductOptions = true
-                            }
+                switch serviceProductViewModel.userProductsState {
+                case is UserProductsUiStateLoading:
+                    ProgressView()
+                        .frame(maxWidth: .infinity, alignment: .center)
+                case let success as UserProductsUiStateSuccess:
+                    if success.products.isEmpty {
+                        Text("No tienes productos contratados.")
+                            .foregroundColor(.secondary)
+                    } else {
+                        ForEach(success.products, id: \.id) { producto in
+                            ProductRow(producto: producto)
+                                .onTapGesture {
+                                    selectedProduct = producto
+                                    showProductOptions = true
+                                }
+                        }
                     }
+                case let error as UserProductsUiStateError:
+                    VStack(spacing: 8) {
+                        Text(error.message)
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+
+                        if let id = userViewModel.currentUser?.id {
+                            Button("Reintentar") {
+                                serviceProductViewModel.loadUserProducts(userId: id)
+                            }
+                        }
+                    }
+                default:
+                    EmptyView()
                 }
             }
             .padding(12)
         }
         .onAppear {
-            if let id = userViewModel.currentUserId {
+            if let id = userViewModel.currentUser?.id {
                 serviceProductViewModel.loadUserProducts(userId: id)
             }
         }
-        .onChange(of: userViewModel.currentUserId) { newId in
+        .onChange(of: userViewModel.currentUser?.id) { newId in
             if let id = newId {
                 serviceProductViewModel.loadUserProducts(userId: id)
             }
         }
         .confirmationDialog(
             selectedProduct.map { "Producto: \($0.name)" } ?? "",
-            isPresented: $showProductOptions, titleVisibility: .visible
+            isPresented: $showProductOptions,
+            titleVisibility: .visible
         ) {
             Button("Ver detalles") {
-                // Navegar a detalle (podría usar NavigationLink, o setear estado para NavigationDestination)
-                serviceProductViewModel.productoSeleccionado = selectedProduct
-                // Suponiendo que ServicesView está en NavigationView, podríamos navegar:
-                // navigateToProductDetail(selectedProduct)
+                if let productId = selectedProduct?.id {
+                    onOpenProductDetail(productId)
+                }
             }
             Button("Darse de baja", role: .destructive) {
                 showUnsubscribeConfirm = true
@@ -64,8 +79,8 @@ struct MyProductsView: View {
         .alert("Confirmar baja", isPresented: $showUnsubscribeConfirm) {
             Button("Cancelar", role: .cancel) { }
             Button("Sí, darse de baja", role: .destructive) {
-                if let prod = selectedProduct {
-                    serviceProductViewModel.unassignProductFromUser(productId: prod.id, userId: userViewModel.currentUserId ?? -1)
+                if let prod = selectedProduct, let userId = userViewModel.currentUser?.id {
+                    serviceProductViewModel.unassignProductFromUser(productId: prod.id, userId: userId)
                 }
                 selectedProduct = nil
             }
@@ -74,4 +89,3 @@ struct MyProductsView: View {
         }
     }
 }
-

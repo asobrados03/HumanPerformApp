@@ -1,11 +1,3 @@
-//
-//  HireServicesView.swift
-//  iosApp
-//
-//  Created by user284952 on 8/25/25.
-//  Copyright © 2025 orgName. All rights reserved.
-//
-
 import SwiftUI
 import shared
 import KMPObservableViewModelSwiftUI
@@ -13,29 +5,50 @@ import KMPObservableViewModelSwiftUI
 struct HireServicesView: View {
     @StateViewModel var viewModel: shared.ServiceProductViewModel = makeServiceProductViewModel()
     @StateViewModel var sessionViewModel: shared.UserViewModel = makeUserViewModel()
-    
+
+    var onOpenHireProducts: (Int) -> Void = { _ in }
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                ForEach(viewModel.allServices, id: \.id) { servicio in
-                    ServiceRow(servicio: servicio, contratado: viewModel.userHasService(servicio.id))
-                        .onTapGesture {
-                            // Navegar a pantalla de contratar producto
-                            // e.g., set selected service in view model and navigate
-                            viewModel.selectedService = servicio
-                            // navigate to HireProductView
+                switch viewModel.serviceUiState {
+                case is ServiceUiStateLoading:
+                    ProgressView()
+                        .frame(maxWidth: .infinity, alignment: .center)
+                case let success as ServiceUiStateSuccess:
+                    ForEach(success.services, id: \.service.id) { model in
+                        ServiceRow(model: model)
+                            .onTapGesture {
+                                onOpenHireProducts(model.service.id)
+                            }
+                    }
+                case let error as ServiceUiStateError:
+                    VStack(spacing: 8) {
+                        Text(error.message)
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+
+                        if let userId = sessionViewModel.currentUser?.id {
+                            Button("Reintentar") {
+                                viewModel.loadAllServices(userId: userId)
+                            }
                         }
+                    }
+                default:
+                    EmptyView()
                 }
             }
             .padding(12)
         }
         .onAppear {
-            // Cuando la vista aparece, cargamos los datos necesarios
-            viewModel.loadAllServices()
-            if let userId = sessionViewModel.userId {
-                viewModel.loadUserProducts(userId: Int32(userId))
+            if let userId = sessionViewModel.currentUser?.id {
+                viewModel.loadAllServices(userId: userId)
+            }
+        }
+        .onChange(of: sessionViewModel.currentUser?.id) { newUserId in
+            if let userId = newUserId {
+                viewModel.loadAllServices(userId: userId)
             }
         }
     }
 }
-

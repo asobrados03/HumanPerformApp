@@ -10,8 +10,11 @@ import SwiftUI
 import shared
 
 struct ServiceRow: View {
-    let servicio: ServiceAvailable
-    let contratado: Bool
+    let model: ServiceUiModel
+
+    private var servicio: ServiceAvailable { model.service }
+    private var contratado: Bool { model.isHired }
+
     var body: some View {
         HStack(alignment: .center) {
             if let imageName = servicio.image {
@@ -52,4 +55,3 @@ struct ServiceRow: View {
         .padding(.vertical, 4)
     }
 }
-

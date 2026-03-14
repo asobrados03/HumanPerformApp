@@ -32,6 +32,8 @@
 		DBC55FF82E5F0F6D00E13D63 /* ElectronicWalletView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FF72E5F0F6D00E13D63 /* ElectronicWalletView.swift */; };
 		DBC55FFA2E5F0F7A00E13D63 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FF92E5F0F7A00E13D63 /* FavoritesView.swift */; };
 		DBC55FFC2E5F0F8A00E13D63 /* PaymentMethodsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FFB2E5F0F8A00E13D63 /* PaymentMethodsView.swift */; };
+		DCA100012E70000100AAA001 /* HireProductsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA100002E70000100AAA001 /* HireProductsView.swift */; };
+		DCA100032E70000200AAA001 /* ProductDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA100022E70000200AAA001 /* ProductDetailView.swift */; };
 		DBC55FFE2E5F163500E13D63 /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FFD2E5F163500E13D63 /* EditProfileView.swift */; };
 		DBC560002E5F164500E13D63 /* MyProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FFF2E5F164500E13D63 /* MyProfileView.swift */; };
 		DBE9A1252E606CB20006E288 /* EnterEmailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE9A1242E606CB20006E288 /* EnterEmailView.swift */; };
@@ -78,6 +80,8 @@
 		DBC55FF72E5F0F6D00E13D63 /* ElectronicWalletView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectronicWalletView.swift; sourceTree = "<group>"; };
 		DBC55FF92E5F0F7A00E13D63 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 		DBC55FFB2E5F0F8A00E13D63 /* PaymentMethodsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodsView.swift; sourceTree = "<group>"; };
+		DCA100002E70000100AAA001 /* HireProductsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HireProductsView.swift; sourceTree = "<group>"; };
+		DCA100022E70000200AAA001 /* ProductDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductDetailView.swift; sourceTree = "<group>"; };
 		DBC55FFD2E5F163500E13D63 /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
 		DBC55FFF2E5F164500E13D63 /* MyProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyProfileView.swift; sourceTree = "<group>"; };
 		DBE9A1242E606CB20006E288 /* EnterEmailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnterEmailView.swift; sourceTree = "<group>"; };
@@ -152,6 +156,8 @@
 				DBC55FF72E5F0F6D00E13D63 /* ElectronicWalletView.swift */,
 				DBC55FF92E5F0F7A00E13D63 /* FavoritesView.swift */,
 				DBC55FFB2E5F0F8A00E13D63 /* PaymentMethodsView.swift */,
+				DCA100002E70000100AAA001 /* HireProductsView.swift */,
+				DCA100022E70000200AAA001 /* ProductDetailView.swift */,
 				DB39E4402E5CD1C0002CB3B0 /* CalendarView.swift */,
 				DB39E42C2E5CC86D002CB3B0 /* HireServicesView.swift */,
 				DB39E42A2E5CC834002CB3B0 /* MyProductsView.swift */,
@@ -298,6 +304,8 @@
 				DBC55FF22E5F0F4600E13D63 /* AddCouponView.swift in Sources */,
 				DBC55FFA2E5F0F7A00E13D63 /* FavoritesView.swift in Sources */,
 				DBC55FFC2E5F0F8A00E13D63 /* PaymentMethodsView.swift in Sources */,
+				DCA100012E70000100AAA001 /* HireProductsView.swift in Sources */,
+				DCA100032E70000200AAA001 /* ProductDetailView.swift in Sources */,
 				DB39E4412E5CD1C6002CB3B0 /* CalendarView.swift in Sources */,
 				DB9F31982E5DAE4700BE1BAA /* AppState.swift in Sources */,
 				DBC55FFE2E5F163500E13D63 /* EditProfileView.swift in Sources */,
