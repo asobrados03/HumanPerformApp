@@ -1,11 +1,3 @@
-//
-//  HireServicesView.swift
-//  iosApp
-//
-//  Created by user284952 on 8/25/25.
-//  Copyright © 2025 orgName. All rights reserved.
-//
-
 import SwiftUI
 import shared
 import KMPObservableViewModelSwiftUI
@@ -13,7 +5,9 @@ import KMPObservableViewModelSwiftUI
 struct HireServicesView: View {
     @StateViewModel var viewModel: shared.ServiceProductViewModel = makeServiceProductViewModel()
     @StateViewModel var sessionViewModel: shared.UserViewModel = makeUserViewModel()
-    
+
+    var onOpenHireProducts: (Int) -> Void = { _ in }
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
@@ -24,6 +18,9 @@ struct HireServicesView: View {
                 case let success as ServiceUiStateSuccess:
                     ForEach(success.services, id: \.service.id) { model in
                         ServiceRow(model: model)
+                            .onTapGesture {
+                                onOpenHireProducts(model.service.id)
+                            }
                     }
                 case let error as ServiceUiStateError:
                     VStack(spacing: 8) {

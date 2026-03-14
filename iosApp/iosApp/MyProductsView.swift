@@ -1,10 +1,3 @@
-//
-//  MyProductsView.swift
-//  iosApp
-//
-//  Created by user284952 on 8/25/25.
-//  Copyright © 2025 orgName. All rights reserved.
-//
 import SwiftUI
 import KMPObservableViewModelSwiftUI
 import shared
@@ -15,6 +8,8 @@ struct MyProductsView: View {
     @State private var selectedProduct: Product? = nil
     @State private var showProductOptions = false
     @State private var showUnsubscribeConfirm = false
+
+    var onOpenProductDetail: (Int) -> Void = { _ in }
 
     var body: some View {
         ScrollView {
@@ -66,10 +61,13 @@ struct MyProductsView: View {
         }
         .confirmationDialog(
             selectedProduct.map { "Producto: \($0.name)" } ?? "",
-            isPresented: $showProductOptions, titleVisibility: .visible
+            isPresented: $showProductOptions,
+            titleVisibility: .visible
         ) {
             Button("Ver detalles") {
-                // Espacio para navegación a detalle (pendiente de pantalla iOS equivalente)
+                if let productId = selectedProduct?.id {
+                    onOpenProductDetail(productId)
+                }
             }
             Button("Darse de baja", role: .destructive) {
                 showUnsubscribeConfirm = true

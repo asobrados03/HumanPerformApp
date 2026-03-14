@@ -1,11 +1,3 @@
-//
-//  ServicesView.swift
-//  iosApp
-//
-//  Created by user284952 on 8/25/25.
-//  Copyright © 2025 orgName. All rights reserved.
-//
-
 import SwiftUI
 
 enum ServicesSection: Int, CaseIterable, Identifiable {
@@ -16,6 +8,9 @@ enum ServicesSection: Int, CaseIterable, Identifiable {
 
 struct ServicesView: View {
     @SceneStorage("services.selected") private var selectedRaw = ServicesSection.myProducts.rawValue
+    private let onOpenHireProducts: (Int) -> Void
+    private let onOpenProductDetail: (Int) -> Void
+
     private var selected: Binding<ServicesSection> {
         Binding(
             get: { ServicesSection(rawValue: selectedRaw) ?? .myProducts },
@@ -23,9 +18,14 @@ struct ServicesView: View {
         )
     }
 
-    // 👇 inyección clara
-    init(initial: ServicesSection = .myProducts) {
+    init(
+        initial: ServicesSection = .myProducts,
+        onOpenHireProducts: @escaping (Int) -> Void = { _ in },
+        onOpenProductDetail: @escaping (Int) -> Void = { _ in }
+    ) {
         _selectedRaw = SceneStorage(wrappedValue: initial.rawValue, "services.selected")
+        self.onOpenHireProducts = onOpenHireProducts
+        self.onOpenProductDetail = onOpenProductDetail
     }
 
     var body: some View {
@@ -39,8 +39,10 @@ struct ServicesView: View {
             .padding(.horizontal)
 
             switch selected.wrappedValue {
-            case .myProducts: MyProductsView()
-            case .hire:       HireServicesView()
+            case .myProducts:
+                MyProductsView(onOpenProductDetail: onOpenProductDetail)
+            case .hire:
+                HireServicesView(onOpenHireProducts: onOpenHireProducts)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
