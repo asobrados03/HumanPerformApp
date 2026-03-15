@@ -3,7 +3,6 @@
 //  iosApp
 //
 //  Created by user284952 on 8/25/25.
-//  Updated by ChatGPT on 2025-08-28.
 //
 
 import SwiftUI
@@ -17,14 +16,16 @@ struct StatsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if statsViewModel.isLoading {
+                switch statsViewModel.uiState {
+                case is UserStatsStateLoading:
                     ProgressView()
                         .frame(maxWidth: .infinity, alignment: .center)
-                } else if let error = statsViewModel.error {
+
+                case let error as UserStatsStateError:
                     VStack(spacing: 12) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.red)
-                        Text("Error: \(error)")
+                        Text("Error: \(error.message)")
                             .foregroundColor(.red)
                             .multilineTextAlignment(.center)
                         Button(action: loadStats) {
@@ -32,18 +33,32 @@ struct StatsView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
-                } else {
+
+                case let success as UserStatsStateSuccess:
                     Text("📊 Tus estadísticas")
                         .font(.title3)
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
-                    StatCard(title: "📅 Entrenamientos del mes pasado",
-                             value: "\(statsViewModel.entrenamientosMesPasado) sesiones")
-                    StatCard(title: "🏋️ Entrenador más usado",
-                             value: statsViewModel.entrenadorMasUsado ?? "No hay datos disponibles")
-                    StatCard(title: "⏳ Reservas pendientes",
-                             value: "\(statsViewModel.reservasPendientes) sesiones pendientes")
+                    let workouts = Int(success.stats.lastMonthWorkouts)
+                    StatCard(
+                        title: "📅 Entrenamientos del mes pasado",
+                        value: workouts == 1 ? "1 sesión" : "\(workouts) sesiones"
+                    )
+
+                    StatCard(
+                        title: "🏋️ Entrenador más usado",
+                        value: success.stats.mostFrequentTrainer ?? "No hay datos disponibles"
+                    )
+
+                    let bookings = Int(success.stats.pendingBookings)
+                    StatCard(
+                        title: "⏳ Reservas pendientes",
+                        value: bookings == 1 ? "1 sesión pendiente" : "\(bookings) sesiones pendientes"
+                    )
+
+                default:
+                    EmptyView()
                 }
             }
             .padding(16)
@@ -56,7 +71,7 @@ struct StatsView: View {
 
     private func loadStats() {
         if let id = userViewModel.currentUserId {
-            statsViewModel.loadStats(userId: id)
+            statsViewModel.loadStatistics(userId: id)
         }
     }
 }
