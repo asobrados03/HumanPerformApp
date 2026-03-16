@@ -62,8 +62,8 @@ class UserUseCase(private val userRepository: UserRepository) {
         return userRepository.getUserCoupons(userId)
     }
 
-    suspend fun uploadDocument(name: String, data: ByteArray): Result<String> {
-        return userRepository.uploadDocument(name, data)
+    suspend fun uploadDocument(userId: Int, name: String, data: ByteArray): Result<String> {
+        return userRepository.uploadDocument(userId, name, data)
     }
 
     suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse> {

@@ -101,8 +101,8 @@ struct DocumentView: View {
     }
 
     private func upload() {
-        guard let data = documentData else { return }
-        userVM.uploadDocument(name: documentName, data: data)
+        guard let data = documentData, let userId = userVM.currentUserId else { return }
+        userVM.uploadDocument(userId: userId, name: documentName, data: data)
     }
 }
 

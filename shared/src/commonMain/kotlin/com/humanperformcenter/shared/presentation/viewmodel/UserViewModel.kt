@@ -393,10 +393,12 @@ class UserViewModel(
     }
 
 
-    fun uploadDocument(name: String, data: ByteArray) {
+
+
+    fun uploadDocument(userId: Int, name: String, data: ByteArray) {
         _uploadState.value = UploadState.Loading
         viewModelScope.launch {
-            userUseCase.uploadDocument(name, data)
+            userUseCase.uploadDocument(userId, name, data)
                 .onSuccess { message ->
                     _uploadState.value = UploadState.Success(message)
                 }

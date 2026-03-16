@@ -22,7 +22,7 @@ interface UserRepository {
     suspend fun getUserStats(customerId: Int): Result<UserStatistics>
     suspend fun addCouponToUser(userId: Int, couponCode: String): Result<Unit>
     suspend fun getUserCoupons(userId: Int): Result<List<Coupon>>
-    suspend fun uploadDocument(name: String, data: ByteArray): Result<String>
+    suspend fun uploadDocument(userId: Int, name: String, data: ByteArray): Result<String>
     suspend fun getEwalletBalance(userId: Int): Result<Double?>
     suspend fun getEwalletTransactions(userId: Int): Result<List<EwalletTransaction>>
 }
