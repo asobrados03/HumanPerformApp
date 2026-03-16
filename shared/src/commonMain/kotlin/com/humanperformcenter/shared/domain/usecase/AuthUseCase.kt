@@ -19,6 +19,10 @@ class AuthUseCase(private val authRepository: AuthRepository) {
         return authRepository.resetPassword(email)
     }
 
+    suspend fun logout(): Result<Unit> {
+        return authRepository.logout()
+    }
+
     suspend fun changePassword(
         currentPassword: String,
         newPassword: String,

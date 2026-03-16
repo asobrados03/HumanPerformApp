@@ -51,7 +51,7 @@ object ApiClient {
                     }
 
                     try {
-                        val resp = authClient.post("$BASE/mobile/refresh") {
+                        val resp = authClient.post("$BASE/mobile/tokens/refresh") {
                             markAsRefreshTokenRequest()
                             bearerAuth(oldRefresh)
                         }
