@@ -48,6 +48,7 @@ fun DocumentScreen(
     val context = LocalContext.current
 
     val uiState by userViewModel.uploadState.collectAsStateWithLifecycle()
+    val user by userViewModel.userData.collectAsStateWithLifecycle()
 
     // Estados para el documento seleccionado
     var documentBytes by remember { mutableStateOf<ByteArray?>(null) }
@@ -119,7 +120,7 @@ fun DocumentScreen(
                 Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        userViewModel.uploadDocument(documentName, documentBytes!!)
+                        user?.id?.let { userViewModel.uploadDocument(it, documentName, documentBytes!!) }
                     },
                     enabled = documentBytes != null && uiState !is UploadState.Loading
                 ) {

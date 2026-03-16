@@ -393,10 +393,27 @@ class UserViewModel(
     }
 
 
-    fun uploadDocument(name: String, data: ByteArray) {
+    fun deleteUserCoupon(userId: Int, code: String) = viewModelScope.launch {
+        _couponUiState.update { it.copy(isLoading = true, error = null) }
+
+        userUseCase.deleteUserCoupon(userId, code).onSuccess {
+            userUseCase.getUserCoupons(userId).onSuccess { updatedCoupons ->
+                _couponUiState.update {
+                    it.copy(isLoading = false, currentCoupons = updatedCoupons)
+                }
+            }.onFailure { ex ->
+                _couponUiState.update { it.copy(isLoading = false, error = ex.message) }
+            }
+        }.onFailure { ex ->
+            _couponUiState.update { it.copy(isLoading = false, error = ex.message) }
+        }
+    }
+
+
+    fun uploadDocument(userId: Int, name: String, data: ByteArray) {
         _uploadState.value = UploadState.Loading
         viewModelScope.launch {
-            userUseCase.uploadDocument(name, data)
+            userUseCase.uploadDocument(userId, name, data)
                 .onSuccess { message ->
                     _uploadState.value = UploadState.Success(message)
                 }

@@ -138,21 +138,26 @@ object UserRepositoryImpl: UserRepository {
 
     override suspend fun getCoaches(): Result<List<Professional>> = withContext(Dispatchers.IO) {
         return@withContext try {
-            val resp: HttpResponse = ApiClient.apiClient.get(
-                "${ApiClient.baseUrl}/mobile/list_coaches"
-            ) {
+            val resp: HttpResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/coaches") {
                 contentType(ContentType.Application.Json)
+                expectSuccess = false
             }
 
-            if (resp.status == HttpStatusCode.OK) {
-                val coaches: List<Professional> = resp.body()
-                Result.success(coaches)
+            val effectiveResponse = if (resp.status == HttpStatusCode.NotFound) {
+                ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/list_coaches") {
+                    contentType(ContentType.Application.Json)
+                    expectSuccess = false
+                }
             } else {
-                Result.failure(Exception("Error al leer entrenadores: código HTTP " +
-                        "${resp.status.value}"))
+                resp
+            }
+
+            if (effectiveResponse.status == HttpStatusCode.OK) {
+                Result.success(effectiveResponse.body<List<Professional>>())
+            } else {
+                Result.failure(Exception("Error al leer entrenadores: código HTTP ${effectiveResponse.status.value}"))
             }
         } catch (e: Exception) {
-            // Si hay timeout, red de falla, JSON malformado, etc.
             Result.failure(e)
         }
     }
@@ -307,14 +312,23 @@ object UserRepositoryImpl: UserRepository {
     override suspend fun getUserStats(customerId: Int)
     : Result<UserStatistics> = withContext(Dispatchers.IO) {
         return@withContext try {
-            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-stats") {
-                url { parameters.append("user_id", customerId.toString()) }
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/users/$customerId/stats") {
+                expectSuccess = false
             }
 
-            if (response.status.value in 200..299) {
-                Result.success(response.body<UserStatistics>())
+            val effectiveResponse = if (response.status == HttpStatusCode.NotFound) {
+                ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-stats") {
+                    url { parameters.append("user_id", customerId.toString()) }
+                    expectSuccess = false
+                }
             } else {
-                Result.failure(Exception("Error HTTP: ${response.status.value}"))
+                response
+            }
+
+            if (effectiveResponse.status.value in 200..299) {
+                Result.success(effectiveResponse.body<UserStatistics>())
+            } else {
+                Result.failure(Exception("Error HTTP: ${effectiveResponse.status.value}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -326,24 +340,62 @@ object UserRepositoryImpl: UserRepository {
         couponCode: String
     ): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
-            val response =
+            val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/users/$userId/coupons") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf("coupon_code" to couponCode))
+                expectSuccess = false
+            }
+
+            val effectiveResponse = if (response.status == HttpStatusCode.NotFound) {
                 ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
                     contentType(ContentType.Application.Json)
                     setBody(mapOf("coupon_code" to couponCode))
                     expectSuccess = false
                 }
+            } else {
+                response
+            }
 
-            when (response.status) {
-                HttpStatusCode.NoContent -> Unit
-
+            when (effectiveResponse.status) {
+                HttpStatusCode.NoContent, HttpStatusCode.OK, HttpStatusCode.Created -> Unit
                 else -> {
                     val error = try {
-                        response.body<ErrorResponse>()
+                        effectiveResponse.body<ErrorResponse>()
                     } catch (_: Exception) {
                         null
                     }
-                    val message = error?.error
-                        ?: "HTTP ${response.status.value}"
+                    val message = error?.error ?: "HTTP ${effectiveResponse.status.value}"
+                    throw Exception(message)
+                }
+            }
+        }
+    }
+
+
+
+    override suspend fun deleteUserCoupon(userId: Int, couponCode: String): Result<Unit> = runCatching {
+        withContext(Dispatchers.IO) {
+            val response = ApiClient.apiClient.delete("${ApiClient.baseUrl}/mobile/users/$userId/coupons/$couponCode") {
+                expectSuccess = false
+            }
+
+            val effectiveResponse = if (response.status == HttpStatusCode.NotFound) {
+                ApiClient.apiClient.delete("${ApiClient.baseUrl}/mobile/user/$userId/coupon/$couponCode") {
+                    expectSuccess = false
+                }
+            } else {
+                response
+            }
+
+            when (effectiveResponse.status) {
+                HttpStatusCode.NoContent, HttpStatusCode.OK -> Unit
+                else -> {
+                    val error = try {
+                        effectiveResponse.body<ErrorResponse>()
+                    } catch (_: Exception) {
+                        null
+                    }
+                    val message = error?.error ?: "HTTP ${effectiveResponse.status.value}"
                     throw Exception(message)
                 }
             }
@@ -352,33 +404,35 @@ object UserRepositoryImpl: UserRepository {
 
     override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> = runCatching {
         withContext(Dispatchers.IO) {
-            val response =
-                ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
-                    url {
-                        parameters.append(
-                            "user_id",
-                            userId.toString()
-                        )
-                    } // (elige uno: path o query)
-                }
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/users/$userId/coupons") {
+                expectSuccess = false
+            }
 
-            when (response.status) {
-                HttpStatusCode.NoContent -> emptyList()                     // sin cupones
-                HttpStatusCode.OK -> response.body<List<Coupon>>()   // hay lista
+            val effectiveResponse = if (response.status == HttpStatusCode.NotFound) {
+                ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
+                    expectSuccess = false
+                }
+            } else {
+                response
+            }
+
+            when (effectiveResponse.status) {
+                HttpStatusCode.NoContent -> emptyList()
+                HttpStatusCode.OK -> effectiveResponse.body<List<Coupon>>()
                 HttpStatusCode.Forbidden -> {
-                    val errorResponse = response.body<ErrorResponse>()
+                    val errorResponse = effectiveResponse.body<ErrorResponse>()
                     throw Exception(errorResponse.error)
                 }
-
                 else -> {
-                    val raw = response.bodyAsText()
-                    throw Exception("Error obteniendo cupones: HTTP ${response.status.value} $raw")
+                    val raw = effectiveResponse.bodyAsText()
+                    throw Exception("Error obteniendo cupones: HTTP ${effectiveResponse.status.value} $raw")
                 }
             }
         }
     }
 
     override suspend fun uploadDocument(
+        userId: Int,
         name: String,
         data: ByteArray
     ): Result<String> =
@@ -403,19 +457,27 @@ object UserRepositoryImpl: UserRepository {
                     })
                 }
 
-                val response = ApiClient.apiClient.post(
-                    "${ApiClient.baseUrl}/mobile/user/document"
-                ) {
+                val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/users/$userId/documents") {
                     setBody(MultiPartFormDataContent(parts))
+                    expectSuccess = false
                 }
 
-                when (response.status) {
-                    HttpStatusCode.Created -> response.body<UploadResponse>().message
+                val effectiveResponse = if (response.status == HttpStatusCode.NotFound) {
+                    ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/user/document") {
+                        setBody(MultiPartFormDataContent(parts))
+                        expectSuccess = false
+                    }
+                } else {
+                    response
+                }
 
-                    HttpStatusCode.OK -> response.body<UploadResponse>().message
+                when (effectiveResponse.status) {
+                    HttpStatusCode.Created -> effectiveResponse.body<UploadResponse>().message
+
+                    HttpStatusCode.OK -> effectiveResponse.body<UploadResponse>().message
 
                     HttpStatusCode.BadRequest -> {
-                        throw Exception("Error en la solicitud: ${response.safeErrorBody()}")
+                        throw Exception("Error en la solicitud: ${effectiveResponse.safeErrorBody()}")
                     }
 
                     HttpStatusCode.Unauthorized -> {
@@ -439,7 +501,7 @@ object UserRepositoryImpl: UserRepository {
 
                     else ->
                         throw Exception(
-                            "HTTP ${response.status.value} → ${response.safeErrorBody()}"
+                            "HTTP ${effectiveResponse.status.value} → ${effectiveResponse.safeErrorBody()}"
                         )
                 }
             }
@@ -454,6 +516,74 @@ object UserRepositoryImpl: UserRepository {
                 else -> throw e
             }
         }
+
+
+    override suspend fun listUserDocuments(userId: Int): Result<List<String>> = runCatching {
+        withContext(Dispatchers.IO) {
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/users/$userId/documents") {
+                expectSuccess = false
+            }
+
+            val effectiveResponse = if (response.status == HttpStatusCode.NotFound) {
+                ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/document") {
+                    parameter("user_id", userId)
+                    expectSuccess = false
+                }
+            } else {
+                response
+            }
+
+            when (effectiveResponse.status) {
+                HttpStatusCode.OK -> effectiveResponse.body<List<String>>()
+                HttpStatusCode.NoContent -> emptyList()
+                else -> throw Exception("HTTP ${effectiveResponse.status.value} → ${effectiveResponse.safeErrorBody()}")
+            }
+        }
+    }
+
+    override suspend fun getUserDocument(userId: Int, filename: String): Result<ByteArray> = runCatching {
+        withContext(Dispatchers.IO) {
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/users/$userId/documents/$filename") {
+                expectSuccess = false
+            }
+
+            val effectiveResponse = if (response.status == HttpStatusCode.NotFound) {
+                ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/document/$filename") {
+                    parameter("user_id", userId)
+                    expectSuccess = false
+                }
+            } else {
+                response
+            }
+
+            when (effectiveResponse.status) {
+                HttpStatusCode.OK -> effectiveResponse.body<ByteArray>()
+                else -> throw Exception("HTTP ${effectiveResponse.status.value} → ${effectiveResponse.safeErrorBody()}")
+            }
+        }
+    }
+
+    override suspend fun deleteUserDocument(userId: Int, filename: String): Result<Unit> = runCatching {
+        withContext(Dispatchers.IO) {
+            val response = ApiClient.apiClient.delete("${ApiClient.baseUrl}/mobile/users/$userId/documents/$filename") {
+                expectSuccess = false
+            }
+
+            val effectiveResponse = if (response.status == HttpStatusCode.NotFound) {
+                ApiClient.apiClient.delete("${ApiClient.baseUrl}/mobile/user/document/$filename") {
+                    parameter("user_id", userId)
+                    expectSuccess = false
+                }
+            } else {
+                response
+            }
+
+            when (effectiveResponse.status) {
+                HttpStatusCode.NoContent, HttpStatusCode.OK -> Unit
+                else -> throw Exception("HTTP ${effectiveResponse.status.value} → ${effectiveResponse.safeErrorBody()}")
+            }
+        }
+    }
 
     private suspend fun HttpResponse.safeErrorBody(): String =
         try {
