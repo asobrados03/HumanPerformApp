@@ -4,6 +4,7 @@ import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.SessionNotificationManager
 import com.humanperformcenter.shared.data.model.user.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.user.User
+import com.humanperformcenter.shared.data.persistence.AuthRepositoryImpl
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
@@ -214,6 +215,13 @@ class UserViewModel(
             try {
                 _isLoggingOut.value = true
 
+                val remoteLogoutResult = AuthRepositoryImpl.logout()
+                if (remoteLogoutResult.isFailure) {
+                    log.debug {
+                        "DEBUG: Logout remoto falló, se aplicará limpieza local: ${remoteLogoutResult.exceptionOrNull()?.message}"
+                    }
+                }
+
                 SecureStorage.clear()
                 log.debug { "DEBUG: Almacenamiento local eliminado" }
 
@@ -224,8 +232,10 @@ class UserViewModel(
 
                 onSuccess()
             } catch (e: Exception) {
+                SecureStorage.clear()
                 _isLoggingOut.value = false
                 log.debug { "DEBUG: Error en logout: ${e.message}" }
+                onSuccess()
             }
         }
     }

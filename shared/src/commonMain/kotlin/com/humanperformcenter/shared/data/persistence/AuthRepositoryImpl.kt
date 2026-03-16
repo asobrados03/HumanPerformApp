@@ -17,6 +17,8 @@ import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
+import io.ktor.client.request.delete
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -34,7 +36,7 @@ object AuthRepositoryImpl : AuthRepository {
     override suspend fun login(email: String, password: String)
     : Result<LoginResponse> = withContext(Dispatchers.IO) {
         try {
-            val resp: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/login") {
+            val resp: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/sessions") {
                 contentType(ContentType.Application.Json)
                 setBody(mapOf("email" to email, "password" to password))
                 expectSuccess = false
@@ -96,7 +98,7 @@ object AuthRepositoryImpl : AuthRepository {
             }
 
             // 2) Envío con MULTIPART, sin tocar el Content-Type manualmente
-            val response: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/register") {
+            val response: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/users") {
                 setBody(MultiPartFormDataContent(parts))
             }
 
@@ -230,6 +232,32 @@ object AuthRepositoryImpl : AuthRepository {
         } catch (e: Exception) {
             e.printStackTrace()
             Result.failure(Exception("Error de conexión. Revisa tu conexión a internet e inténtalo de nuevo"))
+        }
+    }
+
+    override suspend fun logout(): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val accessToken = SecureStorage.getAccessToken()
+            if (accessToken.isNullOrBlank()) {
+                return@withContext Result.failure(Exception("No hay token de acceso para cerrar sesión"))
+            }
+
+            val response: HttpResponse = ApiClient.authClient.delete("${ApiClient.baseUrl}/mobile/sessions/current") {
+                bearerAuth(accessToken)
+                expectSuccess = false
+            }
+
+            when (response.status) {
+                HttpStatusCode.OK,
+                HttpStatusCode.NoContent,
+                HttpStatusCode.Unauthorized -> Result.success(Unit)
+                else -> {
+                    val err = runCatching { response.body<ErrorResponse>() }.getOrNull()
+                    Result.failure(Exception(err?.error ?: "Error al cerrar sesión remotamente"))
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }
