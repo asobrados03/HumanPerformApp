@@ -55,10 +55,6 @@ class UserUseCase(private val userRepository: UserRepository) {
         return userRepository.addCouponToUser(userId, couponCode)
     }
 
-    suspend fun deleteUserCoupon(userId: Int, couponCode: String): Result<Unit> {
-        return userRepository.deleteUserCoupon(userId, couponCode)
-    }
-
     /**
      * Recupera el cupón activo del usuario, o null si no tiene.
      */
@@ -68,18 +64,6 @@ class UserUseCase(private val userRepository: UserRepository) {
 
     suspend fun uploadDocument(userId: Int, name: String, data: ByteArray): Result<String> {
         return userRepository.uploadDocument(userId, name, data)
-    }
-
-    suspend fun listUserDocuments(userId: Int): Result<List<String>> {
-        return userRepository.listUserDocuments(userId)
-    }
-
-    suspend fun getUserDocument(userId: Int, filename: String): Result<ByteArray> {
-        return userRepository.getUserDocument(userId, filename)
-    }
-
-    suspend fun deleteUserDocument(userId: Int, filename: String): Result<Unit> {
-        return userRepository.deleteUserDocument(userId, filename)
     }
 
     suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse> {
