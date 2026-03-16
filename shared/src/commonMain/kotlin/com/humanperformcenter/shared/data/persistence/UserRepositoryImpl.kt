@@ -312,17 +312,24 @@ object UserRepositoryImpl: UserRepository {
     override suspend fun getUserStats(customerId: Int)
     : Result<UserStatistics> = withContext(Dispatchers.IO) {
         return@withContext try {
-            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/users/$customerId/stats") {
+            if (customerId <= 0) {
+                return@withContext Result.failure(Exception("ID de usuario inválido"))
+            }
+
+            val primaryResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/users/$customerId/stats") {
                 expectSuccess = false
             }
 
-            val effectiveResponse = if (response.status == HttpStatusCode.NotFound) {
+            val needsLegacyFallback = primaryResponse.status == HttpStatusCode.NotFound ||
+                primaryResponse.status == HttpStatusCode.BadRequest
+
+            val effectiveResponse = if (needsLegacyFallback) {
                 ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-stats") {
                     url { parameters.append("user_id", customerId.toString()) }
                     expectSuccess = false
                 }
             } else {
-                response
+                primaryResponse
             }
 
             if (effectiveResponse.status.value in 200..299) {

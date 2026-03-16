@@ -6,7 +6,7 @@ import com.humanperformcenter.shared.data.model.product_service.ServiceAvailable
 
 interface ServiceProductRepository {
     suspend fun getAllServices(): Result<List<ServiceAvailable>>
-    suspend fun getServiceProducts(serviceId: Int): Result<List<Product>>
+    suspend fun getServiceProducts(serviceId: Int, userId: Int): Result<List<Product>>
     suspend fun getUserProducts(customerId: Int): Result<List<Product>>
     suspend fun assignProductToUser(
         userId: Int,

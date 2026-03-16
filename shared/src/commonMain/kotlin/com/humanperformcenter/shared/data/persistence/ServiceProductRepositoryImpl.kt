@@ -52,7 +52,7 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
         }
     }
 
-    override suspend fun getServiceProducts(serviceId: Int)
+    override suspend fun getServiceProducts(serviceId: Int, userId: Int)
     : Result<List<Product>> = withContext(Dispatchers.IO) {
         return@withContext runCatching {
             // 1. Le pedimos a Ktor que deserialice la LISTA de productos
@@ -60,6 +60,7 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
                 "${ApiClient.baseUrl}/mobile/service-products"
             ) {
                 parameter("primary_service_id", serviceId)
+                parameter("user_id", userId)
             }
 
             // 2. Extraemos el cuerpo como la lista que realmente es

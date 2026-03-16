@@ -89,12 +89,12 @@ class ServiceProductViewModel(
         initialValue = false
     )
 
-    fun loadServiceProducts(serviceId: Int) {
+    fun loadServiceProducts(serviceId: Int, userId: Int) {
         viewModelScope.launch {
             // 1. Estado: CARGANDO
             updateState(serviceId, ServiceProductUiState.Loading)
 
-            val result = serviceProductUseCase.getServiceProducts(serviceId)
+            val result = serviceProductUseCase.getServiceProducts(serviceId, userId)
 
             // 2. Estado: ÉXITO o ERROR
             result.onSuccess { products ->

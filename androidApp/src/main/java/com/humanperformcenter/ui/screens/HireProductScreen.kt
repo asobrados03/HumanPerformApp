@@ -96,7 +96,7 @@ fun HireProductScreen(
 
     LaunchedEffect(serviceId, userData) {
         userData?.id?.let { uid ->
-            serviceProductViewModel.loadServiceProducts(serviceId)
+            serviceProductViewModel.loadServiceProducts(serviceId, uid)
             serviceProductViewModel.loadUserProducts(uid)
             serviceProductViewModel.loadUserCoupons(uid)
         }
@@ -125,7 +125,7 @@ fun HireProductScreen(
                 ErrorView(
                     message = productsState.message,
                     modifier = Modifier.padding(padding),
-                    onRetry = { serviceProductViewModel.loadServiceProducts(serviceId) }
+                    onRetry = { userData?.id?.let { uid -> serviceProductViewModel.loadServiceProducts(serviceId, uid) } }
                 )
             }
             is ServiceProductUiState.Success -> {
