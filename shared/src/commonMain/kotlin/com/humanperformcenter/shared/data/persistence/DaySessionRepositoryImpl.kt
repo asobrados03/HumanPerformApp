@@ -7,6 +7,7 @@ import com.humanperformcenter.shared.data.model.booking.DaySession
 import com.humanperformcenter.shared.data.model.booking.ReserveResponse
 import com.humanperformcenter.shared.data.model.booking.ReserveUpdateRequest
 import com.humanperformcenter.shared.data.model.booking.ReserveUpdateResponse
+import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.shared.domain.booking.BookingDomainException
 import com.humanperformcenter.shared.domain.repository.DaySessionRepository
@@ -116,11 +117,9 @@ object DaySessionRepositoryImpl : DaySessionRepository {
     override suspend fun getUserProductId(customerId: Int)
     : Result<Int> = withContext(Dispatchers.IO) {
         return@withContext runCatching {
-            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-product") {
-                parameter("user_id", customerId)
-            }
-            val json = response.body<Map<String, Int>>()
-            json["product_id"] ?: throw Exception("No se encontró el product_id")
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/users/$customerId/products")
+            val products = response.body<List<Product>>()
+            products.firstOrNull()?.id ?: throw Exception("No se encontró un producto activo")
         }
     }
 

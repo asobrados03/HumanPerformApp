@@ -72,36 +72,20 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
     override suspend fun getUserProducts(customerId: Int)
     : Result<List<Product>> = withContext(Dispatchers.IO) {
         return@withContext runCatching {
-            // 1. Hacemos la petición
-            val primaryResponse: HttpResponse = ApiClient.apiClient.get(
+            val response: HttpResponse = ApiClient.apiClient.get(
                 "${ApiClient.baseUrl}/mobile/users/$customerId/products"
             ) {
                 accept(ContentType.Application.Json)
+                expectSuccess = false
             }
 
-            if (primaryResponse.status.isSuccess()) {
-                val products: List<Product> = primaryResponse.body()
-                products
-            } else if (primaryResponse.status == HttpStatusCode.NotFound) {
-                val legacyResponse: HttpResponse = ApiClient.apiClient.get(
-                    "${ApiClient.baseUrl}/mobile/user-products"
-                ) {
-                    parameter("user_id", customerId)
-                    accept(ContentType.Application.Json)
-                }
-
-                if (legacyResponse.status.isSuccess()) {
-                    val products: List<Product> = legacyResponse.body()
-                    products
-                } else {
-                    val errorBody = legacyResponse.bodyAsText()
-                    log.error { "🔴 Error API legacy ${legacyResponse.status}: $errorBody" }
-                    throw Exception("Error del servidor: ${legacyResponse.status.value}")
-                }
+            if (response.status.isSuccess()) {
+                response.body<List<Product>>()
             } else {
-                val errorBody = primaryResponse.bodyAsText()
-                log.error { "🔴 Error API ${primaryResponse.status}: $errorBody" }
-                throw Exception("Error del servidor: ${primaryResponse.status.value}")
+                val errorBody = runCatching { response.bodyAsText() }.getOrNull().orEmpty()
+                log.error { "🔴 Error API ${response.status}: $errorBody" }
+                val detail = errorBody.ifBlank { "sin detalle" }
+                throw Exception("Error del servidor (${response.status.value}): $detail")
             }
         }
     }
