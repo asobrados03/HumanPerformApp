@@ -13,8 +13,8 @@ import com.humanperformcenter.shared.domain.repository.DaySessionRepository
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
-import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -32,6 +32,15 @@ import kotlinx.serialization.json.jsonPrimitive
 
 object DaySessionRepositoryImpl : DaySessionRepository {
     private val log = logging()
+
+    @kotlinx.serialization.Serializable
+    private data class ModifyBookingBody(
+        val new_coach_id: Int,
+        val new_service_id: Int,
+        val new_product_id: Int,
+        val new_session_timeslot_id: Int,
+        val new_start_date: String
+    )
 
     override suspend fun getSessionsByDay(productId: Int, weekStart: LocalDate)
     : Result<List<DaySession>> = withContext(Dispatchers.IO) {
@@ -57,7 +66,7 @@ object DaySessionRepositoryImpl : DaySessionRepository {
     override suspend fun makeBooking(bookingRequest: BookingRequest)
     : Result<ReserveResponse> = withContext(Dispatchers.IO) {
         return@withContext try {
-            val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/reserve") {
+            val response = ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/bookings") {
                 contentType(ContentType.Application.Json)
                 setBody(bookingRequest)
             }
@@ -75,15 +84,32 @@ object DaySessionRepositoryImpl : DaySessionRepository {
 
     override suspend fun modifyBookingSession(reserveUpdateRequest: ReserveUpdateRequest)
     : Result<ReserveUpdateResponse> = withContext(Dispatchers.IO) {
-        return@withContext runCatching {
-            val response = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/update-booking") {
+        return@withContext try {
+            val response = ApiClient.apiClient.patch(
+                "${ApiClient.baseUrl}/mobile/bookings/${reserveUpdateRequest.booking_id}"
+            ) {
                 contentType(ContentType.Application.Json)
-                setBody(reserveUpdateRequest)
+                setBody(
+                    ModifyBookingBody(
+                        new_coach_id = reserveUpdateRequest.new_coach_id,
+                        new_service_id = reserveUpdateRequest.new_service_id,
+                        new_product_id = reserveUpdateRequest.new_product_id,
+                        new_session_timeslot_id = reserveUpdateRequest.new_session_timeslot_id,
+                        new_start_date = reserveUpdateRequest.new_start_date
+                    )
+                )
             }
 
-            if (!response.status.isSuccess()) return@withContext Result.failure(Exception("Error al actualizar reserva: ${response.status}"))
+            if (!response.status.isSuccess()) {
+                return@withContext Result.failure(
+                    mapBookingError(response.status.value, response.bodyAsText())
+                )
+            }
 
-            response.body<ReserveUpdateResponse>()
+            Result.success(response.body<ReserveUpdateResponse>())
+        } catch (e: Exception) {
+            log.error { "❌ Excepción en modifyBookingSession: ${e.message}" }
+            Result.failure(e)
         }
     }
 
