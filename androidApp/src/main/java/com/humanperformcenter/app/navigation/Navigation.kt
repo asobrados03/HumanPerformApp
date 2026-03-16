@@ -374,13 +374,19 @@ fun Navigation(
                 val userId = userData?.id
 
                 LaunchedEffect(userId) {
-                    statsViewModel.loadStatistics(userId!!)
+                    if (userId != null && userId > 0) {
+                        statsViewModel.loadStatistics(userId)
+                    }
                 }
 
                 UserStatsScreen(
                     navController = navController,
                     statsViewModel = statsViewModel,
-                    onRetry = { statsViewModel.loadStatistics(userId ?: 0) }
+                    onRetry = {
+                        if (userId != null && userId > 0) {
+                            statsViewModel.loadStatistics(userId)
+                        }
+                    }
                 )
             }
             composable<ActiveProductDetail> { backStackEntry ->

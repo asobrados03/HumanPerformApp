@@ -62,7 +62,8 @@ struct HireProductsView: View {
                 VStack(spacing: 8) {
                     Text(error.message).foregroundColor(.red).multilineTextAlignment(.center)
                     Button("Reintentar") {
-                        serviceProductViewModel.loadServiceProducts(serviceId: serviceId)
+                        guard let userId = userViewModel.currentUser?.id else { return }
+                        serviceProductViewModel.loadServiceProducts(serviceId: serviceId, userId: userId)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -94,7 +95,7 @@ struct HireProductsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             guard let userId = userViewModel.currentUser?.id else { return }
-            serviceProductViewModel.loadServiceProducts(serviceId: serviceId)
+            serviceProductViewModel.loadServiceProducts(serviceId: serviceId, userId: userId)
             serviceProductViewModel.loadUserProducts(userId: userId)
             serviceProductViewModel.loadUserCoupons(userId: userId)
         }

@@ -23,6 +23,14 @@ class UserStatsViewModel(
 
     fun loadStatistics(userId: Int) {
         log.debug { "📊 Cargando estadísticas para userId: $userId" }
+
+        if (userId <= 0) {
+            val message = "ID de usuario inválido"
+            log.error { "❌ Error al cargar estadísticas: $message" }
+            _uiState.value = UserStatsState.Error(message)
+            return
+        }
+
         viewModelScope.launch {
             _uiState.value = UserStatsState.Loading
 
