@@ -65,12 +65,13 @@ object StripeRepositoryImpl : StripeRepository {
     override suspend fun createPaymentIntent(intentRequest: CreatePaymentIntentRequest)
     : Result<StripePaymentIntentResponse> = runCatching {
         withContext(Dispatchers.IO) {
-            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-intent") {
+            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-intents") {
                 contentType(ContentType.Application.Json)
                 setBody(intentRequest)
             }.body()
         }
     }
+
 
     override suspend fun createSetupConfig(userId: Int)
     : Result<StripeSetupConfigResponse> = runCatching {

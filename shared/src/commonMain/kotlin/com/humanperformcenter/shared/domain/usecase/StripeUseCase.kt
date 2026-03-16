@@ -31,7 +31,6 @@ class StripeUseCase (private val stripeRepository: StripeRepository) {
         return stripeRepository.createPaymentIntent(createPaymentIntentRequest)
     }
 
-
     suspend fun createSetupConfig(userId: Int): Result<StripeSetupConfigResponse> {
         return stripeRepository.createSetupConfig(userId)
     }
