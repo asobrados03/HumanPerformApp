@@ -72,22 +72,35 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
     : Result<List<Product>> = withContext(Dispatchers.IO) {
         return@withContext runCatching {
             // 1. Hacemos la petición
-            val response: HttpResponse = ApiClient.apiClient.get(
-                "${ApiClient.baseUrl}/mobile/user-products"
+            val primaryResponse: HttpResponse = ApiClient.apiClient.get(
+                "${ApiClient.baseUrl}/mobile/users/$customerId/products"
             ) {
-                parameter("user_id", customerId)
                 accept(ContentType.Application.Json)
             }
 
-            if (response.status.isSuccess()) {
-                // 2. Si es 2xx, deserializamos la lista directamente
-                val products: List<Product> = response.body()
+            if (primaryResponse.status.isSuccess()) {
+                val products: List<Product> = primaryResponse.body()
                 products
+            } else if (primaryResponse.status == HttpStatusCode.NotFound) {
+                val legacyResponse: HttpResponse = ApiClient.apiClient.get(
+                    "${ApiClient.baseUrl}/mobile/user-products"
+                ) {
+                    parameter("user_id", customerId)
+                    accept(ContentType.Application.Json)
+                }
+
+                if (legacyResponse.status.isSuccess()) {
+                    val products: List<Product> = legacyResponse.body()
+                    products
+                } else {
+                    val errorBody = legacyResponse.bodyAsText()
+                    log.error { "🔴 Error API legacy ${legacyResponse.status}: $errorBody" }
+                    throw Exception("Error del servidor: ${legacyResponse.status.value}")
+                }
             } else {
-                // 3. Si es error (4xx/5xx), lanzamos excepción para que la capture runCatching
-                val errorBody = response.bodyAsText()
-                log.error { "🔴 Error API ${response.status}: $errorBody" }
-                throw Exception("Error del servidor: ${response.status.value}")
+                val errorBody = primaryResponse.bodyAsText()
+                log.error { "🔴 Error API ${primaryResponse.status}: $errorBody" }
+                throw Exception("Error del servidor: ${primaryResponse.status.value}")
             }
         }
     }
@@ -98,11 +111,11 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
         paymentMethod: String,
         couponCode: String?
     ): Result<Int> = withContext(Dispatchers.IO) {
-        val requestBody = AssignProductRequest(userId, productId, paymentMethod, couponCode)
+        val requestBody = AssignProductRequest(productId, paymentMethod, couponCode)
 
         return@withContext try {
             val response =
-                ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/assign-product") {
+                ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/users/$userId/products") {
                     contentType(ContentType.Application.Json)
                     setBody(requestBody)
                 }
@@ -130,10 +143,8 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
     : Result<Unit> = withContext(Dispatchers.IO) {
         return@withContext try {
             val response = ApiClient.apiClient.delete(
-                "${ApiClient.baseUrl}/mobile/unassign-product") {
-                parameter("user_id", userId)
-                parameter("product_id", productId)
-            }
+                "${ApiClient.baseUrl}/mobile/users/$userId/products/$productId"
+            )
 
             if (response.status.isSuccess()) {
                 // Si el backend devuelve 200-299, es un éxito rotundo

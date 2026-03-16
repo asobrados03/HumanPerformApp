@@ -5,7 +5,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class AssignProductRequest(
-    @SerialName("user_id") val userId: Int,
     @SerialName("product_id") val productId: Int,
     @SerialName("payment_method") val paymentMethod: String,
     @SerialName("coupon_code") val couponCode: String?,
