@@ -288,7 +288,7 @@ object UserRepositoryImpl: UserRepository {
     : Result<Unit> = withContext(Dispatchers.IO) {
         return@withContext try {
             val response: HttpResponse = ApiClient.apiClient.delete(
-                "${ApiClient.baseUrl}/mobile/booking/$bookingId"
+                "${ApiClient.baseUrl}/mobile/bookings/$bookingId"
             )
 
             if (response.status == HttpStatusCode.OK) {
