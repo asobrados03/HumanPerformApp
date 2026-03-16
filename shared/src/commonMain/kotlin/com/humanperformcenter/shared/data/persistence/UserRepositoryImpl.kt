@@ -143,19 +143,10 @@ object UserRepositoryImpl: UserRepository {
                 expectSuccess = false
             }
 
-            val effectiveResponse = if (resp.status == HttpStatusCode.NotFound) {
-                ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/list_coaches") {
-                    contentType(ContentType.Application.Json)
-                    expectSuccess = false
-                }
+            if (resp.status == HttpStatusCode.OK) {
+                Result.success(resp.body<List<Professional>>())
             } else {
-                resp
-            }
-
-            if (effectiveResponse.status == HttpStatusCode.OK) {
-                Result.success(effectiveResponse.body<List<Professional>>())
-            } else {
-                Result.failure(Exception("Error al leer entrenadores: código HTTP ${effectiveResponse.status.value}"))
+                Result.failure(Exception("Error al leer entrenadores: código HTTP ${resp.status.value}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -316,26 +307,17 @@ object UserRepositoryImpl: UserRepository {
                 return@withContext Result.failure(Exception("ID de usuario inválido"))
             }
 
-            val primaryResponse = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/users/$customerId/stats") {
+            val response = ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/users/$customerId/stats") {
                 expectSuccess = false
             }
 
-            val needsLegacyFallback = primaryResponse.status == HttpStatusCode.NotFound ||
-                primaryResponse.status == HttpStatusCode.BadRequest
-
-            val effectiveResponse = if (needsLegacyFallback) {
-                ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user-stats") {
-                    url { parameters.append("user_id", customerId.toString()) }
-                    expectSuccess = false
-                }
+            if (response.status.value in 200..299) {
+                Result.success(response.body<UserStatistics>())
             } else {
-                primaryResponse
-            }
-
-            if (effectiveResponse.status.value in 200..299) {
-                Result.success(effectiveResponse.body<UserStatistics>())
-            } else {
-                Result.failure(Exception("Error HTTP: ${effectiveResponse.status.value}"))
+                val errorBody = runCatching { response.bodyAsText() }.getOrNull().orEmpty()
+                log.error { "🔴 Error API stats ${response.status}: $errorBody" }
+                val detail = errorBody.ifBlank { "sin detalle" }
+                Result.failure(Exception("Error HTTP ${response.status.value}: $detail"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -353,25 +335,15 @@ object UserRepositoryImpl: UserRepository {
                 expectSuccess = false
             }
 
-            val effectiveResponse = if (response.status == HttpStatusCode.NotFound) {
-                ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
-                    contentType(ContentType.Application.Json)
-                    setBody(mapOf("coupon_code" to couponCode))
-                    expectSuccess = false
-                }
-            } else {
-                response
-            }
-
-            when (effectiveResponse.status) {
+            when (response.status) {
                 HttpStatusCode.NoContent, HttpStatusCode.OK, HttpStatusCode.Created -> Unit
                 else -> {
                     val error = try {
-                        effectiveResponse.body<ErrorResponse>()
+                        response.body<ErrorResponse>()
                     } catch (_: Exception) {
                         null
                     }
-                    val message = error?.error ?: "HTTP ${effectiveResponse.status.value}"
+                    val message = error?.error ?: "HTTP ${response.status.value}"
                     throw Exception(message)
                 }
             }
@@ -388,24 +360,16 @@ object UserRepositoryImpl: UserRepository {
                 expectSuccess = false
             }
 
-            val effectiveResponse = if (response.status == HttpStatusCode.NotFound) {
-                ApiClient.apiClient.get("${ApiClient.baseUrl}/mobile/user/$userId/coupon") {
-                    expectSuccess = false
-                }
-            } else {
-                response
-            }
-
-            when (effectiveResponse.status) {
+            when (response.status) {
                 HttpStatusCode.NoContent -> emptyList()
-                HttpStatusCode.OK -> effectiveResponse.body<List<Coupon>>()
+                HttpStatusCode.OK -> response.body<List<Coupon>>()
                 HttpStatusCode.Forbidden -> {
-                    val errorResponse = effectiveResponse.body<ErrorResponse>()
+                    val errorResponse = response.body<ErrorResponse>()
                     throw Exception(errorResponse.error)
                 }
                 else -> {
-                    val raw = effectiveResponse.bodyAsText()
-                    throw Exception("Error obteniendo cupones: HTTP ${effectiveResponse.status.value} $raw")
+                    val raw = response.bodyAsText()
+                    throw Exception("Error obteniendo cupones: HTTP ${response.status.value} $raw")
                 }
             }
         }
@@ -442,22 +406,13 @@ object UserRepositoryImpl: UserRepository {
                     expectSuccess = false
                 }
 
-                val effectiveResponse = if (response.status == HttpStatusCode.NotFound) {
-                    ApiClient.apiClient.post("${ApiClient.baseUrl}/mobile/user/document") {
-                        setBody(MultiPartFormDataContent(parts))
-                        expectSuccess = false
-                    }
-                } else {
-                    response
-                }
+                when (response.status) {
+                    HttpStatusCode.Created -> response.body<UploadResponse>().message
 
-                when (effectiveResponse.status) {
-                    HttpStatusCode.Created -> effectiveResponse.body<UploadResponse>().message
-
-                    HttpStatusCode.OK -> effectiveResponse.body<UploadResponse>().message
+                    HttpStatusCode.OK -> response.body<UploadResponse>().message
 
                     HttpStatusCode.BadRequest -> {
-                        throw Exception("Error en la solicitud: ${effectiveResponse.safeErrorBody()}")
+                        throw Exception("Error en la solicitud: ${response.safeErrorBody()}")
                     }
 
                     HttpStatusCode.Unauthorized -> {
@@ -481,7 +436,7 @@ object UserRepositoryImpl: UserRepository {
 
                     else ->
                         throw Exception(
-                            "HTTP ${effectiveResponse.status.value} → ${effectiveResponse.safeErrorBody()}"
+                            "HTTP ${response.status.value} → ${response.safeErrorBody()}"
                         )
                 }
             }
