@@ -1,311 +1,396 @@
-//
-//  CalendarView.swift
-//  iosApp
-//
-//  Created by user284952 on 8/25/25.
-//  Copyright © 2025 orgName. All rights reserved.
-//
 import SwiftUI
 import KMPObservableViewModelSwiftUI
 import shared
 
-/// Lista de sesiones disponibles para la fecha seleccionada.
-private extension DateFormatter {
-    static let yyyymmdd: DateFormatter = {
-        let df = DateFormatter()
-        df.dateFormat = "yyyy-MM-dd"
-        df.locale = Locale(identifier: "en_US_POSIX")
-        df.timeZone = TimeZone(secondsFromGMT: 0)
-        return df
-    }()
-}
-
-/// Vista de calendario simple para iOS que replica la funcionalidad de la
-/// pantalla equivalente en Android, incluyendo filtros por servicio,
-/// comprobación de límites semanales, cuestionarios y notificaciones.
 struct CalendarView: View {
-    /// Mes actualmente mostrado. Se inicializa con la fecha actual.
-    @State private var currentMonth: Date = Date()
+    @StateViewModel private var daySessionViewModel = makeDaySessionViewModel()
+    @StateViewModel private var userViewModel = makeUserViewModel()
+    @StateViewModel private var serviceProductViewModel = makeServiceProductViewModel()
 
-    /// Día seleccionado por el usuario.
+    @State private var currentMonth: Date = Date()
     @State private var selectedDate: Date = Date()
 
-    /// ViewModel encargado de consultar las sesiones disponibles para cada día.
-    @StateViewModel private var daySessionViewModel = makeDaySessionViewModel()
-
-    /// Maneja los datos de sesión del usuario, incluyendo servicios permitidos.
-    @StateViewModel private var sessionViewModel = makeUserViewModel()
-
-    /// ViewModel del usuario para acciones sobre reservas.
-    @StateViewModel private var userViewModel = makeUserViewModel()
-
-    /// Servicio seleccionado por el usuario para filtrar las sesiones.
-    @State private var selectedServiceId: Int32? = nil
+    @State private var selectedProduct: Product?
+    @State private var selectedHour: String?
+    @State private var selectedCoach: DaySession?
+    @State private var dialog: CalendarDialog = .hidden
+    @State private var bookingMenuTarget: UserBooking?
+    @State private var bookingsFilter: String = "Todos"
 
     private let calendar = Calendar.current
 
     var body: some View {
-        VStack(spacing: 16) {
-            monthHeader
-            if !sessionViewModel.allowedServices.isEmpty {
-                servicePicker
+        ScrollView {
+            VStack(spacing: 14) {
+                monthHeader
+                weekDays
+                calendarGrid
+
+                if let state = userViewModel.userBookings as? FetchUserBookingsStateLoading {
+                    _ = state
+                    ProgressView().padding(.top, 12)
+                } else if let error = userViewModel.userBookings as? FetchUserBookingsStateError {
+                    Text("Error al cargar: \(error.message)")
+                        .foregroundColor(.red)
+                } else if let success = userViewModel.userBookings as? FetchUserBookingsStateSuccess {
+                    userBookingsSection(bookings: success.bookings)
+                }
             }
-            calendarGrid
-            sessionList
-            Spacer()
+            .padding(.horizontal)
+            .padding(.bottom, 24)
         }
-        .padding(.horizontal)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
-        .onAppear {
-            sessionViewModel.loadAllowedServicesForUser()
-            if let uid = sessionViewModel.userId {
-                daySessionViewModel.fetchUserWeeklyLimit(userId: Int32(uid))
-                daySessionViewModel.refreshUserBookings(userId: Int32(uid)) {
-                    scheduleNotificationsForBookings()
-                }
-            }
-            if let first = sessionViewModel.allowedServices.first {
-                selectedServiceId = Int32(first.id)
-                daySessionViewModel.fetchSessions(serviceId: Int32(first.id), date: selectedDate)
-            } else {
-                daySessionViewModel.fetchSessions(serviceId: 1, date: selectedDate)
-            }
-            daySessionViewModel.fetchHolidays()
+        .onAppear(perform: bootstrap)
+        .onChange(of: selectedDate) { _ in
+            selectedProduct = nil
+            daySessionViewModel.clearSessions()
         }
-        .onChange(of: sessionViewModel.userId) { uid in
-            if let id = uid {
-                daySessionViewModel.fetchUserWeeklyLimit(userId: Int32(id))
-                daySessionViewModel.refreshUserBookings(userId: Int32(id)) {
-                    scheduleNotificationsForBookings()
-                }
-            }
-        }
-        .onChange(of: sessionViewModel.allowedServices) { services in
-            if selectedServiceId == nil, let first = services.first {
-                selectedServiceId = Int32(first.id)
-                daySessionViewModel.fetchSessions(serviceId: Int32(first.id), date: selectedDate)
-            }
-        }
-        .onChange(of: selectedDate) { newDate in
-            if let serviceId = selectedServiceId {
-                daySessionViewModel.fetchSessions(serviceId: serviceId, date: newDate)
-            }
-        }
-        .onChange(of: selectedServiceId) { newService in
-            if let id = newService {
-                daySessionViewModel.fetchSessions(serviceId: id, date: selectedDate)
-            }
-        }
-        .onChange(of: daySessionViewModel.userBookings) { _ in
-            scheduleNotificationsForBookings()
-        }
-        .alert(isPresented: Binding(
-            get: { daySessionViewModel.reservationResult != nil },
-            set: { _ in daySessionViewModel.reservationResult = nil }
+        .sheet(isPresented: Binding(
+            get: { dialog == .reservation },
+            set: { if !$0 { dismissDialog() } }
         )) {
-            let title: String
-            switch daySessionViewModel.reservationResult {
-            case "success":
-                title = "Reserva confirmada"
-            case "updated":
-                title = "Reserva actualizada"
-            case "limit":
-                title = "Límite semanal alcanzado"
-            default:
-                title = "Error"
-            }
-            return Alert(title: Text(title), dismissButton: .default(Text("OK")))
+            reservationSheet
+                .presentationDetents([.medium, .large])
         }
-        .sheet(isPresented: $daySessionViewModel.questionnaireActive) {
-            questionnaireSheet
+        .alert("Aviso", isPresented: Binding(
+            get: { dialog == .confirmContinue },
+            set: { if !$0 { dismissDialog() } }
+        )) {
+            Button("No", role: .cancel) { dismissDialog() }
+            Button("Sí") { dialog = .reservation }
+        } message: {
+            Text("Ya tienes una reserva hoy. ¿Continuar?")
+        }
+        .alert("Confirmar reserva", isPresented: Binding(
+            get: { dialog == .confirmBooking },
+            set: { if !$0 { dismissDialog() } }
+        )) {
+            Button("Cancelar", role: .cancel) { dismissDialog() }
+            Button("Reservar") { submitBooking() }
+            Button("Cambiar") { dialog = .changeExisting }
+        } message: {
+            Text("¿Deseas confirmar tu sesión con \(selectedCoach?.coachName ?? "-") a las \(selectedHour?.prefix(5) ?? "")?")
+        }
+        .confirmationDialog(
+            "Gestión de reserva",
+            isPresented: Binding(get: { dialog == .changeExisting }, set: { if !$0 { dismissDialog() } }),
+            titleVisibility: .visible
+        ) {
+            if let success = userViewModel.userBookings as? FetchUserBookingsStateSuccess {
+                ForEach(success.bookings, id: \.id) { booking in
+                    Button("Cambiar #\(booking.id) (\(booking.date.prefix(10)) \(booking.hour.prefix(5)))") {
+                        submitBookingChange(booking: booking)
+                    }
+                }
+            }
+            Button("Cancelar", role: .cancel) { dismissDialog() }
+        }
+        .confirmationDialog(
+            "Reserva",
+            isPresented: Binding(get: { bookingMenuTarget != nil }, set: { if !$0 { bookingMenuTarget = nil } }),
+            titleVisibility: .visible
+        ) {
+            if let booking = bookingMenuTarget {
+                Button("Descargar evento") { downloadICS(for: booking) }
+                Button("Cancelar reserva", role: .destructive) {
+                    userViewModel.cancelUserBooking(bookingId: booking.id)
+                    refreshBookings()
+                }
+            }
+            Button("Cerrar", role: .cancel) { bookingMenuTarget = nil }
         }
     }
 
-    /// Cabecera con el nombre del mes y botones para navegar.
+    private func bootstrap() {
+        daySessionViewModel.fetchHolidays()
+        if let userId = userViewModel.currentUser?.id {
+            userViewModel.fetchUserBookings(userId: userId)
+            serviceProductViewModel.loadUserProducts(userId: userId)
+        }
+    }
+
     private var monthHeader: some View {
         HStack {
-            Button(action: previousMonth) {
-                Image(systemName: "chevron.left")
-            }
+            Button(action: previousMonth) { Image(systemName: "chevron.left") }
             Spacer()
-            Text(monthYearString(currentMonth))
-                .font(.title2)
-                .bold()
+            Text(monthYearString(currentMonth)).font(.title3).bold()
             Spacer()
-            Button(action: nextMonth) {
-                Image(systemName: "chevron.right")
+            Button(action: nextMonth) { Image(systemName: "chevron.right") }
+        }
+        .padding(.top, 8)
+    }
+
+    private var weekDays: some View {
+        HStack {
+            ForEach(["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], id: \.self) { day in
+                Text(day).font(.caption).bold().frame(maxWidth: .infinity)
             }
         }
     }
 
-    /// Rejilla con los días del mes.
     private var calendarGrid: some View {
         let days = generateDays(for: currentMonth)
         let columns = Array(repeating: GridItem(.flexible()), count: 7)
+        let today = Date()
+
         return LazyVGrid(columns: columns, spacing: 8) {
-            ForEach(["L","M","X","J","V","S","D"], id: \.self) { weekday in
-                Text(weekday)
-                    .font(.caption)
-                    .frame(maxWidth: .infinity)
-            }
             ForEach(Array(days.enumerated()), id: \.offset) { _, date in
-                if let date = date {
-                    let isHoliday = daySessionViewModel.holidays.contains { calendar.isDate($0, inSameDayAs: date) }
-                    dayView(date, isHoliday: isHoliday)
+                if let date {
+                    let isHoliday = isHolidayDate(date)
+                    let isReserved = isReservedDate(date)
+                    let selectable = isSelectable(date: date, today: today, isHoliday: isHoliday)
+
+                    Text("\(calendar.component(.day, from: date))")
+                        .fontWeight(.bold)
+                        .frame(maxWidth: .infinity, minHeight: 34)
+                        .padding(.vertical, 3)
+                        .background(backgroundColor(date: date, isReserved: isReserved, isHoliday: isHoliday, selectable: selectable))
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle().stroke(calendar.isDateInToday(date) ? Color.secondary : Color.clear, lineWidth: 2)
+                        )
+                        .opacity(selectable ? 1 : 0.45)
+                        .onTapGesture {
+                            guard selectable else { return }
+                            selectedDate = date
+                            onDayClicked(date)
+                        }
                 } else {
-                    Text("")
-                        .frame(maxWidth: .infinity, minHeight: 32)
+                    Color.clear.frame(height: 36)
                 }
             }
         }
     }
 
-    
+    @ViewBuilder
+    private func userBookingsSection(bookings: [UserBooking]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Mis sesiones reservadas")
+                .font(.headline)
 
-    private var sessionList: some View {
-        // Fuera del ViewBuilder puedes tener sentencias normales
-        let selectedDay = DateFormatter.yyyymmdd.string(from: selectedDate)
+            let filterValues = ["Todos"] + Array(Set(bookings.map { $0.service })).sorted()
+            Picker("Servicio", selection: $bookingsFilter) {
+                ForEach(filterValues, id: \.self) { Text($0).tag($0) }
+            }
+            .pickerStyle(.menu)
 
-        return VStack(alignment: .leading, spacing: 8) {
-            if daySessionViewModel.sessions.isEmpty {
-                Text("No hay sesiones disponibles")
-                    .font(.subheadline)
+            let filtered = bookings.filter { bookingsFilter == "Todos" || $0.service == bookingsFilter }
+            if filtered.isEmpty {
+                Text("No tienes sesiones reservadas.")
                     .foregroundColor(.secondary)
             } else {
-                ForEach(daySessionViewModel.sessions, id: \.hour) { session in
-                    // Solo expresiones (let) dentro del ViewBuilder
-                    let sHour = session.hour.count == 5 ? session.hour : String(session.hour.prefix(5))
-
-                    let bookingForSession = daySessionViewModel.userBookings.first { b in
-                        let bDay  = String(b.date.prefix(10))
-                        let bHour = b.hour.count == 5 ? b.hour : String(b.hour.prefix(5))
-                        return bDay == selectedDay && bHour == sHour && b.coach_name == session.coachName
+                ForEach(filtered, id: \.id) { booking in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("📅 \(booking.date.prefix(10)) - 🕒 \(booking.hour.prefix(5))")
+                        Text("🏢 Servicio: \(booking.service)")
+                        Text("✨ Producto: \(booking.product)")
+                        Text("👟 Profesional: \(booking.coachName)")
                     }
-
-                    let bookingSameDay = daySessionViewModel.userBookings.first {
-                        String($0.date.prefix(10)) == selectedDay
-                    }
-
-                    sessionRow(
-                        session: session,
-                        bookingForSession: bookingForSession,
-                        bookingSameDay: bookingSameDay
-                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(10)
+                    .onTapGesture { bookingMenuTarget = booking }
                 }
             }
         }
     }
 
+    private var reservationSheet: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Seleccionar servicio").font(.headline)
 
-    /// Vista para cada fila de sesión. Se extrae para reducir la complejidad del cuerpo y
-    /// evitar que el compilador tarde demasiado en verificar tipos.
-    @ViewBuilder
-    private func sessionRow(session: DaySession,
-                            bookingForSession: UserBooking?,
-                            bookingSameDay: UserBooking?) -> some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text(session.hour)
-                    .font(.body)
-                Text(session.coachName ?? "-")
-                    .font(.caption)
-            }
-            Spacer()
-            Text("\(session.booked)/\(session.capacity)")
-                .font(.caption)
-                .foregroundColor(.secondary)
-            if let userId = sessionViewModel.userId, let serviceId = selectedServiceId {
-                if bookingForSession != nil {
-                    Text("Reservado")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                } else if let existing = bookingSameDay {
-                    Button("Cambiar") {
-                        daySessionViewModel.updateReservation(
-                            customerId: Int32(userId),
-                            bookingId: Int32(existing.id),
-                            newCoachId: Int32(session.coachId),
-                            newServiceId: serviceId,
-                            date: selectedDate,
-                            hour: session.hour
-                        )
-                    }
-                    .buttonStyle(.borderedProminent)
-                } else {
-                    Button("Reservar") {
-                        daySessionViewModel.reserveSession(
-                            customerId: Int32(userId),
-                            coachId: Int32(session.coachId),
-                            serviceId: serviceId,
-                            centerId: 1,
-                            date: selectedDate,
-                            hour: session.hour
-                        )
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-            }
-        }
-        .padding(8)
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(8)
-        .contextMenu {
-            if let booking = bookingForSession {
-                Button("Descargar evento") {
-                    let hour = booking.hour.count == 5 ? booking.hour + ":00" : booking.hour
-                    let iso = String(booking.date.prefix(10)) + "T" + hour
-                    let formatter = ISO8601DateFormatter()
-                    if let date = formatter.date(from: iso) {
-                        let ics = createICSFile(eventTitle: booking.service, startDate: date)
-                        shareICS(content: ics)
-                    }
-                }
-                Button(role: .destructive) {
-                    userViewModel.cancelUserBooking(bookingId: Int32(booking.id)) {
-                        if let uid = sessionViewModel.userId {
-                            daySessionViewModel.refreshUserBookings(userId: Int32(uid)) {
-                                scheduleNotificationsForBookings()
-                            }
+            if let productsState = serviceProductViewModel.userProductsState as? UserProductsUiStateSuccess {
+                Picker("Servicio", selection: Binding(
+                    get: { selectedProduct?.id ?? -1 },
+                    set: { newId in
+                        selectedProduct = productsState.products.first(where: { $0.id == newId })
+                        if let product = selectedProduct {
+                            daySessionViewModel.fetchAvailableSessions(productId: product.id, date: kmmDate(from: selectedDate))
                         }
                     }
-                } label: {
-                    Text("Cancelar reserva")
+                )) {
+                    Text("Seleccionar").tag(-1)
+                    ForEach(productsState.products, id: \.id) { p in Text(p.name).tag(p.id) }
                 }
+                .pickerStyle(.menu)
+            }
+
+            sessionsSelector
+            Spacer()
+        }
+        .padding()
+    }
+
+    @ViewBuilder
+    private var sessionsSelector: some View {
+        if selectedProduct == nil {
+            Text("Selecciona un servicio para ver horarios.")
+                .foregroundColor(.secondary)
+        } else if daySessionViewModel.sessions is DailySessionsUiStateLoading {
+            ProgressView().frame(maxWidth: .infinity)
+        } else if let success = daySessionViewModel.sessions as? DailySessionsUiStateSuccess {
+            let hours = Array(Set(success.sessions.map { $0.hour })).sorted()
+            ForEach(hours, id: \.self) { hour in
+                Button(hour.prefix(5)) {
+                    let coaches = daySessionViewModel.getAvailableCoachesForHour(hour: hour)
+                    if let coach = coaches.first {
+                        selectedHour = hour
+                        selectedCoach = coach
+                        dialog = .confirmBooking
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        } else if daySessionViewModel.sessions is DailySessionsUiStateEmpty {
+            Text("No hay horarios disponibles.")
+                .foregroundColor(.secondary)
+        } else if let error = daySessionViewModel.sessions as? DailySessionsUiStateError {
+            Text(error.message).foregroundColor(.red)
+        }
+    }
+
+    private func onDayClicked(_ date: Date) {
+        if isReservedDate(date) {
+            dialog = .confirmContinue
+        } else {
+            dialog = .reservation
+        }
+    }
+
+    private func submitBooking() {
+        guard
+            let userId = userViewModel.currentUser?.id,
+            let product = selectedProduct,
+            let hour = selectedHour,
+            let coach = selectedCoach
+        else { return }
+
+        daySessionViewModel.fetchServiceIdForProductAsync(productId: product.id) { serviceId in
+            guard let serviceId, serviceId > 0 else { return }
+            daySessionViewModel.makeBookingAsync(
+                customerId: userId,
+                coachId: coach.coachId,
+                serviceId: serviceId,
+                productId: product.id,
+                dayOfWeek: englishDay(from: selectedDate),
+                centerId: 1,
+                selectedDate: ymd(selectedDate),
+                hour: hour
+            ) { _ in
+                refreshBookings()
+                dismissDialog()
             }
         }
     }
 
-    /// Vista individual para cada día.
-    private func dayView(_ date: Date, isHoliday: Bool) -> some View {
-        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
-        return Text("\(calendar.component(.day, from: date))")
-            .frame(maxWidth: .infinity, minHeight: 32)
-            .background(isSelected ? Color.blue.opacity(0.2) : Color.clear)
-            .clipShape(Circle())
-            .foregroundColor(isHoliday ? .red : .primary)
-            .onTapGesture { if !isHoliday { selectedDate = date } }
-            .disabled(isHoliday)
-    }
+    private func submitBookingChange(booking: UserBooking) {
+        guard let product = selectedProduct, let hour = selectedHour, let coach = selectedCoach else { return }
 
-    /// Programa notificaciones para todas las reservas del usuario.
-    private func scheduleNotificationsForBookings() {
-        let formatter = ISO8601DateFormatter()
-        for booking in daySessionViewModel.userBookings {
-            let hour = booking.hour.count == 5 ? booking.hour + ":00" : booking.hour
-            let iso = String(booking.date.prefix(10)) + "T" + hour
-            if let date = formatter.date(from: iso) {
-                daySessionViewModel.scheduleNotification(
-                    bookingId: Int32(booking.id),
-                    hour: hour,
-                    date: date
-                )
+        daySessionViewModel.fetchServiceIdForProductAsync(productId: product.id) { serviceId in
+            guard let serviceId, serviceId > 0 else { return }
+            daySessionViewModel.modifyBookingSessionAsync(
+                bookingId: booking.id,
+                newCoachId: coach.coachId,
+                newServiceId: serviceId,
+                newProductId: product.id,
+                newDayOfWeek: englishDay(from: selectedDate),
+                newStartDate: ymd(selectedDate),
+                hour: hour
+            ) { _ in
+                refreshBookings()
+                dismissDialog()
             }
         }
     }
 
-    /// Genera los días a mostrar para un mes determinado, incluyendo los huecos
-    /// iniciales necesarios para alinear la primera semana con el día correcto.
+    private func refreshBookings() {
+        if let userId = userViewModel.currentUser?.id {
+            userViewModel.fetchUserBookings(userId: userId)
+        }
+    }
+
+    private func dismissDialog() {
+        dialog = .hidden
+    }
+
+    private func isHolidayDate(_ date: Date) -> Bool {
+        daySessionViewModel.holidays.contains {
+            $0.year == Int32(calendar.component(.year, from: date)) &&
+            $0.monthNumber == Int32(calendar.component(.month, from: date)) &&
+            $0.dayOfMonth == Int32(calendar.component(.day, from: date))
+        }
+    }
+
+    private func isReservedDate(_ date: Date) -> Bool {
+        guard let success = userViewModel.userBookings as? FetchUserBookingsStateSuccess else { return false }
+        return success.bookings.contains { booking in
+            String(booking.date.prefix(10)) == ymd(date)
+        }
+    }
+
+    private func backgroundColor(date: Date, isReserved: Bool, isHoliday: Bool, selectable: Bool) -> Color {
+        if isReserved { return Color.green.opacity(0.75) }
+        if isHoliday || calendar.isDateInWeekend(date) { return Color.clear }
+        return selectable ? Color(.systemBackground) : Color(.systemGray5)
+    }
+
+    private func isSelectable(date: Date, today: Date, isHoliday: Bool) -> Bool {
+        if isHoliday || calendar.isDateInWeekend(date) || date < calendar.startOfDay(for: today) { return false }
+
+        let day = calendar.component(.day, from: today)
+        let hour = calendar.component(.hour, from: Date())
+        let isAfter15 = day > 15 || (day == 15 && hour >= 12)
+
+        let monthOfDate = calendar.component(.month, from: date)
+        let yearOfDate = calendar.component(.year, from: date)
+        let currentMonth = calendar.component(.month, from: today)
+        let currentYear = calendar.component(.year, from: today)
+
+        let nextMonthDate = calendar.date(byAdding: .month, value: 1, to: today) ?? today
+        let nextMonth = calendar.component(.month, from: nextMonthDate)
+        let nextYear = calendar.component(.year, from: nextMonthDate)
+
+        if day < 15 {
+            return monthOfDate == currentMonth && yearOfDate == currentYear
+        }
+
+        return (monthOfDate == currentMonth && yearOfDate == currentYear) ||
+            (isAfter15 && monthOfDate == nextMonth && yearOfDate == nextYear)
+    }
+
+    private func downloadICS(for booking: UserBooking) {
+        let hour = booking.hour.count == 5 ? booking.hour + ":00" : booking.hour
+        let iso = String(booking.date.prefix(10)) + "T" + hour
+        if let date = ISO8601DateFormatter().date(from: iso) {
+            shareICS(content: createICSFile(eventTitle: booking.service, startDate: date))
+        }
+    }
+
+    private func kmmDate(from date: Date) -> Kotlinx_datetimeLocalDate {
+        Kotlinx_datetimeLocalDate(
+            year: Int32(calendar.component(.year, from: date)),
+            monthNumber: Int32(calendar.component(.month, from: date)),
+            dayOfMonth: Int32(calendar.component(.day, from: date))
+        )
+    }
+
+    private func englishDay(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US")
+        formatter.dateFormat = "EEEE"
+        return formatter.string(from: date)
+    }
+
+    private func ymd(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+
     private func generateDays(for date: Date) -> [Date?] {
         var days: [Date?] = []
         let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: date))!
@@ -313,19 +398,15 @@ struct CalendarView: View {
         var firstWeekday = calendar.component(.weekday, from: startOfMonth)
         firstWeekday = firstWeekday == 1 ? 7 : firstWeekday - 1
 
-        for _ in 1..<firstWeekday {
-            days.append(nil)
-        }
+        for _ in 1..<firstWeekday { days.append(nil) }
 
         let range = calendar.range(of: .day, in: .month, for: startOfMonth)!
         for day in range {
             days.append(calendar.date(byAdding: .day, value: day - 1, to: startOfMonth))
         }
-
         return days
     }
 
-    /// Devuelve una cadena con el nombre del mes y año en español.
     private func monthYearString(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "es_ES")
@@ -333,56 +414,19 @@ struct CalendarView: View {
         return formatter.string(from: date).capitalized
     }
 
-    /// Navega al mes anterior.
     private func previousMonth() {
         currentMonth = calendar.date(byAdding: .month, value: -1, to: currentMonth) ?? currentMonth
     }
 
-    /// Navega al mes siguiente.
     private func nextMonth() {
         currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? currentMonth
     }
-
-    /// Selector de servicio que permite filtrar las sesiones disponibles.
-    private var servicePicker: some View {
-        Picker("Servicio", selection: Binding(
-            get: { selectedServiceId ?? Int32(0) },
-            set: { selectedServiceId = $0 }
-        )) {
-            ForEach(sessionViewModel.allowedServices, id: \.id) { service in
-                Text(service.name).tag(Int32(service.id))
-            }
-        }
-        .pickerStyle(SegmentedPickerStyle())
-    }
-
-    /// Vista del cuestionario previo a la sesión.
-    private var questionnaireSheet: some View {
-        let questions = [
-            "¿Cómo dormiste?",
-            "¿Nivel de energía?",
-            "¿Dolor muscular?",
-            "¿Nivel de estrés?",
-            "¿Estado de ánimo?"
-        ]
-
-        return VStack(spacing: 16) {
-            Text(questions[daySessionViewModel.currentQuestion])
-                .font(.headline)
-            HStack {
-                ForEach(1...5, id: \.self) { value in
-                    Button("\(value)") {
-                        daySessionViewModel.answerQuestion("\(value)")
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
-            Button("Omitir") {
-                daySessionViewModel.skipQuestionnaire()
-            }
-            .padding(.top, 8)
-        }
-        .padding()
-    }
 }
 
+private enum CalendarDialog {
+    case hidden
+    case confirmContinue
+    case reservation
+    case confirmBooking
+    case changeExisting
+}

@@ -133,6 +133,65 @@ class DaySessionViewModel(
         return useCase.fetchServiceIdForProduct(productId).getOrNull()
     }
 
+
+    fun fetchServiceIdForProductAsync(productId: Int, onResult: (Int?) -> Unit) {
+        viewModelScope.launch {
+            onResult(fetchServiceIdForProduct(productId))
+        }
+    }
+
+    fun makeBookingAsync(
+        customerId: Int,
+        coachId: Int,
+        serviceId: Int,
+        productId: Int,
+        dayOfWeek: String,
+        centerId: Int,
+        selectedDate: String,
+        hour: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            onResult(
+                makeBooking(
+                    customerId = customerId,
+                    coachId = coachId,
+                    serviceId = serviceId,
+                    productId = productId,
+                    dayOfWeek = dayOfWeek,
+                    centerId = centerId,
+                    selectedDate = selectedDate,
+                    hour = hour
+                )
+            )
+        }
+    }
+
+    fun modifyBookingSessionAsync(
+        bookingId: Int,
+        newCoachId: Int,
+        newServiceId: Int,
+        newProductId: Int,
+        newDayOfWeek: String,
+        newStartDate: String,
+        hour: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            onResult(
+                modifyBookingSession(
+                    bookingId = bookingId,
+                    newCoachId = newCoachId,
+                    newServiceId = newServiceId,
+                    newProductId = newProductId,
+                    newDayOfWeek = newDayOfWeek,
+                    newStartDate = newStartDate,
+                    hour = hour
+                )
+            )
+        }
+    }
+
     suspend fun modifyBookingSession(
         bookingId: Int,
         newCoachId: Int,
