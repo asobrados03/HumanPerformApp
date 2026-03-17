@@ -8,8 +8,28 @@ struct ConfigurationView: View {
 
     @State private var showLogoutAlert = false
     @State private var showDeleteAlert = false
-    @State private var isProcessing = false
     @State private var errorMessage: String?
+
+    private var isProcessing: Bool {
+        userVM.isLoggingOut || userVM.deleteState is DeleteUserStateLoading
+    }
+
+    private var deleteStateChangeKey: String {
+        switch userVM.deleteState {
+        case is DeleteUserStateIdle:
+            return "idle"
+        case is DeleteUserStateLoading:
+            return "loading"
+        case is DeleteUserStateSuccess:
+            return "success"
+        case let notFound as DeleteUserStateNotFound:
+            return "notFound:\(notFound.email)"
+        case let error as DeleteUserStateError:
+            return "error:\(error.message)"
+        default:
+            return "unknown"
+        }
+    }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -57,30 +77,40 @@ struct ConfigurationView: View {
         .alert(errorMessage ?? "", isPresented: Binding(get: { errorMessage != nil }, set: { _ in errorMessage = nil })) {
             Button("OK", role: .cancel) { }
         }
+        .onChange(of: deleteStateChangeKey) { _ in
+            switch userVM.deleteState {
+            case is DeleteUserStateSuccess:
+                appState.isAuthenticated = false
+                userVM.resetDeleteState()
+
+            case let notFound as DeleteUserStateNotFound:
+                errorMessage = "No se encontró la cuenta para \(notFound.email)."
+                userVM.resetDeleteState()
+
+            case let error as DeleteUserStateError:
+                errorMessage = error.message
+                userVM.resetDeleteState()
+
+            default:
+                break
+            }
+        }
     }
 
     private func logout() {
-        isProcessing = true
-        SecureStorage.shared.clear { error in
+        userVM.logout {
             DispatchQueue.main.async {
-                userVM.clearCurrentUser()
                 appState.isAuthenticated = false
-                isProcessing = false
             }
         }
     }
 
     private func deleteAccount() {
-        guard let email = userVM.currentUser?.email else { return }
-        isProcessing = true
-        userVM.deleteUser(email: email) { success, error in
-            if success {
-                logout()
-            } else {
-                errorMessage = error ?? "Error desconocido"
-                isProcessing = false
-            }
+        guard let email = userVM.currentUser?.email else {
+            errorMessage = "No se pudo determinar el email de la cuenta."
+            return
         }
+        userVM.deleteUser(email: email)
     }
 }
 
