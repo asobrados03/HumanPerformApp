@@ -53,6 +53,9 @@ struct UserView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
+        .onAppear {
+            refreshProfileAndBalance()
+        }
     }
 
     /// Encabezado con la información principal del usuario y acciones.
@@ -97,10 +100,14 @@ struct UserView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical)
-        .onAppear {
-            if let id = vm.currentUser?.id {
-                vm.loadBalance(for: id)
-            }
+    }
+
+    /// Refresca el perfil al entrar en pantalla y, después, actualiza el saldo
+    /// para el usuario actual.
+    private func refreshProfileAndBalance() {
+        vm.fetchUserProfile()
+        if let id = vm.currentUser?.id {
+            vm.loadBalance(for: id)
         }
     }
 
@@ -123,4 +130,3 @@ struct UserView: View {
         }
     }
 }
-
