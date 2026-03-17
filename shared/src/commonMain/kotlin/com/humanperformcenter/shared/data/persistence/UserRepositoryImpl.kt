@@ -158,18 +158,21 @@ object UserRepositoryImpl: UserRepository {
         serviceName: String?,
         userId: Int?
     ): Result<String> = withContext(Dispatchers.IO) {
+        if (userId == null) {
+            return@withContext Result.failure(
+                IllegalStateException("No se pudo marcar favorito: usuario no disponible")
+            )
+        }
+
         return@withContext try {
             val response: HttpResponse = ApiClient.apiClient.post(
                 "${ApiClient.baseUrl}/mobile/user/preferred-coach"
             ) {
-
-                val customerId = userId ?: 0
-
                 contentType(ContentType.Application.Json)
                 setBody(
                     AssignPreferredCoachRequest(
-                        serviceName = serviceName.toString(),
-                        customerId = customerId,
+                        serviceName = serviceName.orEmpty(),
+                        customerId = userId,
                         coachId = coachId
                     )
                 )
