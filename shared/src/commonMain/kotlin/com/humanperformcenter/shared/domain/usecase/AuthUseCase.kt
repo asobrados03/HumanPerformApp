@@ -4,9 +4,13 @@ import com.humanperformcenter.shared.data.model.auth.LoginResponse
 import com.humanperformcenter.shared.data.model.auth.RegisterRequest
 import com.humanperformcenter.shared.data.model.auth.RegisterResponse
 import com.humanperformcenter.shared.domain.repository.AuthRepository
+import com.humanperformcenter.shared.domain.storage.SessionStorage
 import com.humanperformcenter.shared.domain.usecase.validation.ChangePasswordException
 
-class AuthUseCase(private val authRepository: AuthRepository) {
+class AuthUseCase(
+    private val authRepository: AuthRepository,
+    private val sessionStorage: SessionStorage
+) {
     suspend fun login(email: String, password: String): Result<LoginResponse> {
         return authRepository.login(email, password)
     }
@@ -20,7 +24,9 @@ class AuthUseCase(private val authRepository: AuthRepository) {
     }
 
     suspend fun logout(): Result<Unit> {
-        return authRepository.logout()
+        val remoteLogoutResult = authRepository.logout()
+        sessionStorage.clearSession()
+        return remoteLogoutResult
     }
 
     suspend fun changePassword(

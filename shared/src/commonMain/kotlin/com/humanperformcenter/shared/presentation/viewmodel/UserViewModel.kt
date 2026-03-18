@@ -228,15 +228,14 @@ class UserViewModel(
             try {
                 _isLoggingOut.value = true
 
-                val remoteLogoutResult = authUseCase.logout()
-                if (remoteLogoutResult.isFailure) {
+                val logoutResult = authUseCase.logout()
+                if (logoutResult.isFailure) {
                     log.debug {
-                        "DEBUG: Logout remoto falló, se aplicará limpieza local: ${remoteLogoutResult.exceptionOrNull()?.message}"
+                        "DEBUG: Logout remoto falló, pero la sesión local se limpió: ${logoutResult.exceptionOrNull()?.message}"
                     }
                 }
 
-                SecureStorage.clear()
-                log.debug { "DEBUG: Almacenamiento local eliminado" }
+                log.debug { "DEBUG: Sesión local eliminada desde AuthUseCase" }
 
                 // Esto permite que el CircularProgressIndicator se vea y la UX sea fluida
                 delay(800)
@@ -245,7 +244,6 @@ class UserViewModel(
 
                 onSuccess()
             } catch (e: Exception) {
-                SecureStorage.clear()
                 _isLoggingOut.value = false
                 log.debug { "DEBUG: Error en logout: ${e.message}" }
                 onSuccess()
