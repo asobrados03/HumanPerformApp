@@ -3,6 +3,7 @@ package com.humanperformcenter.shared.presentation.di
 import com.humanperformcenter.shared.data.persistence.AuthRepositoryImpl
 import com.humanperformcenter.shared.data.persistence.DaySessionRepositoryImpl
 import com.humanperformcenter.shared.data.persistence.ServiceProductRepositoryImpl
+import com.humanperformcenter.shared.data.persistence.SessionStorageImpl
 import com.humanperformcenter.shared.data.persistence.StripeRepositoryImpl
 import com.humanperformcenter.shared.data.persistence.UserAccountRepositoryImpl
 import com.humanperformcenter.shared.data.persistence.UserBookingsRepositoryImpl
@@ -24,6 +25,7 @@ import com.humanperformcenter.shared.domain.repository.UserFavoritesRepository
 import com.humanperformcenter.shared.domain.repository.UserProfileRepository
 import com.humanperformcenter.shared.domain.repository.UserStatsRepository
 import com.humanperformcenter.shared.domain.repository.UserWalletRepository
+import com.humanperformcenter.shared.domain.storage.SessionStorage
 import com.humanperformcenter.shared.domain.usecase.AccountUseCase
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.domain.usecase.BookingsUseCase
@@ -51,6 +53,7 @@ expect val platformModule: Module
 
 val appModule = module {
     single<AuthRepository> { AuthRepositoryImpl }
+    single<SessionStorage> { SessionStorageImpl }
     single<UserProfileRepository> { UserProfileRepositoryImpl }
     single<UserAccountRepository> { UserAccountRepositoryImpl }
     single<UserFavoritesRepository> { UserFavoritesRepositoryImpl }
