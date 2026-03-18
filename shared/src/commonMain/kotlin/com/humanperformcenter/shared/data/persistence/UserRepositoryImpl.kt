@@ -15,7 +15,14 @@ import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.data.model.user.UserStatistics
 import com.humanperformcenter.shared.data.network.ApiClient
-import com.humanperformcenter.shared.domain.repository.UserRepository
+import com.humanperformcenter.shared.domain.repository.UserAccountRepository
+import com.humanperformcenter.shared.domain.repository.UserBookingsRepository
+import com.humanperformcenter.shared.domain.repository.UserCouponsRepository
+import com.humanperformcenter.shared.domain.repository.UserDocumentsRepository
+import com.humanperformcenter.shared.domain.repository.UserFavoritesRepository
+import com.humanperformcenter.shared.domain.repository.UserProfileRepository
+import com.humanperformcenter.shared.domain.repository.UserStatsRepository
+import com.humanperformcenter.shared.domain.repository.UserWalletRepository
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import io.ktor.client.call.body
 import io.ktor.client.network.sockets.ConnectTimeoutException
@@ -48,7 +55,15 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-object UserRepositoryImpl: UserRepository {
+object UserRepositoryImpl :
+    UserProfileRepository,
+    UserAccountRepository,
+    UserFavoritesRepository,
+    UserBookingsRepository,
+    UserStatsRepository,
+    UserCouponsRepository,
+    UserDocumentsRepository,
+    UserWalletRepository {
     private val log = logging()
 
     /**

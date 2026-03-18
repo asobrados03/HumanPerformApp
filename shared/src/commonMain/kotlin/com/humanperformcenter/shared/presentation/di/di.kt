@@ -9,7 +9,14 @@ import com.humanperformcenter.shared.domain.repository.AuthRepository
 import com.humanperformcenter.shared.domain.repository.DaySessionRepository
 import com.humanperformcenter.shared.domain.repository.ServiceProductRepository
 import com.humanperformcenter.shared.domain.repository.StripeRepository
-import com.humanperformcenter.shared.domain.repository.UserRepository
+import com.humanperformcenter.shared.domain.repository.UserAccountRepository
+import com.humanperformcenter.shared.domain.repository.UserBookingsRepository
+import com.humanperformcenter.shared.domain.repository.UserCouponsRepository
+import com.humanperformcenter.shared.domain.repository.UserDocumentsRepository
+import com.humanperformcenter.shared.domain.repository.UserFavoritesRepository
+import com.humanperformcenter.shared.domain.repository.UserProfileRepository
+import com.humanperformcenter.shared.domain.repository.UserStatsRepository
+import com.humanperformcenter.shared.domain.repository.UserWalletRepository
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
@@ -30,7 +37,14 @@ expect val platformModule: Module
 
 val appModule = module {
     single<AuthRepository> { AuthRepositoryImpl }
-    single<UserRepository> { UserRepositoryImpl }
+    single<UserProfileRepository> { UserRepositoryImpl }
+    single<UserAccountRepository> { UserRepositoryImpl }
+    single<UserFavoritesRepository> { UserRepositoryImpl }
+    single<UserBookingsRepository> { UserRepositoryImpl }
+    single<UserStatsRepository> { UserRepositoryImpl }
+    single<UserCouponsRepository> { UserRepositoryImpl }
+    single<UserDocumentsRepository> { UserRepositoryImpl }
+    single<UserWalletRepository> { UserRepositoryImpl }
     single<DaySessionRepository> { DaySessionRepositoryImpl }
     single<ServiceProductRepository> { ServiceProductRepositoryImpl }
     single<StripeRepository> { StripeRepositoryImpl }
