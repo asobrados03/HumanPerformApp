@@ -42,8 +42,14 @@ import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserBookingsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserDocumentsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserFavoritesViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserProfileViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserWalletViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
@@ -85,6 +91,12 @@ val appModule = module {
     viewModelOf(::DaySessionViewModel)
     viewModelOf(::ServiceProductViewModel)
     viewModelOf(::UserStatsViewModel)
+    viewModelOf(::UserDocumentsViewModel)
+    viewModelOf(::UserBookingsViewModel)
+    viewModelOf(::UserWalletViewModel)
+    viewModelOf(::UserFavoritesViewModel)
+    viewModelOf(::UserProfileViewModel)
+    viewModelOf(::UserSessionViewModel)
     viewModelOf(::UserViewModel)
     viewModelOf(::StripeViewModel)
 }
