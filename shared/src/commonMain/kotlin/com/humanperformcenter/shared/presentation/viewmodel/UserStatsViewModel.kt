@@ -1,7 +1,7 @@
 package com.humanperformcenter.shared.presentation.viewmodel
 
 import com.diamondedge.logging.logging
-import com.humanperformcenter.shared.domain.usecase.UserUseCase
+import com.humanperformcenter.shared.domain.usecase.UserStatsUseCase
 import com.humanperformcenter.shared.presentation.ui.UserStatsState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class UserStatsViewModel(
-    private val userUseCase: UserUseCase
+    private val userStatsUseCase: UserStatsUseCase
 ) : ViewModel() {
     companion object {
         val log = logging() // Uses class name as tag
@@ -34,7 +34,7 @@ class UserStatsViewModel(
         viewModelScope.launch {
             _uiState.value = UserStatsState.Loading
 
-            userUseCase.getUserStats(userId)
+            userStatsUseCase.getUserStats(userId)
                 .onSuccess { stats ->
                     log.info { "✅ Estadísticas cargadas correctamente para userId: $userId" }
                     _uiState.value = UserStatsState.Success(stats)

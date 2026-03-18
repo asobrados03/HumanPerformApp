@@ -24,11 +24,18 @@ import com.humanperformcenter.shared.domain.repository.UserFavoritesRepository
 import com.humanperformcenter.shared.domain.repository.UserProfileRepository
 import com.humanperformcenter.shared.domain.repository.UserStatsRepository
 import com.humanperformcenter.shared.domain.repository.UserWalletRepository
+import com.humanperformcenter.shared.domain.usecase.AccountUseCase
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
+import com.humanperformcenter.shared.domain.usecase.BookingsUseCase
+import com.humanperformcenter.shared.domain.usecase.CoachesUseCase
+import com.humanperformcenter.shared.domain.usecase.CouponUseCase
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
+import com.humanperformcenter.shared.domain.usecase.ProfileUseCase
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
+import com.humanperformcenter.shared.domain.usecase.UserDocumentUseCase
+import com.humanperformcenter.shared.domain.usecase.UserStatsUseCase
+import com.humanperformcenter.shared.domain.usecase.WalletUseCase
 import com.humanperformcenter.shared.domain.usecase.StripeUseCase
-import com.humanperformcenter.shared.domain.usecase.UserUseCase
 import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
@@ -58,7 +65,14 @@ val appModule = module {
 
     // UseCases (Mucho más limpio con singleOf)
     singleOf(::AuthUseCase)
-    singleOf(::UserUseCase)
+    singleOf(::ProfileUseCase)
+    singleOf(::AccountUseCase)
+    singleOf(::CoachesUseCase)
+    singleOf(::BookingsUseCase)
+    singleOf(::CouponUseCase)
+    singleOf(::WalletUseCase)
+    singleOf(::UserStatsUseCase)
+    singleOf(::UserDocumentUseCase)
     singleOf(::DaySessionUseCase)
     singleOf(::ServiceProductUseCase)
     singleOf(::StripeUseCase)
