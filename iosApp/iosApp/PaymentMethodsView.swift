@@ -14,7 +14,7 @@ extension PaymentMethod: Identifiable {}
 /// Pantalla para visualizar los métodos de pago del usuario.
 struct PaymentMethodsView: View {
     @EnvironmentObject var sessionVM: shared.UserSessionViewModel
-    @StateViewModel private var vm = makeStripeViewModel()
+    @StateViewModel private var vm = SharedDependencies.shared.makeStripeViewModel()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

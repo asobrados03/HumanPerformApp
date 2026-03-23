@@ -3,8 +3,8 @@ import KMPObservableViewModelSwiftUI
 import shared
 
 struct MyProductsView: View {
-    @StateViewModel var serviceProductViewModel: shared.ServiceProductViewModel = makeServiceProductViewModel()
-    @StateViewModel var sessionViewModel: shared.UserSessionViewModel = makeUserSessionViewModel()
+    @StateViewModel var serviceProductViewModel: shared.ServiceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
+    @StateViewModel var sessionViewModel: shared.UserSessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
     @State private var selectedProduct: Product? = nil
     @State private var showProductOptions = false
     @State private var showUnsubscribeConfirm = false

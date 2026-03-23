@@ -22,9 +22,9 @@ private enum UserMenuOption: String, CaseIterable, Identifiable {
 }
 
 struct UserView: View {
-    @StateViewModel private var sessionVM = makeUserSessionViewModel()
-    @StateViewModel private var walletVM = makeUserWalletViewModel()
-    @StateViewModel private var profileVM = makeUserProfileViewModel()
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @StateViewModel private var walletVM = SharedDependencies.shared.makeUserWalletViewModel()
+    @StateViewModel private var profileVM = SharedDependencies.shared.makeUserProfileViewModel()
 
     private var balanceValue: Double {
         walletVM.balance?.doubleValue ?? 0

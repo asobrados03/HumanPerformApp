@@ -12,7 +12,7 @@ import shared
 /// Pantalla del monedero virtual del usuario.
 struct ElectronicWalletView: View {
     @EnvironmentObject var sessionVM: shared.UserSessionViewModel
-    @StateViewModel private var walletVM = makeUserWalletViewModel()
+    @StateViewModel private var walletVM = SharedDependencies.shared.makeUserWalletViewModel()
     @State private var showDetails = false
 
     private var balanceValue: Double {

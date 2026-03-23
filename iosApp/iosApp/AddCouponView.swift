@@ -11,7 +11,7 @@ import shared
 
 struct AddCouponView: View {
     @EnvironmentObject var sessionVM: shared.UserSessionViewModel
-    @StateViewModel private var couponsVM = makeUserCouponsViewModel()
+    @StateViewModel private var couponsVM = SharedDependencies.shared.makeUserCouponsViewModel()
 
     var body: some View {
         VStack(spacing: 12) {

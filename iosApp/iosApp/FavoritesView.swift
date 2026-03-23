@@ -12,7 +12,7 @@ import shared
 /// Pantalla que muestra la lista de entrenadores y permite marcar un favorito.
 struct FavoritesView: View {
     @EnvironmentObject var sessionVM: shared.UserSessionViewModel
-    @StateViewModel private var vm = makeUserFavoritesViewModel()
+    @StateViewModel private var vm = SharedDependencies.shared.makeUserFavoritesViewModel()
 
     @State private var preferredCoachId: Int?
     @State private var alertMessage: String?

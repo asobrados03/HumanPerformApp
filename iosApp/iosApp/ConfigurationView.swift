@@ -5,7 +5,7 @@ import shared
 /// Pantalla de configuración del usuario.
 struct ConfigurationView: View {
     @EnvironmentObject var appState: AppState
-    @StateViewModel private var sessionVM = makeUserSessionViewModel()
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
 
     @State private var showLogoutAlert = false
     @State private var showDeleteAlert = false
