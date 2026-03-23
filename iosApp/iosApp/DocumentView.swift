@@ -6,12 +6,15 @@
 //
 
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 /// Pantalla para la gestión de documentos del usuario, replicando la versión de Android.
 struct DocumentView: View {
-    @EnvironmentObject var userVM: shared.UserViewModel
+    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
     @Environment(\.dismiss) private var dismiss
+
+    @StateViewModel private var documentsVM = makeUserDocumentsViewModel()
 
     @State private var showOptions = false
     @State private var showImagePicker = false
@@ -24,12 +27,16 @@ struct DocumentView: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
 
+    private var isUploading: Bool {
+        documentsVM.uploadState is UploadStateLoading
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             Text("Subida de documentos")
                 .font(.title2)
                 .fontWeight(.semibold)
-            
+
             Button("Seleccionar archivo") {
                 showOptions = true
             }
@@ -38,13 +45,13 @@ struct DocumentView: View {
             if !documentName.isEmpty {
                 Text("Archivo: \(documentName)")
                 Button(action: upload) {
-                    if userVM.uploadState == .loading {
+                    if isUploading {
                         ProgressView().progressViewStyle(.circular)
                     } else {
                         Text("Subir")
                     }
                 }
-                .disabled(documentData == nil || userVM.uploadState == .loading)
+                .disabled(documentData == nil || isUploading)
             }
 
             Spacer()
@@ -82,17 +89,17 @@ struct DocumentView: View {
         }
         .alert(alertMessage, isPresented: $showAlert) {
             Button("OK") {
-                userVM.resetUploadState()
+                documentsVM.resetUploadState()
                 dismiss()
             }
         }
-        .onChange(of: userVM.uploadState) { state in
+        .onChange(of: documentsVM.uploadState) { state in
             switch state {
-            case .success:
+            case is UploadStateSuccess:
                 alertMessage = "Archivo subido correctamente"
                 showAlert = true
-            case .error(let msg):
-                alertMessage = "Error al subir: \(msg)"
+            case let error as UploadStateError:
+                alertMessage = "Error al subir: \(error.message)"
                 showAlert = true
             default:
                 break
@@ -101,8 +108,8 @@ struct DocumentView: View {
     }
 
     private func upload() {
-        guard let data = documentData, let userId = userVM.currentUserId else { return }
-        userVM.uploadDocument(userId: userId, name: documentName, data: data)
+        guard let data = documentData, let userId = sessionVM.userData?.id else { return }
+        documentsVM.uploadDocument(userId: userId, name: documentName, data: data.asKotlinByteArray())
     }
 }
 

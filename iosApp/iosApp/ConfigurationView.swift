@@ -1,21 +1,22 @@
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 /// Pantalla de configuración del usuario.
 struct ConfigurationView: View {
-    @EnvironmentObject var userVM: shared.UserViewModel
     @EnvironmentObject var appState: AppState
+    @StateViewModel private var sessionVM = makeUserSessionViewModel()
 
     @State private var showLogoutAlert = false
     @State private var showDeleteAlert = false
     @State private var errorMessage: String?
 
     private var isProcessing: Bool {
-        userVM.isLoggingOut || userVM.deleteState is DeleteUserStateLoading
+        sessionVM.isLoggingOut || sessionVM.deleteState is DeleteUserStateLoading
     }
 
     private var deleteStateChangeKey: String {
-        switch userVM.deleteState {
+        switch sessionVM.deleteState {
         case is DeleteUserStateIdle:
             return "idle"
         case is DeleteUserStateLoading:
@@ -37,11 +38,11 @@ struct ConfigurationView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
         }
-        
+
         ZStack {
             List {
                 Section {
-                    if let user = userVM.currentUser {
+                    if let user = sessionVM.userData {
                         Text(user.fullName)
                             .font(.headline)
                     }
@@ -49,7 +50,7 @@ struct ConfigurationView: View {
                     Button("Eliminar cuenta") { showDeleteAlert = true }
                         .foregroundColor(.red)
                     NavigationLink("Cambiar contraseña") {
-                        ChangePasswordView().environmentObject(userVM)
+                        ChangePasswordView().environmentObject(sessionVM)
                     }
                 }
             }
@@ -78,19 +79,16 @@ struct ConfigurationView: View {
             Button("OK", role: .cancel) { }
         }
         .onChange(of: deleteStateChangeKey) { _ in
-            switch userVM.deleteState {
+            switch sessionVM.deleteState {
             case is DeleteUserStateSuccess:
                 appState.isAuthenticated = false
-                userVM.resetDeleteState()
-
+                sessionVM.resetDeleteState()
             case let notFound as DeleteUserStateNotFound:
                 errorMessage = "No se encontró la cuenta para \(notFound.email)."
-                userVM.resetDeleteState()
-
+                sessionVM.resetDeleteState()
             case let error as DeleteUserStateError:
                 errorMessage = error.message
-                userVM.resetDeleteState()
-
+                sessionVM.resetDeleteState()
             default:
                 break
             }
@@ -98,7 +96,7 @@ struct ConfigurationView: View {
     }
 
     private func logout() {
-        userVM.logout {
+        sessionVM.logout {
             DispatchQueue.main.async {
                 appState.isAuthenticated = false
             }
@@ -106,16 +104,16 @@ struct ConfigurationView: View {
     }
 
     private func deleteAccount() {
-        guard let email = userVM.currentUser?.email else {
+        guard let email = sessionVM.userData?.email else {
             errorMessage = "No se pudo determinar el email de la cuenta."
             return
         }
-        userVM.deleteUser(email: email)
+        sessionVM.deleteUser(email: email)
     }
 }
 
 #Preview {
     NavigationStack {
-        ConfigurationView().environmentObject(makeUserViewModel()).environmentObject(AppState())
+        ConfigurationView().environmentObject(AppState())
     }
 }

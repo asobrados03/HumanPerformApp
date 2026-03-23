@@ -10,13 +10,13 @@ import shared
 
 /// Muestra la información personal del usuario actual.
 struct MyProfileView: View {
-    @EnvironmentObject var vm: shared.UserViewModel
+    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
 
     var body: some View {
         Group {
-            if vm.isLoading {
+            if sessionVM.isLoading {
                 ProgressView()
-            } else if let user = vm.currentUser {
+            } else if let user = sessionVM.userData {
                 List {
                     Section(header: Text("Información Personal")) {
                         ProfileRow(label: "Nombre completo", value: user.fullName)
@@ -65,4 +65,3 @@ private func localizedSex(_ sex: String?) -> String {
     default: return sex ?? ""
     }
 }
-

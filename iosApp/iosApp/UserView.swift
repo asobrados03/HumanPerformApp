@@ -10,7 +10,6 @@ import SwiftUI
 import KMPObservableViewModelSwiftUI
 import shared
 
-/// Opciones del menú de usuario mostradas en esta pantalla.
 private enum UserMenuOption: String, CaseIterable, Identifiable {
     case configuracion    = "Configuración"
     case favoritos        = "Mis favoritos"
@@ -22,17 +21,20 @@ private enum UserMenuOption: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-/// Vista principal del perfil de usuario en iOS.
-/// Muestra la información básica del usuario y un listado de opciones
-/// de navegación similares a las presentes en la versión Android.
 struct UserView: View {
-    @StateViewModel private var vm = makeUserViewModel()
+    @StateViewModel private var sessionVM = makeUserSessionViewModel()
+    @StateViewModel private var walletVM = makeUserWalletViewModel()
+    @StateViewModel private var profileVM = makeUserProfileViewModel()
+
+    private var balanceValue: Double {
+        walletVM.balance?.doubleValue ?? 0
+    }
 
     var body: some View {
         Group {
-            if vm.isLoading {
+            if sessionVM.isLoading {
                 ProgressView()
-            } else if let user = vm.currentUser {
+            } else if let user = sessionVM.userData {
                 ScrollView {
                     VStack(spacing: 0) {
                         header(for: user)
@@ -52,8 +54,8 @@ struct UserView: View {
                     .padding(.bottom, 16)
                 }
                 .background(Color(.systemGroupedBackground).ignoresSafeArea())
-                .onChange(of: vm.currentUser?.id) { id in
-                    if let id = id { vm.loadBalance(for: id) }
+                .onChange(of: sessionVM.userData?.id) { id in
+                    if let id = id { walletVM.loadBalance(userId: id) }
                 }
             } else {
                 Text("Sin usuario")
@@ -66,7 +68,6 @@ struct UserView: View {
         }
     }
 
-    /// Encabezado con la información principal del usuario y acciones.
     @ViewBuilder
     private func header(for user: User) -> some View {
         VStack(spacing: 16) {
@@ -89,7 +90,7 @@ struct UserView: View {
                 .font(.subheadline)
                 .foregroundColor(.white)
 
-            Text("Saldo: \(vm.balance, specifier: "%.2f") €")
+            Text("Saldo: \(balanceValue, specifier: "%.2f") €")
                 .font(.headline)
                 .foregroundColor(.black)
                 .frame(maxWidth: .infinity)
@@ -101,11 +102,11 @@ struct UserView: View {
 
             HStack(spacing: 12) {
                 actionButton(title: "Mi perfil", isPrimary: true) {
-                    MyProfileView().environmentObject(vm)
+                    MyProfileView().environmentObject(sessionVM)
                 }
 
                 actionButton(title: "Editar perfil", isPrimary: false) {
-                    EditProfileView().environmentObject(vm)
+                    EditProfileView().environmentObject(sessionVM)
                 }
             }
             .padding(.horizontal, 16)
@@ -115,7 +116,6 @@ struct UserView: View {
         .background(Color.red)
     }
 
-    /// Tarjeta de opción de navegación, con chevron y área táctil completa.
     private func menuCardRow(title: String) -> some View {
         HStack {
             Text(title)
@@ -156,31 +156,28 @@ struct UserView: View {
         .buttonStyle(.plain)
     }
 
-    /// Refresca el perfil al entrar en pantalla y, después, actualiza el saldo
-    /// para el usuario actual.
     private func refreshProfileAndBalance() {
-        vm.fetchUserProfile()
-        if let id = vm.currentUser?.id {
-            vm.loadBalance(for: id)
+        if let user = sessionVM.userData {
+            profileVM.fetchUserProfile(currentUser: sessionVM.currentUserState())
+            walletVM.loadBalance(userId: user.id)
         }
     }
 
-    // MARK: - Destinos
     @ViewBuilder
     private func destinationView(for option: UserMenuOption) -> some View {
         switch option {
         case .configuracion:
-            ConfigurationView().environmentObject(vm)
+            ConfigurationView()
         case .favoritos:
-            FavoritesView().environmentObject(vm)
+            FavoritesView().environmentObject(sessionVM)
         case .documento:
-            DocumentView().environmentObject(vm)
+            DocumentView().environmentObject(sessionVM)
         case .verPago:
-            PaymentMethodsView().environmentObject(vm)
+            PaymentMethodsView().environmentObject(sessionVM)
         case .monederoVirtual:
-            ElectronicWalletView().environmentObject(vm)
+            ElectronicWalletView().environmentObject(sessionVM)
         case .anadirCupon:
-            AddCouponView().environmentObject(vm)
+            AddCouponView().environmentObject(makeUserViewModel())
         }
     }
 }

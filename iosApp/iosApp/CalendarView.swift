@@ -4,7 +4,8 @@ import shared
 
 struct CalendarView: View {
     @StateViewModel private var daySessionViewModel = makeDaySessionViewModel()
-    @StateViewModel private var userViewModel = makeUserViewModel()
+    @StateViewModel private var sessionViewModel = makeUserSessionViewModel()
+    @StateViewModel private var bookingsViewModel = makeUserBookingsViewModel()
     @StateViewModel private var serviceProductViewModel = makeServiceProductViewModel()
 
     @State private var currentMonth: Date = Date()
@@ -26,13 +27,13 @@ struct CalendarView: View {
                 weekDays
                 calendarGrid
 
-                if let state = userViewModel.userBookings as? FetchUserBookingsStateLoading {
+                if let state = bookingsViewModel.userBookings as? FetchUserBookingsStateLoading {
                     _ = state
                     ProgressView().padding(.top, 12)
-                } else if let error = userViewModel.userBookings as? FetchUserBookingsStateError {
+                } else if let error = bookingsViewModel.userBookings as? FetchUserBookingsStateError {
                     Text("Error al cargar: \(error.message)")
                         .foregroundColor(.red)
-                } else if let success = userViewModel.userBookings as? FetchUserBookingsStateSuccess {
+                } else if let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess {
                     userBookingsSection(bookings: success.bookings)
                 }
             }
@@ -77,7 +78,7 @@ struct CalendarView: View {
             isPresented: Binding(get: { dialog == .changeExisting }, set: { if !$0 { dismissDialog() } }),
             titleVisibility: .visible
         ) {
-            if let success = userViewModel.userBookings as? FetchUserBookingsStateSuccess {
+            if let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess {
                 ForEach(success.bookings, id: \.id) { booking in
                     Button("Cambiar #\(booking.id) (\(booking.date.prefix(10)) \(booking.hour.prefix(5)))") {
                         submitBookingChange(booking: booking)
@@ -94,7 +95,7 @@ struct CalendarView: View {
             if let booking = bookingMenuTarget {
                 Button("Descargar evento") { downloadICS(for: booking) }
                 Button("Cancelar reserva", role: .destructive) {
-                    userViewModel.cancelUserBooking(bookingId: booking.id)
+                    bookingsViewModel.cancelUserBooking(bookingId: booking.id, currentUser: sessionViewModel.userData)
                     refreshBookings()
                 }
             }
@@ -104,8 +105,8 @@ struct CalendarView: View {
 
     private func bootstrap() {
         daySessionViewModel.fetchHolidays()
-        if let userId = userViewModel.currentUser?.id {
-            userViewModel.fetchUserBookings(userId: userId)
+        if let userId = sessionViewModel.userData?.id {
+            bookingsViewModel.fetchUserBookings(userId: userId)
             serviceProductViewModel.loadUserProducts(userId: userId)
         }
     }
@@ -261,7 +262,7 @@ struct CalendarView: View {
 
     private func submitBooking() {
         guard
-            let userId = userViewModel.currentUser?.id,
+            let userId = sessionViewModel.userData?.id,
             let product = selectedProduct,
             let hour = selectedHour,
             let coach = selectedCoach
@@ -306,8 +307,8 @@ struct CalendarView: View {
     }
 
     private func refreshBookings() {
-        if let userId = userViewModel.currentUser?.id {
-            userViewModel.fetchUserBookings(userId: userId)
+        if let userId = sessionViewModel.userData?.id {
+            bookingsViewModel.fetchUserBookings(userId: userId)
         }
     }
 
@@ -324,7 +325,7 @@ struct CalendarView: View {
     }
 
     private func isReservedDate(_ date: Date) -> Bool {
-        guard let success = userViewModel.userBookings as? FetchUserBookingsStateSuccess else { return false }
+        guard let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess else { return false }
         return success.bookings.contains { booking in
             String(booking.date.prefix(10)) == ymd(date)
         }

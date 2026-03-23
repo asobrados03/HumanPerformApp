@@ -13,7 +13,7 @@ extension PaymentMethod: Identifiable {}
 
 /// Pantalla para visualizar los métodos de pago del usuario.
 struct PaymentMethodsView: View {
-    @EnvironmentObject var userVM: shared.UserViewModel
+    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
     @StateViewModel private var vm = makeStripeViewModel()
 
     var body: some View {
@@ -29,7 +29,7 @@ struct PaymentMethodsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
         .onAppear {
-            if let id = userVM.currentUser?.id {
+            if let id = sessionVM.userData?.id {
                 vm.loadMethods(for: id)
             }
         }
@@ -42,7 +42,7 @@ struct PaymentMethodsView: View {
             PaymentMethodsShimmerView()
         case .error(let message):
             ErrorStateView(message: message) {
-                if let id = userVM.currentUser?.id {
+                if let id = sessionVM.userData?.id {
                     vm.loadMethods(for: id)
                 }
             }
