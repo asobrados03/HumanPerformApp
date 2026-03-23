@@ -49,12 +49,16 @@ import com.humanperformcenter.ui.components.app.FullScreenLoading
 import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.ui.components.app.NavigationBar
 import com.humanperformcenter.ui.components.user.UserProfileImage
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserProfileViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserWalletViewModel
 
 @Composable
 fun UserScreen(
     navController: NavHostController,
-    userViewModel: UserViewModel,
+    sessionViewModel: UserSessionViewModel,
+    walletViewModel: UserWalletViewModel,
+    profileViewModel: UserProfileViewModel,
     onEditProfile: () -> Unit,
     onViewProfile: () -> Unit,
     onMenuClick: (MenuOption) -> Unit
@@ -74,19 +78,19 @@ fun UserScreen(
         newUriString?.toUri()
     }
 
-    val user by userViewModel.userData.collectAsStateWithLifecycle()
+    val user by sessionViewModel.userData.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        userViewModel.fetchUserProfile()
+        profileViewModel.fetchUserProfile(sessionViewModel.currentUserState())
     }
 
     LaunchedEffect(user) {
         user?.let { currentUser ->
-            userViewModel.loadBalance(currentUser.id)
+            walletViewModel.loadBalance(currentUser.id)
         }
     }
 
-    val balance by userViewModel.balance.collectAsStateWithLifecycle()
+    val balance by walletViewModel.balance.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {

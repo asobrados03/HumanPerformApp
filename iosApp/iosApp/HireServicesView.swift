@@ -4,7 +4,7 @@ import KMPObservableViewModelSwiftUI
 
 struct HireServicesView: View {
     @StateViewModel var viewModel: shared.ServiceProductViewModel = makeServiceProductViewModel()
-    @StateViewModel var sessionViewModel: shared.UserViewModel = makeUserViewModel()
+    @StateViewModel var sessionViewModel: shared.UserSessionViewModel = makeUserSessionViewModel()
 
     var onOpenHireProducts: (Int) -> Void = { _ in }
 
@@ -28,7 +28,7 @@ struct HireServicesView: View {
                             .foregroundColor(.red)
                             .multilineTextAlignment(.center)
 
-                        if let userId = sessionViewModel.currentUser?.id {
+                        if let userId = sessionViewModel.userData?.id {
                             Button("Reintentar") {
                                 viewModel.loadAllServices(userId: userId)
                             }
@@ -41,11 +41,11 @@ struct HireServicesView: View {
             .padding(12)
         }
         .onAppear {
-            if let userId = sessionViewModel.currentUser?.id {
+            if let userId = sessionViewModel.userData?.id {
                 viewModel.loadAllServices(userId: userId)
             }
         }
-        .onChange(of: sessionViewModel.currentUser?.id) { newUserId in
+        .onChange(of: sessionViewModel.userData?.id) { newUserId in
             if let userId = newUserId {
                 viewModel.loadAllServices(userId: userId)
             }

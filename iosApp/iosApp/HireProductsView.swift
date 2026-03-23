@@ -7,7 +7,7 @@ struct HireProductsView: View {
     var onOpenProductDetail: (Int) -> Void = { _ in }
 
     @StateViewModel private var serviceProductViewModel = makeServiceProductViewModel()
-    @StateViewModel private var userViewModel = makeUserViewModel()
+    @StateViewModel private var sessionViewModel = makeUserSessionViewModel()
 
     @State private var selectedType: String = "all"
     @State private var selectedSessions: Int = 0
@@ -62,7 +62,7 @@ struct HireProductsView: View {
                 VStack(spacing: 8) {
                     Text(error.message).foregroundColor(.red).multilineTextAlignment(.center)
                     Button("Reintentar") {
-                        guard let userId = userViewModel.currentUser?.id else { return }
+                        guard let userId = sessionViewModel.userData?.id else { return }
                         serviceProductViewModel.loadServiceProducts(serviceId: serviceId, userId: userId)
                     }
                 }
@@ -94,7 +94,7 @@ struct HireProductsView: View {
         .navigationTitle("Contratar")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            guard let userId = userViewModel.currentUser?.id else { return }
+            guard let userId = sessionViewModel.userData?.id else { return }
             serviceProductViewModel.loadServiceProducts(serviceId: serviceId, userId: userId)
             serviceProductViewModel.loadUserProducts(userId: userId)
             serviceProductViewModel.loadUserCoupons(userId: userId)

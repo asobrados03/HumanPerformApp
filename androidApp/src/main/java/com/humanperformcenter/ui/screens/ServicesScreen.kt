@@ -20,7 +20,8 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.presentation.ui.ServiceUiState
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserBookingsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 import com.humanperformcenter.ui.components.app.ErrorComponent
 import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.ui.components.app.NavigationBar
@@ -30,11 +31,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun ServicesScreen(
     navController: NavHostController,
-    userViewModel: UserViewModel,
+    sessionViewModel: UserSessionViewModel,
+    bookingsViewModel: UserBookingsViewModel,
     stripeViewModel: StripeViewModel,
     serviceProductViewModel: ServiceProductViewModel
 ) {
-    val user by userViewModel.userData.collectAsStateWithLifecycle()
+    val user by sessionViewModel.userData.collectAsStateWithLifecycle()
     val availableServicesState by serviceProductViewModel.serviceUiState.collectAsStateWithLifecycle()
 
     // Configuramos el estado del Pager (controla las páginas y la animación)
@@ -44,7 +46,7 @@ fun ServicesScreen(
 
     LaunchedEffect(user) {
         user?.let {
-            userViewModel.fetchUserBookings(it.id)
+            bookingsViewModel.fetchUserBookings(it.id)
             serviceProductViewModel.loadAllServices(it.id)
         }
     }

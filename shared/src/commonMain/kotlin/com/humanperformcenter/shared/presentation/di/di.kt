@@ -43,6 +43,7 @@ import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserBookingsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserCouponsViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserDocumentSelectionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserDocumentsViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserFavoritesViewModel
@@ -58,7 +59,7 @@ import org.koin.dsl.module
 expect val platformModule: Module
 
 val userProfileModule = module {
-    single<UserProfileRepository> { UserProfileRepositoryImpl }
+    single<UserProfileRepository> { UserProfileRepositoryImpl() }
 
     singleOf(::ProfileUseCase)
 
@@ -66,8 +67,8 @@ val userProfileModule = module {
 }
 
 val userSessionModule = module {
-    single<UserAccountRepository> { UserAccountRepositoryImpl }
-    single<SessionStorage> { SessionStorageImpl }
+    single<UserAccountRepository> { UserAccountRepositoryImpl() }
+    single<SessionStorage> { SessionStorageImpl() }
 
     singleOf(::AccountUseCase)
 
@@ -75,7 +76,7 @@ val userSessionModule = module {
 }
 
 val userFavoritesModule = module {
-    single<UserFavoritesRepository> { UserFavoritesRepositoryImpl }
+    single<UserFavoritesRepository> { UserFavoritesRepositoryImpl() }
 
     singleOf(::CoachesUseCase)
 
@@ -83,7 +84,7 @@ val userFavoritesModule = module {
 }
 
 val userBookingsModule = module {
-    single<UserBookingsRepository> { UserBookingsRepositoryImpl }
+    single<UserBookingsRepository> { UserBookingsRepositoryImpl() }
 
     singleOf(::BookingsUseCase)
 
@@ -91,13 +92,15 @@ val userBookingsModule = module {
 }
 
 val userCouponsModule = module {
-    single<UserCouponsRepository> { UserCouponsRepositoryImpl }
+    single<UserCouponsRepository> { UserCouponsRepositoryImpl() }
 
     singleOf(::CouponUseCase)
+
+    viewModelOf(::UserCouponsViewModel)
 }
 
 val userDocumentsModule = module {
-    single<UserDocumentsRepository> { UserDocumentsRepositoryImpl }
+    single<UserDocumentsRepository> { UserDocumentsRepositoryImpl() }
 
     singleOf(::UserDocumentUseCase)
 
@@ -106,8 +109,8 @@ val userDocumentsModule = module {
 }
 
 val userWalletModule = module {
-    single<UserWalletRepository> { UserWalletRepositoryImpl }
-    single<UserStatsRepository> { UserStatsRepositoryImpl }
+    single<UserWalletRepository> { UserWalletRepositoryImpl() }
+    single<UserStatsRepository> { UserStatsRepositoryImpl() }
 
     singleOf(::WalletUseCase)
     singleOf(::UserStatsUseCase)
@@ -117,7 +120,7 @@ val userWalletModule = module {
 }
 
 val authModule = module {
-    single<AuthRepository> { AuthRepositoryImpl }
+    single<AuthRepository> { AuthRepositoryImpl() }
 
     singleOf(::AuthUseCase)
 
@@ -125,7 +128,7 @@ val authModule = module {
 }
 
 val stripeModule = module {
-    single<StripeRepository> { StripeRepositoryImpl }
+    single<StripeRepository> { StripeRepositoryImpl() }
 
     singleOf(::StripeUseCase)
 
@@ -133,7 +136,7 @@ val stripeModule = module {
 }
 
 val schedulingModule = module {
-    single<DaySessionRepository> { DaySessionRepositoryImpl }
+    single<DaySessionRepository> { DaySessionRepositoryImpl() }
 
     singleOf(::DaySessionUseCase)
 
@@ -141,7 +144,7 @@ val schedulingModule = module {
 }
 
 val catalogModule = module {
-    single<ServiceProductRepository> { ServiceProductRepositoryImpl }
+    single<ServiceProductRepository> { ServiceProductRepositoryImpl() }
 
     singleOf(::ServiceProductUseCase)
 

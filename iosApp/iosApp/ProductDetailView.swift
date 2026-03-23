@@ -7,7 +7,7 @@ struct ProductDetailView: View {
     var onPaymentSuccess: () -> Void = {}
 
     @StateViewModel private var serviceProductViewModel = makeServiceProductViewModel()
-    @StateViewModel private var userViewModel = makeUserViewModel()
+    @StateViewModel private var sessionViewModel = makeUserSessionViewModel()
 
     @State private var showPaymentOptions = false
     @State private var showWalletConfirm = false
@@ -43,7 +43,7 @@ struct ProductDetailView: View {
         .navigationTitle("Detalle")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            guard let userId = userViewModel.currentUser?.id else { return }
+            guard let userId = sessionViewModel.userData?.id else { return }
             serviceProductViewModel.loadProductDetail(productId: productId)
             serviceProductViewModel.loadUserCoupons(userId: userId)
             serviceProductViewModel.loadUserProducts(userId: userId)
@@ -116,7 +116,7 @@ struct ProductDetailView: View {
     }
 
     private func assignWithWallet(product: Product) {
-        guard let userId = userViewModel.currentUser?.id else { return }
+        guard let userId = sessionViewModel.userData?.id else { return }
         serviceProductViewModel.assignProductToUser(
             userId: userId,
             productId: product.id,
@@ -153,7 +153,7 @@ struct StripeCheckoutView: View {
     var onSuccess: () -> Void
 
     @StateViewModel private var serviceProductViewModel = makeServiceProductViewModel()
-    @StateViewModel private var userViewModel = makeUserViewModel()
+    @StateViewModel private var sessionViewModel = makeUserSessionViewModel()
     @State private var isProcessing = false
     @State private var errorMessage: String?
 
@@ -184,7 +184,7 @@ struct StripeCheckoutView: View {
     }
 
     private func startCheckout() {
-        guard let userId = userViewModel.currentUser?.id else {
+        guard let userId = sessionViewModel.userData?.id else {
             errorMessage = "Debes iniciar sesión para pagar"
             return
         }

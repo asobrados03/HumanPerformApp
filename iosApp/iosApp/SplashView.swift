@@ -10,7 +10,7 @@ import shared
 import KMPObservableViewModelSwiftUI
 
 struct SplashView: View {
-    @StateViewModel private var vm = makeUserViewModel()
+    @StateViewModel private var sessionVM = makeUserSessionViewModel()
     let onResolved: (_ isLoggedIn: Bool) -> Void
 
     var body: some View {
@@ -18,8 +18,7 @@ struct SplashView: View {
             Color(.systemBackground).ignoresSafeArea()
             ProgressView("Cargando…")
         }
-        .task { vm.startObserving() }
-        .onChange(of: vm.isLoggedIn) { value in
+                .onChange(of: sessionVM.isLoggedIn) { value in
             guard let value else { return }
             onResolved(value)
         }
