@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.presentation.ui.UploadState
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserDocumentsViewModel
 import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.ui.components.user.DocumentsSheet
 import com.humanperformcenter.ui.util.rememberUserDocumentsCoordinator
@@ -38,15 +38,15 @@ import com.humanperformcenter.shared.presentation.viewmodel.UserDocumentSelectio
 @Composable
 fun DocumentScreen(
     navController: NavHostController,
-    userViewModel: UserViewModel,
+    userId: Int?,
+    userDocumentsViewModel: UserDocumentsViewModel,
     documentsViewModel: UserDocumentSelectionViewModel? = null
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val documentsCoordinator = rememberUserDocumentsCoordinator()
     val selectionViewModel = documentsViewModel ?: remember { UserDocumentSelectionViewModel() }
 
-    val uploadState by userViewModel.uploadState.collectAsStateWithLifecycle()
-    val user by userViewModel.userData.collectAsStateWithLifecycle()
+    val uploadState by userDocumentsViewModel.uploadState.collectAsStateWithLifecycle()
     val documentsUiState by selectionViewModel.uiState.collectAsStateWithLifecycle()
 
     var showSheet by remember { mutableStateOf(false) }
@@ -115,7 +115,7 @@ fun DocumentScreen(
                     onClick = {
                         val documentBytes = documentsUiState.selectedDocumentBytes ?: return@Button
                         val documentName = documentsUiState.selectedDocumentName
-                        user?.id?.let { userViewModel.uploadDocument(it, documentName, documentBytes) }
+                        userId?.let { userDocumentsViewModel.uploadDocument(it, documentName, documentBytes) }
                     },
                     enabled = documentsUiState.selectedDocumentBytes != null && uploadState !is UploadState.Loading
                 ) {
@@ -155,12 +155,12 @@ fun DocumentScreen(
             is UploadState.Success -> {
                 selectionViewModel.clearSelection()
                 snackbarHostState.showSnackbar("Archivo subido correctamente")
-                userViewModel.resetUploadState()
+                userDocumentsViewModel.resetUploadState()
                 navController.popBackStack()
             }
             is UploadState.Error -> {
                 snackbarHostState.showSnackbar("Error al subir: ${(uploadState as UploadState.Error).message}")
-                userViewModel.resetUploadState()
+                userDocumentsViewModel.resetUploadState()
                 navController.popBackStack()
             }
             else -> Unit

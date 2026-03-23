@@ -75,7 +75,7 @@ import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.ui.components.user.EditableUserProfileImage
 import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.ui.components.user.ProfilePhotoSheet
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserProfileViewModel
 import com.humanperformcenter.shared.presentation.ui.DeleteProfilePicState
 import com.humanperformcenter.shared.presentation.ui.UpdateState
 import com.humanperformcenter.shared.presentation.ui.UpdateState.Field
@@ -89,14 +89,14 @@ import java.util.Locale
 @Composable
 fun EditProfileScreen(
     user: User,
-    userViewModel: UserViewModel,
+    userProfileViewModel: UserProfileViewModel,
     onSave: (User, ByteArray?) -> Unit,
     onDeleteProfilePic: () -> Unit,
     navController: NavHostController
 ) {
-    val updateState: UpdateState by userViewModel.updateState.collectAsStateWithLifecycle()
+    val updateState: UpdateState by userProfileViewModel.updateState.collectAsStateWithLifecycle()
 
-    val deleteProfilePicState: DeleteProfilePicState by userViewModel.deleteProfilePicState
+    val deleteProfilePicState: DeleteProfilePicState by userProfileViewModel.deleteProfilePicState
         .collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -106,11 +106,11 @@ fun EditProfileScreen(
     LaunchedEffect(deleteProfilePicState) {
         when(val state = deleteProfilePicState) {
             is DeleteProfilePicState.Success -> {
-                userViewModel.clearDeleteProfilePicState()
+                userProfileViewModel.clearDeleteProfilePicState()
                 navController.popBackStack()
             }
             is DeleteProfilePicState.Error -> {
-                userViewModel.clearDeleteProfilePicState()
+                userProfileViewModel.clearDeleteProfilePicState()
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar(
                         message = state.message,
@@ -566,11 +566,11 @@ fun EditProfileScreen(
                             message = (updateState as UpdateState.Error).message,
                             duration = SnackbarDuration.Short
                         )
-                        userViewModel.clearUpdateState()
+                        userProfileViewModel.clearUpdateState()
                     }
                     is UpdateState.Success -> {
                         snackbarHostState.showSnackbar("Perfil actualizado correctamente")
-                        userViewModel.clearUpdateState()
+                        userProfileViewModel.clearUpdateState()
                         navController.popBackStack()
                     }
                     else -> {}

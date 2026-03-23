@@ -40,7 +40,7 @@ import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserBookingsViewModel
 import com.humanperformcenter.ui.components.service.ServiceFilterDropdown
 import com.humanperformcenter.ui.util.createICSFile
 import com.humanperformcenter.ui.util.shareICS
@@ -52,7 +52,7 @@ import kotlin.collections.get
 
 @Composable
 fun UserBookingsSection(
-    userViewModel: UserViewModel,
+    userBookingsViewModel: UserBookingsViewModel,
     serviceProductViewModel: ServiceProductViewModel,
     userBookings: List<UserBooking>,
     userId: Int?
@@ -194,8 +194,8 @@ fun UserBookingsSection(
                                     onClick = {
                                         menuExpandedMap[booking.id] = false
                                         userId?.let {
-                                            userViewModel.cancelUserBooking(booking.id)
-                                            userViewModel.fetchUserBookings(it)
+                                            userBookingsViewModel.cancelUserBooking(booking.id, null)
+                                            userBookingsViewModel.fetchUserBookings(it)
                                         }
                                     }
                                 )

@@ -24,6 +24,10 @@ import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserBookingsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserDocumentsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserWalletViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.ui.components.app.FullScreenLoading
 import com.humanperformcenter.ui.screens.AddCouponScreen
@@ -220,9 +224,10 @@ fun Navigation(
                 }
             }
             composable<Configuration> {
+                val userSessionViewModel: UserSessionViewModel = koinViewModel()
                 ConfigurationRoute(
                     navController = navController,
-                    userViewModel = userViewModel
+                    userSessionViewModel = userSessionViewModel
                 )
             }
             composable<ChangePassword> {
@@ -264,15 +269,18 @@ fun Navigation(
                 }
             }
             composable<Document> {
+                val userDocumentsViewModel: UserDocumentsViewModel = koinViewModel()
                 DocumentScreen(
                     navController = navController,
-                    userViewModel = userViewModel
+                    userId = userData?.id,
+                    userDocumentsViewModel = userDocumentsViewModel
                 )
             }
             composable<ElectronicWallet> {
+                val userWalletViewModel: UserWalletViewModel = koinViewModel()
                 ElectronicWalletScreen(
                     navController = navController,
-                    userViewModel = userViewModel,
+                    userWalletViewModel = userWalletViewModel,
                     userId = userData?.id ?: 0
                 )
             }
@@ -353,18 +361,20 @@ fun Navigation(
             }
             composable<FavoriteCoach> {
                 FavoriteRoute(
-                    userViewModel = userViewModel,
                     navController = navController
                 )
             }
 
             composable<Calendar> {
                 val daySessionViewModel: DaySessionViewModel = koinViewModel()
+                val userSessionViewModel: UserSessionViewModel = koinViewModel()
+                val userBookingsViewModel: UserBookingsViewModel = koinViewModel()
 
                 CalendarScreen(
                     navController = navController,
                     serviceProductViewModel = serviceProductViewModel,
-                    userViewModel = userViewModel,
+                    userSessionViewModel = userSessionViewModel,
+                    userBookingsViewModel = userBookingsViewModel,
                     onPlaySound = onPlaySound,
                     daySessionViewModel = daySessionViewModel
                 )
