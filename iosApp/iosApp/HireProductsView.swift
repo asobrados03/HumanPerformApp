@@ -6,8 +6,8 @@ struct HireProductsView: View {
     let serviceId: Int
     var onOpenProductDetail: (Int) -> Void = { _ in }
 
-    @StateViewModel private var serviceProductViewModel = makeServiceProductViewModel()
-    @StateViewModel private var sessionViewModel = makeUserSessionViewModel()
+    @StateViewModel private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
+    @StateViewModel private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
 
     @State private var selectedType: String = "all"
     @State private var selectedSessions: Int = 0

@@ -1,61 +1,49 @@
 import shared
 
 func makeAuthViewModel() -> shared.AuthViewModel {
-    shared.AuthViewModel(authUseCase: AuthUseCase(authRepository: AuthRepositoryImpl(), sessionStorage: SessionStorageImpl()))
+    SharedDependencies.shared.makeAuthViewModel()
 }
 
 func makeDaySessionViewModel() -> shared.DaySessionViewModel {
-    shared.DaySessionViewModel(useCase: DaySessionUseCase(repository: DaySessionRepositoryImpl()))
+    SharedDependencies.shared.makeDaySessionViewModel()
 }
 
 func makeServiceProductViewModel() -> shared.ServiceProductViewModel {
-    shared.ServiceProductViewModel(
-        serviceProductUseCase: ServiceProductUseCase(repository: ServiceProductRepositoryImpl()),
-        couponUseCase: CouponUseCase(userCouponsRepository: UserCouponsRepositoryImpl())
-    )
+    SharedDependencies.shared.makeServiceProductViewModel()
 }
 
 func makeUserSessionViewModel() -> shared.UserSessionViewModel {
-    shared.UserSessionViewModel(
-        accountUseCase: AccountUseCase(userAccountRepository: UserAccountRepositoryImpl()),
-        authUseCase: AuthUseCase(
-            authRepository: AuthRepositoryImpl(),
-            sessionStorage: SessionStorageImpl()
-        )
-    )
+    SharedDependencies.shared.makeUserSessionViewModel()
 }
 
 func makeUserProfileViewModel() -> shared.UserProfileViewModel {
-    shared.UserProfileViewModel(profileUseCase: ProfileUseCase(userProfileRepository: UserProfileRepositoryImpl()))
+    SharedDependencies.shared.makeUserProfileViewModel()
 }
 
 func makeUserFavoritesViewModel() -> shared.UserFavoritesViewModel {
-    shared.UserFavoritesViewModel(coachesUseCase: CoachesUseCase(userFavoritesRepository: UserFavoritesRepositoryImpl()))
+    SharedDependencies.shared.makeUserFavoritesViewModel()
 }
 
 func makeUserCouponsViewModel() -> shared.UserCouponsViewModel {
-    shared.UserCouponsViewModel(couponUseCase: CouponUseCase(userCouponsRepository: UserCouponsRepositoryImpl()))
+    SharedDependencies.shared.makeUserCouponsViewModel()
 }
 
 func makeUserDocumentsViewModel() -> shared.UserDocumentsViewModel {
-    shared.UserDocumentsViewModel(userDocumentUseCase: UserDocumentUseCase(userDocumentsRepository: UserDocumentsRepositoryImpl()))
+    SharedDependencies.shared.makeUserDocumentsViewModel()
 }
 
 func makeUserBookingsViewModel() -> shared.UserBookingsViewModel {
-    shared.UserBookingsViewModel(
-        bookingsUseCase: BookingsUseCase(userBookingsRepository: UserBookingsRepositoryImpl()),
-        notificationManager: IOSSessionNotificationManager()
-    )
+    SharedDependencies.shared.makeUserBookingsViewModel()
 }
 
 func makeUserWalletViewModel() -> shared.UserWalletViewModel {
-    shared.UserWalletViewModel(walletUseCase: WalletUseCase(userWalletRepository: UserWalletRepositoryImpl()))
+    SharedDependencies.shared.makeUserWalletViewModel()
 }
 
 func makeUserStatsViewModel() -> shared.UserStatsViewModel {
-    shared.UserStatsViewModel(userStatsUseCase: UserStatsUseCase(userStatsRepository: UserStatsRepositoryImpl()))
+    SharedDependencies.shared.makeUserStatsViewModel()
 }
 
 func makeStripeViewModel() -> shared.StripeViewModel {
-    shared.StripeViewModel(stripeUseCase: StripeUseCase(stripeRepository: StripeRepositoryImpl()))
+    SharedDependencies.shared.makeStripeViewModel()
 }

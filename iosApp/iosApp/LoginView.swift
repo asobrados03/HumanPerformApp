@@ -12,7 +12,7 @@ enum LoginState: Equatable {
 }
 
 struct LoginView: View {
-    @StateViewModel var vm = makeAuthViewModel()
+    @StateViewModel var vm = SharedDependencies.shared.makeAuthViewModel()
 
     var onSuccess: (() -> Void)? = nil
     var onForgot: (() -> Void)? = nil

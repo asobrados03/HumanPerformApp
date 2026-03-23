@@ -10,8 +10,8 @@ import KMPObservableViewModelSwiftUI
 import shared
 
 struct StatsView: View {
-    @StateViewModel private var sessionVM = makeUserSessionViewModel()
-    @StateViewModel private var statsViewModel = makeUserStatsViewModel()
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @StateViewModel private var statsViewModel = SharedDependencies.shared.makeUserStatsViewModel()
 
     var body: some View {
         ScrollView {

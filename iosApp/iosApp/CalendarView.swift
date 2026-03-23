@@ -3,10 +3,10 @@ import KMPObservableViewModelSwiftUI
 import shared
 
 struct CalendarView: View {
-    @StateViewModel private var daySessionViewModel = makeDaySessionViewModel()
-    @StateViewModel private var sessionViewModel = makeUserSessionViewModel()
-    @StateViewModel private var bookingsViewModel = makeUserBookingsViewModel()
-    @StateViewModel private var serviceProductViewModel = makeServiceProductViewModel()
+    @StateViewModel private var daySessionViewModel = SharedDependencies.shared.makeDaySessionViewModel()
+    @StateViewModel private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
+    @StateViewModel private var bookingsViewModel = SharedDependencies.shared.makeUserBookingsViewModel()
+    @StateViewModel private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
 
     @State private var currentMonth: Date = Date()
     @State private var selectedDate: Date = Date()

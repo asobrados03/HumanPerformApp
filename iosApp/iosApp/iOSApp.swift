@@ -4,6 +4,7 @@ import shared
 @main
 struct iOSApp: App {
     init() {
+        _ = SharedDependencies.shared
         let prefs = DataStoreProvider().get()
         CryptoCallbacks.register()
         SecureStorage.shared.initialize(prefs: prefs)

@@ -10,7 +10,7 @@ import shared
 import KMPObservableViewModelSwiftUI
 
 struct SplashView: View {
-    @StateViewModel private var sessionVM = makeUserSessionViewModel()
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
     let onResolved: (_ isLoggedIn: Bool) -> Void
 
     var body: some View {
