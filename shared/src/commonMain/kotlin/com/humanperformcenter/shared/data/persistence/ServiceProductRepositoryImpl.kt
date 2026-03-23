@@ -69,11 +69,11 @@ object ServiceProductRepositoryImpl: ServiceProductRepository {
         }
     }
 
-    override suspend fun getUserProducts(customerId: Int)
+    override suspend fun getUserProducts(userId: Int)
     : Result<List<Product>> = withContext(Dispatchers.IO) {
         return@withContext runCatching {
             val response: HttpResponse = ApiClient.apiClient.get(
-                "${ApiClient.baseUrl}/mobile/users/$customerId/products"
+                "${ApiClient.baseUrl}/mobile/users/$userId/products"
             ) {
                 accept(ContentType.Application.Json)
                 expectSuccess = false

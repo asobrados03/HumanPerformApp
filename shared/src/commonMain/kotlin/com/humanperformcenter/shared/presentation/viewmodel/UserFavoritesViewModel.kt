@@ -1,6 +1,6 @@
 package com.humanperformcenter.shared.presentation.viewmodel
 
-import com.humanperformcenter.shared.domain.usecase.CoachesUseCase
+import com.humanperformcenter.shared.domain.usecase.UserCoachesUseCase
 import com.humanperformcenter.shared.presentation.ui.CoachState
 import com.humanperformcenter.shared.presentation.ui.GetPreferredCoachState
 import com.humanperformcenter.shared.presentation.ui.MarkFavoriteState
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class UserFavoritesViewModel(
-    private val coachesUseCase: CoachesUseCase
+    private val userCoachesUseCase: UserCoachesUseCase
 ) : ViewModel() {
     private val _coachesState = MutableStateFlow<CoachState>(CoachState.Idle)
     @NativeCoroutinesState
@@ -28,7 +28,7 @@ class UserFavoritesViewModel(
     fun getCoaches() {
         _coachesState.value = CoachState.Loading
         viewModelScope.launch {
-            coachesUseCase.getCoaches().onSuccess { professionals ->
+            userCoachesUseCase.getCoaches().onSuccess { professionals ->
                 _coachesState.value = CoachState.Success(professionals)
             }.onFailure { throwable ->
                 _coachesState.value = CoachState.Error(
@@ -43,7 +43,7 @@ class UserFavoritesViewModel(
     fun markFavorite(coachId: Int, serviceName: String?, userId: Int?) {
         _markFavoriteState.value = MarkFavoriteState.Loading
         viewModelScope.launch {
-            coachesUseCase.markFavorite(coachId, serviceName, userId).onSuccess { message ->
+            userCoachesUseCase.markFavorite(coachId, serviceName, userId).onSuccess { message ->
                 _markFavoriteState.value = MarkFavoriteState.Success(message)
             }.onFailure { throwable ->
                 _markFavoriteState.value = MarkFavoriteState.Error(
@@ -64,7 +64,7 @@ class UserFavoritesViewModel(
         _getPreferredCoachState.value = GetPreferredCoachState.Loading
         viewModelScope.launch {
             try {
-                coachesUseCase.getPreferredCoach(customerId = userId).onSuccess { preferred ->
+                userCoachesUseCase.getPreferredCoach(customerId = userId).onSuccess { preferred ->
                     _getPreferredCoachState.value = GetPreferredCoachState.Success(preferred.coachId)
                 }.onFailure { throwable ->
                     _getPreferredCoachState.value = GetPreferredCoachState.Error(

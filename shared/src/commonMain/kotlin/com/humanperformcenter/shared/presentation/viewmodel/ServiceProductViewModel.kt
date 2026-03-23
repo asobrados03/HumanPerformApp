@@ -4,7 +4,7 @@ import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.data.model.payment.Coupon
 import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
-import com.humanperformcenter.shared.domain.usecase.CouponUseCase
+import com.humanperformcenter.shared.domain.usecase.UserCouponUseCase
 import com.humanperformcenter.shared.presentation.ui.ActiveProductDetailState
 import com.humanperformcenter.shared.presentation.ui.AssignEvent
 import com.humanperformcenter.shared.presentation.ui.ProductDetailUiState
@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 
 class ServiceProductViewModel(
     private val serviceProductUseCase: ServiceProductUseCase,
-    private val couponUseCase: CouponUseCase
+    private val userCouponUseCase: UserCouponUseCase
 ) : ViewModel() {
     companion object {
         val log = logging() // Uses class name as tag
@@ -240,7 +240,7 @@ class ServiceProductViewModel(
 
     fun loadUserCoupons(userId: Int) {
         viewModelScope.launch {
-            val result = couponUseCase.getUserCoupons(userId)
+            val result = userCouponUseCase.getUserCoupons(userId)
             result.onSuccess { _userCoupons.value = it }
         }
     }

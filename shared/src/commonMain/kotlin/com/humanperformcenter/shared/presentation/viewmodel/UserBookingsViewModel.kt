@@ -2,7 +2,7 @@ package com.humanperformcenter.shared.presentation.viewmodel
 
 import com.humanperformcenter.shared.SessionNotificationManager
 import com.humanperformcenter.shared.data.model.user.User
-import com.humanperformcenter.shared.domain.usecase.BookingsUseCase
+import com.humanperformcenter.shared.domain.usecase.UserBookingsUseCase
 import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class UserBookingsViewModel(
-    private val bookingsUseCase: BookingsUseCase,
+    private val userBookingsUseCase: UserBookingsUseCase,
     private val notificationManager: SessionNotificationManager
 ) : ViewModel() {
     private val _userBookings = MutableStateFlow<FetchUserBookingsState>(FetchUserBookingsState.Loading)
@@ -22,7 +22,7 @@ class UserBookingsViewModel(
         viewModelScope.launch {
             _userBookings.value = FetchUserBookingsState.Loading
 
-            bookingsUseCase.getUserBookings(userId).onSuccess { bookings ->
+            userBookingsUseCase.getUserBookings(userId).onSuccess { bookings ->
                 _userBookings.value = FetchUserBookingsState.Success(bookings)
             }.onFailure { exception ->
                 _userBookings.value = FetchUserBookingsState.Error(
@@ -34,7 +34,7 @@ class UserBookingsViewModel(
 
     fun cancelUserBooking(bookingId: Int, currentUser: User?) {
         viewModelScope.launch {
-            bookingsUseCase.cancelUserBooking(bookingId).fold(
+            userBookingsUseCase.cancelUserBooking(bookingId).fold(
                 onSuccess = {
                     notificationManager.cancelNotification(bookingId)
                     fetchUserBookings(currentUser?.id ?: 0)

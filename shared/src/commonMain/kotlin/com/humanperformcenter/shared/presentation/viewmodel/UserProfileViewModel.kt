@@ -4,7 +4,7 @@ import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.data.model.user.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.storage.SecureStorage
-import com.humanperformcenter.shared.domain.usecase.ProfileUseCase
+import com.humanperformcenter.shared.domain.usecase.UserProfileUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
 import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
 import com.humanperformcenter.shared.presentation.ui.DeleteProfilePicState
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class UserProfileViewModel(
-    private val profileUseCase: ProfileUseCase
+    private val userProfileUseCase: UserProfileUseCase
 ) : ViewModel() {
     companion object {
         val log = logging()
@@ -59,7 +59,7 @@ class UserProfileViewModel(
         _updateState.value = UpdateState.Loading
 
         viewModelScope.launch {
-            val result = profileUseCase.updateUser(candidate, profilePicBytes)
+            val result = userProfileUseCase.updateUser(candidate, profilePicBytes)
 
             result.onSuccess { newUser ->
                 _updateState.value = UpdateState.Success(newUser)
@@ -77,7 +77,7 @@ class UserProfileViewModel(
     fun fetchUserProfile(currentUser: MutableStateFlow<User?>) {
         val user = currentUser.value ?: return
         viewModelScope.launch {
-            val result = profileUseCase.getUserById(user.id)
+            val result = userProfileUseCase.getUserById(user.id)
             result.onSuccess { updatedUser ->
                 currentUser.value = updatedUser
                 SecureStorage.saveUser(updatedUser)
@@ -90,7 +90,7 @@ class UserProfileViewModel(
     fun deleteProfilePic(user: User, currentUser: MutableStateFlow<User?>) {
         _deleteProfilePicState.value = DeleteProfilePicState.Loading
         viewModelScope.launch {
-            profileUseCase.deleteProfilePicture(
+            userProfileUseCase.deleteProfilePicture(
                 DeleteProfilePicRequest(
                     email = user.email,
                     profilePictureName = user.profilePictureName

@@ -4,7 +4,7 @@ import com.humanperformcenter.shared.data.model.user.GetPreferredCoachResponse
 import com.humanperformcenter.shared.data.model.user.Professional
 import com.humanperformcenter.shared.domain.repository.UserFavoritesRepository
 
-class CoachesUseCase(
+class UserCoachesUseCase(
     private val userFavoritesRepository: UserFavoritesRepository,
 ) {
     suspend fun getCoaches(): Result<List<Professional>> {

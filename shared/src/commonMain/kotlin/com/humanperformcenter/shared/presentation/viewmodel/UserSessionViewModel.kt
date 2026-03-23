@@ -3,7 +3,7 @@ package com.humanperformcenter.shared.presentation.viewmodel
 import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.storage.SecureStorage
-import com.humanperformcenter.shared.domain.usecase.AccountUseCase
+import com.humanperformcenter.shared.domain.usecase.UserAccountUseCase
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.presentation.ui.DeleteUserState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 class UserSessionViewModel(
-    private val accountUseCase: AccountUseCase,
+    private val userAccountUseCase: UserAccountUseCase,
     private val authUseCase: AuthUseCase
 ) : ViewModel() {
     companion object {
@@ -69,7 +69,7 @@ class UserSessionViewModel(
         viewModelScope.launch {
             _deleteState.value = DeleteUserState.Loading
 
-            accountUseCase.deleteUser(email).fold(
+            userAccountUseCase.deleteUser(email).fold(
                 onSuccess = {
                     SecureStorage.clear()
                     delay(1000)

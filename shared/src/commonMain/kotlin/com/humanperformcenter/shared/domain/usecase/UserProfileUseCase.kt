@@ -4,7 +4,7 @@ import com.humanperformcenter.shared.data.model.user.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.repository.UserProfileRepository
 
-class ProfileUseCase(
+class UserProfileUseCase(
     private val userProfileRepository: UserProfileRepository,
 ) {
     suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User> {

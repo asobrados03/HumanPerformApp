@@ -14,8 +14,8 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
     suspend fun getServiceProducts(serviceId: Int, userId: Int): Result<List<Product>> {
         return serviceProductRepository.getServiceProducts(serviceId, userId)
     }
-    suspend fun getUserProducts(customerId: Int): Result<List<Product>> {
-        return serviceProductRepository.getUserProducts(customerId)
+    suspend fun getUserProducts(userId: Int): Result<List<Product>> {
+        return serviceProductRepository.getUserProducts(userId)
     }
     suspend fun assignProductToUser(
         userId: Int,

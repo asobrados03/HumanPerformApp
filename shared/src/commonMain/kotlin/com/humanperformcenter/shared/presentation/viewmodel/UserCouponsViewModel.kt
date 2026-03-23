@@ -1,6 +1,6 @@
 package com.humanperformcenter.shared.presentation.viewmodel
 
-import com.humanperformcenter.shared.domain.usecase.CouponUseCase
+import com.humanperformcenter.shared.domain.usecase.UserCouponUseCase
 import com.humanperformcenter.shared.presentation.ui.CouponUiState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class UserCouponsViewModel(
-    private val couponUseCase: CouponUseCase,
+    private val userCouponUseCase: UserCouponUseCase,
 ) : ViewModel() {
     private val _couponUiState = MutableStateFlow(CouponUiState())
     @NativeCoroutinesState
@@ -22,7 +22,7 @@ class UserCouponsViewModel(
             it.copy(isLoading = true, error = null)
         }
 
-        couponUseCase.getUserCoupons(userId).onSuccess { coupons ->
+        userCouponUseCase.getUserCoupons(userId).onSuccess { coupons ->
             _couponUiState.update {
                 it.copy(isLoading = false, currentCoupons = coupons)
             }
@@ -40,8 +40,8 @@ class UserCouponsViewModel(
     fun addCouponToUser(userId: Int, code: String) = viewModelScope.launch {
         _couponUiState.update { it.copy(isLoading = true, error = null) }
 
-        couponUseCase.addCouponToUser(userId, code).onSuccess {
-            couponUseCase.getUserCoupons(userId).onSuccess { updatedCoupons ->
+        userCouponUseCase.addCouponToUser(userId, code).onSuccess {
+            userCouponUseCase.getUserCoupons(userId).onSuccess { updatedCoupons ->
                 _couponUiState.update {
                     it.copy(isLoading = false, currentCoupons = updatedCoupons, code = "")
                 }
