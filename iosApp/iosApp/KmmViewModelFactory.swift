@@ -11,7 +11,7 @@ func makeDaySessionViewModel() -> shared.DaySessionViewModel {
 func makeServiceProductViewModel() -> shared.ServiceProductViewModel {
     shared.ServiceProductViewModel(
         serviceProductUseCase: ServiceProductUseCase(repository: ServiceProductRepositoryImpl()),
-        userUseCase: UserUseCase(userRepository: UserRepositoryImpl())
+        couponUseCase: CouponUseCase(userCouponsRepository: UserCouponsRepositoryImpl())
     )
 }
 
@@ -33,6 +33,10 @@ func makeUserFavoritesViewModel() -> shared.UserFavoritesViewModel {
     shared.UserFavoritesViewModel(coachesUseCase: CoachesUseCase(userFavoritesRepository: UserFavoritesRepositoryImpl()))
 }
 
+func makeUserCouponsViewModel() -> shared.UserCouponsViewModel {
+    shared.UserCouponsViewModel(couponUseCase: CouponUseCase(userCouponsRepository: UserCouponsRepositoryImpl()))
+}
+
 func makeUserDocumentsViewModel() -> shared.UserDocumentsViewModel {
     shared.UserDocumentsViewModel(userDocumentUseCase: UserDocumentUseCase(userDocumentsRepository: UserDocumentsRepositoryImpl()))
 }
@@ -46,23 +50,6 @@ func makeUserBookingsViewModel() -> shared.UserBookingsViewModel {
 
 func makeUserWalletViewModel() -> shared.UserWalletViewModel {
     shared.UserWalletViewModel(walletUseCase: WalletUseCase(userWalletRepository: UserWalletRepositoryImpl()))
-}
-
-func makeUserViewModel() -> shared.UserViewModel {
-    shared.UserViewModel(
-        profileUseCase: ProfileUseCase(userProfileRepository: UserProfileRepositoryImpl()),
-        accountUseCase: AccountUseCase(userAccountRepository: UserAccountRepositoryImpl()),
-        authUseCase: AuthUseCase(
-            authRepository: AuthRepositoryImpl(),
-            sessionStorage: SessionStorageImpl()
-        ),
-        coachesUseCase: CoachesUseCase(userFavoritesRepository: UserFavoritesRepositoryImpl()),
-        couponUseCase: CouponUseCase(userCouponsRepository: UserCouponsRepositoryImpl()),
-        userDocumentUseCase: UserDocumentUseCase(userDocumentsRepository: UserDocumentsRepositoryImpl()),
-        bookingsUseCase: BookingsUseCase(userBookingsRepository: UserBookingsRepositoryImpl()),
-        walletUseCase: WalletUseCase(userWalletRepository: UserWalletRepositoryImpl()),
-        notificationManager: IOSSessionNotificationManager()
-    )
 }
 
 func makeUserStatsViewModel() -> shared.UserStatsViewModel {

@@ -10,7 +10,7 @@ import KMPObservableViewModelSwiftUI
 import shared
 
 struct StatsView: View {
-    @StateViewModel private var userViewModel = makeUserViewModel()
+    @StateViewModel private var sessionVM = makeUserSessionViewModel()
     @StateViewModel private var statsViewModel = makeUserStatsViewModel()
 
     var body: some View {
@@ -66,11 +66,11 @@ struct StatsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
         .onAppear(perform: loadStats)
-        .onChange(of: userViewModel.currentUserId) { _ in loadStats() }
+        .onChange(of: sessionVM.userData?.id) { _ in loadStats() }
     }
 
     private func loadStats() {
-        if let id = userViewModel.currentUserId {
+        if let id = sessionVM.userData?.id {
             statsViewModel.loadStatistics(userId: id)
         }
     }

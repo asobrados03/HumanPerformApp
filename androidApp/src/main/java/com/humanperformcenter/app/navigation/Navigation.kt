@@ -25,10 +25,11 @@ import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserBookingsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserCouponsViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserDocumentsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserProfileViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserWalletViewModel
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.ui.components.app.FullScreenLoading
 import com.humanperformcenter.ui.screens.AddCouponScreen
 import com.humanperformcenter.ui.screens.CalendarScreen
@@ -66,15 +67,18 @@ fun Navigation(
 
     val stripeViewModel: StripeViewModel = koinViewModel()
 
-    val userViewModel: UserViewModel = koinViewModel()
+    val sessionViewModel: UserSessionViewModel = koinViewModel()
+    val couponsViewModel: UserCouponsViewModel = koinViewModel()
+    val walletViewModel: UserWalletViewModel = koinViewModel()
+    val profileViewModel: UserProfileViewModel = koinViewModel()
 
     val authViewModel: AuthViewModel = koinViewModel()
 
     val serviceProductViewModel: ServiceProductViewModel = koinViewModel()
 
-    val isLoggedIn by userViewModel.isLoggedInFlow.collectAsStateWithLifecycle(initialValue = null)
+    val isLoggedIn by sessionViewModel.isLoggedInFlow.collectAsStateWithLifecycle(initialValue = null)
 
-    val userData by userViewModel.userData.collectAsStateWithLifecycle()
+    val userData by sessionViewModel.userData.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         ApiClient.logoutEvents.collect {
@@ -90,7 +94,7 @@ fun Navigation(
             startDestination = Splash
         ) {
             composable<Splash> {
-                SplashScreen(navController, userViewModel)
+                SplashScreen(navController, sessionViewModel)
             }
             composable<Welcome> {
                 WelcomeScreen(
@@ -150,7 +154,8 @@ fun Navigation(
             composable<Service> {
                 ServicesScreen(
                     navController = navController,
-                    userViewModel = userViewModel,
+                    sessionViewModel = sessionViewModel,
+                    bookingsViewModel = koinViewModel(),
                     stripeViewModel = stripeViewModel,
                     serviceProductViewModel = serviceProductViewModel
                 )
@@ -158,7 +163,7 @@ fun Navigation(
             composable<HireProduct> { backStackEntry ->
                 // Reconstruimos el objeto ServicioRoute
                 val route = backStackEntry.toRoute<HireProduct>()
-                val user = userViewModel.userData.collectAsStateWithLifecycle().value
+                val user = sessionViewModel.userData.collectAsStateWithLifecycle().value
                 val userId = user?.id
 
                 // Sólo mostramos si tenemos usuario
@@ -172,7 +177,7 @@ fun Navigation(
                 }
             }
             composable<User> {
-                val loading by userViewModel.isLoading.collectAsStateWithLifecycle()
+                val loading by sessionViewModel.isLoading.collectAsStateWithLifecycle()
 
                 when {
                     loading -> {
@@ -184,7 +189,9 @@ fun Navigation(
                     else -> {
                         UserScreen(
                             navController = navController,
-                            userViewModel = userViewModel,
+                            sessionViewModel = sessionViewModel,
+                            walletViewModel = walletViewModel,
+                            profileViewModel = profileViewModel,
                             onEditProfile = { navController.navigate(EditProfile) },
                             onViewProfile = { navController.navigate(MyProfile) },
                             onMenuClick = { option ->
@@ -218,7 +225,7 @@ fun Navigation(
                         AddCouponScreen(
                             navController  = navController,
                             userId         = user.id,
-                            userViewModel  = userViewModel
+                            couponsViewModel = couponsViewModel
                         )
                     }
                 }
@@ -234,8 +241,8 @@ fun Navigation(
                 val changePasswordState by authViewModel.isChangingPassword
                     .collectAsStateWithLifecycle()
 
-                val loading by userViewModel.isLoading.collectAsState()
-                val user by userViewModel.userData.collectAsState()
+                val loading by sessionViewModel.isLoading.collectAsState()
+                val user by sessionViewModel.userData.collectAsState()
 
                 when {
                     loading -> {
@@ -332,8 +339,8 @@ fun Navigation(
                 EditProfileRoute(navController = navController)
             }
             composable<MyProfile> {
-                val loading by userViewModel.isLoading.collectAsState()
-                val userState by userViewModel.userData.collectAsState()
+                val loading by sessionViewModel.isLoading.collectAsState()
+                val userState by sessionViewModel.userData.collectAsState()
 
                 when {
                     loading -> {

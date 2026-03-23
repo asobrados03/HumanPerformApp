@@ -177,7 +177,7 @@ struct UserView: View {
         case .monederoVirtual:
             ElectronicWalletView().environmentObject(sessionVM)
         case .anadirCupon:
-            AddCouponView().environmentObject(makeUserViewModel())
+            AddCouponView().environmentObject(sessionVM)
         }
     }
 }

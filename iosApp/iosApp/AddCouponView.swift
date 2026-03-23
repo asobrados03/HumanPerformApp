@@ -6,11 +6,12 @@
 //
 
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
-/// Pantalla para añadir un cupón promocional replicando la versión de Android.
 struct AddCouponView: View {
-    @EnvironmentObject var userVM: shared.UserViewModel
+    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
+    @StateViewModel private var couponsVM = makeUserCouponsViewModel()
 
     var body: some View {
         VStack(spacing: 12) {
@@ -25,8 +26,8 @@ struct AddCouponView: View {
                 TextField(
                     "Código de cupón",
                     text: Binding(
-                        get: { userVM.couponState.code },
-                        set: { userVM.onCouponCodeChanged($0) }
+                        get: { couponsVM.couponUiState.code },
+                        set: { couponsVM.onCouponCodeChanged(code: $0) }
                     )
                 )
                 .textFieldStyle(.roundedBorder)
@@ -35,14 +36,14 @@ struct AddCouponView: View {
             }
 
             Button(action: {
-                if let id = userVM.currentUserId {
-                    userVM.addCouponToUser(
-                        userId: id,
-                        code: userVM.couponState.code.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let userId = sessionVM.userData?.id {
+                    couponsVM.addCouponToUser(
+                        userId: userId,
+                        code: couponsVM.couponUiState.code.trimmingCharacters(in: .whitespacesAndNewlines)
                     )
                 }
             }) {
-                if userVM.couponState.isLoading {
+                if couponsVM.couponUiState.isLoading {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle())
                 } else {
@@ -50,16 +51,16 @@ struct AddCouponView: View {
                         .frame(maxWidth: .infinity)
                 }
             }
-            .disabled(userVM.couponState.isLoading)
+            .disabled(couponsVM.couponUiState.isLoading)
             .buttonStyle(.borderedProminent)
 
-            if let error = userVM.couponState.error {
+            if let error = couponsVM.couponUiState.error {
                 Text(error)
                     .font(.footnote)
                     .foregroundColor(.red)
             }
 
-            if userVM.couponState.currentCoupons.isEmpty {
+            if couponsVM.couponUiState.currentCoupons.isEmpty {
                 Text("No hay cupones")
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
@@ -69,7 +70,7 @@ struct AddCouponView: View {
 
                 ScrollView {
                     VStack(spacing: 8) {
-                        ForEach(userVM.couponState.currentCoupons, id: \.id) { coupon in
+                        ForEach(couponsVM.couponUiState.currentCoupons, id: \.id) { coupon in
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Código: \(coupon.code)")
                                 Text("Descuento: \(coupon.discount)\(coupon.isPercentage ? "%" : "€")")
@@ -89,12 +90,11 @@ struct AddCouponView: View {
         }
         .padding()
         .onAppear {
-            if let id = userVM.currentUserId {
-                userVM.loadUserCoupons(id)
+            if let userId = sessionVM.userData?.id {
+                couponsVM.loadUserCoupons(userId: userId)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
     }
 }
-

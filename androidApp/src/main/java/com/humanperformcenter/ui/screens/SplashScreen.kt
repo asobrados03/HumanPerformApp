@@ -15,15 +15,15 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.Service
 import com.humanperformcenter.app.navigation.Splash
 import com.humanperformcenter.app.navigation.Welcome
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 
 @Composable
 fun SplashScreen(
     navController: NavHostController,
-    userViewModel: UserViewModel
+    sessionViewModel: UserSessionViewModel
 ) {
     // 1️⃣ Observa el estado de login
-    val isLoggedIn by userViewModel.isLoggedInFlow.collectAsStateWithLifecycle(initialValue = null)
+    val isLoggedIn by sessionViewModel.isLoggedInFlow.collectAsStateWithLifecycle(initialValue = null)
 
     // 2️⃣ Mientras isLoggedIn sea null => mostramos Spinner
     if (isLoggedIn == null) {

@@ -4,7 +4,7 @@ import shared
 
 struct MyProductsView: View {
     @StateViewModel var serviceProductViewModel: shared.ServiceProductViewModel = makeServiceProductViewModel()
-    @StateViewModel var userViewModel: shared.UserViewModel = makeUserViewModel()
+    @StateViewModel var sessionViewModel: shared.UserSessionViewModel = makeUserSessionViewModel()
     @State private var selectedProduct: Product? = nil
     @State private var showProductOptions = false
     @State private var showUnsubscribeConfirm = false
@@ -37,7 +37,7 @@ struct MyProductsView: View {
                             .foregroundColor(.red)
                             .multilineTextAlignment(.center)
 
-                        if let id = userViewModel.currentUser?.id {
+                        if let id = sessionViewModel.userData?.id {
                             Button("Reintentar") {
                                 serviceProductViewModel.loadUserProducts(userId: id)
                             }
@@ -50,11 +50,11 @@ struct MyProductsView: View {
             .padding(12)
         }
         .onAppear {
-            if let id = userViewModel.currentUser?.id {
+            if let id = sessionViewModel.userData?.id {
                 serviceProductViewModel.loadUserProducts(userId: id)
             }
         }
-        .onChange(of: userViewModel.currentUser?.id) { newId in
+        .onChange(of: sessionViewModel.userData?.id) { newId in
             if let id = newId {
                 serviceProductViewModel.loadUserProducts(userId: id)
             }
@@ -79,7 +79,7 @@ struct MyProductsView: View {
         .alert("Confirmar baja", isPresented: $showUnsubscribeConfirm) {
             Button("Cancelar", role: .cancel) { }
             Button("Sí, darse de baja", role: .destructive) {
-                if let prod = selectedProduct, let userId = userViewModel.currentUser?.id {
+                if let prod = selectedProduct, let userId = sessionViewModel.userData?.id {
                     serviceProductViewModel.unassignProductFromUser(productId: prod.id, userId: userId)
                 }
                 selectedProduct = nil

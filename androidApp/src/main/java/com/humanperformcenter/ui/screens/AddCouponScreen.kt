@@ -28,20 +28,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserCouponsViewModel
 import com.humanperformcenter.ui.components.app.LogoAppBar
 
 @Composable
 fun AddCouponScreen(
     userId: Int,
     navController: NavHostController,
-    userViewModel: UserViewModel
+    couponsViewModel: UserCouponsViewModel
 ) {
-    val uiState by userViewModel.couponUiState.collectAsStateWithLifecycle()
+    val uiState by couponsViewModel.couponUiState.collectAsStateWithLifecycle()
 
-    // Carga el cupón activo al entrar
-    LaunchedEffect(Unit) {
-        userViewModel.loadUserCoupon(userId)
+    LaunchedEffect(userId) {
+        couponsViewModel.loadUserCoupons(userId)
     }
 
     Scaffold(
@@ -71,7 +70,7 @@ fun AddCouponScreen(
 
             OutlinedTextField(
                 value = uiState.code ?: "",
-                onValueChange = userViewModel::onCouponCodeChanged,
+                onValueChange = couponsViewModel::onCouponCodeChanged,
                 label = { Text("Código de cupón") },
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Default.LocalOffer, contentDescription = null) },
@@ -88,7 +87,7 @@ fun AddCouponScreen(
             )
 
             Button(
-                onClick = { userViewModel.addCouponToUser(userId, uiState.code?.trim() ?: "") },
+                onClick = { couponsViewModel.addCouponToUser(userId, uiState.code?.trim().orEmpty()) },
                 enabled = !uiState.isLoading,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -97,10 +96,9 @@ fun AddCouponScreen(
             }
 
             uiState.error?.let {
-                Log.d("DEBUG COUPON","Error al añadir cupón: $it")
+                Log.d("DEBUG COUPON", "Error al añadir cupón: $it")
             }
 
-            // 🔽 Scroll solo para los cupones
             if (uiState.currentCoupons.isEmpty()) {
                 Text("No hay cupones", style = MaterialTheme.typography.bodyMedium)
             } else {

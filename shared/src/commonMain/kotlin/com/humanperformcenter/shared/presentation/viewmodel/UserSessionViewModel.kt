@@ -1,6 +1,7 @@
 package com.humanperformcenter.shared.presentation.viewmodel
 
 import com.diamondedge.logging.logging
+import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.usecase.AccountUseCase
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
@@ -28,23 +29,34 @@ class UserSessionViewModel(
         .map { token -> token.isNotBlank() }
         .distinctUntilChanged()
 
-    private val _userData = MutableStateFlow<com.humanperformcenter.shared.data.model.user.User?>(null)
+    private val _isLoggedIn = MutableStateFlow<Boolean?>(null)
     @NativeCoroutinesState
-    val userData: StateFlow<com.humanperformcenter.shared.data.model.user.User?> = _userData
+    val isLoggedIn: StateFlow<Boolean?> = _isLoggedIn.asStateFlow()
+
+    private val _userData = MutableStateFlow<User?>(null)
+    @NativeCoroutinesState
+    val userData: StateFlow<User?> = _userData.asStateFlow()
 
     private val _isLoading = MutableStateFlow(true)
     @NativeCoroutinesState
-    val isLoading: StateFlow<Boolean> = _isLoading
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _deleteState = MutableStateFlow<DeleteUserState>(DeleteUserState.Idle)
     @NativeCoroutinesState
-    val deleteState: StateFlow<DeleteUserState> = _deleteState
+    val deleteState: StateFlow<DeleteUserState> = _deleteState.asStateFlow()
 
     private val _isLoggingOut = MutableStateFlow(false)
     @NativeCoroutinesState
     val isLoggingOut: StateFlow<Boolean> = _isLoggingOut.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            SecureStorage.accessTokenFlow()
+                .map { token -> token.isNotBlank() }
+                .distinctUntilChanged()
+                .collect { _isLoggedIn.value = it }
+        }
+
         viewModelScope.launch {
             SecureStorage.userFlow().collect { storedUser ->
                 _userData.value = storedUser
@@ -105,5 +117,5 @@ class UserSessionViewModel(
         }
     }
 
-    fun currentUserState(): MutableStateFlow<com.humanperformcenter.shared.data.model.user.User?> = _userData
+    fun currentUserState(): MutableStateFlow<User?> = _userData
 }
