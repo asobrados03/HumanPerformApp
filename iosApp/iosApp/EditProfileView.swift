@@ -1,11 +1,13 @@
 import SwiftUI
 import Foundation
+import KMPObservableViewModelSwiftUI
 import shared
 
 /// Permite editar campos del perfil de usuario y la foto.
 struct EditProfileView: View {
-    @EnvironmentObject var vm: shared.UserViewModel
-    
+    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
+    @StateViewModel private var profileVM = makeUserProfileViewModel()
+
     @Environment(\.dismiss) private var dismiss
     @State private var pendingDismiss = false
 
@@ -33,7 +35,7 @@ struct EditProfileView: View {
 
     var body: some View {
         Group {
-            if let user = vm.currentUser {
+            if let user = sessionVM.userData {
                 Form {
                     Section {
                         HStack {
@@ -91,12 +93,12 @@ struct EditProfileView: View {
                     Button("OK", role: .cancel) {
                         if pendingDismiss {
                             pendingDismiss = false
-                            dismiss()          // pop tras cerrar la alerta
+                            dismiss()
                         }
                     }
                 }
                 .confirmationDialog("Foto del perfil", isPresented: $showDialog, titleVisibility: .visible) {
-                    if vm.currentUser?.profilePictureName != nil || image != nil {
+                    if sessionVM.userData?.profilePictureName != nil || image != nil {
                         Button("Eliminar foto", role: .destructive) { deletePhoto(user: user) }
                     }
                     Button("Cámara") { pickerSource = .camera; showPicker = true }
@@ -107,12 +109,14 @@ struct EditProfileView: View {
                     ImagePicker(sourceType: pickerSource) { img, name in
                         image = img
                         imageData = img.jpegData(compressionQuality: 0.8)
-                        if let n = name {
-                            imageFileName = n
-                        } else {
-                            imageFileName = "IMG_\(Int(Date().timeIntervalSince1970)).jpg"
-                        }
+                        imageFileName = name ?? "IMG_\(Int(Date().timeIntervalSince1970)).jpg"
                     }
+                }
+                .onChange(of: profileStateKey) { _ in
+                    handleProfileStateChange()
+                }
+                .onChange(of: deletePhotoStateKey) { _ in
+                    handleDeletePhotoStateChange()
                 }
             } else {
                 Text("Sin usuario")
@@ -121,6 +125,38 @@ struct EditProfileView: View {
         .navigationTitle("Editar perfil")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
+    }
+
+    private var profileStateKey: String {
+        switch profileVM.updateState {
+        case is UpdateStateIdle:
+            return "idle"
+        case is UpdateStateLoading:
+            return "loading"
+        case is UpdateStateSuccess:
+            return "success"
+        case let error as UpdateStateError:
+            return "error:\(error.message)"
+        case let validation as UpdateStateValidationErrors:
+            return "validation:\(validation.fieldErrors.description)"
+        default:
+            return "unknown"
+        }
+    }
+
+    private var deletePhotoStateKey: String {
+        switch profileVM.deleteProfilePicState {
+        case is DeleteProfilePicStateIdle:
+            return "idle"
+        case is DeleteProfilePicStateLoading:
+            return "loading"
+        case is DeleteProfilePicStateSuccess:
+            return "success"
+        case let error as DeleteProfilePicStateError:
+            return "error:\(error.message)"
+        default:
+            return "unknown"
+        }
     }
 
     private func save(user: User) {
@@ -155,30 +191,53 @@ struct EditProfileView: View {
             dni: dni.isEmpty ? nil : dni,
             profilePictureName: picName
         )
-        vm.updateUserProfile(updated, profilePicData: imageData) { success, error in
-            DispatchQueue.main.async {
-                isSaving = false
-                if success {
-                    alertMessage = "Perfil actualizado"
-                    pendingDismiss = true
-                    showAlert = true
-                } else {
-                    alertMessage = error ?? "Error desconocido"
-                    showAlert = true
-                }
-            }
-        }
+        profileVM.updateUser(candidate: updated, profilePicBytes: imageData?.asKotlinByteArray(), currentUser: sessionVM.currentUserState())
     }
 
     private func deletePhoto(user: User) {
-        vm.deleteProfilePic(for: user) { success, error in
-            alertMessage = success ? "Foto eliminada" : (error ?? "Error desconocido")
+        profileVM.deleteProfilePic(user: user, currentUser: sessionVM.currentUserState())
+    }
+
+    private func handleProfileStateChange() {
+        switch profileVM.updateState {
+        case is UpdateStateLoading:
+            isSaving = true
+        case is UpdateStateSuccess:
+            isSaving = false
+            alertMessage = "Perfil actualizado"
+            pendingDismiss = true
             showAlert = true
-            if success {
-                image = nil
-                imageFileName = nil
-                imageData = nil
-            }
+            profileVM.clearUpdateState()
+        case let error as UpdateStateError:
+            isSaving = false
+            alertMessage = error.message
+            showAlert = true
+            profileVM.clearUpdateState()
+        case let validation as UpdateStateValidationErrors:
+            isSaving = false
+            alertMessage = validation.fieldErrors.values.joined(separator: "\n")
+            showAlert = true
+            profileVM.clearUpdateState()
+        default:
+            break
+        }
+    }
+
+    private func handleDeletePhotoStateChange() {
+        switch profileVM.deleteProfilePicState {
+        case is DeleteProfilePicStateSuccess:
+            alertMessage = "Foto eliminada"
+            showAlert = true
+            image = nil
+            imageFileName = nil
+            imageData = nil
+            profileVM.clearDeleteProfilePicState()
+        case let error as DeleteProfilePicStateError:
+            alertMessage = error.message
+            showAlert = true
+            profileVM.clearDeleteProfilePicState()
+        default:
+            break
         }
     }
 }

@@ -6,18 +6,28 @@
 //
 
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 /// Pantalla del monedero virtual del usuario.
 struct ElectronicWalletView: View {
-    @EnvironmentObject var userVM: shared.UserViewModel
+    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
+    @StateViewModel private var walletVM = makeUserWalletViewModel()
     @State private var showDetails = false
+
+    private var balanceValue: Double {
+        walletVM.balance?.doubleValue ?? 0
+    }
+
+    private var walletState: EwalletUiState {
+        walletVM.eWalletTransactions
+    }
 
     var body: some View {
         VStack(spacing: 16) {
             VStack(alignment: .leading) {
                 Text("Monedero Virtual").font(.title2).fontWeight(.semibold)
-                Text("💳 Saldo actual: \(userVM.balance, format: .currency(code: "EUR"))")
+                Text("💳 Saldo actual: \(balanceValue, format: .currency(code: "EUR"))")
                     .fontWeight(.semibold)
 
                 Button(showDetails ? "Ocultar detalles" : "Ver detalles") { showDetails.toggle() }
@@ -25,13 +35,8 @@ struct ElectronicWalletView: View {
                     .foregroundColor(.blue)
 
                 if showDetails {
-                    List {
-                        ForEach(Array(userVM.ewalletTransactions.enumerated()), id: \.offset) { _, tx in
-                            TxRow(tx: tx)
-                        }
-                    }
-                    .listStyle(.plain)
-                    .frame(maxHeight: 420)
+                    walletDetails
+                        .frame(maxHeight: 420)
                 }
             }
             .padding(16)
@@ -45,10 +50,31 @@ struct ElectronicWalletView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
         .onAppear {
-            if let id = userVM.currentUser?.id {
-                userVM.loadBalance(for: id)
-                userVM.loadEwalletTransactions(for: id)
+            if let id = sessionVM.userData?.id {
+                walletVM.loadBalance(userId: id)
+                walletVM.loadEwalletTransactions(userId: id)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var walletDetails: some View {
+        switch walletState {
+        case is EwalletUiStateLoading:
+            ProgressView()
+                .frame(maxWidth: .infinity)
+        case let success as EwalletUiStateSuccess:
+            List {
+                ForEach(Array(success.transactions.enumerated()), id: \.offset) { _, tx in
+                    TxRow(tx: tx)
+                }
+            }
+            .listStyle(.plain)
+        case let error as EwalletUiStateError:
+            Text(error.message)
+                .foregroundStyle(.red)
+        default:
+            EmptyView()
         }
     }
 }
@@ -64,7 +90,6 @@ private struct TxRow: View {
                     .fontWeight(.semibold)
                     .foregroundColor(tx.amount >= 0 ? .green : .red)
             }
-            // Usa 'tx.description_' si no renombraste en Kotlin
             Text("📝 \(tx.description_)")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)

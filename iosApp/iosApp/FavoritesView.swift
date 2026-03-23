@@ -11,23 +11,34 @@ import shared
 
 /// Pantalla que muestra la lista de entrenadores y permite marcar un favorito.
 struct FavoritesView: View {
-    @EnvironmentObject var userVM: shared.UserViewModel
-    @StateViewModel private var vm = makeUserViewModel()
+    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
+    @StateViewModel private var vm = makeUserFavoritesViewModel()
+
+    @State private var preferredCoachId: Int?
+    @State private var alertMessage: String?
 
     /// Color de fondo para el entrenador seleccionado (0xAAF683).
     private let selectedColor = Color(red: 170/255, green: 246/255, blue: 131/255)
 
     private let avatarSize: CGFloat = 36
 
+    private var isLoading: Bool {
+        vm.coachesState is CoachStateLoading || vm.getPreferredCoachState is GetPreferredCoachStateLoading || vm.markFavoriteState is MarkFavoriteStateLoading
+    }
+
+    private var coaches: [Professional] {
+        (vm.coachesState as? CoachStateSuccess)?.coaches ?? []
+    }
+
     var body: some View {
         Group {
-            if vm.isLoading {
+            if isLoading && coaches.isEmpty {
                 ProgressView()
             } else {
                 List {
                     Section {
-                        ForEach(vm.coaches, id: \.id) { coach in
-                            let isSelected = coach.id == vm.preferredCoachId
+                        ForEach(coaches, id: \.id) { coach in
+                            let isSelected = coach.id == preferredCoachId
                             HStack(spacing: 12) {
                                 coachImage(for: coach, selected: isSelected)
                                 Text(coach.name)
@@ -37,10 +48,12 @@ struct FavoritesView: View {
                                     .truncationMode(.tail)
                             }
                             .padding(.vertical, 8)
-                            .contentShape(Rectangle())                  // toda la fila tap
+                            .contentShape(Rectangle())
                             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 12))
                             .listRowBackground(isSelected ? selectedColor : Color(.systemBackground))
-                            .onTapGesture { vm.markFavorite(coach: coach, userId: userVM.currentUser?.id) }
+                            .onTapGesture {
+                                vm.markFavorite(coachId: coach.id, serviceName: nil, userId: sessionVM.userData?.id)
+                            }
                         }
                     } header: {
                         Text("Profesionales del deporte")
@@ -51,20 +64,43 @@ struct FavoritesView: View {
             }
         }
         .task {
-            vm.loadCoaches()
-            if let id = userVM.currentUser?.id { vm.loadPreferredCoach(for: id) }
+            vm.getCoaches()
+            if let id = sessionVM.userData?.id { vm.getPreferredCoach(userId: id) }
         }
-        .alert(vm.alertMessage ?? "", isPresented: Binding(
-            get: { vm.alertMessage != nil },
-            set: { if !$0 { vm.alertMessage = nil } }
+        .onChange(of: vm.markFavoriteState) { state in
+            switch state {
+            case let success as MarkFavoriteStateSuccess:
+                alertMessage = success.message
+                preferredCoachId = nil
+                if let id = sessionVM.userData?.id { vm.getPreferredCoach(userId: id) }
+                vm.clearMarkFavoriteState()
+            case let error as MarkFavoriteStateError:
+                alertMessage = error.message
+                vm.clearMarkFavoriteState()
+            default:
+                break
+            }
+        }
+        .onChange(of: vm.getPreferredCoachState) { state in
+            switch state {
+            case let success as GetPreferredCoachStateSuccess:
+                preferredCoachId = Int(success.coachId)
+            case is GetPreferredCoachStateError:
+                preferredCoachId = nil
+            default:
+                break
+            }
+        }
+        .alert(alertMessage ?? "", isPresented: Binding(
+            get: { alertMessage != nil },
+            set: { if !$0 { alertMessage = nil } }
         )) {
-            Button("OK", role: .cancel) { vm.alertMessage = nil }
+            Button("OK", role: .cancel) { alertMessage = nil }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
     }
 
-    /// Imagen del entrenador o icono por defecto.
     private func coachImage(for coach: Professional, selected: Bool) -> some View {
         let base = "\(ApiClient.shared.baseUrl)/profile_pic/"
         let circleStroke = selected ? Color.white.opacity(0.7) : Color.secondary.opacity(0.25)
@@ -72,7 +108,6 @@ struct FavoritesView: View {
         if let photo = coach.photoName,
            let encoded = photo.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
            let url = URL(string: base + encoded) {
-
             return AnyView(
                 AsyncImage(url: url) { phase in
                     switch phase {
