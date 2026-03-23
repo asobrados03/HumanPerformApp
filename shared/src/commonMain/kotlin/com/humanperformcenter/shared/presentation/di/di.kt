@@ -34,21 +34,21 @@ import com.humanperformcenter.shared.domain.usecase.CouponUseCase
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
 import com.humanperformcenter.shared.domain.usecase.ProfileUseCase
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
+import com.humanperformcenter.shared.domain.usecase.StripeUseCase
 import com.humanperformcenter.shared.domain.usecase.UserDocumentUseCase
 import com.humanperformcenter.shared.domain.usecase.UserStatsUseCase
 import com.humanperformcenter.shared.domain.usecase.WalletUseCase
-import com.humanperformcenter.shared.domain.usecase.StripeUseCase
 import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
-import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserBookingsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserDocumentSelectionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserDocumentsViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserFavoritesViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserProfileViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserWalletViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.singleOf
@@ -57,46 +57,109 @@ import org.koin.dsl.module
 
 expect val platformModule: Module
 
-val appModule = module {
-    single<AuthRepository> { AuthRepositoryImpl }
-    single<SessionStorage> { SessionStorageImpl }
+val userProfileModule = module {
     single<UserProfileRepository> { UserProfileRepositoryImpl }
-    single<UserAccountRepository> { UserAccountRepositoryImpl }
-    single<UserFavoritesRepository> { UserFavoritesRepositoryImpl }
-    single<UserBookingsRepository> { UserBookingsRepositoryImpl }
-    single<UserStatsRepository> { UserStatsRepositoryImpl }
-    single<UserCouponsRepository> { UserCouponsRepositoryImpl }
-    single<UserDocumentsRepository> { UserDocumentsRepositoryImpl }
-    single<UserWalletRepository> { UserWalletRepositoryImpl }
-    single<DaySessionRepository> { DaySessionRepositoryImpl }
-    single<ServiceProductRepository> { ServiceProductRepositoryImpl }
-    single<StripeRepository> { StripeRepositoryImpl }
 
-    // UseCases (Mucho más limpio con singleOf)
-    singleOf(::AuthUseCase)
     singleOf(::ProfileUseCase)
+
+    viewModelOf(::UserProfileViewModel)
+}
+
+val userSessionModule = module {
+    single<UserAccountRepository> { UserAccountRepositoryImpl }
+    single<SessionStorage> { SessionStorageImpl }
+
     singleOf(::AccountUseCase)
+
+    viewModelOf(::UserSessionViewModel)
+}
+
+val userFavoritesModule = module {
+    single<UserFavoritesRepository> { UserFavoritesRepositoryImpl }
+
     singleOf(::CoachesUseCase)
+
+    viewModelOf(::UserFavoritesViewModel)
+}
+
+val userBookingsModule = module {
+    single<UserBookingsRepository> { UserBookingsRepositoryImpl }
+
     singleOf(::BookingsUseCase)
+
+    viewModelOf(::UserBookingsViewModel)
+}
+
+val userCouponsModule = module {
+    single<UserCouponsRepository> { UserCouponsRepositoryImpl }
+
     singleOf(::CouponUseCase)
+}
+
+val userDocumentsModule = module {
+    single<UserDocumentsRepository> { UserDocumentsRepositoryImpl }
+
+    singleOf(::UserDocumentUseCase)
+
+    viewModelOf(::UserDocumentsViewModel)
+    viewModelOf(::UserDocumentSelectionViewModel)
+}
+
+val userWalletModule = module {
+    single<UserWalletRepository> { UserWalletRepositoryImpl }
+    single<UserStatsRepository> { UserStatsRepositoryImpl }
+
     singleOf(::WalletUseCase)
     singleOf(::UserStatsUseCase)
-    singleOf(::UserDocumentUseCase)
-    singleOf(::DaySessionUseCase)
-    singleOf(::ServiceProductUseCase)
+
+    viewModelOf(::UserWalletViewModel)
+    viewModelOf(::UserStatsViewModel)
+}
+
+val authModule = module {
+    single<AuthRepository> { AuthRepositoryImpl }
+
+    singleOf(::AuthUseCase)
+
+    viewModelOf(::AuthViewModel)
+}
+
+val stripeModule = module {
+    single<StripeRepository> { StripeRepositoryImpl }
+
     singleOf(::StripeUseCase)
 
-    // ViewModels (Ya los tenías bien, pero los agrupamos)
-    viewModelOf(::AuthViewModel)
-    viewModelOf(::DaySessionViewModel)
-    viewModelOf(::ServiceProductViewModel)
-    viewModelOf(::UserStatsViewModel)
-    viewModelOf(::UserDocumentsViewModel)
-    viewModelOf(::UserBookingsViewModel)
-    viewModelOf(::UserWalletViewModel)
-    viewModelOf(::UserFavoritesViewModel)
-    viewModelOf(::UserProfileViewModel)
-    viewModelOf(::UserSessionViewModel)
-    viewModelOf(::UserViewModel)
     viewModelOf(::StripeViewModel)
+}
+
+val schedulingModule = module {
+    single<DaySessionRepository> { DaySessionRepositoryImpl }
+
+    singleOf(::DaySessionUseCase)
+
+    viewModelOf(::DaySessionViewModel)
+}
+
+val catalogModule = module {
+    single<ServiceProductRepository> { ServiceProductRepositoryImpl }
+
+    singleOf(::ServiceProductUseCase)
+
+    viewModelOf(::ServiceProductViewModel)
+}
+
+val appModule = module {
+    includes(
+        userProfileModule,
+        userSessionModule,
+        userFavoritesModule,
+        userBookingsModule,
+        userCouponsModule,
+        userDocumentsModule,
+        userWalletModule,
+        authModule,
+        stripeModule,
+        schedulingModule,
+        catalogModule,
+    )
 }
