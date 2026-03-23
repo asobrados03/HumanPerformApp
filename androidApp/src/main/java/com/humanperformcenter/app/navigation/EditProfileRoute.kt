@@ -5,20 +5,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.humanperformcenter.shared.presentation.viewmodel.UserProfileViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 import com.humanperformcenter.ui.screens.EditProfileScreen
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun EditProfileRoute(navController: NavHostController) {
-    val userViewModel: UserViewModel = koinViewModel()
-    val loading by userViewModel.isLoading.collectAsState()
-    val userState by userViewModel.userData.collectAsState()
+    val userProfileViewModel: UserProfileViewModel = koinViewModel()
+    val userSessionViewModel: UserSessionViewModel = koinViewModel()
+    val loading by userSessionViewModel.isLoading.collectAsStateWithLifecycle()
+    val userState by userSessionViewModel.userData.collectAsStateWithLifecycle()
 
     when {
         loading -> {
@@ -37,11 +39,11 @@ fun EditProfileRoute(navController: NavHostController) {
         else -> {
             EditProfileScreen(
                 user = userState!!,
-                userViewModel = userViewModel,
+                userProfileViewModel = userProfileViewModel,
                 onSave = { updatedUser, profilePicBytes ->
-                    userViewModel.updateUser(updatedUser, profilePicBytes)
+                    userProfileViewModel.updateUser(updatedUser, profilePicBytes, userSessionViewModel.currentUserState())
                 },
-                onDeleteProfilePic = { userViewModel.deleteProfilePic(userState!!) },
+                onDeleteProfilePic = { userProfileViewModel.deleteProfilePic(userState!!, userSessionViewModel.currentUserState()) },
                 navController = navController
             )
         }

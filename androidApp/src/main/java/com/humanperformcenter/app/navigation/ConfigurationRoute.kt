@@ -12,21 +12,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.ui.components.app.FullScreenLoading
 import com.humanperformcenter.ui.screens.ConfigurationScreen
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 import com.humanperformcenter.shared.presentation.ui.DeleteUserState
 
 @Composable
 fun ConfigurationRoute(
     navController: NavHostController,
-    userViewModel: UserViewModel
+    userSessionViewModel: UserSessionViewModel
 ) {
-    val deleteState by userViewModel.deleteState.collectAsStateWithLifecycle()
-    val user by userViewModel.userData.collectAsStateWithLifecycle()
+    val deleteState by userSessionViewModel.deleteState.collectAsStateWithLifecycle()
+    val user by userSessionViewModel.userData.collectAsStateWithLifecycle()
     val currentEmail = user?.email.orEmpty()
 
     val context = LocalContext.current
 
-    val isLoggingOut by userViewModel.isLoggingOut.collectAsStateWithLifecycle()
+    val isLoggingOut by userSessionViewModel.isLoggingOut.collectAsStateWithLifecycle()
 
     LaunchedEffect(deleteState) {
         when (deleteState) {
@@ -34,7 +34,7 @@ fun ConfigurationRoute(
                 navController.navigate(Welcome) {
                     popUpTo(Welcome) { inclusive = true }
                 }
-                userViewModel.resetDeleteState()
+                userSessionViewModel.resetDeleteState()
             }
             is DeleteUserState.Error -> {
                 Toast.makeText(
@@ -42,7 +42,7 @@ fun ConfigurationRoute(
                     "Error: ${(deleteState as DeleteUserState.Error).message}",
                     Toast.LENGTH_LONG
                 ).show()
-                userViewModel.resetDeleteState()
+                userSessionViewModel.resetDeleteState()
             }
             is DeleteUserState.NotFound -> {
                 Toast.makeText(
@@ -50,7 +50,7 @@ fun ConfigurationRoute(
                     "Usuario no encontrado: ${(deleteState as DeleteUserState.NotFound).email}",
                     Toast.LENGTH_LONG
                 ).show()
-                userViewModel.resetDeleteState()
+                userSessionViewModel.resetDeleteState()
             }
             else -> Unit
         }
@@ -60,7 +60,7 @@ fun ConfigurationRoute(
         ConfigurationScreen(
             navController = navController,
             onLogout = {
-                userViewModel.logout {
+                userSessionViewModel.logout {
                     // Usamos una navegación que evite duplicados si el usuario pulsa dos veces rápido
                     navController.navigate(Welcome) {
                         popUpTo(navController.graph.startDestinationId) {
@@ -71,7 +71,7 @@ fun ConfigurationRoute(
                 }
             },
             onDeleteAccount = {
-                userViewModel.deleteUser(currentEmail)
+                userSessionViewModel.deleteUser(currentEmail)
             },
             onChangePasswordRequested = {
                 navController.navigate(ChangePassword)

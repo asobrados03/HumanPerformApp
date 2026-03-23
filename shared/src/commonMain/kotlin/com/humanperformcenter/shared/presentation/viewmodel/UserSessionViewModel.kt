@@ -105,5 +105,5 @@ class UserSessionViewModel(
         }
     }
 
-    internal fun currentUserState(): MutableStateFlow<com.humanperformcenter.shared.data.model.user.User?> = _userData
+    fun currentUserState(): MutableStateFlow<com.humanperformcenter.shared.data.model.user.User?> = _userData
 }

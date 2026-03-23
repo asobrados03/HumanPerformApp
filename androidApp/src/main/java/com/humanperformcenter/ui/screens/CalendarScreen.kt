@@ -27,7 +27,8 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
 import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserBookingsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 import com.humanperformcenter.ui.components.calendar.CalendarGrid
 import com.humanperformcenter.ui.components.calendar.CalendarHeader
 import com.humanperformcenter.ui.components.calendar.CalendarWeekDays
@@ -44,7 +45,8 @@ fun CalendarScreen(
     navController: NavHostController,
     daySessionViewModel: DaySessionViewModel,
     serviceProductViewModel: ServiceProductViewModel,
-    userViewModel: UserViewModel,
+    userSessionViewModel: UserSessionViewModel,
+    userBookingsViewModel: UserBookingsViewModel,
     onPlaySound: (Int) -> Unit
 ) {
     val today = remember { LocalDate.now() }
@@ -52,8 +54,8 @@ fun CalendarScreen(
     var displayedMonth by remember { mutableStateOf(today.month) }
     var displayedYear by remember { mutableIntStateOf(today.year) }
 
-    val user by userViewModel.userData.collectAsStateWithLifecycle()
-    val userBookings by userViewModel.userBookings.collectAsStateWithLifecycle()
+    val user by userSessionViewModel.userData.collectAsStateWithLifecycle()
+    val userBookings by userBookingsViewModel.userBookings.collectAsStateWithLifecycle()
     val userId = user?.id
 
     val context = LocalContext.current
@@ -62,7 +64,7 @@ fun CalendarScreen(
     LaunchedEffect(userId) {
         if (userId != null && userId != -1) {
             if (userBookings !is FetchUserBookingsState.Success) {
-                userViewModel.fetchUserBookings(userId)
+                userBookingsViewModel.fetchUserBookings(userId)
             }
             daySessionViewModel.fetchHolidays()
         }
@@ -82,7 +84,8 @@ fun CalendarScreen(
     val onDayClicked = reservationFlowDialogs(
         daySessionViewModel = daySessionViewModel,
         serviceProductViewModel = serviceProductViewModel,
-        userViewModel = userViewModel
+        userSessionViewModel = userSessionViewModel,
+        userBookingsViewModel = userBookingsViewModel
     )
 
     Scaffold(
@@ -147,7 +150,7 @@ fun CalendarScreen(
                     }
                     is FetchUserBookingsState.Success -> {
                         UserBookingsSection(
-                            userViewModel = userViewModel,
+                            userBookingsViewModel = userBookingsViewModel,
                             serviceProductViewModel = serviceProductViewModel,
                             userBookings = state.bookings,
                             userId = userId

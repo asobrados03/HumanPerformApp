@@ -13,29 +13,32 @@ import androidx.navigation.NavHostController
 import com.humanperformcenter.ui.components.app.FullScreenLoading
 import com.humanperformcenter.ui.components.app.FullScreenTextLoading
 import com.humanperformcenter.ui.screens.FavoriteScreen
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserFavoritesViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
+import org.koin.androidx.compose.koinViewModel
 import com.humanperformcenter.shared.presentation.ui.CoachState
 import com.humanperformcenter.shared.presentation.ui.GetPreferredCoachState
 
 @Composable
 fun FavoriteRoute(
-    userViewModel: UserViewModel,
     navController: NavHostController
 ) {
-    val coachState by userViewModel.coachesState.collectAsStateWithLifecycle()
-    val getPreferredCoachState by userViewModel.getPreferredCoachState.collectAsStateWithLifecycle()
-    val markFavoriteState by userViewModel.markFavoriteState.collectAsStateWithLifecycle()
-    val userState by userViewModel.userData.collectAsStateWithLifecycle()
+    val favoritesViewModel: UserFavoritesViewModel = koinViewModel()
+    val userSessionViewModel: UserSessionViewModel = koinViewModel()
+    val coachState by favoritesViewModel.coachesState.collectAsStateWithLifecycle()
+    val getPreferredCoachState by favoritesViewModel.getPreferredCoachState.collectAsStateWithLifecycle()
+    val markFavoriteState by favoritesViewModel.markFavoriteState.collectAsStateWithLifecycle()
+    val userState by userSessionViewModel.userData.collectAsStateWithLifecycle()
     val userId = userState?.id
 
     // Sólo para getCoaches() al montar la pantalla
     LaunchedEffect(Unit) {
-        userViewModel.getCoaches()
+        favoritesViewModel.getCoaches()
     }
 
     // Observa userId y, cuando deje de ser null, pide el favorito
     LaunchedEffect(userId) {
-        userId?.let { userViewModel.getPreferredCoach(userId = it) }
+        userId?.let { favoritesViewModel.getPreferredCoach(userId = it) }
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -43,7 +46,7 @@ fun FavoriteRoute(
     LaunchedEffect(getPreferredCoachState) {
         if (getPreferredCoachState is GetPreferredCoachState.Error) {
             snackbarHostState.showSnackbar((getPreferredCoachState as GetPreferredCoachState.Error).message)
-            userViewModel.clearGetPreferredCoachState()
+            favoritesViewModel.clearGetPreferredCoachState()
         }
     }
 
@@ -73,10 +76,11 @@ fun FavoriteRoute(
                             coaches = coaches,
                             preferredCoachId = favoriteId,
                             onSelect = { prof ->
-                                userViewModel.markFavorite(prof.id, prof.service, userId)
+                                favoritesViewModel.markFavorite(prof.id, prof.service, userId)
                             },
                             markFavoriteState = markFavoriteState,
-                            userViewModel = userViewModel,
+                            onMarkFavoriteStateConsumed = favoritesViewModel::clearMarkFavoriteState,
+                            onRefreshPreferredCoach = favoritesViewModel::getPreferredCoach,
                             userId = userId,
                             navController = navController
                         )
@@ -88,10 +92,11 @@ fun FavoriteRoute(
                             coaches = coaches,
                             preferredCoachId = -1,
                             onSelect = { prof ->
-                                userViewModel.markFavorite(prof.id, prof.service, userId)
+                                favoritesViewModel.markFavorite(prof.id, prof.service, userId)
                             },
                             markFavoriteState = markFavoriteState,
-                            userViewModel = userViewModel,
+                            onMarkFavoriteStateConsumed = favoritesViewModel::clearMarkFavoriteState,
+                            onRefreshPreferredCoach = favoritesViewModel::getPreferredCoach,
                             userId = userId,
                             navController = navController,
                         )

@@ -36,22 +36,22 @@ import com.humanperformcenter.shared.data.model.payment.EwalletTransaction
 import com.humanperformcenter.shared.presentation.ui.EwalletUiState
 import com.humanperformcenter.ui.components.app.AppCard
 import com.humanperformcenter.ui.components.app.LogoAppBar
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserWalletViewModel
 
 @Composable
 fun ElectronicWalletScreen(
     navController: NavHostController,
-    userViewModel: UserViewModel,
+    userWalletViewModel: UserWalletViewModel,
     userId: Int
 ) {
-    val balance by userViewModel.balance.collectAsStateWithLifecycle()
-    val uiState by userViewModel.eWalletTransactions.collectAsStateWithLifecycle()
+    val balance by userWalletViewModel.balance.collectAsStateWithLifecycle()
+    val uiState by userWalletViewModel.eWalletTransactions.collectAsStateWithLifecycle()
 
     var mostrarDetalles by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
-        userViewModel.loadBalance(userId)
-        userViewModel.loadEwalletTransactions(userId)
+        userWalletViewModel.loadBalance(userId)
+        userWalletViewModel.loadEwalletTransactions(userId)
     }
 
     Scaffold(

@@ -41,7 +41,6 @@ import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.model.user.Professional
 import com.humanperformcenter.shared.data.network.ApiClient
 import com.humanperformcenter.ui.components.app.LogoAppBar
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
 import com.humanperformcenter.shared.presentation.ui.MarkFavoriteState
 import kotlinx.coroutines.launch
 
@@ -51,7 +50,8 @@ fun FavoriteScreen(
     preferredCoachId: Int?,
     onSelect: (Professional) -> Unit,
     markFavoriteState: MarkFavoriteState,
-    userViewModel: UserViewModel,
+    onMarkFavoriteStateConsumed: () -> Unit,
+    onRefreshPreferredCoach: (Int) -> Unit,
     userId: Int?,
     navController: NavHostController
 ) {
@@ -69,8 +69,8 @@ fun FavoriteScreen(
                         duration = SnackbarDuration.Short
                     )
                 }
-                userViewModel.clearMarkFavoriteState()
-                userViewModel.getPreferredCoach(userId!!)
+                onMarkFavoriteStateConsumed()
+                onRefreshPreferredCoach(userId!!)
             }
 
             is MarkFavoriteState.Success -> {
@@ -80,8 +80,8 @@ fun FavoriteScreen(
                         duration = SnackbarDuration.Short
                     )
                 }
-                userViewModel.clearMarkFavoriteState()
-                userViewModel.getPreferredCoach(userId!!)
+                onMarkFavoriteStateConsumed()
+                onRefreshPreferredCoach(userId!!)
             } else -> Unit
         }
     }

@@ -54,7 +54,8 @@ import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
-import com.humanperformcenter.shared.presentation.viewmodel.UserViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserBookingsViewModel
+import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -75,7 +76,7 @@ private val DisabledTextColor = Color.Gray
 @Stable
 private class ReservationFlowState(
     private val daySessionViewModel: DaySessionViewModel,
-    private val userViewModel: UserViewModel,
+    private val userBookingsViewModel: UserBookingsViewModel,
     private val scope: CoroutineScope,
     private val userId: Int,
     private val userBookingsState: State<List<UserBooking>>,
@@ -181,7 +182,7 @@ private class ReservationFlowState(
                 return@launch
             }
 
-            userViewModel.fetchUserBookings(userId)
+            userBookingsViewModel.fetchUserBookings(userId)
 
             dismiss()
         }
@@ -222,7 +223,7 @@ private class ReservationFlowState(
             }
 
             // 4. Refrescamos datos globales para que la UI se actualice
-            userViewModel.fetchUserBookings(userId)
+            userBookingsViewModel.fetchUserBookings(userId)
             dismiss()
         }
     }
@@ -332,13 +333,14 @@ private class ReservationFlowState(
 fun reservationFlowDialogs(
     daySessionViewModel: DaySessionViewModel,
     serviceProductViewModel: ServiceProductViewModel,
-    userViewModel: UserViewModel
+    userSessionViewModel: UserSessionViewModel,
+    userBookingsViewModel: UserBookingsViewModel
 ): (JavaLocalDate) -> Unit {
-    val user by userViewModel.userData.collectAsStateWithLifecycle()
+    val user by userSessionViewModel.userData.collectAsStateWithLifecycle()
     val userId = user?.id ?: return {}
     val scope = rememberCoroutineScope()
 
-    val userBookings by userViewModel.userBookings.collectAsStateWithLifecycle()
+    val userBookings by userBookingsViewModel.userBookings.collectAsStateWithLifecycle()
     val bookingsList = (userBookings as? FetchUserBookingsState.Success)?.bookings ?: emptyList()
     val bookingsState = rememberUpdatedState(bookingsList)
 
@@ -352,10 +354,10 @@ fun reservationFlowDialogs(
 
     val bookingError by daySessionViewModel.bookingErrorMessage.collectAsStateWithLifecycle()
 
-    val state = remember(userId, daySessionViewModel, userViewModel, scope) {
+    val state = remember(userId, daySessionViewModel, userBookingsViewModel, scope) {
         ReservationFlowState(
             daySessionViewModel = daySessionViewModel,
-            userViewModel = userViewModel,
+            userBookingsViewModel = userBookingsViewModel,
             scope = scope,
             userId = userId,
             userBookingsState = bookingsState
