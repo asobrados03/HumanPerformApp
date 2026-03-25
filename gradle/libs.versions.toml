@@ -35,6 +35,7 @@ securityCrypto = "1.1.0"
 ktorClientAuth = "3.4.0"
 datastore = "1.2.0"
 kotlinxCoroutinesCore = "1.10.2"
+kotlinxCoroutinesTest = "1.10.2"
 logging = "2.1.0"
 ktorClientCio = "3.4.0"
 ktorClientLogging = "3.4.0"
@@ -45,6 +46,7 @@ appcompat = "1.7.1"
 materialVersion = "1.13.0"
 kmpNativecoroutinesCore = "1.0.0"
 koin = "4.1.1"
+turbine = "1.2.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -91,7 +93,9 @@ ktor-client-auth = { group = "io.ktor", name = "ktor-client-auth", version.ref =
 datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
 logging = { group = "com.diamondedge", name = "logging", version.ref = "logging" }
+turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktorClientCio" }
 ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktorClientLogging" }
 compose-pay-button = { group = "com.google.pay.button", name = "compose-pay-button", version.ref = "composePayButton" }
@@ -114,4 +118,3 @@ compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
-
