@@ -12,12 +12,30 @@ import com.humanperformcenter.shared.presentation.ui.LoginState
 import com.humanperformcenter.shared.presentation.ui.RegisterState
 import com.humanperformcenter.shared.presentation.ui.ResetPasswordState
 import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.koin.core.context.startKoin
+import org.koin.core.module.dsl.viewModel
+import org.koin.dsl.module
+import org.koin.mp.KoinPlatform
+import org.koin.mp.KoinPlatform.stopKoin
+import org.koin.test.KoinTest
 import kotlin.test.Test
+import kotlin.test.BeforeTest
+import kotlin.test.AfterTest
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class AuthViewModelTest {
+@OptIn(ExperimentalCoroutinesApi::class)
+class AuthViewModelTest : KoinTest {
+
+    // ─────────────────────────────────────────────────────────────
+    // Fakes
+    // ─────────────────────────────────────────────────────────────
 
     private class FakeAuthRepository(
         private val loginResult: Result<LoginResponse> = Result.success(sampleLoginResponse()),
@@ -26,11 +44,28 @@ class AuthViewModelTest {
         private val changePasswordResult: Result<Unit> = Result.success(Unit),
         private val logoutResult: Result<Unit> = Result.success(Unit)
     ) : AuthRepository {
-        override suspend fun login(email: String, password: String): Result<LoginResponse> = loginResult
-        override suspend fun register(data: RegisterRequest): Result<RegisterResponse> = registerResult
+
+        var loginCallCount = 0
+            private set
+        var registerCallCount = 0
+            private set
+
+        override suspend fun login(email: String, password: String): Result<LoginResponse> {
+            loginCallCount++
+            return loginResult
+        }
+
+        override suspend fun register(data: RegisterRequest): Result<RegisterResponse> {
+            registerCallCount++
+            return registerResult
+        }
+
         override suspend fun resetPassword(email: String): Result<Unit> = resetPasswordResult
-        override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int): Result<Unit> =
-            changePasswordResult
+        override suspend fun changePassword(
+            currentPassword: String,
+            newPassword: String,
+            userId: Int
+        ): Result<Unit> = changePasswordResult
         override suspend fun logout(): Result<Unit> = logoutResult
     }
 
@@ -38,14 +73,52 @@ class AuthViewModelTest {
         override suspend fun clearSession() = Unit
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Koin setup
+    // ─────────────────────────────────────────────────────────────
+
+    private val testDispatcher = StandardTestDispatcher()
+
+    private fun testModule(repository: FakeAuthRepository = FakeAuthRepository()) = module {
+        single<AuthRepository> { repository }
+        single<SessionStorage> { FakeSessionStorage() }
+        single { AuthUseCase(get(), get()) }
+        viewModel { AuthViewModel(get()) }
+    }
+
+    @BeforeTest
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        stopKoin()
+        Dispatchers.resetMain()
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Helper
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Arranca un contenedor Koin aislado para el test y devuelve el ViewModel
+     * resuelto por el grafo, igual que lo haría la app real.
+     */
+    private fun buildViewModel(repository: FakeAuthRepository = FakeAuthRepository()): AuthViewModel {
+        startKoin { modules(testModule(repository)) }
+        return KoinPlatform.getKoin().get()
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Login
+    // ─────────────────────────────────────────────────────────────
+
     @Test
-    fun login_whenSuccess_emitsLoadingThenSuccess() = runTest {
+    fun `login - when success - emits Loading then Success`() = runTest {
         val login = sampleLoginResponse()
-        val viewModel = AuthViewModel(
-            AuthUseCase(
-                FakeAuthRepository(loginResult = Result.success(login)),
-                FakeSessionStorage()
-            )
+        val viewModel = buildViewModel(
+            FakeAuthRepository(loginResult = Result.success(login))
         )
 
         viewModel.loginState.test {
@@ -58,12 +131,24 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun login_whenFailureWithoutMessage_emitsUnknownError() = runTest {
-        val viewModel = AuthViewModel(
-            AuthUseCase(
-                FakeAuthRepository(loginResult = Result.failure(IllegalStateException())),
-                FakeSessionStorage()
-            )
+    fun `login - when failure with message - emits Error with that message`() = runTest {
+        val viewModel = buildViewModel(
+            FakeAuthRepository(loginResult = Result.failure(IllegalStateException("Credenciales inválidas")))
+        )
+
+        viewModel.loginState.test {
+            assertEquals(LoginState.Idle, awaitItem())
+            viewModel.login("mail@test.com", "wrong")
+            assertEquals(LoginState.Loading, awaitItem())
+            assertEquals(LoginState.Error("Credenciales inválidas"), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `login - when failure without message - emits unknown error`() = runTest {
+        val viewModel = buildViewModel(
+            FakeAuthRepository(loginResult = Result.failure(IllegalStateException()))
         )
 
         viewModel.loginState.test {
@@ -76,29 +161,26 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun register_whenInvalidData_emitsValidationErrors() = runTest {
-        val viewModel = AuthViewModel(AuthUseCase(FakeAuthRepository(), FakeSessionStorage()))
+    fun `resetStates - after login success - restores loginState to Idle`() = runTest {
+        val viewModel = buildViewModel()
 
-        viewModel.register(
-            sampleRegisterRequest().copy(
-                email = "invalid-email",
-                password = "123"
-            )
-        )
+        viewModel.login("mail@test.com", "secret")
+        testDispatcher.scheduler.advanceUntilIdle()
 
-        val state = viewModel.registerState.value
-        assertTrue(state is RegisterState.ValidationErrors)
-        assertTrue(state.fieldErrors.isNotEmpty())
+        viewModel.resetStates()
+
+        assertEquals(LoginState.Idle, viewModel.loginState.value)
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Register
+    // ─────────────────────────────────────────────────────────────
+
     @Test
-    fun register_whenSuccess_emitsLoadingThenSuccess() = runTest {
+    fun `register - when success - emits Loading then Success`() = runTest {
         val response = RegisterResponse("Creado")
-        val viewModel = AuthViewModel(
-            AuthUseCase(
-                FakeAuthRepository(registerResult = Result.success(response)),
-                FakeSessionStorage()
-            )
+        val viewModel = buildViewModel(
+            FakeAuthRepository(registerResult = Result.success(response))
         )
 
         viewModel.registerState.test {
@@ -111,43 +193,243 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun resetPassword_and_changePassword_and_resets_updateStateAsExpected() = runTest {
-        val viewModel = AuthViewModel(
-            AuthUseCase(
-                FakeAuthRepository(
-                    resetPasswordResult = Result.success(Unit),
-                    changePasswordResult = Result.success(Unit)
-                ),
-                FakeSessionStorage()
-            )
+    fun `register - when failure with message - emits Error with that message`() = runTest {
+        val viewModel = buildViewModel(
+            FakeAuthRepository(registerResult = Result.failure(RuntimeException("Email ya registrado")))
+        )
+
+        viewModel.registerState.test {
+            assertEquals(RegisterState.Idle, awaitItem())
+            viewModel.register(sampleRegisterRequest())
+            assertEquals(RegisterState.Loading, awaitItem())
+            assertEquals(RegisterState.Error("Email ya registrado"), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `register - when failure without message - emits unknown error`() = runTest {
+        val viewModel = buildViewModel(
+            FakeAuthRepository(registerResult = Result.failure(RuntimeException()))
+        )
+
+        viewModel.registerState.test {
+            assertEquals(RegisterState.Idle, awaitItem())
+            viewModel.register(sampleRegisterRequest())
+            assertEquals(RegisterState.Loading, awaitItem())
+            assertEquals(RegisterState.Error("Error desconocido"), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `register - when invalid email - emits ValidationErrors and does not call repository`() =
+        runTest {
+            val repository = FakeAuthRepository()
+            val viewModel = buildViewModel(repository)
+
+            viewModel.register(sampleRegisterRequest().copy(email = "invalid-email"))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = viewModel.registerState.value
+            assertTrue(state is RegisterState.ValidationErrors)
+            assertTrue(state.fieldErrors.isNotEmpty())
+            assertEquals(0, repository.registerCallCount)
+        }
+
+    @Test
+    fun `register - when password too short - emits ValidationErrors and does not call repository`() =
+        runTest {
+            val repository = FakeAuthRepository()
+            val viewModel = buildViewModel(repository)
+
+            viewModel.register(sampleRegisterRequest().copy(password = "123"))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = viewModel.registerState.value
+            assertTrue(state is RegisterState.ValidationErrors)
+            assertTrue(state.fieldErrors.isNotEmpty())
+            assertEquals(0, repository.registerCallCount)
+        }
+
+    @Test
+    fun `resetStates - after register success - restores registerState to Idle`() = runTest {
+        val viewModel = buildViewModel()
+
+        viewModel.register(sampleRegisterRequest())
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.resetStates()
+
+        assertEquals(RegisterState.Idle, viewModel.registerState.value)
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Reset password
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    fun `resetPassword - when success - emits Loading then Success`() = runTest {
+        val viewModel = buildViewModel(
+            FakeAuthRepository(resetPasswordResult = Result.success(Unit))
         )
 
         viewModel.isResettingPassword.test {
             assertEquals(ResetPasswordState.Idle, awaitItem())
             viewModel.resetPassword("mail@test.com")
             assertEquals(ResetPasswordState.Loading, awaitItem())
-            assertEquals(ResetPasswordState.Success("Contraseña restablecida exitosamente"), awaitItem())
-            viewModel.resetResettingPasswordState()
-            assertEquals(ResetPasswordState.Idle, awaitItem())
+            assertEquals(
+                ResetPasswordState.Success("Contraseña restablecida exitosamente"),
+                awaitItem()
+            )
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `resetPassword - when failure with message - emits Error with that message`() =
+        runTest {
+            val viewModel = buildViewModel(
+                FakeAuthRepository(
+                    resetPasswordResult = Result.failure(RuntimeException("Email no encontrado"))
+                )
+            )
+
+            viewModel.isResettingPassword.test {
+                assertEquals(ResetPasswordState.Idle, awaitItem())
+                viewModel.resetPassword("unknown@test.com")
+                assertEquals(ResetPasswordState.Loading, awaitItem())
+                assertEquals(ResetPasswordState.Error("Email no encontrado"), awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `resetPassword - when failure without message - emits unknown error`() =
+        runTest {
+            val viewModel = buildViewModel(
+                FakeAuthRepository(resetPasswordResult = Result.failure(RuntimeException()))
+            )
+
+            viewModel.isResettingPassword.test {
+                assertEquals(ResetPasswordState.Idle, awaitItem())
+                viewModel.resetPassword("mail@test.com")
+                assertEquals(ResetPasswordState.Loading, awaitItem())
+                assertEquals(ResetPasswordState.Error("Error desconocido"), awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `resetResettingPasswordState - after success - restores state to Idle`() =
+        runTest {
+            val viewModel = buildViewModel(
+                FakeAuthRepository(resetPasswordResult = Result.success(Unit))
+            )
+
+            viewModel.isResettingPassword.test {
+                assertEquals(ResetPasswordState.Idle, awaitItem())
+                viewModel.resetPassword("mail@test.com")
+                skipItems(2) // Loading + Success
+                viewModel.resetResettingPasswordState()
+                assertEquals(ResetPasswordState.Idle, awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    // ─────────────────────────────────────────────────────────────
+    // Change password
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    fun `changePassword - when success - emits Loading then Success`() = runTest {
+        val viewModel = buildViewModel(
+            FakeAuthRepository(changePasswordResult = Result.success(Unit))
+        )
 
         viewModel.isChangingPassword.test {
             assertEquals(ChangePasswordState.Idle, awaitItem())
             viewModel.changePassword("Oldpass1", "Newpass1", "Newpass1", 1)
             assertEquals(ChangePasswordState.Loading, awaitItem())
-            assertEquals(ChangePasswordState.Success("Contraseña cambiada exitosamente"), awaitItem())
-            viewModel.resetChangePasswordState()
-            assertEquals(ChangePasswordState.Idle, awaitItem())
+            assertEquals(
+                ChangePasswordState.Success("Contraseña cambiada exitosamente"),
+                awaitItem()
+            )
             cancelAndIgnoreRemainingEvents()
         }
-
-        viewModel.login("mail@test.com", "secret")
-        viewModel.register(sampleRegisterRequest())
-        viewModel.resetStates()
-        assertEquals(LoginState.Idle, viewModel.loginState.value)
-        assertEquals(RegisterState.Idle, viewModel.registerState.value)
     }
+
+    @Test
+    fun `changePassword - when failure with message - emits Error with that message`() =
+        runTest {
+            val viewModel = buildViewModel(
+                FakeAuthRepository(
+                    changePasswordResult = Result.failure(RuntimeException("Contraseña actual incorrecta"))
+                )
+            )
+
+            viewModel.isChangingPassword.test {
+                assertEquals(ChangePasswordState.Idle, awaitItem())
+                viewModel.changePassword("WrongOld1", "Newpass1", "Newpass1", 1)
+                assertEquals(ChangePasswordState.Loading, awaitItem())
+                assertEquals(
+                    ChangePasswordState.Error("Contraseña actual incorrecta"),
+                    awaitItem()
+                )
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `changePassword - when failure without message - emits unknown error`() =
+        runTest {
+            val viewModel = buildViewModel(
+                FakeAuthRepository(changePasswordResult = Result.failure(RuntimeException()))
+            )
+
+            viewModel.isChangingPassword.test {
+                assertEquals(ChangePasswordState.Idle, awaitItem())
+                viewModel.changePassword("Oldpass1", "Newpass1", "Newpass1", 1)
+                assertEquals(ChangePasswordState.Loading, awaitItem())
+                assertEquals(ChangePasswordState.Error("Error desconocido"), awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `changePassword - when new passwords do not match - emits ValidationError and does not call repository`() =
+        runTest {
+            val repository = FakeAuthRepository()
+            val viewModel = buildViewModel(repository)
+
+            viewModel.changePassword("Oldpass1", "Newpass1", "Different1", 1)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = viewModel.isChangingPassword.value
+            assertTrue(state is ChangePasswordState.Error)
+            assertEquals(0, repository.loginCallCount) // repositorio no fue tocado
+        }
+
+    @Test
+    fun `resetChangePasswordState - after success - restores state to Idle`() =
+        runTest {
+            val viewModel = buildViewModel(
+                FakeAuthRepository(changePasswordResult = Result.success(Unit))
+            )
+
+            viewModel.isChangingPassword.test {
+                assertEquals(ChangePasswordState.Idle, awaitItem())
+                viewModel.changePassword("Oldpass1", "Newpass1", "Newpass1", 1)
+                skipItems(2) // Loading + Success
+                viewModel.resetChangePasswordState()
+                assertEquals(ChangePasswordState.Idle, awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    // ─────────────────────────────────────────────────────────────
+    // Fixtures
+    // ─────────────────────────────────────────────────────────────
 
     private companion object {
         fun sampleLoginResponse() = LoginResponse(
