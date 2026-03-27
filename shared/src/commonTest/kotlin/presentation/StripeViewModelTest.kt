@@ -1,6 +1,5 @@
 package com.humanperformcenter.shared.presentation
 
-import app.cash.turbine.test
 import com.humanperformcenter.shared.data.model.payment.AssociatedObject
 import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
 import com.humanperformcenter.shared.data.model.payment.CreatePiDto
@@ -31,9 +30,7 @@ import kotlin.test.assertTrue
 class StripeViewModelTest {
 
     private class FakeStripeRepository(
-        private val publishableKeyResult: Result<String> = Result.success("pk_test_123"),
         private val customerResult: Result<CreateStripeCustomerResponse> = Result.success(sampleCustomerResponse()),
-        private val ephemeralKeyResult: Result<StripeEphemeralKeyResponse> = Result.success(sampleEphemeralKeyResponse()),
         private val detachResult: Result<Unit> = Result.success(Unit),
         private val setDefaultResult: Result<Unit> = Result.success(Unit),
         private val paymentIntentResult: Result<StripePaymentIntentResponse> = Result.success(samplePiResponse()),
@@ -43,9 +40,9 @@ class StripeViewModelTest {
         private val cancelSubResult: Result<Unit> = Result.success(Unit),
         private val userCardsResult: Result<StripePaymentMethodsContainer> = Result.success(sampleCards())
     ) : StripeRepository {
-        override suspend fun getPublishableKey(): Result<String> = publishableKeyResult
+        override suspend fun getPublishableKey(): Result<String> = Result.success("pk_test_123")
         override suspend fun createOrGetCustomer(): Result<CreateStripeCustomerResponse> = customerResult
-        override suspend fun createEphemeralKey(customerId: String): Result<StripeEphemeralKeyResponse> = ephemeralKeyResult
+        override suspend fun createEphemeralKey(customerId: String): Result<StripeEphemeralKeyResponse> = Result.success(sampleEphemeralKeyResponse())
         override suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit> = detachResult
         override suspend fun setDefaultPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit> = setDefaultResult
         override suspend fun createPaymentIntent(intentRequest: CreatePaymentIntentRequest): Result<StripePaymentIntentResponse> = paymentIntentResult
@@ -57,127 +54,124 @@ class StripeViewModelTest {
         override suspend fun getUserCards(customerId: String): Result<StripePaymentMethodsContainer> = userCardsResult
     }
 
+    private fun buildViewModel(repository: FakeStripeRepository = FakeStripeRepository()) =
+        StripeViewModel(StripeUseCase(repository))
+
     @Test
-    fun checkout_state_transitions_and_reset_methods_work() = runTest {
-        val vm = StripeViewModel(StripeUseCase(FakeStripeRepository()))
+    fun checkout_state_transitions_ready_processing_completed_canceled_failed_and_reset_to_idle() = runTest {
+        val viewModel = buildViewModel()
 
-        vm.startStripeCheckout(amount = 10.0, currency = "eur", customerId = "cus_1")
-        assertTrue(vm.startStripeCheckout.value is StartStripeCheckoutState.Ready)
+        viewModel.startStripeCheckout(amount = 10.0, currency = "eur", customerId = "cus_1")
+        assertTrue(viewModel.startStripeCheckout.value is StartStripeCheckoutState.Ready)
 
-        vm.onSheetPresented()
-        assertEquals(StartStripeCheckoutState.Processing, vm.startStripeCheckout.value)
+        viewModel.onSheetPresented()
+        assertEquals(StartStripeCheckoutState.Processing, viewModel.startStripeCheckout.value)
 
-        vm.onCheckoutCompleted()
-        assertEquals(StartStripeCheckoutState.Completed, vm.startStripeCheckout.value)
+        viewModel.onCheckoutCompleted()
+        assertEquals(StartStripeCheckoutState.Completed, viewModel.startStripeCheckout.value)
 
-        vm.onCheckoutCanceled()
-        assertEquals(StartStripeCheckoutState.Canceled, vm.startStripeCheckout.value)
+        viewModel.onCheckoutCanceled()
+        assertEquals(StartStripeCheckoutState.Canceled, viewModel.startStripeCheckout.value)
 
-        vm.onCheckoutFailed("fallo")
-        assertEquals(StartStripeCheckoutState.Failed("fallo"), vm.startStripeCheckout.value)
+        viewModel.onCheckoutFailed("fallo")
+        assertEquals(StartStripeCheckoutState.Failed("fallo"), viewModel.startStripeCheckout.value)
 
-        vm.onStripeFailed("stripe fallo")
-        assertEquals(StartStripeCheckoutState.Failed("stripe fallo"), vm.startStripeCheckout.value)
+        viewModel.onStripeFailed("stripe fallo")
+        assertEquals(StartStripeCheckoutState.Failed("stripe fallo"), viewModel.startStripeCheckout.value)
 
-        vm.resetStartCheckoutState()
-        assertEquals(StartStripeCheckoutState.Idle, vm.startStripeCheckout.value)
+        viewModel.resetStartCheckoutState()
+        assertEquals(StartStripeCheckoutState.Idle, viewModel.startStripeCheckout.value)
     }
 
     @Test
-    fun addPaymentMethod_and_paymentMethods_flows_work() = runTest {
-        val vm = StripeViewModel(StripeUseCase(FakeStripeRepository()))
+    fun add_payment_method_flow_emits_ready_completed_canceled_failed_and_reset() = runTest {
+        val viewModel = buildViewModel()
 
-        vm.prepareAddPaymentMethod(7)
-        assertTrue(vm.addPaymentMethodUiState.value is AddPaymentMethodUiState.Ready)
+        viewModel.prepareAddPaymentMethod(7)
+        assertTrue(viewModel.addPaymentMethodUiState.value is AddPaymentMethodUiState.Ready)
 
-        vm.onAddPaymentMethodCompleted()
-        assertEquals(AddPaymentMethodUiState.Completed, vm.addPaymentMethodUiState.value)
-        assertTrue(vm.viewPaymentMethodsUiState.value is PaymentMethodsUiState.Success)
+        viewModel.onAddPaymentMethodCompleted()
+        assertEquals(AddPaymentMethodUiState.Completed, viewModel.addPaymentMethodUiState.value)
+        assertTrue(viewModel.viewPaymentMethodsUiState.value is PaymentMethodsUiState.Success)
 
-        vm.onAddPaymentMethodCanceled()
-        assertEquals(AddPaymentMethodUiState.Canceled, vm.addPaymentMethodUiState.value)
+        viewModel.onAddPaymentMethodCanceled()
+        assertEquals(AddPaymentMethodUiState.Canceled, viewModel.addPaymentMethodUiState.value)
 
-        vm.onAddPaymentMethodFailed("oops")
-        assertEquals(AddPaymentMethodUiState.Failed("oops"), vm.addPaymentMethodUiState.value)
+        viewModel.onAddPaymentMethodFailed("oops")
+        assertEquals(AddPaymentMethodUiState.Failed("oops"), viewModel.addPaymentMethodUiState.value)
 
-        vm.resetAddPaymentMethodState()
-        assertEquals(AddPaymentMethodUiState.Idle, vm.addPaymentMethodUiState.value)
-
-        vm.loadPaymentMethods()
-        assertTrue(vm.viewPaymentMethodsUiState.value is PaymentMethodsUiState.Success)
+        viewModel.resetAddPaymentMethodState()
+        assertEquals(AddPaymentMethodUiState.Idle, viewModel.addPaymentMethodUiState.value)
     }
 
     @Test
-    fun subscription_refund_actions_and_customer_helpers_work() = runTest {
-        val vm = StripeViewModel(StripeUseCase(FakeStripeRepository()))
+    fun subscription_refund_and_action_helpers_when_success_update_states() = runTest {
+        val viewModel = buildViewModel()
 
-        vm.startStripeSubscription("price_1", "cus_1", 10, 20)
-        assertTrue(vm.startStripeCheckout.value is StartStripeCheckoutState.Ready)
+        viewModel.startStripeSubscription("price_1", "cus_1", 10, 20)
+        assertTrue(viewModel.startStripeCheckout.value is StartStripeCheckoutState.Ready)
 
-        vm.cancelSubscription("sub_1", 20, 10)
-        assertEquals(ActionUiState.Success, vm.actionUiState.value)
+        viewModel.cancelSubscription("sub_1", 20, 10)
+        assertEquals(ActionUiState.Success, viewModel.actionUiState.value)
 
-        val customerId = vm.createOrGetCustomer()
-        assertEquals("cus_123", customerId)
+        assertEquals("cus_123", viewModel.createOrGetCustomer())
 
-        vm.createRefund("pi_1", 20, amount = 10.0)
-        assertEquals(RefundUiState.Success(20), vm.refundUiState.value)
+        viewModel.createRefund("pi_1", 20, amount = 10.0)
+        assertEquals(RefundUiState.Success(20), viewModel.refundUiState.value)
 
-        vm.createRefund("pi_1", 20, amount = 0.0)
-        assertEquals(RefundUiState.Error("El importe del reembolso debe ser mayor que cero"), vm.refundUiState.value)
+        viewModel.createRefund("pi_1", 20, amount = 0.0)
+        assertEquals(RefundUiState.Error("El importe del reembolso debe ser mayor que cero"), viewModel.refundUiState.value)
 
-        vm.resetRefundState()
-        assertEquals(RefundUiState.Idle, vm.refundUiState.value)
+        viewModel.resetRefundState()
+        assertEquals(RefundUiState.Idle, viewModel.refundUiState.value)
 
-        vm.detachPaymentMethod("pm_1")
-        assertEquals(ActionUiState.Success, vm.actionUiState.value)
+        viewModel.detachPaymentMethod("pm_1")
+        assertEquals(ActionUiState.Success, viewModel.actionUiState.value)
 
-        vm.setDefaultPaymentMethod("pm_1")
-        assertEquals(ActionUiState.Success, vm.actionUiState.value)
+        viewModel.setDefaultPaymentMethod("pm_1")
+        assertEquals(ActionUiState.Success, viewModel.actionUiState.value)
 
-        vm.resetActionState()
-        assertEquals(ActionUiState.Idle, vm.actionUiState.value)
+        viewModel.resetActionState()
+        assertEquals(ActionUiState.Idle, viewModel.actionUiState.value)
     }
 
     @Test
-    fun failure_paths_for_key_flows_emit_error_states() = runTest {
-        val vm = StripeViewModel(
-            StripeUseCase(
-                FakeStripeRepository(
-                    paymentIntentResult = Result.failure(IllegalStateException("pi fail")),
-                    setupConfigResult = Result.failure(IllegalStateException("setup fail")),
-                    createSubResult = Result.failure(IllegalStateException("sub fail")),
-                    cancelSubResult = Result.failure(IllegalStateException("cancel fail")),
-                    customerResult = Result.failure(IllegalStateException("customer fail")),
-                    refundResult = Result.failure(IllegalStateException("refund fail")),
-                    detachResult = Result.failure(IllegalStateException("detach fail")),
-                    setDefaultResult = Result.failure(IllegalStateException("default fail"))
-                )
+    fun failure_paths_emit_expected_failed_states() = runTest {
+        val viewModel = buildViewModel(
+            FakeStripeRepository(
+                paymentIntentResult = Result.failure(IllegalStateException("pi fail")),
+                setupConfigResult = Result.failure(IllegalStateException("setup fail")),
+                createSubResult = Result.failure(IllegalStateException("sub fail")),
+                cancelSubResult = Result.failure(IllegalStateException("cancel fail")),
+                customerResult = Result.failure(IllegalStateException("customer fail")),
+                refundResult = Result.failure(IllegalStateException("refund fail")),
+                detachResult = Result.failure(IllegalStateException("detach fail")),
+                setDefaultResult = Result.failure(IllegalStateException("default fail"))
             )
         )
 
-        vm.startStripeCheckout(amount = 10.0, currency = "eur", customerId = "cus_1")
-        assertEquals(StartStripeCheckoutState.Failed("pi fail"), vm.startStripeCheckout.value)
+        viewModel.startStripeCheckout(amount = 10.0, currency = "eur", customerId = "cus_1")
+        assertEquals(StartStripeCheckoutState.Failed("pi fail"), viewModel.startStripeCheckout.value)
 
-        vm.prepareAddPaymentMethod(7)
-        assertEquals(AddPaymentMethodUiState.Failed("setup fail"), vm.addPaymentMethodUiState.value)
+        viewModel.prepareAddPaymentMethod(7)
+        assertEquals(AddPaymentMethodUiState.Failed("setup fail"), viewModel.addPaymentMethodUiState.value)
 
-        vm.startStripeSubscription("price_1", "cus_1", 10, 20)
-        assertEquals(StartStripeCheckoutState.Failed("sub fail"), vm.startStripeCheckout.value)
+        viewModel.startStripeSubscription("price_1", "cus_1", 10, 20)
+        assertEquals(StartStripeCheckoutState.Failed("sub fail"), viewModel.startStripeCheckout.value)
 
-        vm.cancelSubscription("sub_1", 20, 10)
-        assertEquals(ActionUiState.Error("cancel fail"), vm.actionUiState.value)
+        viewModel.cancelSubscription("sub_1", 20, 10)
+        assertEquals(ActionUiState.Error("cancel fail"), viewModel.actionUiState.value)
 
-        assertEquals(null, vm.createOrGetCustomer())
+        assertEquals(null, viewModel.createOrGetCustomer())
 
-        vm.createRefund("pi_1", 20, 10.0)
-        assertEquals(RefundUiState.Error("refund fail"), vm.refundUiState.value)
+        viewModel.createRefund("pi_1", 20, 10.0)
+        assertEquals(RefundUiState.Error("refund fail"), viewModel.refundUiState.value)
 
-        vm.detachPaymentMethod("pm_1")
-        assertEquals(ActionUiState.Error("detach fail"), vm.actionUiState.value)
+        viewModel.detachPaymentMethod("pm_1")
+        assertEquals(ActionUiState.Error("detach fail"), viewModel.actionUiState.value)
 
-        vm.setDefaultPaymentMethod("pm_1")
-        assertEquals(ActionUiState.Error("No se pudo obtener el cliente de Stripe"), vm.actionUiState.value)
+        viewModel.setDefaultPaymentMethod("pm_1")
+        assertEquals(ActionUiState.Error("No se pudo obtener el cliente de Stripe"), viewModel.actionUiState.value)
     }
 
     private companion object {

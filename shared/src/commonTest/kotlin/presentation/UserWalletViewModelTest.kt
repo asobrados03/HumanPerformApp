@@ -20,11 +20,14 @@ class UserWalletViewModelTest {
         override suspend fun getEwalletTransactions(userId: Int): Result<List<EwalletTransaction>> = transactionsResult
     }
 
+    private fun buildViewModel(
+        balanceResult: Result<Double?> = Result.success(10.0),
+        transactionsResult: Result<List<EwalletTransaction>> = Result.success(emptyList())
+    ) = UserWalletViewModel(WalletUseCase(FakeWalletRepository(balanceResult, transactionsResult)))
+
     @Test
-    fun userWalletViewModel_whenLoadBalanceSucceeds_updatesBalance() = runTest {
-        val viewModel = UserWalletViewModel(
-            WalletUseCase(FakeWalletRepository(balanceResult = Result.success(42.5)))
-        )
+    fun loadbalance_when_success_updates_balance() = runTest {
+        val viewModel = buildViewModel(balanceResult = Result.success(42.5))
 
         viewModel.balance.test {
             assertEquals(0.0, awaitItem())
@@ -35,10 +38,8 @@ class UserWalletViewModelTest {
     }
 
     @Test
-    fun userWalletViewModel_whenLoadBalanceReturnsNull_setsBalanceToZero() = runTest {
-        val viewModel = UserWalletViewModel(
-            WalletUseCase(FakeWalletRepository(balanceResult = Result.success(null)))
-        )
+    fun loadbalance_when_repository_returns_null_sets_zero() = runTest {
+        val viewModel = buildViewModel(balanceResult = Result.success(null))
 
         viewModel.balance.test {
             assertEquals(0.0, awaitItem())
@@ -49,10 +50,8 @@ class UserWalletViewModelTest {
     }
 
     @Test
-    fun userWalletViewModel_whenInvalidUserId_setsBalanceToZeroWithoutCallingRepository() = runTest {
-        val viewModel = UserWalletViewModel(
-            WalletUseCase(FakeWalletRepository(balanceResult = Result.success(99.9)))
-        )
+    fun loadbalance_when_user_id_is_invalid_keeps_zero() = runTest {
+        val viewModel = buildViewModel(balanceResult = Result.success(99.9))
 
         viewModel.balance.test {
             assertEquals(0.0, awaitItem())
@@ -63,10 +62,8 @@ class UserWalletViewModelTest {
     }
 
     @Test
-    fun userWalletViewModel_whenLoadBalanceFails_keepsLastBalance() = runTest {
-        val viewModel = UserWalletViewModel(
-            WalletUseCase(FakeWalletRepository(balanceResult = Result.failure(IllegalStateException("Sin conexión"))))
-        )
+    fun loadbalance_when_repository_fails_keeps_last_balance() = runTest {
+        val viewModel = buildViewModel(balanceResult = Result.failure(IllegalStateException("Sin conexión")))
 
         viewModel.balance.test {
             assertEquals(0.0, awaitItem())
@@ -77,11 +74,9 @@ class UserWalletViewModelTest {
     }
 
     @Test
-    fun userWalletViewModel_whenLoadTransactionsSucceeds_emitsLoadingThenSuccess() = runTest {
+    fun loadewallettransactions_when_success_emits_loading_then_success() = runTest {
         val tx = EwalletTransaction(5.0, 10.0, "Recarga", "credit", "2026-03-01")
-        val viewModel = UserWalletViewModel(
-            WalletUseCase(FakeWalletRepository(transactionsResult = Result.success(listOf(tx))))
-        )
+        val viewModel = buildViewModel(transactionsResult = Result.success(listOf(tx)))
 
         viewModel.eWalletTransactions.test {
             assertEquals(EwalletUiState.Loading, awaitItem())
@@ -93,13 +88,9 @@ class UserWalletViewModelTest {
     }
 
     @Test
-    fun userWalletViewModel_whenLoadTransactionsFailsWithMessage_emitsLoadingThenError() = runTest {
-        val viewModel = UserWalletViewModel(
-            WalletUseCase(
-                FakeWalletRepository(
-                    transactionsResult = Result.failure(IllegalStateException("Sin conexión"))
-                )
-            )
+    fun loadewallettransactions_when_failure_with_message_emits_error() = runTest {
+        val viewModel = buildViewModel(
+            transactionsResult = Result.failure(IllegalStateException("Sin conexión"))
         )
 
         viewModel.eWalletTransactions.test {
@@ -112,13 +103,9 @@ class UserWalletViewModelTest {
     }
 
     @Test
-    fun userWalletViewModel_whenLoadTransactionsFailsWithoutMessage_emitsUnknownError() = runTest {
-        val viewModel = UserWalletViewModel(
-            WalletUseCase(
-                FakeWalletRepository(
-                    transactionsResult = Result.failure(IllegalStateException())
-                )
-            )
+    fun loadewallettransactions_when_failure_without_message_emits_unknown_error() = runTest {
+        val viewModel = buildViewModel(
+            transactionsResult = Result.failure(IllegalStateException())
         )
 
         viewModel.eWalletTransactions.test {

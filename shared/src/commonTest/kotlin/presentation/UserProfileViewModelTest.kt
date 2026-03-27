@@ -16,6 +16,10 @@ import kotlin.test.assertTrue
 
 class UserProfileViewModelTest {
 
+    // ─────────────────────────────────────────────────────────────
+    // Fakes
+    // ─────────────────────────────────────────────────────────────
+
     private class FakeUserProfileRepository(
         private val updateResult: Result<User> = Result.success(sampleUser(1, "Updated")),
         private val getByIdResult: Result<User> = Result.success(sampleUser(1, "Fetched")),
@@ -26,55 +30,88 @@ class UserProfileViewModelTest {
         override suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit> = deletePicResult
     }
 
-    @Test
-    fun updateUser_validationSuccessAndFailure_plus_clearState() = runTest {
-        val currentUser = MutableStateFlow<User?>(sampleUser(1, "Old"))
-        val successVm = UserProfileViewModel(
-            UserProfileUseCase(FakeUserProfileRepository(updateResult = Result.success(sampleUser(1, "New"))))
-        )
+    // ─────────────────────────────────────────────────────────────
+    // Helper
+    // ─────────────────────────────────────────────────────────────
 
-        successVm.updateState.test {
+    private fun buildViewModel(repository: FakeUserProfileRepository = FakeUserProfileRepository()) =
+        UserProfileViewModel(UserProfileUseCase(repository))
+
+    // ─────────────────────────────────────────────────────────────
+    // Update user
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    fun updateuser_when_success_emits_loading_then_success_and_updates_current_user() = runTest {
+        val viewModel = buildViewModel(
+            FakeUserProfileRepository(updateResult = Result.success(sampleUser(1, "New")))
+        )
+        val currentUser = MutableStateFlow<User?>(sampleUser(1, "Old"))
+
+        viewModel.updateState.test {
             assertEquals(UpdateState.Idle, awaitItem())
-            successVm.updateUser(sampleUser(1, "New"), null, currentUser)
+            viewModel.updateUser(sampleUser(1, "New"), null, currentUser)
             assertEquals(UpdateState.Loading, awaitItem())
             assertEquals(UpdateState.Success(sampleUser(1, "New")), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
+
         assertEquals(sampleUser(1, "New"), currentUser.value)
-
-        successVm.clearUpdateState()
-        assertEquals(UpdateState.Idle, successVm.updateState.value)
-
-        val validationVm = UserProfileViewModel(UserProfileUseCase(FakeUserProfileRepository()))
-        validationVm.updateUser(sampleUser(1, ""), null, MutableStateFlow(null))
-        assertTrue(validationVm.updateState.value is UpdateState.ValidationErrors)
-
-        val errorVm = UserProfileViewModel(
-            UserProfileUseCase(FakeUserProfileRepository(updateResult = Result.failure(IllegalStateException("fail"))))
-        )
-        errorVm.updateUser(sampleUser(1, "New"), null, MutableStateFlow(null))
-        assertEquals(UpdateState.Error("fail"), errorVm.updateState.value)
     }
 
     @Test
-    fun fetchUserProfile_and_deleteProfilePic_cover_safe_paths() = runTest {
-        val vm = UserProfileViewModel(UserProfileUseCase(FakeUserProfileRepository()))
+    fun updateuser_when_invalid_user_data_emits_validationerrors() = runTest {
+        val viewModel = buildViewModel()
 
-        // currentUser nulo: return temprano, no crash
-        vm.fetchUserProfile(MutableStateFlow(null))
+        viewModel.updateUser(sampleUser(1, ""), null, MutableStateFlow(null))
 
-        // deleteProfilePic en fallo evita tocar SecureStorage
-        val deleteErrorVm = UserProfileViewModel(
-            UserProfileUseCase(
-                FakeUserProfileRepository(deletePicResult = Result.failure(IllegalStateException("delete fail")))
-            )
+        assertTrue(viewModel.updateState.value is UpdateState.ValidationErrors)
+    }
+
+    @Test
+    fun updateuser_when_repository_fails_emits_error() = runTest {
+        val viewModel = buildViewModel(
+            FakeUserProfileRepository(updateResult = Result.failure(IllegalStateException("fail")))
         )
 
-        deleteErrorVm.deleteProfilePic(sampleUser(1, "User"), MutableStateFlow(sampleUser(1, "User")))
-        assertEquals(DeleteProfilePicState.Error("delete fail"), deleteErrorVm.deleteProfilePicState.value)
+        viewModel.updateUser(sampleUser(1, "New"), null, MutableStateFlow(null))
 
-        deleteErrorVm.clearDeleteProfilePicState()
-        assertEquals(DeleteProfilePicState.Idle, deleteErrorVm.deleteProfilePicState.value)
+        assertEquals(UpdateState.Error("fail"), viewModel.updateState.value)
+    }
+
+    @Test
+    fun clearupdatestate_after_update_flow_restores_idle() = runTest {
+        val viewModel = buildViewModel()
+
+        viewModel.clearUpdateState()
+
+        assertEquals(UpdateState.Idle, viewModel.updateState.value)
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Profile fetch and picture delete
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    fun fetchuserprofile_when_currentuser_is_null_returns_safely() = runTest {
+        val viewModel = buildViewModel()
+
+        viewModel.fetchUserProfile(MutableStateFlow(null))
+
+        assertTrue(viewModel.updateState.value is UpdateState.Idle)
+    }
+
+    @Test
+    fun deleteprofilepic_when_repository_fails_emits_error_and_can_be_reset() = runTest {
+        val viewModel = buildViewModel(
+            FakeUserProfileRepository(deletePicResult = Result.failure(IllegalStateException("delete fail")))
+        )
+
+        viewModel.deleteProfilePic(sampleUser(1, "User"), MutableStateFlow(sampleUser(1, "User")))
+        assertEquals(DeleteProfilePicState.Error("delete fail"), viewModel.deleteProfilePicState.value)
+
+        viewModel.clearDeleteProfilePicState()
+        assertEquals(DeleteProfilePicState.Idle, viewModel.deleteProfilePicState.value)
     }
 
     private companion object {

@@ -35,27 +35,16 @@ class UserBookingsViewModelTest {
         }
     }
 
-    private fun sampleUser(id: Int = 1): User = User(
-        id = id,
-        fullName = "Test User",
-        email = "test@example.com",
-        phone = "600000000",
-        sex = "M",
-        dateOfBirth = "1990-01-01",
-        postcode = 28001,
-        postAddress = "Street 1",
-        dni = "12345678A",
-        profilePictureName = null
-    )
+    private fun buildViewModel(
+        repository: FakeUserBookingsRepository = FakeUserBookingsRepository(),
+        notificationManager: FakeNotificationManager = FakeNotificationManager()
+    ) = UserBookingsViewModel(UserBookingsUseCase(repository), notificationManager)
 
     @Test
-    fun fetchUserBookings_whenSuccess_emitsLoadingThenSuccess() = runTest {
+    fun fetchuserbookings_when_success_emits_loading_then_success() = runTest {
         val booking = UserBooking(1, "2026-03-20", "10:00", "PT", "Pack", 1, 2, "Coach", null)
-        val viewModel = UserBookingsViewModel(
-            userBookingsUseCase = UserBookingsUseCase(
-                FakeUserBookingsRepository(bookingsResult = Result.success(listOf(booking)))
-            ),
-            notificationManager = FakeNotificationManager()
+        val viewModel = buildViewModel(
+            repository = FakeUserBookingsRepository(bookingsResult = Result.success(listOf(booking)))
         )
 
         viewModel.userBookings.test {
@@ -68,12 +57,9 @@ class UserBookingsViewModelTest {
     }
 
     @Test
-    fun fetchUserBookings_whenFailureWithoutMessage_emitsDefaultError() = runTest {
-        val viewModel = UserBookingsViewModel(
-            userBookingsUseCase = UserBookingsUseCase(
-                FakeUserBookingsRepository(bookingsResult = Result.failure(IllegalStateException()))
-            ),
-            notificationManager = FakeNotificationManager()
+    fun fetchuserbookings_when_failure_without_message_emits_default_error() = runTest {
+        val viewModel = buildViewModel(
+            repository = FakeUserBookingsRepository(bookingsResult = Result.failure(IllegalStateException()))
         )
 
         viewModel.userBookings.test {
@@ -86,10 +72,10 @@ class UserBookingsViewModelTest {
     }
 
     @Test
-    fun cancelUserBooking_whenSuccess_cancelsNotificationAndRefreshesBookings() = runTest {
-        val repo = FakeUserBookingsRepository(bookingsResult = Result.success(emptyList()))
+    fun canceluserbooking_when_success_cancels_notification_and_refreshes_bookings() = runTest {
+        val repository = FakeUserBookingsRepository(bookingsResult = Result.success(emptyList()))
         val notifications = FakeNotificationManager()
-        val viewModel = UserBookingsViewModel(UserBookingsUseCase(repo), notifications)
+        val viewModel = buildViewModel(repository, notifications)
 
         viewModel.cancelUserBooking(bookingId = 99, currentUser = sampleUser(id = 7))
 
@@ -99,18 +85,31 @@ class UserBookingsViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
         assertEquals(99, notifications.canceledBookingId)
-        assertEquals(1, repo.getBookingsCalls)
+        assertEquals(1, repository.getBookingsCalls)
     }
 
     @Test
-    fun cancelUserBooking_whenFailure_doesNotRefreshOrCancelNotification() = runTest {
-        val repo = FakeUserBookingsRepository(cancelResult = Result.failure(IllegalStateException("fallo")))
+    fun canceluserbooking_when_failure_does_not_refresh_or_cancel_notification() = runTest {
+        val repository = FakeUserBookingsRepository(cancelResult = Result.failure(IllegalStateException("fallo")))
         val notifications = FakeNotificationManager()
-        val viewModel = UserBookingsViewModel(UserBookingsUseCase(repo), notifications)
+        val viewModel = buildViewModel(repository, notifications)
 
         viewModel.cancelUserBooking(bookingId = 99, currentUser = sampleUser())
 
         assertEquals(null, notifications.canceledBookingId)
-        assertEquals(0, repo.getBookingsCalls)
+        assertEquals(0, repository.getBookingsCalls)
     }
+
+    private fun sampleUser(id: Int = 1): User = User(
+        id = id,
+        fullName = "Test User",
+        email = "test@example.com",
+        phone = "600000000",
+        sex = "M",
+        dateOfBirth = "1990-01-01",
+        postcode = 28001,
+        postAddress = "Street 1",
+        dni = "12345678A",
+        profilePictureName = null
+    )
 }

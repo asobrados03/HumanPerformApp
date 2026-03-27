@@ -20,6 +20,9 @@ class UserCouponsViewModelTest {
         override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> = couponsResult
     }
 
+    private fun buildViewModel(repository: FakeUserCouponsRepository) =
+        UserCouponsViewModel(UserCouponUseCase(repository))
+
     private val coupon = Coupon(
         id = 1,
         code = "WELCOME10",
@@ -30,9 +33,9 @@ class UserCouponsViewModelTest {
     )
 
     @Test
-    fun loadUserCoupons_whenSuccess_updatesListAndStopsLoading() = runTest {
-        val viewModel = UserCouponsViewModel(
-            UserCouponUseCase(FakeUserCouponsRepository(couponsResult = Result.success(listOf(coupon))))
+    fun loadusercoupons_when_success_updates_list_and_clears_loading() = runTest {
+        val viewModel = buildViewModel(
+            FakeUserCouponsRepository(couponsResult = Result.success(listOf(coupon)))
         )
 
         viewModel.couponUiState.test {
@@ -49,13 +52,9 @@ class UserCouponsViewModelTest {
     }
 
     @Test
-    fun loadUserCoupons_whenFailure_setsError() = runTest {
-        val viewModel = UserCouponsViewModel(
-            UserCouponUseCase(
-                FakeUserCouponsRepository(
-                    couponsResult = Result.failure(IllegalStateException("No disponible"))
-                )
-            )
+    fun loadusercoupons_when_failure_sets_error() = runTest {
+        val viewModel = buildViewModel(
+            FakeUserCouponsRepository(couponsResult = Result.failure(IllegalStateException("No disponible")))
         )
 
         viewModel.couponUiState.test {
@@ -71,8 +70,8 @@ class UserCouponsViewModelTest {
     }
 
     @Test
-    fun onCouponCodeChanged_updatesCodeAndClearsError() {
-        val viewModel = UserCouponsViewModel(UserCouponUseCase(FakeUserCouponsRepository()))
+    fun oncouponcodechanged_when_called_updates_code_and_clears_error() {
+        val viewModel = buildViewModel(FakeUserCouponsRepository())
 
         viewModel.onCouponCodeChanged("SPRING20")
 
@@ -82,13 +81,11 @@ class UserCouponsViewModelTest {
     }
 
     @Test
-    fun addCouponToUser_whenSuccess_refreshesCouponsAndClearsCode() = runTest {
-        val viewModel = UserCouponsViewModel(
-            UserCouponUseCase(
-                FakeUserCouponsRepository(
-                    addResult = Result.success(Unit),
-                    couponsResult = Result.success(listOf(coupon))
-                )
+    fun addcoupontouser_when_add_and_refresh_succeed_clears_code_and_refreshes_coupons() = runTest {
+        val viewModel = buildViewModel(
+            FakeUserCouponsRepository(
+                addResult = Result.success(Unit),
+                couponsResult = Result.success(listOf(coupon))
             )
         )
         viewModel.onCouponCodeChanged("WELCOME10")
@@ -107,11 +104,9 @@ class UserCouponsViewModelTest {
     }
 
     @Test
-    fun addCouponToUser_whenAddFails_setsError() = runTest {
-        val viewModel = UserCouponsViewModel(
-            UserCouponUseCase(
-                FakeUserCouponsRepository(addResult = Result.failure(IllegalStateException("Cupón inválido")))
-            )
+    fun addcoupontouser_when_add_fails_sets_error() = runTest {
+        val viewModel = buildViewModel(
+            FakeUserCouponsRepository(addResult = Result.failure(IllegalStateException("Cupón inválido")))
         )
 
         viewModel.couponUiState.test {
@@ -127,13 +122,11 @@ class UserCouponsViewModelTest {
     }
 
     @Test
-    fun addCouponToUser_whenRefreshFails_setsError() = runTest {
-        val viewModel = UserCouponsViewModel(
-            UserCouponUseCase(
-                FakeUserCouponsRepository(
-                    addResult = Result.success(Unit),
-                    couponsResult = Result.failure(IllegalStateException("No se pudo refrescar"))
-                )
+    fun addcoupontouser_when_refresh_fails_sets_refresh_error() = runTest {
+        val viewModel = buildViewModel(
+            FakeUserCouponsRepository(
+                addResult = Result.success(Unit),
+                couponsResult = Result.failure(IllegalStateException("No se pudo refrescar"))
             )
         )
 

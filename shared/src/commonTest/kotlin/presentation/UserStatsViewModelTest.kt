@@ -18,11 +18,12 @@ class UserStatsViewModelTest {
         override suspend fun getUserStats(customerId: Int): Result<UserStatistics> = statsResult
     }
 
+    private fun buildViewModel(statsResult: Result<UserStatistics>) =
+        UserStatsViewModel(UserStatsUseCase(FakeUserStatsRepository(statsResult)))
+
     @Test
-    fun loadStatistics_whenUserIdInvalid_emitsError() = runTest {
-        val viewModel = UserStatsViewModel(
-            UserStatsUseCase(FakeUserStatsRepository(Result.success(UserStatistics())))
-        )
+    fun loadstatistics_when_invalid_user_id_emits_error() = runTest {
+        val viewModel = buildViewModel(Result.success(UserStatistics()))
 
         viewModel.uiState.test {
             assertEquals(UserStatsState.Loading, awaitItem())
@@ -33,11 +34,9 @@ class UserStatsViewModelTest {
     }
 
     @Test
-    fun loadStatistics_whenSuccess_emitsLoadingThenSuccess() = runTest {
+    fun loadstatistics_when_success_emits_loading_then_success() = runTest {
         val stats = UserStatistics(lastMonthWorkouts = 12, mostFrequentTrainer = "Ana", pendingBookings = 2)
-        val viewModel = UserStatsViewModel(
-            UserStatsUseCase(FakeUserStatsRepository(Result.success(stats)))
-        )
+        val viewModel = buildViewModel(Result.success(stats))
 
         viewModel.uiState.test {
             assertEquals(UserStatsState.Loading, awaitItem())
@@ -49,10 +48,8 @@ class UserStatsViewModelTest {
     }
 
     @Test
-    fun loadStatistics_whenFailureWithoutMessage_emitsUnknownError() = runTest {
-        val viewModel = UserStatsViewModel(
-            UserStatsUseCase(FakeUserStatsRepository(Result.failure(IllegalStateException())))
-        )
+    fun loadstatistics_when_failure_without_message_emits_unknown_error() = runTest {
+        val viewModel = buildViewModel(Result.failure(IllegalStateException()))
 
         viewModel.uiState.test {
             assertEquals(UserStatsState.Loading, awaitItem())

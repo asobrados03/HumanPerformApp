@@ -46,12 +46,16 @@ class UserSessionViewModelTest {
     ) : AuthRepository {
         override suspend fun login(email: String, password: String): Result<LoginResponse> =
             Result.failure(UnsupportedOperationException())
+
         override suspend fun register(data: RegisterRequest): Result<RegisterResponse> =
             Result.failure(UnsupportedOperationException())
+
         override suspend fun resetPassword(email: String): Result<Unit> =
             Result.failure(UnsupportedOperationException())
+
         override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int): Result<Unit> =
             Result.failure(UnsupportedOperationException())
+
         override suspend fun logout(): Result<Unit> = logoutResult
     }
 
@@ -59,49 +63,66 @@ class UserSessionViewModelTest {
         override suspend fun clearSession() = Unit
     }
 
-    @Test
-    fun deleteUser_resetDeleteState_logout_and_currentUserState_work() = runTest {
+    private fun buildViewModel(
+        deleteResult: Result<Unit> = Result.success(Unit),
+        logoutResult: Result<Unit> = Result.success(Unit)
+    ): UserSessionViewModel {
         SecureStorage.initialize(InMemoryPreferencesDataStore())
-        val vm = UserSessionViewModel(
-            userAccountUseCase = UserAccountUseCase(FakeUserAccountRepository(Result.success(Unit))),
-            authUseCase = AuthUseCase(FakeAuthRepository(Result.success(Unit)), FakeSessionStorage())
+        return UserSessionViewModel(
+            userAccountUseCase = UserAccountUseCase(FakeUserAccountRepository(deleteResult)),
+            authUseCase = AuthUseCase(FakeAuthRepository(logoutResult), FakeSessionStorage())
         )
-
-        vm.deleteUser("user@test.com")
-        assertEquals(DeleteUserState.Success, vm.deleteState.value)
-
-        vm.resetDeleteState()
-        assertEquals(DeleteUserState.Idle, vm.deleteState.value)
-
-        var callbackCalled = false
-        vm.logout { callbackCalled = true }
-        assertTrue(callbackCalled)
-        assertEquals(false, vm.isLoggingOut.value)
-
-        assertEquals(vm.userData.value, vm.currentUserState().value)
-        assertEquals(false, vm.isLoggedInFlow.first())
     }
 
     @Test
-    fun deleteUser_handles_notFound_and_generic_errors() = runTest {
-        SecureStorage.initialize(InMemoryPreferencesDataStore())
+    fun deleteuser_when_success_emits_success_and_can_be_reset() = runTest {
+        val viewModel = buildViewModel(deleteResult = Result.success(Unit))
 
-        val notFoundVm = UserSessionViewModel(
-            userAccountUseCase = UserAccountUseCase(
-                FakeUserAccountRepository(Result.failure(IllegalStateException("usuario no encontrado")))
-            ),
-            authUseCase = AuthUseCase(FakeAuthRepository(), FakeSessionStorage())
-        )
-        notFoundVm.deleteUser("user@test.com")
-        assertEquals(DeleteUserState.NotFound("user@test.com"), notFoundVm.deleteState.value)
+        viewModel.deleteUser("user@test.com")
+        assertEquals(DeleteUserState.Success, viewModel.deleteState.value)
 
-        val errorVm = UserSessionViewModel(
-            userAccountUseCase = UserAccountUseCase(
-                FakeUserAccountRepository(Result.failure(IllegalStateException("fallo")))
-            ),
-            authUseCase = AuthUseCase(FakeAuthRepository(), FakeSessionStorage())
+        viewModel.resetDeleteState()
+        assertEquals(DeleteUserState.Idle, viewModel.deleteState.value)
+    }
+
+    @Test
+    fun deleteuser_when_not_found_emits_notfound() = runTest {
+        val viewModel = buildViewModel(
+            deleteResult = Result.failure(IllegalStateException("usuario no encontrado"))
         )
-        errorVm.deleteUser("user@test.com")
-        assertEquals(DeleteUserState.Error("fallo"), errorVm.deleteState.value)
+
+        viewModel.deleteUser("user@test.com")
+
+        assertEquals(DeleteUserState.NotFound("user@test.com"), viewModel.deleteState.value)
+    }
+
+    @Test
+    fun deleteuser_when_generic_failure_emits_error() = runTest {
+        val viewModel = buildViewModel(
+            deleteResult = Result.failure(IllegalStateException("fallo"))
+        )
+
+        viewModel.deleteUser("user@test.com")
+
+        assertEquals(DeleteUserState.Error("fallo"), viewModel.deleteState.value)
+    }
+
+    @Test
+    fun logout_when_success_invokes_callback_and_updates_state() = runTest {
+        val viewModel = buildViewModel(logoutResult = Result.success(Unit))
+        var callbackCalled = false
+
+        viewModel.logout { callbackCalled = true }
+
+        assertTrue(callbackCalled)
+        assertEquals(false, viewModel.isLoggingOut.value)
+    }
+
+    @Test
+    fun session_helpers_currentuserstate_and_isloggedinflow_expose_expected_values() = runTest {
+        val viewModel = buildViewModel()
+
+        assertEquals(viewModel.userData.value, viewModel.currentUserState().value)
+        assertEquals(false, viewModel.isLoggedInFlow.first())
     }
 }

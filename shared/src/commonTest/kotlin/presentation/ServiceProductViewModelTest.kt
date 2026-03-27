@@ -18,6 +18,7 @@ import com.humanperformcenter.shared.presentation.ui.ServiceUiState
 import com.humanperformcenter.shared.presentation.ui.UnassignEvent
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
+import com.humanperformcenter.shared.presentation.ui.models.ServiceUiModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -51,124 +52,146 @@ class ServiceProductViewModelTest {
         override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> = couponsResult
     }
 
+    private fun buildViewModel(
+        serviceRepository: FakeServiceProductRepository = FakeServiceProductRepository(),
+        couponsResult: Result<List<Coupon>> = Result.success(emptyList())
+    ) = ServiceProductViewModel(
+        ServiceProductUseCase(serviceRepository),
+        UserCouponUseCase(FakeCouponsRepository(couponsResult))
+    )
+
     @Test
-    fun loadServiceProducts_userProducts_productDetail_and_activeDetail_updateStates() = runTest {
+    fun loadserviceproducts_loaduserproducts_loadproductdetail_and_fetchactiveproductdetail_when_success_update_states() = runTest {
         val product = sampleProduct()
         val detail = sampleProductDetail()
-        val vm = ServiceProductViewModel(
-            ServiceProductUseCase(
-                FakeServiceProductRepository(
-                    serviceProductsResult = Result.success(listOf(product)),
-                    userProductsResult = Result.success(listOf(product)),
-                    productDetailResult = Result.success(product),
-                    activeDetailResult = Result.success(detail)
-                )
-            ),
-            UserCouponUseCase(FakeCouponsRepository(Result.success(emptyList())))
+        val viewModel = buildViewModel(
+            serviceRepository = FakeServiceProductRepository(
+                serviceProductsResult = Result.success(listOf(product)),
+                userProductsResult = Result.success(listOf(product)),
+                productDetailResult = Result.success(product),
+                activeDetailResult = Result.success(detail)
+            )
         )
 
-        vm.loadServiceProducts(serviceId = 1, userId = 2)
-        assertEquals(ServiceProductUiState.Success(listOf(product)), vm.serviceProducts.value[1])
+        viewModel.loadServiceProducts(serviceId = 1, userId = 2)
+        viewModel.loadUserProducts(2)
+        viewModel.loadProductDetail(1)
+        viewModel.fetchActiveProductDetail(2, 1)
 
-        vm.loadUserProducts(2)
-        assertEquals(UserProductsUiState.Success(listOf(product)), vm.userProductsState.value)
-
-        vm.loadProductDetail(1)
-        assertEquals(ProductDetailUiState.Success(product), vm.productDetailState.value)
-
-        vm.fetchActiveProductDetail(2, 1)
-        assertEquals(ActiveProductDetailState.Success(detail), vm.activeProductDetails.value)
+        assertEquals(ServiceProductUiState.Success(listOf(product)), viewModel.serviceProducts.value[1])
+        assertEquals(UserProductsUiState.Success(listOf(product)), viewModel.userProductsState.value)
+        assertEquals(ProductDetailUiState.Success(product), viewModel.productDetailState.value)
+        assertEquals(ActiveProductDetailState.Success(detail), viewModel.activeProductDetails.value)
     }
 
     @Test
-    fun loadAllServices_assign_unassign_and_coupons_work() = runTest {
+    fun loadallservices_when_success_marks_owned_services() = runTest {
         val service = ServiceAvailable(id = 1, name = "PT")
         val product = sampleProduct(id = 1)
-        val coupon = Coupon(1, "PROMO", 10.0, true, LocalDate.parse("2026-12-31"), listOf(1))
-        val vm = ServiceProductViewModel(
-            ServiceProductUseCase(
-                FakeServiceProductRepository(
-                    allServicesResult = Result.success(listOf(service)),
-                    userProductsResult = Result.success(listOf(product)),
-                    assignResult = Result.success(1),
-                    unassignResult = Result.success(Unit)
-                )
-            ),
-            UserCouponUseCase(FakeCouponsRepository(Result.success(listOf(coupon))))
+        val viewModel = buildViewModel(
+            serviceRepository = FakeServiceProductRepository(
+                allServicesResult = Result.success(listOf(service)),
+                userProductsResult = Result.success(listOf(product))
+            )
         )
 
-        vm.loadAllServices(userId = 7)
-        assertEquals(ServiceUiState.Success(listOf(com.humanperformcenter.shared.presentation.ui.models.ServiceUiModel(service, true))), vm.serviceUiState.value)
+        viewModel.loadAllServices(userId = 7)
 
-        vm.assignEvent.test {
-            vm.assignProductToUser(7, 1, "card", "PROMO")
+        assertEquals(
+            ServiceUiState.Success(listOf(ServiceUiModel(service, true))),
+            viewModel.serviceUiState.value
+        )
+    }
+
+    @Test
+    fun assignproducttouser_and_unassignproductfromuser_when_success_emit_success_events() = runTest {
+        val viewModel = buildViewModel(
+            serviceRepository = FakeServiceProductRepository(
+                assignResult = Result.success(1),
+                unassignResult = Result.success(Unit)
+            )
+        )
+
+        viewModel.assignEvent.test {
+            viewModel.assignProductToUser(7, 1, "card", "PROMO")
             assertEquals(AssignEvent.Success(1), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
 
-        vm.unassignEvent.test {
-            vm.unassignProductFromUser(1, 7)
+        viewModel.unassignEvent.test {
+            viewModel.unassignProductFromUser(1, 7)
             assertEquals(UnassignEvent.Success, awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
-
-        vm.loadUserCoupons(7)
-        assertEquals(listOf(coupon), vm.userCoupons.value)
     }
 
     @Test
-    fun errorBranches_and_helperFunctions_areCovered() = runTest {
-        val vm = ServiceProductViewModel(
-            ServiceProductUseCase(
-                FakeServiceProductRepository(
-                    serviceProductsResult = Result.failure(IllegalStateException("svc error")),
-                    userProductsResult = Result.failure(IllegalStateException("user error")),
-                    productDetailResult = Result.failure(IllegalStateException("detail error")),
-                    activeDetailResult = Result.failure(IllegalStateException()),
-                    allServicesResult = Result.failure(IllegalStateException("services error")),
-                    assignResult = Result.failure(IllegalStateException("assign error")),
-                    unassignResult = Result.failure(IllegalStateException())
-                )
-            ),
-            UserCouponUseCase(FakeCouponsRepository(Result.failure(IllegalStateException("ignore"))))
+    fun loadusercoupons_when_success_updates_coupons_list() = runTest {
+        val coupon = Coupon(1, "PROMO", 10.0, true, LocalDate.parse("2026-12-31"), listOf(1))
+        val viewModel = buildViewModel(couponsResult = Result.success(listOf(coupon)))
+
+        viewModel.loadUserCoupons(7)
+
+        assertEquals(listOf(coupon), viewModel.userCoupons.value)
+    }
+
+    @Test
+    fun error_branches_emit_expected_errors() = runTest {
+        val viewModel = buildViewModel(
+            serviceRepository = FakeServiceProductRepository(
+                serviceProductsResult = Result.failure(IllegalStateException("svc error")),
+                userProductsResult = Result.failure(IllegalStateException("user error")),
+                productDetailResult = Result.failure(IllegalStateException("detail error")),
+                activeDetailResult = Result.failure(IllegalStateException()),
+                allServicesResult = Result.failure(IllegalStateException("services error")),
+                assignResult = Result.failure(IllegalStateException("assign error")),
+                unassignResult = Result.failure(IllegalStateException())
+            )
         )
 
-        vm.loadServiceProducts(3, 4)
-        assertEquals(ServiceProductUiState.Error("svc error"), vm.serviceProducts.value[3])
+        viewModel.loadServiceProducts(3, 4)
+        viewModel.loadUserProducts(4)
+        viewModel.loadProductDetail(9)
+        viewModel.fetchActiveProductDetail(4, 9)
+        viewModel.loadAllServices(4)
 
-        vm.loadUserProducts(4)
-        assertEquals(UserProductsUiState.Error("user error"), vm.userProductsState.value)
+        assertEquals(ServiceProductUiState.Error("svc error"), viewModel.serviceProducts.value[3])
+        assertEquals(UserProductsUiState.Error("user error"), viewModel.userProductsState.value)
+        assertEquals(ProductDetailUiState.Error("detail error"), viewModel.productDetailState.value)
+        assertEquals(ActiveProductDetailState.Error("Error al cargar el producto"), viewModel.activeProductDetails.value)
+        assertEquals(ServiceUiState.Error("services error"), viewModel.serviceUiState.value)
 
-        vm.loadProductDetail(9)
-        assertEquals(ProductDetailUiState.Error("detail error"), vm.productDetailState.value)
-
-        vm.fetchActiveProductDetail(4, 9)
-        assertEquals(ActiveProductDetailState.Error("Error al cargar el producto"), vm.activeProductDetails.value)
-
-        vm.loadAllServices(4)
-        assertEquals(ServiceUiState.Error("services error"), vm.serviceUiState.value)
-
-        vm.assignEvent.test {
-            vm.assignProductToUser(7, 1, "card")
+        viewModel.assignEvent.test {
+            viewModel.assignProductToUser(7, 1, "card")
             assertEquals(AssignEvent.Error("assign error"), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
 
-        vm.unassignEvent.test {
-            vm.unassignProductFromUser(1, 7)
+        viewModel.unassignEvent.test {
+            viewModel.unassignProductFromUser(1, 7)
             assertEquals(UnassignEvent.Error("No se pudo eliminar"), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
+    }
 
-        val list = listOf(
+    @Test
+    fun helper_functions_filterproducts_and_calculatediscountedprice_return_expected_values() {
+        val viewModel = buildViewModel()
+        val products = listOf(
             sampleProduct(id = 1, type = "recurrent", sessions = 12),
             sampleProduct(id = 2, type = "single", sessions = 1)
         )
-        assertEquals(1, vm.filterProducts(list, ProductTypeFilter.RECURRENT, 0).size)
-        assertEquals(2, vm.filterProducts(list, ProductTypeFilter.ALL, 0).size)
-        assertEquals(90.0, vm.calculateDiscountedPrice(1, 100.0, listOf(
-            Coupon(1, "P10", 10.0, true, LocalDate.parse("2026-12-31"), listOf(1))
-        )))
+
+        assertEquals(1, viewModel.filterProducts(products, ProductTypeFilter.RECURRENT, 0).size)
+        assertEquals(2, viewModel.filterProducts(products, ProductTypeFilter.ALL, 0).size)
+        assertEquals(
+            90.0,
+            viewModel.calculateDiscountedPrice(
+                1,
+                100.0,
+                listOf(Coupon(1, "P10", 10.0, true, LocalDate.parse("2026-12-31"), listOf(1)))
+            )
+        )
     }
 
     private companion object {
