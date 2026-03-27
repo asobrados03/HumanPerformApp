@@ -19,12 +19,10 @@ class UserDocumentsViewModelTest {
 
     @Test
     fun userDocumentsViewModel_whenUploadSucceeds_emitsLoadingThenSuccess() = runTest {
-        // Arrange
         val viewModel = UserDocumentsViewModel(
             UserDocumentUseCase(FakeUserDocumentsRepository(Result.success("Subido")))
         )
 
-        // Act + Assert
         viewModel.uploadState.test {
             assertEquals(UploadState.Idle, awaitItem())
             viewModel.uploadDocument(1, "dni.pdf", byteArrayOf(1, 2))
@@ -35,18 +33,49 @@ class UserDocumentsViewModelTest {
     }
 
     @Test
-    fun userDocumentsViewModel_whenUploadFails_emitsLoadingThenError() = runTest {
-        // Arrange
+    fun userDocumentsViewModel_whenUploadFailsWithMessage_emitsLoadingThenError() = runTest {
         val viewModel = UserDocumentsViewModel(
             UserDocumentUseCase(FakeUserDocumentsRepository(Result.failure(IllegalStateException("Fallo"))))
         )
 
-        // Act + Assert
         viewModel.uploadState.test {
             assertEquals(UploadState.Idle, awaitItem())
             viewModel.uploadDocument(1, "dni.pdf", byteArrayOf(1, 2))
             assertEquals(UploadState.Loading, awaitItem())
             assertEquals(UploadState.Error("Fallo"), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun userDocumentsViewModel_whenUploadFailsWithoutMessage_emitsFallbackError() = runTest {
+        val viewModel = UserDocumentsViewModel(
+            UserDocumentUseCase(FakeUserDocumentsRepository(Result.failure(IllegalStateException())))
+        )
+
+        viewModel.uploadState.test {
+            assertEquals(UploadState.Idle, awaitItem())
+            viewModel.uploadDocument(1, "dni.pdf", byteArrayOf(1, 2))
+            assertEquals(UploadState.Loading, awaitItem())
+            assertEquals(UploadState.Error("Error desconocido al subir documento"), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun userDocumentsViewModel_whenResetUploadState_called_emitsIdle() = runTest {
+        val viewModel = UserDocumentsViewModel(
+            UserDocumentUseCase(FakeUserDocumentsRepository(Result.success("Subido")))
+        )
+
+        viewModel.uploadState.test {
+            assertEquals(UploadState.Idle, awaitItem())
+            viewModel.uploadDocument(1, "dni.pdf", byteArrayOf(1, 2))
+            assertEquals(UploadState.Loading, awaitItem())
+            assertEquals(UploadState.Success("Subido"), awaitItem())
+
+            viewModel.resetUploadState()
+            assertEquals(UploadState.Idle, awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }
