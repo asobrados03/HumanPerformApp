@@ -115,7 +115,7 @@ class AuthViewModelTest : KoinTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    fun `login - when success - emits Loading then Success`() = runTest {
+    fun login_when_success_emits_loading_then_success() = runTest {
         val login = sampleLoginResponse()
         val viewModel = buildViewModel(
             FakeAuthRepository(loginResult = Result.success(login))
@@ -131,7 +131,7 @@ class AuthViewModelTest : KoinTest {
     }
 
     @Test
-    fun `login - when failure with message - emits Error with that message`() = runTest {
+    fun login_when_failure_with_message_emits_error_with_that_message() = runTest {
         val viewModel = buildViewModel(
             FakeAuthRepository(loginResult = Result.failure(IllegalStateException("Credenciales inválidas")))
         )
@@ -146,7 +146,7 @@ class AuthViewModelTest : KoinTest {
     }
 
     @Test
-    fun `login - when failure without message - emits unknown error`() = runTest {
+    fun login_when_failure_without_message_emits_unknown_error() = runTest {
         val viewModel = buildViewModel(
             FakeAuthRepository(loginResult = Result.failure(IllegalStateException()))
         )
@@ -161,7 +161,7 @@ class AuthViewModelTest : KoinTest {
     }
 
     @Test
-    fun `resetStates - after login success - restores loginState to Idle`() = runTest {
+    fun resetstates_after_login_success_restores_loginstate_to_idle() = runTest {
         val viewModel = buildViewModel()
 
         viewModel.login("mail@test.com", "secret")
@@ -177,7 +177,7 @@ class AuthViewModelTest : KoinTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    fun `register - when success - emits Loading then Success`() = runTest {
+    fun register_when_success_emits_loading_then_success() = runTest {
         val response = RegisterResponse("Creado")
         val viewModel = buildViewModel(
             FakeAuthRepository(registerResult = Result.success(response))
@@ -193,7 +193,7 @@ class AuthViewModelTest : KoinTest {
     }
 
     @Test
-    fun `register - when failure with message - emits Error with that message`() = runTest {
+    fun register_when_failure_with_message_emits_error_with_that_message() = runTest {
         val viewModel = buildViewModel(
             FakeAuthRepository(registerResult = Result.failure(RuntimeException("Email ya registrado")))
         )
@@ -208,7 +208,7 @@ class AuthViewModelTest : KoinTest {
     }
 
     @Test
-    fun `register - when failure without message - emits unknown error`() = runTest {
+    fun register_when_failure_without_message_emits_unknown_error() = runTest {
         val viewModel = buildViewModel(
             FakeAuthRepository(registerResult = Result.failure(RuntimeException()))
         )
@@ -223,7 +223,7 @@ class AuthViewModelTest : KoinTest {
     }
 
     @Test
-    fun `register - when invalid email - emits ValidationErrors and does not call repository`() =
+    fun register_when_invalid_email_emits_validationerrors_and_does_not_call_repository() =
         runTest {
             val repository = FakeAuthRepository()
             val viewModel = buildViewModel(repository)
@@ -238,7 +238,7 @@ class AuthViewModelTest : KoinTest {
         }
 
     @Test
-    fun `register - when password too short - emits ValidationErrors and does not call repository`() =
+    fun register_when_password_too_short_emits_validationerrors_and_does_not_call_repository() =
         runTest {
             val repository = FakeAuthRepository()
             val viewModel = buildViewModel(repository)
@@ -253,7 +253,7 @@ class AuthViewModelTest : KoinTest {
         }
 
     @Test
-    fun `resetStates - after register success - restores registerState to Idle`() = runTest {
+    fun resetstates_after_register_success_restores_registerstate_to_idle() = runTest {
         val viewModel = buildViewModel()
 
         viewModel.register(sampleRegisterRequest())
@@ -269,7 +269,7 @@ class AuthViewModelTest : KoinTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    fun `resetPassword - when success - emits Loading then Success`() = runTest {
+    fun resetpassword_when_success_emits_loading_then_success() = runTest {
         val viewModel = buildViewModel(
             FakeAuthRepository(resetPasswordResult = Result.success(Unit))
         )
@@ -287,7 +287,7 @@ class AuthViewModelTest : KoinTest {
     }
 
     @Test
-    fun `resetPassword - when failure with message - emits Error with that message`() =
+    fun resetpassword_when_failure_with_message_emits_error_with_that_message() =
         runTest {
             val viewModel = buildViewModel(
                 FakeAuthRepository(
@@ -305,7 +305,7 @@ class AuthViewModelTest : KoinTest {
         }
 
     @Test
-    fun `resetPassword - when failure without message - emits unknown error`() =
+    fun resetpassword_when_failure_without_message_emits_unknown_error() =
         runTest {
             val viewModel = buildViewModel(
                 FakeAuthRepository(resetPasswordResult = Result.failure(RuntimeException()))
@@ -321,7 +321,7 @@ class AuthViewModelTest : KoinTest {
         }
 
     @Test
-    fun `resetResettingPasswordState - after success - restores state to Idle`() =
+    fun resetresettingpasswordstate_after_success_restores_state_to_idle() =
         runTest {
             val viewModel = buildViewModel(
                 FakeAuthRepository(resetPasswordResult = Result.success(Unit))
@@ -342,7 +342,7 @@ class AuthViewModelTest : KoinTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    fun `changePassword - when success - emits Loading then Success`() = runTest {
+    fun changepassword_when_success_emits_loading_then_success() = runTest {
         val viewModel = buildViewModel(
             FakeAuthRepository(changePasswordResult = Result.success(Unit))
         )
@@ -360,7 +360,7 @@ class AuthViewModelTest : KoinTest {
     }
 
     @Test
-    fun `changePassword - when failure with message - emits Error with that message`() =
+    fun changepassword_when_failure_with_message_emits_error_with_that_message() =
         runTest {
             val viewModel = buildViewModel(
                 FakeAuthRepository(
@@ -381,7 +381,7 @@ class AuthViewModelTest : KoinTest {
         }
 
     @Test
-    fun `changePassword - when failure without message - emits unknown error`() =
+    fun changepassword_when_failure_without_message_emits_unknown_error() =
         runTest {
             val viewModel = buildViewModel(
                 FakeAuthRepository(changePasswordResult = Result.failure(RuntimeException()))
@@ -397,7 +397,7 @@ class AuthViewModelTest : KoinTest {
         }
 
     @Test
-    fun `changePassword - when new passwords do not match - emits ValidationError and does not call repository`() =
+    fun changepassword_when_new_passwords_do_not_match_emits_validationerror_and_does_not_call_repository() =
         runTest {
             val repository = FakeAuthRepository()
             val viewModel = buildViewModel(repository)
@@ -411,7 +411,7 @@ class AuthViewModelTest : KoinTest {
         }
 
     @Test
-    fun `resetChangePasswordState - after success - restores state to Idle`() =
+    fun resetchangepasswordstate_after_success_restores_state_to_idle() =
         runTest {
             val viewModel = buildViewModel(
                 FakeAuthRepository(changePasswordResult = Result.success(Unit))
