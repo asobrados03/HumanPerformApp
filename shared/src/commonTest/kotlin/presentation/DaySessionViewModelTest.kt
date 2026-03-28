@@ -12,14 +12,35 @@ import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
 import com.humanperformcenter.shared.presentation.ui.DailySessionsUiState
 import com.humanperformcenter.shared.presentation.ui.SessionsRequestContext
 import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
+import kotlin.test.BeforeTest
+import kotlin.test.AfterTest
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class DaySessionViewModelTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+
+    @BeforeTest
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     private class FakeDaySessionRepository(
         private val sessionsResult: Result<List<DaySession>> = Result.success(emptyList()),
@@ -106,6 +127,7 @@ class DaySessionViewModelTest {
         )
 
         viewModel.fetchAvailableSessions(1, date)
+        advanceUntilIdle()
 
         assertEquals(listOf(available), viewModel.getAvailableCoachesForHour("10:00"))
         assertTrue(viewModel.getAvailableCoachesForHour("13:00").isEmpty())
@@ -131,6 +153,7 @@ class DaySessionViewModelTest {
 
         viewModel.makeBookingAsync(1, 2, 3, 4, "monday", 5, "2026-03-27", "10:00") { asyncBookingResult = it }
         viewModel.modifyBookingSessionAsync(10, 2, 3, 4, "monday", "2026-03-28", "11:00") { asyncModifyResult = it }
+        advanceUntilIdle()
 
         assertEquals(true, asyncBookingResult)
         assertEquals(true, asyncModifyResult)
@@ -185,6 +208,7 @@ class DaySessionViewModelTest {
 
         val serviceId = viewModel.fetchServiceIdForProduct(9)
         viewModel.fetchServiceIdForProductAsync(9) { serviceIdAsync = it }
+        advanceUntilIdle()
 
         assertEquals(42, serviceId)
         assertEquals(42, serviceIdAsync)
@@ -199,6 +223,7 @@ class DaySessionViewModelTest {
         viewModel.fetchAvailableSessions(1, LocalDate.parse("2026-03-27"))
         viewModel.clearSessions()
         viewModel.fetchHolidays()
+        advanceUntilIdle()
 
         assertEquals(DailySessionsUiState.Idle, viewModel.sessions.value)
         assertEquals(
