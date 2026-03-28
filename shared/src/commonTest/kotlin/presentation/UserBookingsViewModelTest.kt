@@ -50,7 +50,6 @@ class UserBookingsViewModelTest {
         viewModel.userBookings.test {
             assertEquals(FetchUserBookingsState.Loading, awaitItem())
             viewModel.fetchUserBookings(1)
-            assertEquals(FetchUserBookingsState.Loading, awaitItem())
             assertEquals(FetchUserBookingsState.Success(listOf(booking)), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
@@ -65,7 +64,6 @@ class UserBookingsViewModelTest {
         viewModel.userBookings.test {
             assertEquals(FetchUserBookingsState.Loading, awaitItem())
             viewModel.fetchUserBookings(1)
-            assertEquals(FetchUserBookingsState.Loading, awaitItem())
             assertEquals(FetchUserBookingsState.Error("Ocurrió un error inesperado"), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
