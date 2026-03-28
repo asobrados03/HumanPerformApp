@@ -179,9 +179,8 @@ class AuthViewModelTest : KoinTest {
     @Test
     fun register_when_success_emits_loading_then_success() = runTest {
         val response = RegisterResponse("Creado")
-        val viewModel = buildViewModel(
-            FakeAuthRepository(registerResult = Result.success(response))
-        )
+        val repository = FakeAuthRepository(registerResult = Result.success(response))
+        val viewModel = buildViewModel(repository)
 
         viewModel.registerState.test {
             assertEquals(RegisterState.Idle, awaitItem())
@@ -190,13 +189,16 @@ class AuthViewModelTest : KoinTest {
             assertEquals(RegisterState.Success(response), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
+
+        assertEquals(1, repository.registerCallCount)
     }
 
     @Test
     fun register_when_failure_with_message_emits_error_with_that_message() = runTest {
-        val viewModel = buildViewModel(
-            FakeAuthRepository(registerResult = Result.failure(RuntimeException("Email ya registrado")))
+        val repository = FakeAuthRepository(
+            registerResult = Result.failure(RuntimeException("Email ya registrado"))
         )
+        val viewModel = buildViewModel(repository)
 
         viewModel.registerState.test {
             assertEquals(RegisterState.Idle, awaitItem())
@@ -205,13 +207,14 @@ class AuthViewModelTest : KoinTest {
             assertEquals(RegisterState.Error("Email ya registrado"), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
+
+        assertEquals(1, repository.registerCallCount)
     }
 
     @Test
     fun register_when_failure_without_message_emits_unknown_error() = runTest {
-        val viewModel = buildViewModel(
-            FakeAuthRepository(registerResult = Result.failure(RuntimeException()))
-        )
+        val repository = FakeAuthRepository(registerResult = Result.failure(RuntimeException()))
+        val viewModel = buildViewModel(repository)
 
         viewModel.registerState.test {
             assertEquals(RegisterState.Idle, awaitItem())
@@ -220,6 +223,8 @@ class AuthViewModelTest : KoinTest {
             assertEquals(RegisterState.Error("Error desconocido"), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
+
+        assertEquals(1, repository.registerCallCount)
     }
 
     @Test
@@ -453,11 +458,11 @@ class AuthViewModelTest : KoinTest {
             email = "juan@test.com",
             phone = "600000000",
             password = "Password1",
-            sex = "M",
-            dateOfBirth = "1990-01-01",
+            sex = "Male",
+            dateOfBirth = "01011990",
             postCode = "28001",
             postAddress = "Street 1",
-            dni = "12345678A",
+            dni = "12345678Z",
             deviceType = "android",
             profilePicBytes = null,
             profilePicName = null
