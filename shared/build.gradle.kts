@@ -21,6 +21,7 @@ kotlin {
         minSdk = 26
 
         withHostTestBuilder {
+            isReturnDefaultValues = true
         }
 
         withDeviceTestBuilder {
