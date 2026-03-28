@@ -19,8 +19,7 @@ class ExampleInstrumentedTest {
         val targetContext = instrumentation.targetContext
         val testContext = instrumentation.context
 
-        val sharedModulePackage = BuildConfig.LIBRARY_PACKAGE_NAME
-        assertEquals(sharedModulePackage, targetContext.packageName)
-        assertEquals("$sharedModulePackage.test", testContext.packageName)
+        assertEquals("com.humanperformcenter.shared.test", targetContext.packageName)
+        assertEquals("com.humanperformcenter.shared.test", testContext.packageName)
     }
 }

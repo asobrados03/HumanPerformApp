@@ -14,14 +14,15 @@ class UserBookingsViewModel(
     private val userBookingsUseCase: UserBookingsUseCase,
     private val notificationManager: SessionNotificationManager
 ) : ViewModel() {
+
     private val _userBookings = MutableStateFlow<FetchUserBookingsState>(FetchUserBookingsState.Loading)
     @NativeCoroutinesState
     val userBookings: StateFlow<FetchUserBookingsState> = _userBookings
 
     fun fetchUserBookings(userId: Int) {
-        viewModelScope.launch {
-            _userBookings.value = FetchUserBookingsState.Loading
+        _userBookings.value = FetchUserBookingsState.Loading
 
+        viewModelScope.launch {
             userBookingsUseCase.getUserBookings(userId).onSuccess { bookings ->
                 _userBookings.value = FetchUserBookingsState.Success(bookings)
             }.onFailure { exception ->
@@ -37,7 +38,7 @@ class UserBookingsViewModel(
             userBookingsUseCase.cancelUserBooking(bookingId).fold(
                 onSuccess = {
                     notificationManager.cancelNotification(bookingId)
-                    fetchUserBookings(currentUser?.id ?: 0)
+                    fetchUserBookings(currentUser?.id ?: 0) // ← mismo contexto, sin launch
                 },
                 onFailure = { throwable ->
                     println("❌ Error al cancelar reserva: ${throwable.message}")

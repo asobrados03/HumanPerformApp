@@ -23,6 +23,7 @@ import com.humanperformcenter.shared.presentation.ui.RefundUiState
 import com.humanperformcenter.shared.presentation.ui.StartStripeCheckoutState
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -37,11 +38,13 @@ import kotlin.test.assertTrue
 class StripeViewModelTest {
     private val mainDispatcher = StandardTestDispatcher()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(mainDispatcher)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @AfterTest
     fun tearDown() {
         Dispatchers.resetMain()
@@ -75,6 +78,7 @@ class StripeViewModelTest {
     private fun buildViewModel(repository: FakeStripeRepository = FakeStripeRepository()) =
         StripeViewModel(StripeUseCase(repository))
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun checkout_state_transitions_ready_processing_completed_canceled_failed_and_reset_to_idle() = runTest(mainDispatcher.scheduler) {
         val viewModel = buildViewModel()
@@ -102,6 +106,7 @@ class StripeViewModelTest {
         assertEquals(StartStripeCheckoutState.Idle, viewModel.startStripeCheckout.value)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun add_payment_method_flow_emits_ready_completed_canceled_failed_and_reset() = runTest(mainDispatcher.scheduler) {
         val viewModel = buildViewModel()
@@ -111,6 +116,7 @@ class StripeViewModelTest {
         assertTrue(viewModel.addPaymentMethodUiState.value is AddPaymentMethodUiState.Ready)
 
         viewModel.onAddPaymentMethodCompleted()
+        advanceUntilIdle()
         assertEquals(AddPaymentMethodUiState.Completed, viewModel.addPaymentMethodUiState.value)
         assertTrue(viewModel.viewPaymentMethodsUiState.value is PaymentMethodsUiState.Success)
 
@@ -124,6 +130,7 @@ class StripeViewModelTest {
         assertEquals(AddPaymentMethodUiState.Idle, viewModel.addPaymentMethodUiState.value)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun subscription_refund_and_action_helpers_when_success_update_states() = runTest(mainDispatcher.scheduler) {
         val viewModel = buildViewModel()
@@ -161,6 +168,7 @@ class StripeViewModelTest {
         assertEquals(ActionUiState.Idle, viewModel.actionUiState.value)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun failure_paths_emit_expected_failed_states() = runTest(mainDispatcher.scheduler) {
         val viewModel = buildViewModel(

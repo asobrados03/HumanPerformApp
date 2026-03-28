@@ -76,9 +76,10 @@ class UserBookingsViewModelTest {
         val viewModel = buildViewModel(repository, notifications)
 
         viewModel.userBookings.test {
-            assertEquals(FetchUserBookingsState.Loading, awaitItem())
+            assertEquals(FetchUserBookingsState.Loading, awaitItem()) // Loading inicial
+
             viewModel.cancelUserBooking(bookingId = 99, currentUser = sampleUser(id = 7))
-            assertEquals(FetchUserBookingsState.Loading, awaitItem())
+            // No esperamos un segundo Loading porque StateFlow deduplica
             assertEquals(FetchUserBookingsState.Success(emptyList()), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }

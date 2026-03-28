@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.kotlinxSerialization)
-    id("com.rickclephas.kmp.nativecoroutines") version "1.0.0"
+    id("com.rickclephas.kmp.nativecoroutines") version "1.0.2"
 }
 
 kotlin {
@@ -21,7 +21,9 @@ kotlin {
         minSdk = 26
 
         withHostTestBuilder {
-            isReturnDefaultValues = true
+            sourceSetTreeName = "test"
+        }.configure {
+            isReturnDefaultValues = true  // ← moverlo al configure
         }
 
         withDeviceTestBuilder {
