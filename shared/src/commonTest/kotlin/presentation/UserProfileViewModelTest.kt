@@ -8,14 +8,32 @@ import com.humanperformcenter.shared.domain.usecase.UserProfileUseCase
 import com.humanperformcenter.shared.presentation.ui.DeleteProfilePicState
 import com.humanperformcenter.shared.presentation.ui.UpdateState
 import com.humanperformcenter.shared.presentation.viewmodel.UserProfileViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class UserProfileViewModelTest {
+
+    private val mainDispatcher = StandardTestDispatcher()
+
+    @BeforeTest
+    fun setup() {
+        Dispatchers.setMain(mainDispatcher)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     // ─────────────────────────────────────────────────────────────
     // Fakes
@@ -76,6 +94,7 @@ class UserProfileViewModelTest {
         )
 
         viewModel.updateUser(sampleUser(1, "New"), null, MutableStateFlow(null))
+        advanceUntilIdle()
 
         assertEquals(UpdateState.Error("fail"), viewModel.updateState.value)
     }
