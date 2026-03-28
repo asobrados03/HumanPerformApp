@@ -76,7 +76,7 @@ class StripeViewModelTest {
         StripeViewModel(StripeUseCase(repository))
 
     @Test
-    fun checkout_state_transitions_ready_processing_completed_canceled_failed_and_reset_to_idle() = runTest {
+    fun checkout_state_transitions_ready_processing_completed_canceled_failed_and_reset_to_idle() = runTest(mainDispatcher.scheduler) {
         val viewModel = buildViewModel()
 
         viewModel.startStripeCheckout(amount = 10.0, currency = "eur", customerId = "cus_1")
@@ -103,7 +103,7 @@ class StripeViewModelTest {
     }
 
     @Test
-    fun add_payment_method_flow_emits_ready_completed_canceled_failed_and_reset() = runTest {
+    fun add_payment_method_flow_emits_ready_completed_canceled_failed_and_reset() = runTest(mainDispatcher.scheduler) {
         val viewModel = buildViewModel()
 
         viewModel.prepareAddPaymentMethod(7)
@@ -125,7 +125,7 @@ class StripeViewModelTest {
     }
 
     @Test
-    fun subscription_refund_and_action_helpers_when_success_update_states() = runTest {
+    fun subscription_refund_and_action_helpers_when_success_update_states() = runTest(mainDispatcher.scheduler) {
         val viewModel = buildViewModel()
 
         viewModel.startStripeSubscription("price_1", "cus_1", 10, 20)
@@ -162,7 +162,7 @@ class StripeViewModelTest {
     }
 
     @Test
-    fun failure_paths_emit_expected_failed_states() = runTest {
+    fun failure_paths_emit_expected_failed_states() = runTest(mainDispatcher.scheduler) {
         val viewModel = buildViewModel(
             FakeStripeRepository(
                 paymentIntentResult = Result.failure(IllegalStateException("pi fail")),

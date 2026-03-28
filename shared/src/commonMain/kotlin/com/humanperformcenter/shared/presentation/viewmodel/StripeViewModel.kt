@@ -111,7 +111,7 @@ class StripeViewModel(
                 }
 
                 // 2. Evaluamos los resultados
-                if (piResult.isSuccess && ekResult.isSuccess) {
+                if (piResult.isSuccess && ekResult.isSuccess && publishableKeyResult.isSuccess) {
                     val paymentIntent = piResult.getOrThrow().data
                     val ephemeralKey = ekResult.getOrThrow().data
                     val publishableKey = publishableKeyResult.getOrThrow()
@@ -137,9 +137,11 @@ class StripeViewModel(
                         config = checkoutConfig
                     )
                 } else {
-                    // 3. Manejo de errores de cualquiera de las dos peticiones
+                    // 3. Manejo de errores de cualquiera de las peticiones, priorizando PI para no
+                    // enmascarar errores previos del flujo principal de checkout.
                     val errorMsg = piResult.exceptionOrNull()?.message
                         ?: ekResult.exceptionOrNull()?.message
+                        ?: publishableKeyResult.exceptionOrNull()?.message
                         ?: "Error al configurar el pago"
                     _startStripeCheckout.value = StartStripeCheckoutState.Failed(errorMsg)
                 }

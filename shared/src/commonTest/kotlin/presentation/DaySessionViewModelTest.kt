@@ -63,7 +63,7 @@ class DaySessionViewModelTest {
         DaySessionViewModel(DaySessionUseCase(repository))
 
     @Test
-    fun fetchavailablesessions_when_success_with_matching_data_emits_loading_then_success() = runTest {
+    fun fetchavailablesessions_when_success_with_matching_data_emits_loading_then_success() = runTest(testDispatcher.scheduler) {
         val date = LocalDate.parse("2026-03-27")
         val ctx = SessionsRequestContext(productId = 1, date = date)
         val matching = DaySession(1, "2026-03-27", "10:00", 5, "Ana", 0, 1)
@@ -82,7 +82,7 @@ class DaySessionViewModelTest {
     }
 
     @Test
-    fun fetchavailablesessions_when_no_coach_has_capacity_emits_empty() = runTest {
+    fun fetchavailablesessions_when_no_coach_has_capacity_emits_empty() = runTest(testDispatcher.scheduler) {
         val date = LocalDate.parse("2026-03-27")
         val ctx = SessionsRequestContext(productId = 1, date = date)
         val other = DaySession(2, "2026-03-27", "10:00", 6, "Juan", 1, 1)
@@ -100,7 +100,7 @@ class DaySessionViewModelTest {
     }
 
     @Test
-    fun fetchavailablesessions_when_repository_fails_emits_error() = runTest {
+    fun fetchavailablesessions_when_repository_fails_emits_error() = runTest(testDispatcher.scheduler) {
         val date = LocalDate.parse("2026-03-27")
         val ctx = SessionsRequestContext(productId = 1, date = date)
         val viewModel = buildViewModel(
@@ -117,7 +117,7 @@ class DaySessionViewModelTest {
     }
 
     @Test
-    fun getavailablecoachesforhour_returns_only_available_coaches_for_requested_hour() = runTest {
+    fun getavailablecoachesforhour_returns_only_available_coaches_for_requested_hour() = runTest(testDispatcher.scheduler) {
         val date = LocalDate.parse("2026-03-27")
         val available = DaySession(1, "2026-03-27", "10:00", 5, "Ana", 0, 1)
         val full = DaySession(1, "2026-03-27", "10:00", 6, "Juan", 1, 1)
@@ -134,7 +134,7 @@ class DaySessionViewModelTest {
     }
 
     @Test
-    fun makebooking_and_modifybooking_when_success_return_true_and_keep_error_null() = runTest {
+    fun makebooking_and_modifybooking_when_success_return_true_and_keep_error_null() = runTest(testDispatcher.scheduler) {
         val viewModel = buildViewModel()
 
         val booked = viewModel.makeBooking(1, 2, 3, 4, "monday", 5, "2026-03-27", "10:00")
@@ -146,7 +146,7 @@ class DaySessionViewModelTest {
     }
 
     @Test
-    fun makebookingasync_and_modifybookingasync_when_success_invoke_callbacks_with_true() = runTest {
+    fun makebookingasync_and_modifybookingasync_when_success_invoke_callbacks_with_true() = runTest(testDispatcher.scheduler) {
         val viewModel = buildViewModel()
         var asyncBookingResult: Boolean? = null
         var asyncModifyResult: Boolean? = null
@@ -160,7 +160,7 @@ class DaySessionViewModelTest {
     }
 
     @Test
-    fun makebooking_when_timeslot_fails_with_domain_error_maps_to_friendly_message() = runTest {
+    fun makebooking_when_timeslot_fails_with_domain_error_maps_to_friendly_message() = runTest(testDispatcher.scheduler) {
         val viewModel = buildViewModel(
             FakeDaySessionRepository(timeslotResult = Result.failure(BookingDomainException.DuplicateBooking))
         )
@@ -172,7 +172,7 @@ class DaySessionViewModelTest {
     }
 
     @Test
-    fun makebooking_when_booking_fails_with_generic_error_maps_to_generic_message() = runTest {
+    fun makebooking_when_booking_fails_with_generic_error_maps_to_generic_message() = runTest(testDispatcher.scheduler) {
         val viewModel = buildViewModel(
             FakeDaySessionRepository(bookingResult = Result.failure(IllegalStateException("whatever")))
         )
@@ -187,7 +187,7 @@ class DaySessionViewModelTest {
     }
 
     @Test
-    fun modifybookingsession_when_weekly_limit_exceeded_maps_to_friendly_message_and_can_clear_error() = runTest {
+    fun modifybookingsession_when_weekly_limit_exceeded_maps_to_friendly_message_and_can_clear_error() = runTest(testDispatcher.scheduler) {
         val viewModel = buildViewModel(
             FakeDaySessionRepository(modifyResult = Result.failure(BookingDomainException.WeeklyLimitExceeded))
         )
@@ -202,7 +202,7 @@ class DaySessionViewModelTest {
     }
 
     @Test
-    fun fetchserviceidforproduct_and_fetchserviceidforproductasync_return_repository_value() = runTest {
+    fun fetchserviceidforproduct_and_fetchserviceidforproductasync_return_repository_value() = runTest(testDispatcher.scheduler) {
         val viewModel = buildViewModel(FakeDaySessionRepository(serviceIdResult = Result.success(42)))
         var serviceIdAsync: Int? = null
 
@@ -215,7 +215,7 @@ class DaySessionViewModelTest {
     }
 
     @Test
-    fun clearsessions_and_fetchholidays_reset_sessions_and_parse_holidays() = runTest {
+    fun clearsessions_and_fetchholidays_reset_sessions_and_parse_holidays() = runTest(testDispatcher.scheduler) {
         val viewModel = buildViewModel(
             FakeDaySessionRepository(holidaysResult = Result.success(listOf("2026-12-25", "2026-01-01")))
         )
