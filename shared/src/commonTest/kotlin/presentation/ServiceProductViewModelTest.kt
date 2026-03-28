@@ -20,13 +20,30 @@ import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.shared.presentation.ui.models.ServiceUiModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ServiceProductViewModelTest {
+    private val mainDispatcher = StandardTestDispatcher()
+
+    @BeforeTest
+    fun setUp() {
+        Dispatchers.setMain(mainDispatcher)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     private class FakeServiceProductRepository(
         private val allServicesResult: Result<List<ServiceAvailable>> = Result.success(emptyList()),
