@@ -22,12 +22,30 @@ import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
 import com.humanperformcenter.shared.presentation.ui.RefundUiState
 import com.humanperformcenter.shared.presentation.ui.StartStripeCheckoutState
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class StripeViewModelTest {
+    private val mainDispatcher = StandardTestDispatcher()
+
+    @BeforeTest
+    fun setUp() {
+        Dispatchers.setMain(mainDispatcher)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     private class FakeStripeRepository(
         private val customerResult: Result<CreateStripeCustomerResponse> = Result.success(sampleCustomerResponse()),
@@ -62,6 +80,7 @@ class StripeViewModelTest {
         val viewModel = buildViewModel()
 
         viewModel.startStripeCheckout(amount = 10.0, currency = "eur", customerId = "cus_1")
+        advanceUntilIdle()
         assertTrue(viewModel.startStripeCheckout.value is StartStripeCheckoutState.Ready)
 
         viewModel.onSheetPresented()
@@ -88,6 +107,7 @@ class StripeViewModelTest {
         val viewModel = buildViewModel()
 
         viewModel.prepareAddPaymentMethod(7)
+        advanceUntilIdle()
         assertTrue(viewModel.addPaymentMethodUiState.value is AddPaymentMethodUiState.Ready)
 
         viewModel.onAddPaymentMethodCompleted()
@@ -109,14 +129,17 @@ class StripeViewModelTest {
         val viewModel = buildViewModel()
 
         viewModel.startStripeSubscription("price_1", "cus_1", 10, 20)
+        advanceUntilIdle()
         assertTrue(viewModel.startStripeCheckout.value is StartStripeCheckoutState.Ready)
 
         viewModel.cancelSubscription("sub_1", 20, 10)
+        advanceUntilIdle()
         assertEquals(ActionUiState.Success, viewModel.actionUiState.value)
 
         assertEquals("cus_123", viewModel.createOrGetCustomer())
 
         viewModel.createRefund("pi_1", 20, amount = 10.0)
+        advanceUntilIdle()
         assertEquals(RefundUiState.Success(20), viewModel.refundUiState.value)
 
         viewModel.createRefund("pi_1", 20, amount = 0.0)
@@ -126,9 +149,11 @@ class StripeViewModelTest {
         assertEquals(RefundUiState.Idle, viewModel.refundUiState.value)
 
         viewModel.detachPaymentMethod("pm_1")
+        advanceUntilIdle()
         assertEquals(ActionUiState.Success, viewModel.actionUiState.value)
 
         viewModel.setDefaultPaymentMethod("pm_1")
+        advanceUntilIdle()
         assertEquals(ActionUiState.Success, viewModel.actionUiState.value)
 
         viewModel.resetActionState()
@@ -151,26 +176,33 @@ class StripeViewModelTest {
         )
 
         viewModel.startStripeCheckout(amount = 10.0, currency = "eur", customerId = "cus_1")
+        advanceUntilIdle()
         assertEquals(StartStripeCheckoutState.Failed("pi fail"), viewModel.startStripeCheckout.value)
 
         viewModel.prepareAddPaymentMethod(7)
+        advanceUntilIdle()
         assertEquals(AddPaymentMethodUiState.Failed("setup fail"), viewModel.addPaymentMethodUiState.value)
 
         viewModel.startStripeSubscription("price_1", "cus_1", 10, 20)
+        advanceUntilIdle()
         assertEquals(StartStripeCheckoutState.Failed("sub fail"), viewModel.startStripeCheckout.value)
 
         viewModel.cancelSubscription("sub_1", 20, 10)
+        advanceUntilIdle()
         assertEquals(ActionUiState.Error("cancel fail"), viewModel.actionUiState.value)
 
         assertEquals(null, viewModel.createOrGetCustomer())
 
         viewModel.createRefund("pi_1", 20, 10.0)
+        advanceUntilIdle()
         assertEquals(RefundUiState.Error("refund fail"), viewModel.refundUiState.value)
 
         viewModel.detachPaymentMethod("pm_1")
+        advanceUntilIdle()
         assertEquals(ActionUiState.Error("detach fail"), viewModel.actionUiState.value)
 
         viewModel.setDefaultPaymentMethod("pm_1")
+        advanceUntilIdle()
         assertEquals(ActionUiState.Error("No se pudo obtener el cliente de Stripe"), viewModel.actionUiState.value)
     }
 
