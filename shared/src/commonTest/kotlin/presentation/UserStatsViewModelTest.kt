@@ -41,7 +41,6 @@ class UserStatsViewModelTest {
         viewModel.uiState.test {
             assertEquals(UserStatsState.Loading, awaitItem())
             viewModel.loadStatistics(1)
-            assertEquals(UserStatsState.Loading, awaitItem())
             assertEquals(UserStatsState.Success(stats), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
@@ -54,7 +53,6 @@ class UserStatsViewModelTest {
         viewModel.uiState.test {
             assertEquals(UserStatsState.Loading, awaitItem())
             viewModel.loadStatistics(1)
-            assertEquals(UserStatsState.Loading, awaitItem())
             assertEquals(UserStatsState.Error("Error desconocido"), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }

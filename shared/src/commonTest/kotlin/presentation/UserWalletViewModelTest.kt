@@ -44,7 +44,8 @@ class UserWalletViewModelTest {
         viewModel.balance.test {
             assertEquals(0.0, awaitItem())
             viewModel.loadBalance(1)
-            assertEquals(0.0, awaitItem())
+            expectNoEvents()
+            assertEquals(0.0, viewModel.balance.value)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -56,7 +57,8 @@ class UserWalletViewModelTest {
         viewModel.balance.test {
             assertEquals(0.0, awaitItem())
             viewModel.loadBalance(-1)
-            assertEquals(0.0, awaitItem())
+            expectNoEvents()
+            assertEquals(0.0, viewModel.balance.value)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -81,7 +83,6 @@ class UserWalletViewModelTest {
         viewModel.eWalletTransactions.test {
             assertEquals(EwalletUiState.Loading, awaitItem())
             viewModel.loadEwalletTransactions(1)
-            assertEquals(EwalletUiState.Loading, awaitItem())
             assertEquals(EwalletUiState.Success(listOf(tx)), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
@@ -96,7 +97,6 @@ class UserWalletViewModelTest {
         viewModel.eWalletTransactions.test {
             assertEquals(EwalletUiState.Loading, awaitItem())
             viewModel.loadEwalletTransactions(1)
-            assertEquals(EwalletUiState.Loading, awaitItem())
             assertEquals(EwalletUiState.Error("Sin conexión"), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
@@ -111,7 +111,6 @@ class UserWalletViewModelTest {
         viewModel.eWalletTransactions.test {
             assertEquals(EwalletUiState.Loading, awaitItem())
             viewModel.loadEwalletTransactions(1)
-            assertEquals(EwalletUiState.Loading, awaitItem())
             assertEquals(EwalletUiState.Error("Error desconocido"), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
