@@ -75,9 +75,9 @@ class UserBookingsViewModelTest {
         val notifications = FakeNotificationManager()
         val viewModel = buildViewModel(repository, notifications)
 
-        viewModel.cancelUserBooking(bookingId = 99, currentUser = sampleUser(id = 7))
-
         viewModel.userBookings.test {
+            assertEquals(FetchUserBookingsState.Loading, awaitItem())
+            viewModel.cancelUserBooking(bookingId = 99, currentUser = sampleUser(id = 7))
             assertEquals(FetchUserBookingsState.Loading, awaitItem())
             assertEquals(FetchUserBookingsState.Success(emptyList()), awaitItem())
             cancelAndIgnoreRemainingEvents()
