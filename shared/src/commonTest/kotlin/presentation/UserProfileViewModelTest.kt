@@ -9,6 +9,7 @@ import com.humanperformcenter.shared.presentation.ui.DeleteProfilePicState
 import com.humanperformcenter.shared.presentation.ui.UpdateState
 import com.humanperformcenter.shared.presentation.viewmodel.UserProfileViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -108,6 +109,7 @@ class UserProfileViewModelTest {
         )
 
         viewModel.deleteProfilePic(sampleUser(1, "User"), MutableStateFlow(sampleUser(1, "User")))
+        advanceUntilIdle()
         assertEquals(DeleteProfilePicState.Error("delete fail"), viewModel.deleteProfilePicState.value)
 
         viewModel.clearDeleteProfilePicState()
@@ -120,11 +122,11 @@ class UserProfileViewModelTest {
             fullName = name,
             email = "user$id@test.com",
             phone = "600000000",
-            sex = "M",
-            dateOfBirth = "1990-01-01",
+            sex = "Male",
+            dateOfBirth = "01/01/1990",
             postcode = 28001,
             postAddress = "Street 1",
-            dni = "12345678A",
+            dni = "12345678Z",
             profilePictureName = "pic.jpg"
         )
     }
