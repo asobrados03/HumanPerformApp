@@ -1,12 +1,10 @@
-package com.humaneperformcenter.shared
+package com.humanperformcenter.shared
 
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
-
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-
-import org.junit.Assert.*
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -17,8 +15,12 @@ import org.junit.Assert.*
 class ExampleInstrumentedTest {
     @Test
     fun useAppContext() {
-        // Context of the app under test.
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.humaneperformcenter.shared.test", appContext.packageName)
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val targetContext = instrumentation.targetContext
+        val testContext = instrumentation.context
+
+        val sharedModulePackage = BuildConfig.LIBRARY_PACKAGE_NAME
+        assertEquals(sharedModulePackage, targetContext.packageName)
+        assertEquals("$sharedModulePackage.test", testContext.packageName)
     }
 }
