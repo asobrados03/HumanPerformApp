@@ -143,6 +143,7 @@ class StripeViewModelTest {
         assertEquals(RefundUiState.Success(20), viewModel.refundUiState.value)
 
         viewModel.createRefund("pi_1", 20, amount = 0.0)
+        advanceUntilIdle()
         assertEquals(RefundUiState.Error("El importe del reembolso debe ser mayor que cero"), viewModel.refundUiState.value)
 
         viewModel.resetRefundState()
