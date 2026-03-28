@@ -32,6 +32,10 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthViewModelTest : KoinTest {
+    // Contrato unificado para fallbacks sin mensaje:
+    // - Login usa fallback genérico: "Error desconocido".
+    // - Register / ResetPassword / ChangePassword usan fallback específico por acción
+    //   definido en AuthViewModel para mantener mensajes más orientados al contexto.
 
     // ─────────────────────────────────────────────────────────────
     // Fakes
@@ -212,7 +216,7 @@ class AuthViewModelTest : KoinTest {
     }
 
     @Test
-    fun register_when_failure_without_message_emits_unknown_error() = runTest {
+    fun register_when_failure_without_message_emits_action_specific_fallback_error() = runTest {
         val repository = FakeAuthRepository(registerResult = Result.failure(RuntimeException()))
         val viewModel = buildViewModel(repository)
 
@@ -220,7 +224,7 @@ class AuthViewModelTest : KoinTest {
             assertEquals(RegisterState.Idle, awaitItem())
             viewModel.register(sampleRegisterRequest())
             assertEquals(RegisterState.Loading, awaitItem())
-            assertEquals(RegisterState.Error("Error desconocido"), awaitItem())
+            assertEquals(RegisterState.Error("Registro fallido"), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
 
@@ -310,7 +314,7 @@ class AuthViewModelTest : KoinTest {
         }
 
     @Test
-    fun resetpassword_when_failure_without_message_emits_unknown_error() =
+    fun resetpassword_when_failure_without_message_emits_action_specific_fallback_error() =
         runTest {
             val viewModel = buildViewModel(
                 FakeAuthRepository(resetPasswordResult = Result.failure(RuntimeException()))
@@ -320,7 +324,7 @@ class AuthViewModelTest : KoinTest {
                 assertEquals(ResetPasswordState.Idle, awaitItem())
                 viewModel.resetPassword("mail@test.com")
                 assertEquals(ResetPasswordState.Loading, awaitItem())
-                assertEquals(ResetPasswordState.Error("Error desconocido"), awaitItem())
+                assertEquals(ResetPasswordState.Error("Error al restablecer"), awaitItem())
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -386,7 +390,7 @@ class AuthViewModelTest : KoinTest {
         }
 
     @Test
-    fun changepassword_when_failure_without_message_emits_unknown_error() =
+    fun changepassword_when_failure_without_message_emits_action_specific_fallback_error() =
         runTest {
             val viewModel = buildViewModel(
                 FakeAuthRepository(changePasswordResult = Result.failure(RuntimeException()))
@@ -396,7 +400,7 @@ class AuthViewModelTest : KoinTest {
                 assertEquals(ChangePasswordState.Idle, awaitItem())
                 viewModel.changePassword("Oldpass1", "Newpass1", "Newpass1", 1)
                 assertEquals(ChangePasswordState.Loading, awaitItem())
-                assertEquals(ChangePasswordState.Error("Error desconocido"), awaitItem())
+                assertEquals(ChangePasswordState.Error("Error al cambiar contraseña"), awaitItem())
                 cancelAndIgnoreRemainingEvents()
             }
         }
