@@ -17,12 +17,32 @@ import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class UserSessionViewModelTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+
+    @BeforeTest
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     private class InMemoryPreferencesDataStore : DataStore<Preferences> {
         private val state = MutableStateFlow<Preferences>(emptyPreferences())
@@ -79,6 +99,8 @@ class UserSessionViewModelTest {
         val viewModel = buildViewModel(deleteResult = Result.success(Unit))
 
         viewModel.deleteUser("user@test.com")
+        advanceTimeBy(1000)
+        advanceUntilIdle()
         assertEquals(DeleteUserState.Success, viewModel.deleteState.value)
 
         viewModel.resetDeleteState()
@@ -92,6 +114,7 @@ class UserSessionViewModelTest {
         )
 
         viewModel.deleteUser("user@test.com")
+        advanceUntilIdle()
 
         assertEquals(DeleteUserState.NotFound("user@test.com"), viewModel.deleteState.value)
     }
@@ -103,6 +126,7 @@ class UserSessionViewModelTest {
         )
 
         viewModel.deleteUser("user@test.com")
+        advanceUntilIdle()
 
         assertEquals(DeleteUserState.Error("fallo"), viewModel.deleteState.value)
     }
@@ -113,6 +137,8 @@ class UserSessionViewModelTest {
         var callbackCalled = false
 
         viewModel.logout { callbackCalled = true }
+        advanceTimeBy(800)
+        advanceUntilIdle()
 
         assertTrue(callbackCalled)
         assertEquals(false, viewModel.isLoggingOut.value)
