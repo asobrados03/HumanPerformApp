@@ -20,6 +20,7 @@ import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.shared.presentation.ui.models.ServiceUiModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
@@ -77,6 +78,7 @@ class ServiceProductViewModelTest {
         viewModel.loadUserProducts(2)
         viewModel.loadProductDetail(1)
         viewModel.fetchActiveProductDetail(2, 1)
+        advanceUntilIdle()
 
         assertEquals(ServiceProductUiState.Success(listOf(product)), viewModel.serviceProducts.value[1])
         assertEquals(UserProductsUiState.Success(listOf(product)), viewModel.userProductsState.value)
@@ -96,6 +98,7 @@ class ServiceProductViewModelTest {
         )
 
         viewModel.loadAllServices(userId = 7)
+        advanceUntilIdle()
 
         assertEquals(
             ServiceUiState.Success(listOf(ServiceUiModel(service, true))),
@@ -131,6 +134,7 @@ class ServiceProductViewModelTest {
         val viewModel = buildViewModel(couponsResult = Result.success(listOf(coupon)))
 
         viewModel.loadUserCoupons(7)
+        advanceUntilIdle()
 
         assertEquals(listOf(coupon), viewModel.userCoupons.value)
     }
@@ -154,6 +158,7 @@ class ServiceProductViewModelTest {
         viewModel.loadProductDetail(9)
         viewModel.fetchActiveProductDetail(4, 9)
         viewModel.loadAllServices(4)
+        advanceUntilIdle()
 
         assertEquals(ServiceProductUiState.Error("svc error"), viewModel.serviceProducts.value[3])
         assertEquals(UserProductsUiState.Error("user error"), viewModel.userProductsState.value)
