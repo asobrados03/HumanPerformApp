@@ -130,6 +130,40 @@ class StripeViewModelTest {
         assertEquals(AddPaymentMethodUiState.Idle, viewModel.addPaymentMethodUiState.value)
     }
 
+
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun load_payment_methods_sets_success_empty_and_error_states() = runTest(mainDispatcher.scheduler) {
+        val successViewModel = buildViewModel()
+        successViewModel.loadPaymentMethods()
+        advanceUntilIdle()
+        assertTrue(successViewModel.viewPaymentMethodsUiState.value is PaymentMethodsUiState.Success)
+
+        val emptyViewModel = buildViewModel(
+            FakeStripeRepository(
+                userCardsResult = Result.success(
+                    StripePaymentMethodsContainer(methods = emptyList(), defaultPaymentMethodId = null)
+                )
+            )
+        )
+        emptyViewModel.loadPaymentMethods()
+        advanceUntilIdle()
+        assertEquals(PaymentMethodsUiState.Empty, emptyViewModel.viewPaymentMethodsUiState.value)
+
+        val errorViewModel = buildViewModel(
+            FakeStripeRepository(
+                customerResult = Result.failure(IllegalStateException("customer fail"))
+            )
+        )
+        errorViewModel.loadPaymentMethods()
+        advanceUntilIdle()
+        assertEquals(
+            PaymentMethodsUiState.Error("Error al identificar usuario"),
+            errorViewModel.viewPaymentMethodsUiState.value
+        )
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun subscription_refund_and_action_helpers_when_success_update_states() = runTest(mainDispatcher.scheduler) {
