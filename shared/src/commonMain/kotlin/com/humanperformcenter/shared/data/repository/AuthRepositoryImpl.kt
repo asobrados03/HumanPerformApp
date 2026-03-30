@@ -13,7 +13,9 @@ class AuthRepositoryImpl(
     private val local: AuthLocalDataSource,
 ) : AuthRepository {
     override suspend fun login(email: String, password: String): Result<LoginResponse> =
-        remote.login(email, password).onSuccess { data ->
+        remote.login(email, password)
+            .mapDomainError(ErrorCategory.AUTH)
+            .onSuccess { data ->
             val userData = User(
                 id = data.id,
                 fullName = data.fullName,
@@ -28,11 +30,16 @@ class AuthRepositoryImpl(
             )
             local.saveTokens(data.accessToken, data.refreshToken)
             local.saveUser(userData)
-        }
+            }
 
-    override suspend fun register(data: RegisterRequest): Result<RegisterResponse> = remote.register(data)
-    override suspend fun resetPassword(email: String): Result<Unit> = remote.resetPassword(email)
+    override suspend fun register(data: RegisterRequest): Result<RegisterResponse> =
+        remote.register(data).mapDomainError(ErrorCategory.AUTH)
+
+    override suspend fun resetPassword(email: String): Result<Unit> =
+        remote.resetPassword(email).mapDomainError(ErrorCategory.AUTH)
+
     override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int): Result<Unit> =
-        remote.changePassword(currentPassword, newPassword, userId)
-    override suspend fun logout(): Result<Unit> = remote.logout()
+        remote.changePassword(currentPassword, newPassword, userId).mapDomainError(ErrorCategory.AUTH)
+
+    override suspend fun logout(): Result<Unit> = remote.logout().mapDomainError(ErrorCategory.AUTH)
 }

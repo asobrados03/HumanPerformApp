@@ -11,8 +11,8 @@ class UserProfileRepositoryImpl(
     private val local: UserProfileLocalDataSource,
 ) : UserProfileRepository {
     override suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User> =
-        remote.updateUser(user, profilePicBytes).onSuccess { local.saveUser(it) }
+        remote.updateUser(user, profilePicBytes).onSuccess { local.saveUser(it) }.mapDomainError()
 
-    override suspend fun getUserById(id: Int): Result<User> = remote.getUserById(id)
-    override suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit> = remote.deleteProfilePic(req)
+    override suspend fun getUserById(id: Int): Result<User> = remote.getUserById(id).mapDomainError()
+    override suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit> = remote.deleteProfilePic(req).mapDomainError()
 }
