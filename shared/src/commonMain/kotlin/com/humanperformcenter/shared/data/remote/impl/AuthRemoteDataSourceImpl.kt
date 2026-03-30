@@ -43,7 +43,10 @@ class AuthRemoteDataSourceImpl(
             data.profilePicBytes?.let { bytes ->
                 append("profile_pic", bytes, Headers.build {
                     append(HttpHeaders.ContentType, "image/jpeg")
-                    append(HttpHeaders.ContentDisposition, "filename=\"${data.profilePicName}\"")
+                    append(
+                        HttpHeaders.ContentDisposition,
+                        "form-data; name=\"profile_pic\"; filename=\"${data.profilePicName}\"",
+                    )
                 })
             }
             append("nombre", data.name)
