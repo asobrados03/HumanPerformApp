@@ -7,7 +7,7 @@ import com.humanperformcenter.shared.domain.repository.UserWalletRepository
 class UserWalletRepositoryImpl(
     private val remote: UserWalletRemoteDataSource,
 ) : UserWalletRepository {
-    override suspend fun getEwalletBalance(userId: Int): Result<Double?> = remote.getEwalletBalance(userId)
+    override suspend fun getEwalletBalance(userId: Int): Result<Double?> = remote.getEwalletBalance(userId).mapDomainError()
     override suspend fun getEwalletTransactions(userId: Int): Result<List<EwalletTransaction>> =
-        remote.getEwalletTransactions(userId)
+        remote.getEwalletTransactions(userId).mapDomainError()
 }

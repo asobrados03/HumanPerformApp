@@ -7,5 +7,5 @@ import com.humanperformcenter.shared.domain.repository.UserStatsRepository
 class UserStatsRepositoryImpl(
     private val remote: UserStatsRemoteDataSource,
 ) : UserStatsRepository {
-    override suspend fun getUserStats(customerId: Int): Result<UserStatistics> = remote.getUserStats(customerId)
+    override suspend fun getUserStats(customerId: Int): Result<UserStatistics> = remote.getUserStats(customerId).mapDomainError()
 }

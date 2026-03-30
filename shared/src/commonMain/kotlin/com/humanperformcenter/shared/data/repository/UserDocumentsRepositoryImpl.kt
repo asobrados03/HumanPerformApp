@@ -7,5 +7,5 @@ class UserDocumentsRepositoryImpl(
     private val remote: UserDocumentsRemoteDataSource,
 ) : UserDocumentsRepository {
     override suspend fun uploadDocument(userId: Int, name: String, data: ByteArray): Result<String> =
-        remote.uploadDocument(userId, name, data)
+        remote.uploadDocument(userId, name, data).mapDomainError()
 }

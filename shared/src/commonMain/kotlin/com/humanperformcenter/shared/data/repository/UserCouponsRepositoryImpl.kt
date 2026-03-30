@@ -8,7 +8,7 @@ class UserCouponsRepositoryImpl(
     private val remote: UserCouponsRemoteDataSource,
 ) : UserCouponsRepository {
     override suspend fun addCouponToUser(userId: Int, couponCode: String): Result<Unit> =
-        remote.addCouponToUser(userId, couponCode)
+        remote.addCouponToUser(userId, couponCode).mapDomainError()
 
-    override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> = remote.getUserCoupons(userId)
+    override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> = remote.getUserCoupons(userId).mapDomainError()
 }
