@@ -1,11 +1,11 @@
-package com.humanperformcenter.shared.data.persistence
+package com.humanperformcenter.shared.data.repository
 
 import com.humanperformcenter.shared.data.model.user.UserStatistics
 import com.humanperformcenter.shared.data.remote.UserStatsRemoteDataSource
 import com.humanperformcenter.shared.domain.repository.UserStatsRepository
 
 class UserStatsRepositoryImpl(
-    private val remoteDataSource: UserStatsRemoteDataSource,
+    private val remote: UserStatsRemoteDataSource,
 ) : UserStatsRepository {
-    override suspend fun getUserStats(customerId: Int): Result<UserStatistics> = remoteDataSource.getUserStats(customerId)
+    override suspend fun getUserStats(customerId: Int): Result<UserStatistics> = remote.getUserStats(customerId)
 }
