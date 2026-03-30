@@ -69,7 +69,7 @@ class AuthRemoteDataSourceImplTest {
         assertTrue(result.isSuccess)
         assertEquals(HttpMethod.Post, capturedRequest.method)
         assertEquals("https://api.test/mobile/sessions", capturedRequest.url.toString())
-        assertEquals(ContentType.Application.Json.toString(), capturedRequest.headers[HttpHeaders.ContentType])
+        assertEquals(ContentType.Application.Json.toString(), capturedRequest.requestContentType())
 
         val body = capturedRequest.bodyAsText()
         assertTrue(body.contains("\"email\":\"ana@test.com\""))
@@ -151,7 +151,7 @@ class AuthRemoteDataSourceImplTest {
         assertEquals(HttpMethod.Post, capturedRequest.method)
         assertEquals("https://api.test/mobile/users", capturedRequest.url.toString())
 
-        val contentType = capturedRequest.headers[HttpHeaders.ContentType].orEmpty()
+        val contentType = capturedRequest.requestContentType().orEmpty()
         assertTrue(contentType.startsWith(ContentType.MultiPart.FormData.toString()))
 
         val multipartBody = capturedRequest.bodyAsText()
@@ -212,6 +212,14 @@ class AuthRemoteDataSourceImplTest {
 
         is io.ktor.http.content.OutgoingContent.NoContent -> ""
         else -> ""
+    }
+
+    private fun HttpRequestData.requestContentType(): String? {
+        val fromHeaders = headers[HttpHeaders.ContentType]
+        if (fromHeaders != null) return fromHeaders
+
+        val outgoing = body as? io.ktor.http.content.OutgoingContent ?: return null
+        return outgoing.contentType?.toString()
     }
 
     private class FakeAuthLocalDataSource(

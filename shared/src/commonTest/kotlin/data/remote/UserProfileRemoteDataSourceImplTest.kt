@@ -124,7 +124,7 @@ class UserProfileRemoteDataSourceImplTest {
         assertEquals(HttpMethod.Put, capturedRequest.method)
         assertEquals("https://api.test/mobile/user", capturedRequest.url.toString())
 
-        val contentType = capturedRequest.headers[HttpHeaders.ContentType].orEmpty()
+        val contentType = capturedRequest.requestContentType().orEmpty()
         assertTrue(contentType.startsWith(ContentType.MultiPart.FormData.toString()))
 
         val multipartBody = capturedRequest.bodyAsText()
@@ -178,5 +178,13 @@ class UserProfileRemoteDataSourceImplTest {
 
         is io.ktor.http.content.OutgoingContent.NoContent -> ""
         else -> ""
+    }
+
+    private fun HttpRequestData.requestContentType(): String? {
+        val fromHeaders = headers[HttpHeaders.ContentType]
+        if (fromHeaders != null) return fromHeaders
+
+        val outgoing = body as? io.ktor.http.content.OutgoingContent ?: return null
+        return outgoing.contentType?.toString()
     }
 }
