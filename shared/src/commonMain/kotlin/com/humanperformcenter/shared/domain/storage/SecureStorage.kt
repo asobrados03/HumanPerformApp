@@ -3,11 +3,9 @@ package com.humanperformcenter.shared.domain.storage
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.humanperformcenter.shared.data.model.user.User
-import com.humanperformcenter.shared.domain.security.AuthPreferences
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.Flow
 
 object SecureStorage {
     private lateinit var prefs: DataStore<Preferences>
@@ -18,38 +16,28 @@ object SecureStorage {
     }
 
     /** Devuelve el access token actual o null si no hay */
-    fun getAccessToken(): String? = runBlocking {
-        AuthPreferences.accessTokenFlow(prefs)
-            .firstOrNull()
-            .takeIf { !it.isNullOrBlank() }
-    }
+    fun getAccessToken(): String? = runBlocking { AuthStorageCore.getAccessToken(prefs) }
 
     /** Devuelve el refresh token actual o null si no hay */
-    fun getRefreshToken(): String? = runBlocking {
-        AuthPreferences.refreshTokenFlow(prefs)
-            .firstOrNull()
-            .takeIf { !it.isNullOrBlank() }
-    }
+    fun getRefreshToken(): String? = runBlocking { AuthStorageCore.getRefreshToken(prefs) }
 
     /** Guarda ambos tokens (suspende) */
     suspend fun saveTokens(access: String, refresh: String) {
-        AuthPreferences.saveTokens(prefs, access, refresh)
+        AuthStorageCore.saveTokens(prefs, access, refresh)
     }
 
     @NativeCoroutines
-    fun accessTokenFlow(): Flow<String> {
-        return AuthPreferences.accessTokenFlow(prefs)
-    }
+    fun accessTokenFlow(): Flow<String> = AuthStorageCore.accessTokenFlow(prefs)
 
     suspend fun saveUser(user: User) {
-        AuthPreferences.saveUser(prefs, user)
+        AuthStorageCore.saveUser(prefs, user)
     }
 
     @NativeCoroutines
-    fun userFlow(): Flow<User?> = AuthPreferences.userFlow(prefs)
+    fun userFlow(): Flow<User?> = AuthStorageCore.userFlow(prefs)
 
     /** Borra tokens (logout) */
     suspend fun clear() {
-        AuthPreferences.clear(prefs)
+        AuthStorageCore.clear(prefs)
     }
 }
