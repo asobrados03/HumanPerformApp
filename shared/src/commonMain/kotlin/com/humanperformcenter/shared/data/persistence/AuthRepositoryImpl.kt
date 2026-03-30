@@ -1,263 +1,37 @@
 package com.humanperformcenter.shared.data.persistence
 
-import com.humanperformcenter.shared.data.model.auth.ChangePasswordRequest
-import com.humanperformcenter.shared.data.model.ErrorResponse
 import com.humanperformcenter.shared.data.model.auth.LoginResponse
 import com.humanperformcenter.shared.data.model.auth.RegisterRequest
 import com.humanperformcenter.shared.data.model.auth.RegisterResponse
-import com.humanperformcenter.shared.data.model.auth.ResetPasswordRequest
 import com.humanperformcenter.shared.data.model.user.User
-import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.data.remote.AuthRemoteDataSource
 import com.humanperformcenter.shared.domain.repository.AuthRepository
 import com.humanperformcenter.shared.domain.storage.SecureStorage
-import io.ktor.client.call.body
-import io.ktor.client.plugins.ClientRequestException
-import io.ktor.client.plugins.RedirectResponseException
-import io.ktor.client.plugins.ServerResponseException
-import io.ktor.client.plugins.expectSuccess
-import io.ktor.client.request.forms.MultiPartFormDataContent
-import io.ktor.client.request.forms.formData
-import io.ktor.client.request.delete
-import io.ktor.client.request.bearerAuth
-import io.ktor.client.request.post
-import io.ktor.client.request.put
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
-import io.ktor.http.ContentType
-import io.ktor.http.Headers
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.withContext
 
-object AuthRepositoryImpl : AuthRepository {
-    override suspend fun login(email: String, password: String)
-    : Result<LoginResponse> = withContext(Dispatchers.IO) {
-        try {
-            val resp: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/sessions") {
-                contentType(ContentType.Application.Json)
-                setBody(mapOf("email" to email, "password" to password))
-                expectSuccess = false
-            }
-
-            when (resp.status) {
-                HttpStatusCode.OK -> {
-                    val data: LoginResponse = resp.body()
-                    val userData = User(
-                        id = data.id,
-                        fullName = data.fullName,
-                        email = data.email,
-                        phone = data.phone,
-                        sex = data.sex,
-                        dateOfBirth = data.dateOfBirth,
-                        postcode = data.postcode,
-                        postAddress = data.postAddress,
-                        dni = data.dni,
-                        profilePictureName = data.profilePictureName
-                    )
-                    SecureStorage.saveTokens(data.accessToken, data.refreshToken)
-                    SecureStorage.saveUser(userData)
-                    Result.success(data)
-                }
-                HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized -> {
-                    val err: ErrorResponse = resp.body() ?: ErrorResponse("Credenciales inválidas")
-                    Result.failure(Exception(err.error))
-                }
-                else -> Result.failure(Exception("Error al iniciar sesión"))
-            }
-        } catch (err: Throwable) {
-            Result.failure(err)
+class AuthRepositoryImpl(
+    private val remoteDataSource: AuthRemoteDataSource,
+) : AuthRepository {
+    override suspend fun login(email: String, password: String): Result<LoginResponse> =
+        remoteDataSource.login(email, password).onSuccess { data ->
+            val userData = User(
+                id = data.id,
+                fullName = data.fullName,
+                email = data.email,
+                phone = data.phone,
+                sex = data.sex,
+                dateOfBirth = data.dateOfBirth,
+                postcode = data.postcode,
+                postAddress = data.postAddress,
+                dni = data.dni,
+                profilePictureName = data.profilePictureName,
+            )
+            SecureStorage.saveTokens(data.accessToken, data.refreshToken)
+            SecureStorage.saveUser(userData)
         }
-    }
 
-    override suspend fun register(data: RegisterRequest)
-    : Result<RegisterResponse> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            // 1) Construye la lista de partes
-            val parts = formData {
-                data.profilePicBytes?.let { bytes ->
-                    append("profile_pic", bytes, Headers.build {
-                        append(HttpHeaders.ContentType, "image/jpeg")
-                        append(HttpHeaders.ContentDisposition,
-                            "filename=\"${data.profilePicName}\"")
-                    })
-                }
-                append("nombre",       data.name)
-                append("apellidos",    data.surnames)
-                append("email",        data.email)
-                append("telefono",     data.phone)
-                append("password",     data.password)
-                append("sexo",         data.sex)
-                append("fecha_nacimiento", data.dateOfBirth)
-                append("codigo_postal",   data.postCode)
-                append("direccion_postal", data.postAddress)
-                append("dni",             data.dni)
-                append("device_type",      data.deviceType)
-            }
-
-            // 2) Envío con MULTIPART, sin tocar el Content-Type manualmente
-            val response: HttpResponse = ApiClient.authClient.post("${ApiClient.baseUrl}/mobile/users") {
-                setBody(MultiPartFormDataContent(parts))
-            }
-
-            // 3) Procesa la respuesta
-            when (response.status) {
-                HttpStatusCode.Created -> {
-                    Result.success(response.body())
-                }
-                HttpStatusCode.InternalServerError -> {
-                    Result.failure(Exception("Ha habido un error interno. Vuelva a intentarlo."))
-                }
-                else -> {
-                    val err = response.body<ErrorResponse>()
-                    Result.failure(Exception(err.error))
-                }
-            }
-        } catch (e: Exception) {
-            Result.failure(Exception("Error al registrar: ${e.message}"))
-        }
-    }
-
-    override suspend fun resetPassword(email: String): Result<Unit> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val resp: HttpResponse = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/reset-password") {
-                contentType(ContentType.Application.Json)
-                setBody(ResetPasswordRequest(
-                    email = email
-                ))
-
-                expectSuccess = false
-            }
-
-            when (resp.status) {
-                HttpStatusCode.OK -> {
-                    Result.success(Unit)
-                }
-                HttpStatusCode.NotFound -> {
-                    // Error de validación (contraseña muy débil, etc.)
-                    val errorBody: ErrorResponse = try {
-                        resp.body()
-                    } catch (_: Exception) {
-                        ErrorResponse("Error no se ha encontrado el usuario asociado al email")
-                    }
-                    Result.failure(Exception(errorBody.error))
-                }
-                else -> {
-                    Result.failure(Exception("Error al restablecer la contraseña. Inténtalo más tarde"))
-                }
-            }
-        } catch (e: ClientRequestException) {
-            val errorMessage = try {
-                e.response.body<ErrorResponse>().error
-            } catch (_: Exception) {
-                when (e.response.status) {
-                    HttpStatusCode.NotFound -> "Usuario no encontrado"
-                    else -> "Error en la solicitud"
-                }
-            }
-
-            Result.failure(Exception(errorMessage))
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(Exception("Error de conexión. Revisa tu conexión a internet e inténtalo de nuevo"))
-        }
-    }
-
-    override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int)
-    : Result<Unit> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val resp: HttpResponse = ApiClient.apiClient.put("${ApiClient.baseUrl}/mobile/change-password") {
-                contentType(ContentType.Application.Json)
-                setBody(ChangePasswordRequest(
-                    currentPassword = currentPassword,
-                    newPassword = newPassword,
-                    userId = userId
-                ))
-
-                expectSuccess = false
-            }
-
-            when (resp.status) {
-                HttpStatusCode.OK -> {
-                    Result.success(Unit)
-                }
-                HttpStatusCode.BadRequest -> {
-                    // Error de validación (contraseña muy débil, etc.)
-                    val errorBody: ErrorResponse = try {
-                        resp.body()
-                    } catch (_: Exception) {
-                        ErrorResponse("Error de validación en los datos enviados")
-                    }
-                    Result.failure(Exception(errorBody.error))
-                }
-                HttpStatusCode.Unauthorized -> {
-                    // Contraseña actual incorrecta
-                    val errorBody: ErrorResponse = try {
-                        resp.body()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        ErrorResponse("Contraseña actual incorrecta")
-                    }
-                    Result.failure(Exception(errorBody.error))
-                }
-                HttpStatusCode.Forbidden -> {
-                    // Usuario no tiene permisos o sesión expirada
-                    Result.failure(Exception("Sesión expirada. Por favor, inicia sesión nuevamente"))
-                }
-                else -> {
-                    Result.failure(Exception("Error al cambiar contraseña. Inténtalo más tarde"))
-                }
-            }
-        } catch (e: ClientRequestException) {
-            // Manejo específico de errores del cliente (4xx)
-            val errorMessage = try {
-                e.response.body<ErrorResponse>().error
-            } catch (_: Exception) {
-                when (e.response.status) {
-                    HttpStatusCode.BadRequest -> "Datos inválidos"
-                    HttpStatusCode.Unauthorized -> "Contraseña actual incorrecta"
-                    HttpStatusCode.Forbidden -> "Sesión expirada"
-                    else -> "Error en la solicitud"
-                }
-            }
-            Result.failure(Exception(errorMessage))
-        } catch (_: ServerResponseException) {
-            // Errores del servidor (5xx)
-            Result.failure(Exception("Error del servidor. Inténtalo más tarde"))
-        } catch (_: RedirectResponseException) {
-            // Redirecciones inesperadas (3xx)
-            Result.failure(Exception("Error de redirección. Contacta soporte"))
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(Exception("Error de conexión. Revisa tu conexión a internet e inténtalo de nuevo"))
-        }
-    }
-
-    override suspend fun logout(): Result<Unit> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val accessToken = SecureStorage.getAccessToken()
-            if (accessToken.isNullOrBlank()) {
-                return@withContext Result.failure(Exception("No hay token de acceso para cerrar sesión"))
-            }
-
-            val response: HttpResponse = ApiClient.authClient.delete("${ApiClient.baseUrl}/mobile/sessions/current") {
-                bearerAuth(accessToken)
-                expectSuccess = false
-            }
-
-            when (response.status) {
-                HttpStatusCode.OK,
-                HttpStatusCode.NoContent,
-                HttpStatusCode.Unauthorized -> Result.success(Unit)
-                else -> {
-                    val err = runCatching { response.body<ErrorResponse>() }.getOrNull()
-                    Result.failure(Exception(err?.error ?: "Error al cerrar sesión remotamente"))
-                }
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+    override suspend fun register(data: RegisterRequest): Result<RegisterResponse> = remoteDataSource.register(data)
+    override suspend fun resetPassword(email: String): Result<Unit> = remoteDataSource.resetPassword(email)
+    override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int): Result<Unit> =
+        remoteDataSource.changePassword(currentPassword, newPassword, userId)
+    override suspend fun logout(): Result<Unit> = remoteDataSource.logout()
 }

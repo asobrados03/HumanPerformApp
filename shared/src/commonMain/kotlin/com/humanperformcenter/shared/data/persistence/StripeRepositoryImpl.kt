@@ -1,155 +1,34 @@
 package com.humanperformcenter.shared.data.persistence
 
-import com.humanperformcenter.shared.data.model.payment.*
-import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
+import com.humanperformcenter.shared.data.model.payment.CreateStripeCustomerResponse
+import com.humanperformcenter.shared.data.model.payment.StripeEphemeralKeyResponse
+import com.humanperformcenter.shared.data.model.payment.StripePaymentIntentResponse
+import com.humanperformcenter.shared.data.model.payment.StripePaymentMethodsContainer
+import com.humanperformcenter.shared.data.model.payment.StripeSetupConfigResponse
+import com.humanperformcenter.shared.data.model.payment.SubscriptionDto
+import com.humanperformcenter.shared.data.model.payment.TransactionDto
+import com.humanperformcenter.shared.data.remote.StripeRemoteDataSource
 import com.humanperformcenter.shared.domain.repository.StripeRepository
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.http.ContentType
-import io.ktor.client.request.*
-import io.ktor.http.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.withContext
-import kotlin.collections.mapOf
 
-object StripeRepositoryImpl : StripeRepository {
-    override suspend fun getPublishableKey(): Result<String> = runCatching {
-        withContext(Dispatchers.IO) {
-            val response = ApiClient.apiClient
-                .get("${ApiClient.baseUrl}/stripe/publishable-key")
-                .body<PublishableKeyResponse>()
-
-            response.publishableKey.trim()
-        }
-    }
-
-    override suspend fun createOrGetCustomer(): Result<CreateStripeCustomerResponse> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/customer").body()
-        }
-    }
-
-    override suspend fun createEphemeralKey(customerId: String)
-    : Result<StripeEphemeralKeyResponse> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/ephemeral-keys") {
-                contentType(ContentType.Application.Json)
-                setBody(mapOf("customer_id" to customerId))
-            }.body()
-        }
-    }
-
-    override suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.delete(
-                "${ApiClient.baseUrl}/stripe/payment-method/$paymentMethodId"
-            ).body()
-        }
-    }
-
-    override suspend fun setDefaultPaymentMethod(
-        paymentMethodId: String,
-        customerId: String
-    ): Result<Unit> {
-        return runCatching {
-            withContext(Dispatchers.IO) {
-                ApiClient.apiClient.put("${ApiClient.baseUrl}/stripe/payment-method/default") {
-                    contentType(ContentType.Application.Json)
-                    setBody(mapOf("paymentMethodId" to paymentMethodId, "customerId" to customerId))
-                }.body()
-            }
-        }
-    }
-
-    override suspend fun createPaymentIntent(intentRequest: CreatePaymentIntentRequest)
-    : Result<StripePaymentIntentResponse> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payment-intents") {
-                contentType(ContentType.Application.Json)
-                setBody(intentRequest)
-            }.body()
-        }
-    }
-
-
-    override suspend fun createSetupConfig(userId: Int)
-    : Result<StripeSetupConfigResponse> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/payments/setup-config") {
-                contentType(ContentType.Application.Json)
-                setBody(mapOf("user_id" to userId))
-            }.body()
-        }
-    }
-
-    override suspend fun createRefund(paymentIntentId: String, amount: Double?)
-    : Result<Unit> = runCatching {
-        require(amount == null || amount > 0.0) {
-            "Refund amount must be a positive amount"
-        }
-
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/refund") {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    CreateRefundRequest(
-                        paymentIntentId = paymentIntentId,
-                        amount = amount
-                    )
-                )
-            }.body()
-        }
-    }
-
-    override suspend fun createSubscription(
-        priceId: String,
-        userId: Int,
-        productId: Int,
-        couponCode: String?
-    ): Result<SubscriptionDto> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.post("${ApiClient.baseUrl}/stripe/subscription") {
-                contentType(ContentType.Application.Json)
-                setBody(buildMap {
-                    put("priceId", priceId)
-                    put("userId", userId.toString())
-                    put("productId", productId.toString())
-                    if (!couponCode.isNullOrBlank()) {
-                        put("couponCode", couponCode)
-                    }
-                })
-            }.body()
-        }
-    }
-
-    override suspend fun cancelSubscription(subscriptionId: String, productId: Int, userId: Int)
-    : Result<Unit> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.delete(
-                "${ApiClient.baseUrl}/stripe/subscription/$subscriptionId"
-            ){
-                url {
-                    parameters.append("user_id", userId.toString())
-                    parameters.append("product_id", productId.toString())
-                }
-            }.body()
-        }
-    }
-
-    override suspend fun getUserTransactions(): Result<List<TransactionDto>> = runCatching {
-        withContext(Dispatchers.IO) {
-            ApiClient.apiClient.get("${ApiClient.baseUrl}/stripe/transactions").body()
-        }
-    }
-
-    override suspend fun getUserCards(customerId: String): Result<StripePaymentMethodsContainer> = runCatching {
-        withContext(Dispatchers.IO) {
-            val response: StripePaymentMethodsResponse = ApiClient.apiClient.get(
-                "${ApiClient.baseUrl}/stripe/payment-methods/$customerId"
-            ).body()
-
-            response.data
-        }
-    }
+class StripeRepositoryImpl(
+    private val remoteDataSource: StripeRemoteDataSource,
+) : StripeRepository {
+    override suspend fun getPublishableKey(): Result<String> = remoteDataSource.getPublishableKey()
+    override suspend fun createOrGetCustomer(): Result<CreateStripeCustomerResponse> = remoteDataSource.createOrGetCustomer()
+    override suspend fun createEphemeralKey(customerId: String): Result<StripeEphemeralKeyResponse> = remoteDataSource.createEphemeralKey(customerId)
+    override suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit> = remoteDataSource.detachPaymentMethod(paymentMethodId)
+    override suspend fun setDefaultPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit> =
+        remoteDataSource.setDefaultPaymentMethod(paymentMethodId, customerId)
+    override suspend fun createPaymentIntent(intentRequest: CreatePaymentIntentRequest): Result<StripePaymentIntentResponse> =
+        remoteDataSource.createPaymentIntent(intentRequest)
+    override suspend fun createSetupConfig(userId: Int): Result<StripeSetupConfigResponse> = remoteDataSource.createSetupConfig(userId)
+    override suspend fun createRefund(paymentIntentId: String, amount: Double?): Result<Unit> =
+        remoteDataSource.createRefund(paymentIntentId, amount)
+    override suspend fun createSubscription(priceId: String, userId: Int, productId: Int, couponCode: String?): Result<SubscriptionDto> =
+        remoteDataSource.createSubscription(priceId, userId, productId, couponCode)
+    override suspend fun cancelSubscription(subscriptionId: String, productId: Int, userId: Int): Result<Unit> =
+        remoteDataSource.cancelSubscription(subscriptionId, productId, userId)
+    override suspend fun getUserTransactions(): Result<List<TransactionDto>> = remoteDataSource.getUserTransactions()
+    override suspend fun getUserCards(customerId: String): Result<StripePaymentMethodsContainer> = remoteDataSource.getUserCards(customerId)
 }
