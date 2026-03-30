@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.remote.impl
+package com.humanperformcenter.shared.data.remote.implementation
 
 import com.humanperformcenter.shared.data.model.user.UserBooking
 import com.humanperformcenter.shared.data.network.HttpClientProvider
@@ -19,6 +19,5 @@ class UserBookingsRemoteDataSourceImpl(
 
     override suspend fun cancelUserBooking(bookingId: Int): Result<Unit> = runCatching {
         clientProvider.apiClient.delete("${clientProvider.baseUrl}/mobile/bookings/$bookingId")
-        Unit
     }
 }

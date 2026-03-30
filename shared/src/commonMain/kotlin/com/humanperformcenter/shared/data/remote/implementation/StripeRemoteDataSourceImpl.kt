@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.remote.impl
+package com.humanperformcenter.shared.data.remote.implementation
 
 import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
 import com.humanperformcenter.shared.data.model.payment.CreateRefundRequest
@@ -42,7 +42,6 @@ class StripeRemoteDataSourceImpl(
 
     override suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit> = runCatching {
         clientProvider.apiClient.delete("${clientProvider.baseUrl}/stripe/payment-method/$paymentMethodId")
-        Unit
     }
 
     override suspend fun setDefaultPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit> = runCatching {
@@ -50,7 +49,6 @@ class StripeRemoteDataSourceImpl(
             contentType(ContentType.Application.Json)
             setBody(mapOf("paymentMethodId" to paymentMethodId, "customerId" to customerId))
         }
-        Unit
     }
 
     override suspend fun createPaymentIntent(intentRequest: CreatePaymentIntentRequest): Result<StripePaymentIntentResponse> = runCatching {
@@ -72,7 +70,6 @@ class StripeRemoteDataSourceImpl(
             contentType(ContentType.Application.Json)
             setBody(CreateRefundRequest(paymentIntentId, amount))
         }
-        Unit
     }
 
     override suspend fun createSubscription(priceId: String, userId: Int, productId: Int, couponCode: String?): Result<SubscriptionDto> = runCatching {
@@ -94,7 +91,6 @@ class StripeRemoteDataSourceImpl(
                 parameters.append("product_id", productId.toString())
             }
         }
-        Unit
     }
 
     override suspend fun getUserTransactions(): Result<List<TransactionDto>> = runCatching {

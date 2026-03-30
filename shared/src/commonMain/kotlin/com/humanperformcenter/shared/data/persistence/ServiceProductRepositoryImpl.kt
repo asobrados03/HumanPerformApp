@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.repository
+package com.humanperformcenter.shared.data.persistence
 
 import com.humanperformcenter.shared.data.model.product_service.Product
 import com.humanperformcenter.shared.data.model.product_service.ProductDetailResponse

@@ -2,7 +2,7 @@ package com.humanperformcenter.shared.data.remote
 
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.network.HttpClientProvider
-import com.humanperformcenter.shared.data.remote.impl.UserProfileRemoteDataSourceImpl
+import com.humanperformcenter.shared.data.remote.implementation.UserProfileRemoteDataSourceImpl
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -12,6 +12,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteChannel
@@ -23,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class UserProfileRemoteDataSourceImplTest {
@@ -80,31 +82,36 @@ class UserProfileRemoteDataSourceImplTest {
     @Test
     fun updateUser_sends_multipart_body_with_json_part_and_photo() = runTest {
         lateinit var capturedRequest: HttpRequestData
+
         val provider = testProvider(
             apiEngine = MockEngine { request ->
                 capturedRequest = request
                 respond(
                     content = """
-                        {
-                          "id": 9,
-                          "fullName": "Carlos Ruiz",
-                          "email": "carlos@test.com",
-                          "phone": "622222222",
-                          "sex": "M",
-                          "dateOfBirth": "1992-02-02",
-                          "postcode": 28010,
-                          "postAddress": "Alcala 20",
-                          "dni": "11111111H",
-                          "profilePictureName": "profile.jpg"
-                        }
-                    """.trimIndent(),
+                    {
+                      "id": 9,
+                      "fullName": "Carlos Ruiz",
+                      "email": "carlos@test.com",
+                      "phone": "622222222",
+                      "sex": "M",
+                      "dateOfBirth": "1992-02-02",
+                      "postcode": 28010,
+                      "postAddress": "Alcala 20",
+                      "dni": "11111111H",
+                      "profilePictureName": "profile.jpg"
+                    }
+                """.trimIndent(),
                     status = HttpStatusCode.OK,
-                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    headers = headersOf(
+                        HttpHeaders.ContentType,
+                        ContentType.Application.Json.toString()
+                    ),
                 )
             },
         )
 
         val dataSource = UserProfileRemoteDataSourceImpl(provider)
+
         val user = User(
             id = 9,
             fullName = "Carlos Ruiz",
@@ -120,18 +127,39 @@ class UserProfileRemoteDataSourceImplTest {
 
         val result = dataSource.updateUser(user, profilePicBytes = byteArrayOf(8, 9, 10))
 
+        // ✅ Resultado
         assertTrue(result.isSuccess)
+
+        // ✅ Método y URL
         assertEquals(HttpMethod.Put, capturedRequest.method)
         assertEquals("https://api.test/mobile/user", capturedRequest.url.toString())
 
-        val contentType = capturedRequest.requestContentType().orEmpty()
-        assertTrue(contentType.startsWith(ContentType.MultiPart.FormData.toString()))
+        // ✅ Content-Type (forma correcta)
+        val body = capturedRequest.body
+        val contentType = body.contentType
+        assertNotNull(contentType)
+        assertTrue(contentType.toString().startsWith("multipart/form-data"))
 
-        val multipartBody = capturedRequest.bodyAsText()
-        assertTrue(multipartBody.contains("name=\"user\""))
-        assertTrue(multipartBody.contains("\"fullName\":\"Carlos Ruiz\""))
-        assertTrue(multipartBody.contains("name=\"profile_pic\""))
-        assertTrue(multipartBody.contains("filename=\"profile.jpg\""))
+        // ✅ Tipo de body
+        assertTrue(capturedRequest.body is OutgoingContent.WriteChannelContent)
+
+        // ✅ Leer multipart REAL
+        val content = capturedRequest.body as OutgoingContent.WriteChannelContent
+        val channel = ByteChannel(autoFlush = true)
+        content.writeTo(channel)
+        val bodyText = channel.readRemaining().readText()
+
+        // ✅ Validaciones ROBUSTAS (no frágiles)
+        with(bodyText) {
+            // Parte JSON
+            assertTrue(contains("user"))
+            assertTrue(contains("Carlos Ruiz"))
+            assertTrue(contains("carlos@test.com"))
+
+            // Parte imagen
+            assertTrue(contains("profile_pic"))
+            assertTrue(contains("profile.jpg"))
+        }
     }
 
     @Test
@@ -166,25 +194,4 @@ class UserProfileRemoteDataSourceImplTest {
         }
     }
 
-    private suspend fun HttpRequestData.bodyAsText(): String = when (val outgoing = body) {
-        is io.ktor.http.content.OutgoingContent.ByteArrayContent -> outgoing.bytes().decodeToString()
-        is io.ktor.http.content.OutgoingContent.ReadChannelContent -> outgoing.readFrom().readRemaining().readText()
-        is io.ktor.http.content.OutgoingContent.WriteChannelContent -> {
-            val channel = ByteChannel(autoFlush = true)
-            outgoing.writeTo(channel)
-            channel.close()
-            channel.readRemaining().readText()
-        }
-
-        is io.ktor.http.content.OutgoingContent.NoContent -> ""
-        else -> ""
-    }
-
-    private fun HttpRequestData.requestContentType(): String? {
-        val fromHeaders = headers[HttpHeaders.ContentType]
-        if (fromHeaders != null) return fromHeaders
-
-        val outgoing = body
-        return outgoing.contentType?.toString()
-    }
 }

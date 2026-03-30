@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.remote.impl
+package com.humanperformcenter.shared.data.remote.implementation
 
 import com.humanperformcenter.shared.data.model.payment.Coupon
 import com.humanperformcenter.shared.data.network.HttpClientProvider
@@ -18,7 +18,6 @@ class UserCouponsRemoteDataSourceImpl(
             contentType(ContentType.Application.Json)
             setBody(mapOf("coupon_code" to couponCode))
         }
-        Unit
     }
 
     override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> = runCatching {

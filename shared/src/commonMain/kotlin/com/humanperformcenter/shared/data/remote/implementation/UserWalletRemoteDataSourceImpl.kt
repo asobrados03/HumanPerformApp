@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.remote.impl
+package com.humanperformcenter.shared.data.remote.implementation
 
 import com.humanperformcenter.shared.data.model.payment.EwalletResponse
 import com.humanperformcenter.shared.data.model.payment.EwalletTransaction

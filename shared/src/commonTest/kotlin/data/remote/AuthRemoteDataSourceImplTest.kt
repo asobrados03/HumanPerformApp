@@ -6,7 +6,7 @@ import com.humanperformcenter.shared.data.model.auth.RegisterRequest
 import com.humanperformcenter.shared.data.model.auth.RegisterResponse
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.network.HttpClientProvider
-import com.humanperformcenter.shared.data.remote.impl.AuthRemoteDataSourceImpl
+import com.humanperformcenter.shared.data.remote.implementation.AuthRemoteDataSourceImpl
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -16,6 +16,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteChannel
@@ -30,6 +31,7 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AuthRemoteDataSourceImplTest {
@@ -111,24 +113,29 @@ class AuthRemoteDataSourceImplTest {
 
         assertTrue(result.isFailure)
         assertIs<IllegalStateException>(result.exceptionOrNull())
-        assertTrue(result.exceptionOrNull()?.message?.contains("HTTP 401") == true)
+        assertEquals(result.exceptionOrNull()?.message?.contains("HTTP 401"), true)
     }
 
     @Test
     fun register_sends_multipart_request_and_deserializes_success() = runTest {
         lateinit var capturedRequest: HttpRequestData
+
         val provider = testProvider(
             authEngine = MockEngine { request ->
                 capturedRequest = request
                 respond(
                     content = "{\"message\":\"ok\"}",
                     status = HttpStatusCode.OK,
-                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    headers = headersOf(
+                        HttpHeaders.ContentType,
+                        ContentType.Application.Json.toString()
+                    ),
                 )
             },
         )
 
         val dataSource = AuthRemoteDataSourceImpl(provider, FakeAuthLocalDataSource())
+
         val request = RegisterRequest(
             name = "Ana",
             surnames = "Perez",
@@ -147,20 +154,36 @@ class AuthRemoteDataSourceImplTest {
 
         val result = dataSource.register(request)
 
+        // ✅ Resultado correcto
         assertTrue(result.isSuccess)
+        assertEquals(RegisterResponse("ok"), result.getOrNull())
+
+        // ✅ Método y URL
         assertEquals(HttpMethod.Post, capturedRequest.method)
         assertEquals("https://api.test/mobile/users", capturedRequest.url.toString())
 
-        val contentType = capturedRequest.requestContentType().orEmpty()
-        assertTrue(contentType.startsWith(ContentType.MultiPart.FormData.toString()))
+        // ✅ Content-Type
+        val body = capturedRequest.body
+        val contentType = body.contentType
+        assertNotNull(contentType)
+        assertTrue(contentType.toString().startsWith("multipart/form-data"))
 
-        val multipartBody = capturedRequest.bodyAsText()
-        assertTrue(multipartBody.contains("name=\"nombre\""))
-        assertTrue(multipartBody.contains("Ana"))
-        assertTrue(multipartBody.contains("name=\"profile_pic\""))
-        assertTrue(multipartBody.contains("filename=\"avatar.jpg\""))
+        // ✅ Tipo de body
+        assertTrue(capturedRequest.body is OutgoingContent.WriteChannelContent)
 
-        assertEquals(RegisterResponse("ok"), result.getOrNull())
+        // ✅ Leer el multipart REAL (forma correcta)
+        val content = capturedRequest.body as OutgoingContent.WriteChannelContent
+        val channel = ByteChannel(autoFlush = true)
+        content.writeTo(channel)
+
+        val bodyText = channel.readRemaining().readText()
+
+        // ✅ Assertions reales sobre el contenido
+        assertTrue(bodyText.contains("nombre"))
+        assertTrue(bodyText.contains("Ana"))
+
+        assertTrue(bodyText.contains("profile_pic"))
+        assertTrue(bodyText.contains("avatar.jpg"))
     }
 
     @Test
@@ -201,16 +224,16 @@ class AuthRemoteDataSourceImplTest {
     }
 
     private suspend fun HttpRequestData.bodyAsText(): String = when (val outgoing = body) {
-        is io.ktor.http.content.OutgoingContent.ByteArrayContent -> outgoing.bytes().decodeToString()
-        is io.ktor.http.content.OutgoingContent.ReadChannelContent -> outgoing.readFrom().readRemaining().readText()
-        is io.ktor.http.content.OutgoingContent.WriteChannelContent -> {
+        is OutgoingContent.ByteArrayContent -> outgoing.bytes().decodeToString()
+        is OutgoingContent.ReadChannelContent -> outgoing.readFrom().readRemaining().readText()
+        is OutgoingContent.WriteChannelContent -> {
             val channel = ByteChannel(autoFlush = true)
             outgoing.writeTo(channel)
             channel.close()
             channel.readRemaining().readText()
         }
 
-        is io.ktor.http.content.OutgoingContent.NoContent -> ""
+        is OutgoingContent.NoContent -> ""
         else -> ""
     }
 

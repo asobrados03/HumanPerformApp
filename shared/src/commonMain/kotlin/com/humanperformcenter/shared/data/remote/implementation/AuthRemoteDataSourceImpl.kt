@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.remote.impl
+package com.humanperformcenter.shared.data.remote.implementation
 
 import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.model.auth.ChangePasswordRequest
@@ -74,7 +74,6 @@ class AuthRemoteDataSourceImpl(
             expectSuccess = false
         }
         check(response.status == HttpStatusCode.OK) { "HTTP ${response.status.value}" }
-        Unit
     }
 
     override suspend fun changePassword(
@@ -88,7 +87,6 @@ class AuthRemoteDataSourceImpl(
             expectSuccess = false
         }
         check(response.status == HttpStatusCode.OK) { "HTTP ${response.status.value}" }
-        Unit
     }
 
     override suspend fun logout(): Result<Unit> = runCatching {
@@ -100,6 +98,5 @@ class AuthRemoteDataSourceImpl(
         check(response.status.value in 200..299 || response.status == HttpStatusCode.Unauthorized) {
             "HTTP ${response.status.value}"
         }
-        Unit
     }
 }

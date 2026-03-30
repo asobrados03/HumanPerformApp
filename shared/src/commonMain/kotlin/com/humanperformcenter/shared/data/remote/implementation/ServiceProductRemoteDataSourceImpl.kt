@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.remote.impl
+package com.humanperformcenter.shared.data.remote.implementation
 
 import com.humanperformcenter.shared.data.model.payment.AssignProductResponse
 import com.humanperformcenter.shared.data.model.product_service.AssignProductRequest
@@ -44,7 +44,6 @@ class ServiceProductRemoteDataSourceImpl(
 
     override suspend fun unassignProductFromUser(userId: Int, productId: Int): Result<Unit> = runCatching {
         clientProvider.apiClient.delete("${clientProvider.baseUrl}/mobile/users/$userId/products/$productId")
-        Unit
     }
 
     override suspend fun getActiveProductDetail(userId: Int, productId: Int): Result<ProductDetailResponse> = runCatching {

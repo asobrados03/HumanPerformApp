@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.repository
+package com.humanperformcenter.shared.data.persistence
 
 import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
 import com.humanperformcenter.shared.data.model.payment.CreateStripeCustomerResponse

@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.repository
+package com.humanperformcenter.shared.data.persistence
 
 import com.humanperformcenter.shared.data.remote.UserAccountRemoteDataSource
 import com.humanperformcenter.shared.domain.repository.UserAccountRepository

@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.remote.impl
+package com.humanperformcenter.shared.data.remote.implementation
 
 import com.humanperformcenter.shared.data.model.user.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.user.User
@@ -55,6 +55,5 @@ class UserProfileRemoteDataSourceImpl(
                 parameters.append("email", req.email)
             }
         }
-        Unit
     }
 }
