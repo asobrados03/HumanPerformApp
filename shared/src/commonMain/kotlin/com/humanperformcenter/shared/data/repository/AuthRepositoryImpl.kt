@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.persistence
+package com.humanperformcenter.shared.data.repository
 
 import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.model.auth.LoginResponse
@@ -9,11 +9,11 @@ import com.humanperformcenter.shared.data.remote.AuthRemoteDataSource
 import com.humanperformcenter.shared.domain.repository.AuthRepository
 
 class AuthRepositoryImpl(
-    private val remoteDataSource: AuthRemoteDataSource,
-    private val localDataSource: AuthLocalDataSource,
+    private val remote: AuthRemoteDataSource,
+    private val local: AuthLocalDataSource,
 ) : AuthRepository {
     override suspend fun login(email: String, password: String): Result<LoginResponse> =
-        remoteDataSource.login(email, password).onSuccess { data ->
+        remote.login(email, password).onSuccess { data ->
             val userData = User(
                 id = data.id,
                 fullName = data.fullName,
@@ -26,13 +26,13 @@ class AuthRepositoryImpl(
                 dni = data.dni,
                 profilePictureName = data.profilePictureName,
             )
-            localDataSource.saveTokens(data.accessToken, data.refreshToken)
-            localDataSource.saveUser(userData)
+            local.saveTokens(data.accessToken, data.refreshToken)
+            local.saveUser(userData)
         }
 
-    override suspend fun register(data: RegisterRequest): Result<RegisterResponse> = remoteDataSource.register(data)
-    override suspend fun resetPassword(email: String): Result<Unit> = remoteDataSource.resetPassword(email)
+    override suspend fun register(data: RegisterRequest): Result<RegisterResponse> = remote.register(data)
+    override suspend fun resetPassword(email: String): Result<Unit> = remote.resetPassword(email)
     override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int): Result<Unit> =
-        remoteDataSource.changePassword(currentPassword, newPassword, userId)
-    override suspend fun logout(): Result<Unit> = remoteDataSource.logout()
+        remote.changePassword(currentPassword, newPassword, userId)
+    override suspend fun logout(): Result<Unit> = remote.logout()
 }
