@@ -25,7 +25,7 @@ import coil.compose.SubcomposeAsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.transform.RoundedCornersTransformation
-import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.data.network.API_BASE_URL
 
 @Composable
 fun UserProfileImage(
@@ -40,7 +40,7 @@ fun UserProfileImage(
     val data: Any? = remember(photoUri, photoName) {
         when {
             photoUri != null -> photoUri
-            !photoName.isNullOrBlank() ->  "${ApiClient.baseUrl}/profile_pic/$photoName"
+            !photoName.isNullOrBlank() ->  "${API_BASE_URL}/profile_pic/$photoName"
             else -> null
         }
     }

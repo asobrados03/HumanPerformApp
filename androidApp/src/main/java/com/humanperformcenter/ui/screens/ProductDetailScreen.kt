@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.data.network.API_BASE_URL
 import com.humanperformcenter.shared.presentation.ui.ProductDetailUiState
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.components.app.LogoAppBar
@@ -148,7 +148,7 @@ fun ProductDetailScreen(
                     // --- Imagen ---
                     product.image?.let { imagePath ->
                         AsyncImage(
-                            model = "${ApiClient.baseUrl}/product_images/$imagePath",
+                            model = "${API_BASE_URL}/product_images/$imagePath",
                             contentDescription = product.name,
                             modifier = Modifier
                                 .fillMaxWidth()

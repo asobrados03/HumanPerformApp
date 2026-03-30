@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.persistence
+package com.humanperformcenter.shared.data.local.impl
 
 import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.domain.storage.SessionStorage

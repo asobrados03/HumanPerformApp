@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.model.payment.Coupon
 import com.humanperformcenter.shared.data.model.product_service.Product
-import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.data.network.API_BASE_URL
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.ui.components.app.AppCard
 import java.util.Locale
@@ -72,7 +72,7 @@ fun ProductList(
                         // Imagen
                         availableProduct.image?.let { imagePath ->
                             AsyncImage(
-                                model = "${ApiClient.baseUrl}/product_images/$imagePath",
+                                model = "${API_BASE_URL}/product_images/$imagePath",
                                 contentDescription = availableProduct.name,
                                 modifier = Modifier
                                     .size(69.dp)

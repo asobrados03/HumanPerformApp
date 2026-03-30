@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.model.user.Professional
-import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.data.network.API_BASE_URL
 import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.shared.presentation.ui.MarkFavoriteState
 import kotlinx.coroutines.launch
@@ -58,7 +58,7 @@ fun FavoriteScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    val baseUrl = "${ApiClient.baseUrl}/profile_pic/"
+    val baseUrl = "${API_BASE_URL}/profile_pic/"
 
     LaunchedEffect(markFavoriteState) {
         when(markFavoriteState) {

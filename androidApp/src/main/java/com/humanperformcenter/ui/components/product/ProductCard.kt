@@ -12,14 +12,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.model.product_service.Product
-import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.data.network.API_BASE_URL
 import com.humanperformcenter.ui.components.app.AppCard
 import java.util.Locale
 
 @Composable
 fun ProductCard(product: Product, onClick: () -> Unit) {
     val imageUrl = product.image?.let {
-        "${ApiClient.baseUrl}/product_images/$it"
+        "${API_BASE_URL}/product_images/$it"
     }
 
     AppCard(onClick = onClick) {

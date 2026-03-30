@@ -9,7 +9,7 @@ import com.humanperformcenter.shared.data.network.HttpClientProvider
 import com.humanperformcenter.shared.data.repository.AuthRepositoryImpl
 import com.humanperformcenter.shared.data.repository.DaySessionRepositoryImpl
 import com.humanperformcenter.shared.data.repository.ServiceProductRepositoryImpl
-import com.humanperformcenter.shared.data.persistence.SessionStorageImpl
+import com.humanperformcenter.shared.data.local.impl.SessionStorageImpl
 import com.humanperformcenter.shared.data.repository.StripeRepositoryImpl
 import com.humanperformcenter.shared.data.repository.UserAccountRepositoryImpl
 import com.humanperformcenter.shared.data.repository.UserBookingsRepositoryImpl
@@ -89,12 +89,12 @@ import org.koin.dsl.module
 expect val platformModule: Module
 
 val localStorageModule = module {
-    single<AuthLocalDataSource> { AuthLocalDataSourceImpl }
-    single<UserProfileLocalDataSource> { UserProfileLocalDataSourceImpl }
+    single<AuthLocalDataSource> { AuthLocalDataSourceImpl(get()) }
+    single<UserProfileLocalDataSource> { UserProfileLocalDataSourceImpl(get()) }
 }
 
 val networkModule = module {
-    single<HttpClientProvider> { DefaultHttpClientProvider }
+    single<HttpClientProvider> { DefaultHttpClientProvider(get()) }
     single<AuthRemoteDataSource> { AuthRemoteDataSourceImpl(get(), get()) }
     single<DaySessionRemoteDataSource> { DaySessionRemoteDataSourceImpl(get()) }
     single<ServiceProductRemoteDataSource> { ServiceProductRemoteDataSourceImpl(get()) }

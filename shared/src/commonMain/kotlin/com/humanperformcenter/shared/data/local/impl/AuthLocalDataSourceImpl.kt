@@ -8,13 +8,9 @@ import com.humanperformcenter.shared.domain.security.AuthPreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 
-object AuthLocalDataSourceImpl : AuthLocalDataSource {
-    private lateinit var prefs: DataStore<Preferences>
-
-    fun initialize(prefs: DataStore<Preferences>) {
-        this.prefs = prefs
-    }
-
+class AuthLocalDataSourceImpl(
+    private val prefs: DataStore<Preferences>,
+) : AuthLocalDataSource {
     override suspend fun getAccessToken(): String? =
         AuthPreferences.accessTokenFlow(prefs)
             .firstOrNull()
