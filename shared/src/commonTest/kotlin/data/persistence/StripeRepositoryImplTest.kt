@@ -20,7 +20,7 @@ import kotlin.test.assertTrue
 class StripeRepositoryImplTest {
 
     @Test
-    fun getpublishablekey_when_success_returns_key() = runTest {
+    fun get_publishable_key_when_success_returns_key() = runTest {
         val remote = FakeStripeRemoteDataSource(publishableKeyResult = Result.success("pk_test_123"))
         val repository = StripeRepositoryImpl(remote)
 
@@ -31,7 +31,7 @@ class StripeRepositoryImplTest {
     }
 
     @Test
-    fun getpublishablekey_when_backend_error_maps_to_domain_server() = runTest {
+    fun get_publishable_key_when_backend_error_maps_to_domain_server() = runTest {
         val remote = FakeStripeRemoteDataSource(
             publishableKeyResult = Result.failure(IllegalStateException("HTTP 500 Internal Server Error")),
         )
@@ -44,7 +44,7 @@ class StripeRepositoryImplTest {
     }
 
     @Test
-    fun getusercards_when_network_exception_maps_to_domain_network() = runTest {
+    fun get_user_cards_when_network_exception_maps_to_domain_network() = runTest {
         val remote = FakeStripeRemoteDataSource(
             userCardsResult = Result.failure(IOException("No connection")),
         )

@@ -10,6 +10,7 @@ import com.humanperformcenter.shared.presentation.ui.DeleteProfilePicState
 import com.humanperformcenter.shared.presentation.ui.UpdateState
 import com.humanperformcenter.shared.presentation.viewmodel.UserProfileViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -26,11 +27,13 @@ class UserProfileViewModelTest {
 
     private val mainDispatcher = StandardTestDispatcher()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
     fun setup() {
         Dispatchers.setMain(mainDispatcher)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @AfterTest
     fun tearDown() {
         Dispatchers.resetMain()
@@ -77,7 +80,7 @@ class UserProfileViewModelTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    fun updateuser_when_success_emits_loading_then_success_and_updates_current_user() = runTest {
+    fun updateUser_when_success_emits_loading_then_success_and_updates_current_user() = runTest {
         val viewModel = buildViewModel(
             FakeUserProfileRepository(updateResult = Result.success(sampleUser(1, "New")))
         )
@@ -95,7 +98,7 @@ class UserProfileViewModelTest {
     }
 
     @Test
-    fun updateuser_when_invalid_user_data_emits_validationerrors() = runTest {
+    fun updateUser_when_invalid_user_data_emits_validationerrors() = runTest {
         val viewModel = buildViewModel()
 
         viewModel.updateUser(sampleUser(1, ""), null, MutableStateFlow(null))
@@ -103,8 +106,9 @@ class UserProfileViewModelTest {
         assertTrue(viewModel.updateState.value is UpdateState.ValidationErrors)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun updateuser_when_repository_fails_emits_error() = runTest {
+    fun updateUser_when_repository_fails_emits_error() = runTest {
         val viewModel = buildViewModel(
             FakeUserProfileRepository(updateResult = Result.failure(IllegalStateException("fail")))
         )
@@ -116,7 +120,7 @@ class UserProfileViewModelTest {
     }
 
     @Test
-    fun clearupdatestate_after_update_flow_restores_idle() = runTest {
+    fun clearUpdateState_after_update_flow_restores_idle() = runTest {
         val viewModel = buildViewModel()
 
         viewModel.clearUpdateState()
@@ -129,7 +133,7 @@ class UserProfileViewModelTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    fun fetchuserprofile_when_currentuser_is_null_returns_safely() = runTest {
+    fun fetchUserProfile_when_currentUser_is_null_returns_safely() = runTest {
         val viewModel = buildViewModel()
 
         viewModel.fetchUserProfile(MutableStateFlow(null))
@@ -137,8 +141,9 @@ class UserProfileViewModelTest {
         assertTrue(viewModel.updateState.value is UpdateState.Idle)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun deleteprofilepic_when_repository_fails_emits_error_and_can_be_reset() = runTest {
+    fun deleteProfilePic_when_repository_fails_emits_error_and_can_be_reset() = runTest {
         val viewModel = buildViewModel(
             FakeUserProfileRepository(deletePicResult = Result.failure(IllegalStateException("delete fail")))
         )

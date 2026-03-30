@@ -21,7 +21,7 @@ class UserDocumentsViewModelTest {
         UserDocumentsViewModel(UserDocumentUseCase(FakeUserDocumentsRepository(result)))
 
     @Test
-    fun uploaddocument_when_success_emits_loading_then_success() = runTest {
+    fun uploadDocument_when_success_emits_loading_then_success() = runTest {
         val viewModel = buildViewModel(Result.success("Subido"))
 
         viewModel.uploadState.test {
@@ -34,7 +34,7 @@ class UserDocumentsViewModelTest {
     }
 
     @Test
-    fun uploaddocument_when_failure_with_message_emits_error_with_that_message() = runTest {
+    fun uploadDocument_when_failure_with_message_emits_error_with_that_message() = runTest {
         val viewModel = buildViewModel(Result.failure(IllegalStateException("Fallo")))
 
         viewModel.uploadState.test {
@@ -47,7 +47,7 @@ class UserDocumentsViewModelTest {
     }
 
     @Test
-    fun uploaddocument_when_failure_without_message_emits_fallback_error() = runTest {
+    fun uploadDocument_when_failure_without_message_emits_fallback_error() = runTest {
         val viewModel = buildViewModel(Result.failure(IllegalStateException()))
 
         viewModel.uploadState.test {
@@ -60,7 +60,7 @@ class UserDocumentsViewModelTest {
     }
 
     @Test
-    fun resetuploadstate_after_success_emits_idle() = runTest {
+    fun resetUploadState_after_success_emits_idle() = runTest {
         val viewModel = buildViewModel(Result.success("Subido"))
 
         viewModel.uploadState.test {

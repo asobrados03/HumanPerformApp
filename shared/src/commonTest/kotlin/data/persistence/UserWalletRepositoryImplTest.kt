@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
 class UserWalletRepositoryImplTest {
 
     @Test
-    fun getewalletbalance_when_success_returns_balance() = runTest {
+    fun get_e_wallet_balance_when_success_returns_balance() = runTest {
         val remote = FakeUserWalletRemoteDataSource(balanceResult = Result.success(150.5))
         val repository = UserWalletRepositoryImpl(remote)
 
@@ -24,7 +24,7 @@ class UserWalletRepositoryImplTest {
     }
 
     @Test
-    fun getewallettransactions_when_backend_error_maps_to_unauthorized() = runTest {
+    fun get_e_wallet_transactions_when_backend_error_maps_to_unauthorized() = runTest {
         val remote = FakeUserWalletRemoteDataSource(
             transactionsResult = Result.failure(IllegalStateException("HTTP 401 Unauthorized")),
         )
@@ -37,7 +37,7 @@ class UserWalletRepositoryImplTest {
     }
 
     @Test
-    fun getewallettransactions_when_network_exception_maps_to_domain_network() = runTest {
+    fun get_e_wallet_transactions_when_network_exception_maps_to_domain_network() = runTest {
         val remote = FakeUserWalletRemoteDataSource(
             transactionsResult = Result.failure(IOException("Connection error")),
         )

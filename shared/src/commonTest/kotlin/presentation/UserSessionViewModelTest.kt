@@ -12,6 +12,7 @@ import com.humanperformcenter.shared.domain.usecase.UserAccountUseCase
 import com.humanperformcenter.shared.presentation.ui.DeleteUserState
 import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -32,11 +33,13 @@ class UserSessionViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @AfterTest
     fun tearDown() {
         Dispatchers.resetMain()
@@ -104,8 +107,9 @@ class UserSessionViewModelTest {
         )
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun deleteuser_when_success_emits_success_and_can_be_reset() = runTest {
+    fun deleteUser_when_success_emits_success_and_can_be_reset() = runTest {
         val viewModel = buildViewModel(deleteResult = Result.success(Unit))
 
         viewModel.deleteUser("user@test.com")
@@ -117,8 +121,9 @@ class UserSessionViewModelTest {
         assertEquals(DeleteUserState.Idle, viewModel.deleteState.value)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun deleteuser_when_not_found_emits_notfound() = runTest {
+    fun deleteUser_when_not_found_emits_notfound() = runTest {
         val viewModel = buildViewModel(
             deleteResult = Result.failure(IllegalStateException("usuario no encontrado"))
         )
@@ -129,8 +134,9 @@ class UserSessionViewModelTest {
         assertEquals(DeleteUserState.NotFound("user@test.com"), viewModel.deleteState.value)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun deleteuser_when_generic_failure_emits_error() = runTest {
+    fun deleteUser_when_generic_failure_emits_error() = runTest {
         val viewModel = buildViewModel(
             deleteResult = Result.failure(IllegalStateException("fallo"))
         )
@@ -141,6 +147,7 @@ class UserSessionViewModelTest {
         assertEquals(DeleteUserState.Error("fallo"), viewModel.deleteState.value)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun logout_when_success_invokes_callback_and_updates_state() = runTest {
         val viewModel = buildViewModel(logoutResult = Result.success(Unit))
@@ -155,7 +162,7 @@ class UserSessionViewModelTest {
     }
 
     @Test
-    fun session_helpers_currentuserstate_and_isloggedinflow_expose_expected_values() = runTest {
+    fun session_helpers_currentUserState_and_isLoggedInFlow_expose_expected_values() = runTest {
         val viewModel = buildViewModel()
 
         assertEquals(viewModel.userData.value, viewModel.currentUserState().value)

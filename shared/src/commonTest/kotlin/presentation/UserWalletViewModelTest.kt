@@ -26,7 +26,7 @@ class UserWalletViewModelTest {
     ) = UserWalletViewModel(WalletUseCase(FakeWalletRepository(balanceResult, transactionsResult)))
 
     @Test
-    fun loadbalance_when_success_updates_balance() = runTest {
+    fun loadBalance_when_success_updates_balance() = runTest {
         val viewModel = buildViewModel(balanceResult = Result.success(42.5))
 
         viewModel.balance.test {
@@ -38,7 +38,7 @@ class UserWalletViewModelTest {
     }
 
     @Test
-    fun loadbalance_when_repository_returns_null_sets_zero() = runTest {
+    fun loadBalance_when_repository_returns_null_sets_zero() = runTest {
         val viewModel = buildViewModel(balanceResult = Result.success(null))
 
         viewModel.balance.test {
@@ -51,7 +51,7 @@ class UserWalletViewModelTest {
     }
 
     @Test
-    fun loadbalance_when_user_id_is_invalid_keeps_zero() = runTest {
+    fun loadBalance_when_user_id_is_invalid_keeps_zero() = runTest {
         val viewModel = buildViewModel(balanceResult = Result.success(99.9))
 
         viewModel.balance.test {
@@ -64,7 +64,7 @@ class UserWalletViewModelTest {
     }
 
     @Test
-    fun loadbalance_when_repository_fails_keeps_last_balance() = runTest {
+    fun loadBalance_when_repository_fails_keeps_last_balance() = runTest {
         val viewModel = buildViewModel(balanceResult = Result.failure(IllegalStateException("Sin conexión")))
 
         viewModel.balance.test {
@@ -76,7 +76,7 @@ class UserWalletViewModelTest {
     }
 
     @Test
-    fun loadewallettransactions_when_success_emits_loading_then_success() = runTest {
+    fun loadEWalletTransactions_when_success_emits_loading_then_success() = runTest {
         val tx = EwalletTransaction(5.0, 10.0, "Recarga", "credit", "2026-03-01")
         val viewModel = buildViewModel(transactionsResult = Result.success(listOf(tx)))
 
@@ -89,7 +89,7 @@ class UserWalletViewModelTest {
     }
 
     @Test
-    fun loadewallettransactions_when_failure_with_message_emits_error() = runTest {
+    fun loadEWalletTransactions_when_failure_with_message_emits_error() = runTest {
         val viewModel = buildViewModel(
             transactionsResult = Result.failure(IllegalStateException("Sin conexión"))
         )
@@ -103,7 +103,7 @@ class UserWalletViewModelTest {
     }
 
     @Test
-    fun loadewallettransactions_when_failure_without_message_emits_unknown_error() = runTest {
+    fun loadEWalletTransactions_when_failure_without_message_emits_unknown_error() = runTest {
         val viewModel = buildViewModel(
             transactionsResult = Result.failure(IllegalStateException())
         )

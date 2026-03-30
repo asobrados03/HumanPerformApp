@@ -21,6 +21,7 @@ import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.shared.presentation.ui.models.ServiceUiModel
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -35,11 +36,13 @@ import kotlin.test.assertEquals
 class ServiceProductViewModelTest {
     private val mainDispatcher = StandardTestDispatcher()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(mainDispatcher)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @AfterTest
     fun tearDown() {
         Dispatchers.resetMain()
@@ -78,8 +81,9 @@ class ServiceProductViewModelTest {
         UserCouponUseCase(FakeCouponsRepository(couponsResult))
     )
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun loadserviceproducts_loaduserproducts_loadproductdetail_and_fetchactiveproductdetail_when_success_update_states() = runTest {
+    fun loadServiceProducts_loadUserProducts_loadProductDetail_and_fetchActiveProductDetail_when_success_update_states() = runTest {
         val product = sampleProduct()
         val detail = sampleProductDetail()
         val viewModel = buildViewModel(
@@ -103,8 +107,9 @@ class ServiceProductViewModelTest {
         assertEquals(ActiveProductDetailState.Success(detail), viewModel.activeProductDetails.value)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun loadallservices_when_success_marks_owned_services() = runTest {
+    fun loadAllServices_when_success_marks_owned_services() = runTest {
         val service = ServiceAvailable(id = 1, name = "PT")
         val product = sampleProduct(id = 1)
         val viewModel = buildViewModel(
@@ -124,7 +129,7 @@ class ServiceProductViewModelTest {
     }
 
     @Test
-    fun assignproducttouser_and_unassignproductfromuser_when_success_emit_success_events() = runTest {
+    fun assignProductToUser_and_unassignProductFromUser_when_success_emit_success_events() = runTest {
         val viewModel = buildViewModel(
             serviceRepository = FakeServiceProductRepository(
                 assignResult = Result.success(1),
@@ -145,8 +150,9 @@ class ServiceProductViewModelTest {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun loadusercoupons_when_success_updates_coupons_list() = runTest {
+    fun loadUserCoupons_when_success_updates_coupons_list() = runTest {
         val coupon = Coupon(1, "PROMO", 10.0, true, LocalDate.parse("2026-12-31"), listOf(1))
         val viewModel = buildViewModel(couponsResult = Result.success(listOf(coupon)))
 
@@ -156,6 +162,7 @@ class ServiceProductViewModelTest {
         assertEquals(listOf(coupon), viewModel.userCoupons.value)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun error_branches_emit_expected_errors() = runTest {
         val viewModel = buildViewModel(
@@ -197,7 +204,7 @@ class ServiceProductViewModelTest {
     }
 
     @Test
-    fun helper_functions_filterproducts_and_calculatediscountedprice_return_expected_values() {
+    fun helper_functions_filterProducts_and_calculatediscountedprice_return_expected_values() {
         val viewModel = buildViewModel()
         val products = listOf(
             sampleProduct(id = 1, type = "recurrent", sessions = 12),

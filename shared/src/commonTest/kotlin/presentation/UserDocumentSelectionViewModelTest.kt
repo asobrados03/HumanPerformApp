@@ -9,7 +9,7 @@ import kotlin.test.assertNull
 class UserDocumentSelectionViewModelTest {
 
     @Test
-    fun settempcamerauri_when_called_updates_only_temp_uri() {
+    fun setTempCameraUri_when_called_updates_only_temp_uri() {
         val viewModel = UserDocumentSelectionViewModel()
 
         viewModel.setTempCameraUri("content://camera/temp")
@@ -21,7 +21,7 @@ class UserDocumentSelectionViewModelTest {
     }
 
     @Test
-    fun ondocumentselected_when_called_updates_document_and_clears_temp_uri() {
+    fun onDocumentSelected_when_called_updates_document_and_clears_temp_uri() {
         val viewModel = UserDocumentSelectionViewModel()
         val bytes = byteArrayOf(1, 2, 3)
         viewModel.setTempCameraUri("content://camera/temp")
@@ -35,7 +35,7 @@ class UserDocumentSelectionViewModelTest {
     }
 
     @Test
-    fun clearselection_when_called_resets_all_fields() {
+    fun clearSelection_when_called_resets_all_fields() {
         val viewModel = UserDocumentSelectionViewModel()
         viewModel.setTempCameraUri("content://camera/temp")
         viewModel.onDocumentSelected("dni.pdf", byteArrayOf(1, 2, 3))

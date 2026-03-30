@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
 class UserProfileRepositoryImplTest {
 
     @Test
-    fun updateuser_when_success_persists_user_in_local_datasource() = runTest {
+    fun update_user_when_success_persists_user_in_local_datasource() = runTest {
         val updatedUser = sampleUser().copy(fullName = "Nuevo Nombre")
         val remote = FakeUserProfileRemoteDataSource(updateResult = Result.success(updatedUser))
         val local = FakeUserProfileLocalDataSource()
@@ -30,7 +30,7 @@ class UserProfileRepositoryImplTest {
     }
 
     @Test
-    fun updateuser_when_backend_error_maps_to_not_found_and_does_not_persist() = runTest {
+    fun update_user_when_backend_error_maps_to_not_found_and_does_not_persist() = runTest {
         val remote = FakeUserProfileRemoteDataSource(
             updateResult = Result.failure(IllegalStateException("HTTP 404 User not found")),
         )
@@ -45,7 +45,7 @@ class UserProfileRepositoryImplTest {
     }
 
     @Test
-    fun getuserbyid_when_network_exception_maps_to_domain_network() = runTest {
+    fun get_user_by_id_when_network_exception_maps_to_domain_network() = runTest {
         val remote = FakeUserProfileRemoteDataSource(
             getByIdResult = Result.failure(IOException("No internet")),
         )

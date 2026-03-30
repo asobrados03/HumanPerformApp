@@ -33,7 +33,7 @@ class UserCouponsViewModelTest {
     )
 
     @Test
-    fun loadusercoupons_when_success_updates_list_and_clears_loading() = runTest {
+    fun loadUserCoupons_when_success_updates_list_and_clears_loading() = runTest {
         val viewModel = buildViewModel(
             FakeUserCouponsRepository(couponsResult = Result.success(listOf(coupon)))
         )
@@ -52,7 +52,7 @@ class UserCouponsViewModelTest {
     }
 
     @Test
-    fun loadusercoupons_when_failure_sets_error() = runTest {
+    fun loadUserCoupons_when_failure_sets_error() = runTest {
         val viewModel = buildViewModel(
             FakeUserCouponsRepository(couponsResult = Result.failure(IllegalStateException("No disponible")))
         )
@@ -70,7 +70,7 @@ class UserCouponsViewModelTest {
     }
 
     @Test
-    fun oncouponcodechanged_when_called_updates_code_and_clears_error() {
+    fun onCouponCodeChanged_when_called_updates_code_and_clears_error() {
         val viewModel = buildViewModel(FakeUserCouponsRepository())
 
         viewModel.onCouponCodeChanged("SPRING20")
@@ -81,7 +81,7 @@ class UserCouponsViewModelTest {
     }
 
     @Test
-    fun addcoupontouser_when_add_and_refresh_succeed_clears_code_and_refreshes_coupons() = runTest {
+    fun addCouponToUser_when_add_and_refresh_succeed_clears_code_and_refreshes_coupons() = runTest {
         val viewModel = buildViewModel(
             FakeUserCouponsRepository(
                 addResult = Result.success(Unit),
@@ -104,7 +104,7 @@ class UserCouponsViewModelTest {
     }
 
     @Test
-    fun addcoupontouser_when_add_fails_sets_error() = runTest {
+    fun addCouponToUser_when_add_fails_sets_error() = runTest {
         val viewModel = buildViewModel(
             FakeUserCouponsRepository(addResult = Result.failure(IllegalStateException("Cupón inválido")))
         )
@@ -122,7 +122,7 @@ class UserCouponsViewModelTest {
     }
 
     @Test
-    fun addcoupontouser_when_refresh_fails_sets_refresh_error() = runTest {
+    fun addCouponToUser_when_refresh_fails_sets_refresh_error() = runTest {
         val viewModel = buildViewModel(
             FakeUserCouponsRepository(
                 addResult = Result.success(Unit),

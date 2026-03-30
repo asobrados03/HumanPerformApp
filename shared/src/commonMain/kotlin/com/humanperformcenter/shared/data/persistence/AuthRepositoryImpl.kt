@@ -38,8 +38,10 @@ class AuthRepositoryImpl(
     override suspend fun resetPassword(email: String): Result<Unit> =
         remote.resetPassword(email).mapDomainError(ErrorCategory.AUTH)
 
-    override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int): Result<Unit> =
-        remote.changePassword(currentPassword, newPassword, userId).mapDomainError(ErrorCategory.AUTH)
+    override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int)
+    : Result<Unit> = remote.changePassword(currentPassword, newPassword, userId)
+        .mapDomainError(ErrorCategory.AUTH)
 
-    override suspend fun logout(): Result<Unit> = remote.logout().mapDomainError(ErrorCategory.AUTH)
+    override suspend fun logout(): Result<Unit> = remote.logout()
+        .mapDomainError(ErrorCategory.AUTH)
 }

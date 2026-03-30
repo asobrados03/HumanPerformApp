@@ -29,7 +29,7 @@ class UserFavoritesViewModelTest {
         UserFavoritesViewModel(UserCoachesUseCase(repository))
 
     @Test
-    fun getcoaches_when_success_emits_loading_then_success() = runTest {
+    fun getCoaches_when_success_emits_loading_then_success() = runTest {
         val coaches = listOf(Professional(id = 1, name = "Ana"))
         val viewModel = buildViewModel(
             FakeUserFavoritesRepository(coachesResult = Result.success(coaches))
@@ -45,7 +45,7 @@ class UserFavoritesViewModelTest {
     }
 
     @Test
-    fun markfavorite_when_failure_without_message_emits_fallback_error_and_can_be_reset() = runTest {
+    fun markFavorite_when_failure_without_message_emits_fallback_error_and_can_be_reset() = runTest {
         val viewModel = buildViewModel(
             FakeUserFavoritesRepository(markFavoriteResult = Result.failure(IllegalStateException()))
         )
@@ -63,7 +63,7 @@ class UserFavoritesViewModelTest {
     }
 
     @Test
-    fun getpreferredcoach_when_userid_is_null_keeps_idle() {
+    fun getPreferredCoach_when_userid_is_null_keeps_idle() {
         val viewModel = buildViewModel()
 
         viewModel.getPreferredCoach(null)
@@ -72,7 +72,7 @@ class UserFavoritesViewModelTest {
     }
 
     @Test
-    fun getpreferredcoach_when_success_emits_loading_then_success_and_can_be_reset() = runTest {
+    fun getPreferredCoach_when_success_emits_loading_then_success_and_can_be_reset() = runTest {
         val viewModel = buildViewModel(
             FakeUserFavoritesRepository(preferredCoachResult = Result.success(GetPreferredCoachResponse(7)))
         )

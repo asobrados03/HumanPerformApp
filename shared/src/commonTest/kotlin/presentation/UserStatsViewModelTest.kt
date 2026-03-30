@@ -22,7 +22,7 @@ class UserStatsViewModelTest {
         UserStatsViewModel(UserStatsUseCase(FakeUserStatsRepository(statsResult)))
 
     @Test
-    fun loadstatistics_when_invalid_user_id_emits_error() = runTest {
+    fun loadStatistics_when_invalid_user_id_emits_error() = runTest {
         val viewModel = buildViewModel(Result.success(UserStatistics()))
 
         viewModel.uiState.test {
@@ -34,7 +34,7 @@ class UserStatsViewModelTest {
     }
 
     @Test
-    fun loadstatistics_when_success_emits_loading_then_success() = runTest {
+    fun loadStatistics_when_success_emits_loading_then_success() = runTest {
         val stats = UserStatistics(lastMonthWorkouts = 12, mostFrequentTrainer = "Ana", pendingBookings = 2)
         val viewModel = buildViewModel(Result.success(stats))
 
@@ -47,7 +47,7 @@ class UserStatsViewModelTest {
     }
 
     @Test
-    fun loadstatistics_when_failure_without_message_emits_unknown_error() = runTest {
+    fun loadStatistics_when_failure_without_message_emits_unknown_error() = runTest {
         val viewModel = buildViewModel(Result.failure(IllegalStateException()))
 
         viewModel.uiState.test {

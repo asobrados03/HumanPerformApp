@@ -41,7 +41,7 @@ class UserBookingsViewModelTest {
     ) = UserBookingsViewModel(UserBookingsUseCase(repository), notificationManager)
 
     @Test
-    fun fetchuserbookings_when_success_emits_loading_then_success() = runTest {
+    fun fetchUserBookings_when_success_emits_loading_then_success() = runTest {
         val booking = UserBooking(1, "2026-03-20", "10:00", "PT", "Pack", 1, 2, "Coach", null)
         val viewModel = buildViewModel(
             repository = FakeUserBookingsRepository(bookingsResult = Result.success(listOf(booking)))
@@ -56,7 +56,7 @@ class UserBookingsViewModelTest {
     }
 
     @Test
-    fun fetchuserbookings_when_failure_without_message_emits_default_error() = runTest {
+    fun fetchUserBookings_when_failure_without_message_emits_default_error() = runTest {
         val viewModel = buildViewModel(
             repository = FakeUserBookingsRepository(bookingsResult = Result.failure(IllegalStateException()))
         )
@@ -70,7 +70,7 @@ class UserBookingsViewModelTest {
     }
 
     @Test
-    fun canceluserbooking_when_success_cancels_notification_and_refreshes_bookings() = runTest {
+    fun cancelUserBooking_when_success_cancels_notification_and_refreshes_bookings() = runTest {
         val repository = FakeUserBookingsRepository(bookingsResult = Result.success(emptyList()))
         val notifications = FakeNotificationManager()
         val viewModel = buildViewModel(repository, notifications)
@@ -88,7 +88,7 @@ class UserBookingsViewModelTest {
     }
 
     @Test
-    fun canceluserbooking_when_failure_does_not_refresh_or_cancel_notification() = runTest {
+    fun cancelUserBooking_when_failure_does_not_refresh_or_cancel_notification() = runTest {
         val repository = FakeUserBookingsRepository(cancelResult = Result.failure(IllegalStateException("fallo")))
         val notifications = FakeNotificationManager()
         val viewModel = buildViewModel(repository, notifications)
