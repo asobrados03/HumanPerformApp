@@ -1,0 +1,101 @@
+package com.humanperformcenter.shared.data.remote.impl
+
+import com.humanperformcenter.shared.data.model.auth.ChangePasswordRequest
+import com.humanperformcenter.shared.data.model.auth.LoginResponse
+import com.humanperformcenter.shared.data.model.auth.RegisterRequest
+import com.humanperformcenter.shared.data.model.auth.RegisterResponse
+import com.humanperformcenter.shared.data.model.auth.ResetPasswordRequest
+import com.humanperformcenter.shared.data.network.HttpClientProvider
+import com.humanperformcenter.shared.data.remote.AuthRemoteDataSource
+import io.ktor.client.call.body
+import io.ktor.client.plugins.expectSuccess
+import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.delete
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.post
+import io.ktor.client.request.put
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import com.humanperformcenter.shared.domain.storage.SecureStorage
+
+class AuthRemoteDataSourceImpl(
+    private val clientProvider: HttpClientProvider,
+) : AuthRemoteDataSource {
+    override suspend fun login(email: String, password: String): Result<LoginResponse> = runCatching {
+        val response = clientProvider.authClient.post("${clientProvider.baseUrl}/mobile/sessions") {
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("email" to email, "password" to password))
+            expectSuccess = false
+        }
+
+        check(response.status == HttpStatusCode.OK) { "HTTP ${response.status.value}" }
+        response.body<LoginResponse>()
+    }
+
+    override suspend fun register(data: RegisterRequest): Result<RegisterResponse> = runCatching {
+        val parts = formData {
+            data.profilePicBytes?.let { bytes ->
+                append("profile_pic", bytes, Headers.build {
+                    append(HttpHeaders.ContentType, "image/jpeg")
+                    append(HttpHeaders.ContentDisposition, "filename=\"${data.profilePicName}\"")
+                })
+            }
+            append("nombre", data.name)
+            append("apellidos", data.surnames)
+            append("email", data.email)
+            append("telefono", data.phone)
+            append("password", data.password)
+            append("sexo", data.sex)
+            append("fecha_nacimiento", data.dateOfBirth)
+            append("codigo_postal", data.postCode)
+            append("direccion_postal", data.postAddress)
+            append("dni", data.dni)
+            append("device_type", data.deviceType)
+        }
+
+        clientProvider.authClient.post("${clientProvider.baseUrl}/mobile/users") {
+            setBody(MultiPartFormDataContent(parts))
+        }.body()
+    }
+
+    override suspend fun resetPassword(email: String): Result<Unit> = runCatching {
+        val response = clientProvider.apiClient.put("${clientProvider.baseUrl}/mobile/reset-password") {
+            contentType(ContentType.Application.Json)
+            setBody(ResetPasswordRequest(email))
+            expectSuccess = false
+        }
+        check(response.status == HttpStatusCode.OK) { "HTTP ${response.status.value}" }
+        Unit
+    }
+
+    override suspend fun changePassword(
+        currentPassword: String,
+        newPassword: String,
+        userId: Int,
+    ): Result<Unit> = runCatching {
+        val response = clientProvider.apiClient.put("${clientProvider.baseUrl}/mobile/change-password") {
+            contentType(ContentType.Application.Json)
+            setBody(ChangePasswordRequest(currentPassword, newPassword, userId))
+            expectSuccess = false
+        }
+        check(response.status == HttpStatusCode.OK) { "HTTP ${response.status.value}" }
+        Unit
+    }
+
+    override suspend fun logout(): Result<Unit> = runCatching {
+        val accessToken = SecureStorage.getAccessToken().orEmpty()
+        val response = clientProvider.authClient.delete("${clientProvider.baseUrl}/mobile/sessions/current") {
+            bearerAuth(accessToken)
+            expectSuccess = false
+        }
+        check(response.status.value in 200..299 || response.status == HttpStatusCode.Unauthorized) {
+            "HTTP ${response.status.value}"
+        }
+        Unit
+    }
+}
