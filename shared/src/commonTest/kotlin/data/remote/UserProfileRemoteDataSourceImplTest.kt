@@ -17,6 +17,8 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteChannel
 import io.ktor.utils.io.core.readText
 import io.ktor.utils.io.readRemaining
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -160,6 +162,7 @@ class UserProfileRemoteDataSourceImplTest {
             override val apiClient: HttpClient = apiClient
             override val authClient: HttpClient = apiClient
             override val baseUrl: String = "https://api.test"
+            override val logoutEvents: SharedFlow<Unit> = emptyFlow()
         }
     }
 

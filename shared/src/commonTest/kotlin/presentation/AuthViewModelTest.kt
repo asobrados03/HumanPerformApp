@@ -4,8 +4,9 @@ import app.cash.turbine.test
 import com.humanperformcenter.shared.data.model.auth.LoginResponse
 import com.humanperformcenter.shared.data.model.auth.RegisterRequest
 import com.humanperformcenter.shared.data.model.auth.RegisterResponse
+import com.humanperformcenter.shared.data.local.AuthLocalDataSource
+import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.repository.AuthRepository
-import com.humanperformcenter.shared.domain.storage.SessionStorage
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.presentation.ui.ChangePasswordState
 import com.humanperformcenter.shared.presentation.ui.LoginState
@@ -14,6 +15,8 @@ import com.humanperformcenter.shared.presentation.ui.ResetPasswordState
 import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -73,8 +76,15 @@ class AuthViewModelTest : KoinTest {
         override suspend fun logout(): Result<Unit> = logoutResult
     }
 
-    private class FakeSessionStorage : SessionStorage {
-        override suspend fun clearSession() = Unit
+    private class FakeAuthLocalDataSource : AuthLocalDataSource {
+        override suspend fun getAccessToken(): String? = null
+        override suspend fun getRefreshToken(): String? = null
+        override fun accessTokenFlow(): Flow<String> = MutableStateFlow("")
+        override fun userFlow(): Flow<User?> = MutableStateFlow(null)
+        override suspend fun saveTokens(accessToken: String, refreshToken: String) = Unit
+        override suspend fun clearTokens() = Unit
+        override suspend fun saveUser(user: User) = Unit
+        override suspend fun clear() = Unit
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -85,7 +95,7 @@ class AuthViewModelTest : KoinTest {
 
     private fun testModule(repository: FakeAuthRepository = FakeAuthRepository()) = module {
         single<AuthRepository> { repository }
-        single<SessionStorage> { FakeSessionStorage() }
+        single<AuthLocalDataSource> { FakeAuthLocalDataSource() }
         single { AuthUseCase(get(), get()) }
         viewModel { AuthViewModel(get()) }
     }
