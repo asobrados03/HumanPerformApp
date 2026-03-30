@@ -1,8 +1,9 @@
 package com.humanperformcenter.shared.presentation.viewmodel
 
 import com.diamondedge.logging.logging
+import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.model.user.User
-import com.humanperformcenter.shared.domain.storage.SecureStorage
+import com.humanperformcenter.shared.domain.storage.SessionStorage
 import com.humanperformcenter.shared.domain.usecase.UserAccountUseCase
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.presentation.ui.DeleteUserState
@@ -19,13 +20,15 @@ import kotlinx.coroutines.flow.map
 
 class UserSessionViewModel(
     private val userAccountUseCase: UserAccountUseCase,
-    private val authUseCase: AuthUseCase
+    private val authUseCase: AuthUseCase,
+    private val authLocalDataSource: AuthLocalDataSource,
+    private val sessionStorage: SessionStorage,
 ) : ViewModel() {
     companion object {
         val log = logging()
     }
 
-    val isLoggedInFlow: Flow<Boolean> = SecureStorage.accessTokenFlow()
+    val isLoggedInFlow: Flow<Boolean> = authLocalDataSource.accessTokenFlow()
         .map { token -> token.isNotBlank() }
         .distinctUntilChanged()
 
@@ -51,14 +54,14 @@ class UserSessionViewModel(
 
     init {
         viewModelScope.launch {
-            SecureStorage.accessTokenFlow()
+            authLocalDataSource.accessTokenFlow()
                 .map { token -> token.isNotBlank() }
                 .distinctUntilChanged()
                 .collect { _isLoggedIn.value = it }
         }
 
         viewModelScope.launch {
-            SecureStorage.userFlow().collect { storedUser ->
+            authLocalDataSource.userFlow().collect { storedUser ->
                 _userData.value = storedUser
                 _isLoading.value = false
             }
@@ -71,7 +74,7 @@ class UserSessionViewModel(
 
             userAccountUseCase.deleteUser(email).fold(
                 onSuccess = {
-                    SecureStorage.clear()
+                    sessionStorage.clearSession()
                     delay(1000)
                     _deleteState.value = DeleteUserState.Success
                 },

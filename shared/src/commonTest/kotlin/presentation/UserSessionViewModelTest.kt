@@ -1,23 +1,22 @@
 package com.humanperformcenter.shared.presentation
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.emptyPreferences
+import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.model.auth.LoginResponse
 import com.humanperformcenter.shared.data.model.auth.RegisterRequest
 import com.humanperformcenter.shared.data.model.auth.RegisterResponse
+import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.repository.AuthRepository
 import com.humanperformcenter.shared.domain.repository.UserAccountRepository
-import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.storage.SessionStorage
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.domain.usecase.UserAccountUseCase
 import com.humanperformcenter.shared.presentation.ui.DeleteUserState
 import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -42,17 +41,6 @@ class UserSessionViewModelTest {
     @AfterTest
     fun tearDown() {
         Dispatchers.resetMain()
-    }
-
-    private class InMemoryPreferencesDataStore : DataStore<Preferences> {
-        private val state = MutableStateFlow<Preferences>(emptyPreferences())
-        override val data: Flow<Preferences> = state
-
-        override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences {
-            val newValue = transform(state.value)
-            state.value = newValue
-            return newValue
-        }
     }
 
     private class FakeUserAccountRepository(
@@ -83,14 +71,47 @@ class UserSessionViewModelTest {
         override suspend fun clearSession() = Unit
     }
 
+    private class FakeAuthLocalDataSource : AuthLocalDataSource {
+        private val token = MutableStateFlow("")
+        private val user = MutableStateFlow<User?>(null)
+
+        override suspend fun getAccessToken(): String? = token.value.ifBlank { null }
+        override suspend fun getRefreshToken(): String? = null
+        override fun accessTokenFlow(): Flow<String> = token
+        override fun userFlow(): Flow<User?> = user
+        override suspend fun saveTokens(accessToken: String, refreshToken: String) {
+            token.value = accessToken
+        }
+
+        override suspend fun clearTokens() {
+            token.value = ""
+        }
+
+        override suspend fun saveUser(user: User) {
+            this.user.value = user
+        }
+
+        override suspend fun clearUser() {
+            user.value = null
+        }
+
+        override suspend fun clearSession() {
+            token.value = ""
+            user.value = null
+        }
+    }
+
     private fun buildViewModel(
         deleteResult: Result<Unit> = Result.success(Unit),
         logoutResult: Result<Unit> = Result.success(Unit)
     ): UserSessionViewModel {
-        SecureStorage.initialize(InMemoryPreferencesDataStore())
+        val localDataSource = FakeAuthLocalDataSource()
+        val sessionStorage = FakeSessionStorage()
         return UserSessionViewModel(
             userAccountUseCase = UserAccountUseCase(FakeUserAccountRepository(deleteResult)),
-            authUseCase = AuthUseCase(FakeAuthRepository(logoutResult), FakeSessionStorage())
+            authUseCase = AuthUseCase(FakeAuthRepository(logoutResult), sessionStorage),
+            authLocalDataSource = localDataSource,
+            sessionStorage = sessionStorage,
         )
     }
 
@@ -149,6 +170,6 @@ class UserSessionViewModelTest {
         val viewModel = buildViewModel()
 
         assertEquals(viewModel.userData.value, viewModel.currentUserState().value)
-        assertEquals(false, viewModel.isLoggedInFlow.first())
+        assertEquals(false, viewModel.isLoggedInFlow.map { it }.first())
     }
 }

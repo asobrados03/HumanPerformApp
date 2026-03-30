@@ -1,6 +1,7 @@
 package com.humanperformcenter.shared.presentation
 
 import app.cash.turbine.test
+import com.humanperformcenter.shared.data.local.UserProfileLocalDataSource
 import com.humanperformcenter.shared.data.model.user.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.repository.UserProfileRepository
@@ -49,12 +50,27 @@ class UserProfileViewModelTest {
         override suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit> = deletePicResult
     }
 
+
+    private class FakeUserProfileLocalDataSource : UserProfileLocalDataSource {
+        private var currentUser: User? = null
+
+        override suspend fun saveUser(user: User) {
+            currentUser = user
+        }
+
+        override suspend fun getUser(): User? = currentUser
+
+        override suspend fun clearUser() {
+            currentUser = null
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────
     // Helper
     // ─────────────────────────────────────────────────────────────
 
     private fun buildViewModel(repository: FakeUserProfileRepository = FakeUserProfileRepository()) =
-        UserProfileViewModel(UserProfileUseCase(repository))
+        UserProfileViewModel(UserProfileUseCase(repository), FakeUserProfileLocalDataSource())
 
     // ─────────────────────────────────────────────────────────────
     // Update user
