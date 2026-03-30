@@ -4,44 +4,37 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.model.user.User
-import com.humanperformcenter.shared.domain.security.AuthPreferences
+import com.humanperformcenter.shared.domain.storage.AuthStorageCore
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
 
 class AuthLocalDataSourceImpl(
     private val prefs: DataStore<Preferences>,
 ) : AuthLocalDataSource {
-    override suspend fun getAccessToken(): String? =
-        AuthPreferences.accessTokenFlow(prefs)
-            .firstOrNull()
-            .takeIf { !it.isNullOrBlank() }
+    override suspend fun getAccessToken(): String? = AuthStorageCore.getAccessToken(prefs)
 
-    override suspend fun getRefreshToken(): String? =
-        AuthPreferences.refreshTokenFlow(prefs)
-            .firstOrNull()
-            .takeIf { !it.isNullOrBlank() }
+    override suspend fun getRefreshToken(): String? = AuthStorageCore.getRefreshToken(prefs)
 
-    override fun accessTokenFlow(): Flow<String> = AuthPreferences.accessTokenFlow(prefs)
+    override fun accessTokenFlow(): Flow<String> = AuthStorageCore.accessTokenFlow(prefs)
 
-    override fun userFlow(): Flow<User?> = AuthPreferences.userFlow(prefs)
+    override fun userFlow(): Flow<User?> = AuthStorageCore.userFlow(prefs)
 
     override suspend fun saveTokens(accessToken: String, refreshToken: String) {
-        AuthPreferences.saveTokens(prefs, accessToken, refreshToken)
+        AuthStorageCore.saveTokens(prefs, accessToken, refreshToken)
     }
 
     override suspend fun clearTokens() {
-        AuthPreferences.saveTokens(prefs, "", "")
+        AuthStorageCore.saveTokens(prefs, "", "")
     }
 
     override suspend fun saveUser(user: User) {
-        AuthPreferences.saveUser(prefs, user)
+        AuthStorageCore.saveUser(prefs, user)
     }
 
     override suspend fun clearUser() {
-        AuthPreferences.clear(prefs)
+        AuthStorageCore.clear(prefs)
     }
 
     override suspend fun clearSession() {
-        AuthPreferences.clear(prefs)
+        AuthStorageCore.clear(prefs)
     }
 }

@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import com.humanperformcenter.app.navigation.PaymentSuccess
-import com.humanperformcenter.shared.data.local.impl.AuthLocalDataSourceImpl
+import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.presentation.ui.StartStripeCheckoutState
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
 import com.humanperformcenter.ui.components.app.LogoAppBar
@@ -101,7 +101,7 @@ fun StripeCheckoutGate(
                 )
             }
 
-            val userData = AuthLocalDataSourceImpl.userFlow().firstOrNull()
+            val userData = SecureStorage.userFlow().firstOrNull()
             val userEmail = userData?.email ?: ""
             val userName = userData?.fullName ?: ""
             val userPhone = userData?.phone ?: ""

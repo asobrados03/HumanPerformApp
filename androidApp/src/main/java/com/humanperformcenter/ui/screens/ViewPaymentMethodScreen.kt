@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.payment.StripePaymentMethod
-import com.humanperformcenter.shared.data.local.impl.AuthLocalDataSourceImpl
+import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.presentation.ui.ActionUiState
 import com.humanperformcenter.shared.presentation.ui.AddPaymentMethodUiState
 import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
@@ -73,7 +73,7 @@ fun ViewPaymentMethodScreen(
     val addPaymentMethodState by stripeViewModel.addPaymentMethodUiState.collectAsStateWithLifecycle()
     val actionState by stripeViewModel.actionUiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val user by AuthLocalDataSourceImpl.userFlow().collectAsStateWithLifecycle(initialValue = null)
+    val user by SecureStorage.userFlow().collectAsStateWithLifecycle(initialValue = null)
 
     var pendingDeleteCardId by remember { mutableStateOf<String?>(null) }
 
