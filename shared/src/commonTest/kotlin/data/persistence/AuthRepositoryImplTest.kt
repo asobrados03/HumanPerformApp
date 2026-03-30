@@ -7,7 +7,7 @@ import com.humanperformcenter.shared.data.model.auth.RegisterResponse
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.remote.AuthRemoteDataSource
 import com.humanperformcenter.shared.domain.AuthDomainError
-import io.ktor.utils.io.errors.IOException
+import kotlinx.io.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest

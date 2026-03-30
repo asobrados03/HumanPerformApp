@@ -3,7 +3,7 @@ package com.humanperformcenter.shared.data.persistence
 import com.humanperformcenter.shared.data.model.payment.EwalletTransaction
 import com.humanperformcenter.shared.data.remote.UserWalletRemoteDataSource
 import com.humanperformcenter.shared.domain.DomainException
-import io.ktor.utils.io.errors.IOException
+import kotlinx.io.IOException
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
