@@ -1,15 +1,16 @@
 package com.humanperformcenter.shared.data.persistence
 
+import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.model.auth.LoginResponse
 import com.humanperformcenter.shared.data.model.auth.RegisterRequest
 import com.humanperformcenter.shared.data.model.auth.RegisterResponse
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.remote.AuthRemoteDataSource
 import com.humanperformcenter.shared.domain.repository.AuthRepository
-import com.humanperformcenter.shared.domain.storage.SecureStorage
 
 class AuthRepositoryImpl(
     private val remoteDataSource: AuthRemoteDataSource,
+    private val localDataSource: AuthLocalDataSource,
 ) : AuthRepository {
     override suspend fun login(email: String, password: String): Result<LoginResponse> =
         remoteDataSource.login(email, password).onSuccess { data ->
@@ -25,8 +26,8 @@ class AuthRepositoryImpl(
                 dni = data.dni,
                 profilePictureName = data.profilePictureName,
             )
-            SecureStorage.saveTokens(data.accessToken, data.refreshToken)
-            SecureStorage.saveUser(userData)
+            localDataSource.saveTokens(data.accessToken, data.refreshToken)
+            localDataSource.saveUser(userData)
         }
 
     override suspend fun register(data: RegisterRequest): Result<RegisterResponse> = remoteDataSource.register(data)

@@ -1,5 +1,9 @@
 package com.humanperformcenter.shared.presentation.di
 
+import com.humanperformcenter.shared.data.local.AuthLocalDataSource
+import com.humanperformcenter.shared.data.local.UserProfileLocalDataSource
+import com.humanperformcenter.shared.data.local.impl.AuthLocalDataSourceImpl
+import com.humanperformcenter.shared.data.local.impl.UserProfileLocalDataSourceImpl
 import com.humanperformcenter.shared.data.network.DefaultHttpClientProvider
 import com.humanperformcenter.shared.data.network.HttpClientProvider
 import com.humanperformcenter.shared.data.persistence.AuthRepositoryImpl
@@ -84,9 +88,14 @@ import org.koin.dsl.module
 
 expect val platformModule: Module
 
+val localStorageModule = module {
+    single<AuthLocalDataSource> { AuthLocalDataSourceImpl }
+    single<UserProfileLocalDataSource> { UserProfileLocalDataSourceImpl }
+}
+
 val networkModule = module {
     single<HttpClientProvider> { DefaultHttpClientProvider }
-    single<AuthRemoteDataSource> { AuthRemoteDataSourceImpl(get()) }
+    single<AuthRemoteDataSource> { AuthRemoteDataSourceImpl(get(), get()) }
     single<DaySessionRemoteDataSource> { DaySessionRemoteDataSourceImpl(get()) }
     single<ServiceProductRemoteDataSource> { ServiceProductRemoteDataSourceImpl(get()) }
     single<StripeRemoteDataSource> { StripeRemoteDataSourceImpl(get()) }
@@ -101,14 +110,14 @@ val networkModule = module {
 }
 
 val userProfileModule = module {
-    single<UserProfileRepository> { UserProfileRepositoryImpl(get()) }
+    single<UserProfileRepository> { UserProfileRepositoryImpl(get(), get()) }
     singleOf(::UserProfileUseCase)
     viewModelOf(::UserProfileViewModel)
 }
 
 val userSessionModule = module {
     single<UserAccountRepository> { UserAccountRepositoryImpl(get()) }
-    single<SessionStorage> { SessionStorageImpl }
+    single<SessionStorage> { SessionStorageImpl(get()) }
     singleOf(::UserAccountUseCase)
     viewModelOf(::UserSessionViewModel)
 }
@@ -148,7 +157,7 @@ val userWalletModule = module {
 }
 
 val authModule = module {
-    single<AuthRepository> { AuthRepositoryImpl(get()) }
+    single<AuthRepository> { AuthRepositoryImpl(get(), get()) }
     singleOf(::AuthUseCase)
     viewModelOf(::AuthViewModel)
 }
@@ -173,6 +182,7 @@ val catalogModule = module {
 
 val appModule = module {
     includes(
+        localStorageModule,
         networkModule,
         userProfileModule,
         userSessionModule,

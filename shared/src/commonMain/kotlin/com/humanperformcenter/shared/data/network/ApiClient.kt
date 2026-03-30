@@ -1,7 +1,7 @@
 package com.humanperformcenter.shared.data.network
 
+import com.humanperformcenter.shared.data.local.impl.AuthLocalDataSourceImpl
 import com.humanperformcenter.shared.data.model.auth.RefreshResponse
-import com.humanperformcenter.shared.domain.storage.SecureStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.Auth
@@ -17,19 +17,16 @@ import kotlinx.serialization.json.Json
 
 object ApiClient {
     private const val BASE = "https://human-app.duckdns.org/api"
-    private val storage = SecureStorage
+    private val storage = AuthLocalDataSourceImpl
 
-    // Cambiamos a SharedFlow con buffer para que el evento no se pierda
     val logoutEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
-    // 1) Cliente puro para refresh
     val authClient = HttpClient {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
     }
 
-    // 2) Cliente principal sin lógica de refresh en Auth
     val apiClient = HttpClient {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
@@ -40,8 +37,7 @@ object ApiClient {
                 loadTokens {
                     val access = storage.getAccessToken()
                     val refresh = storage.getRefreshToken()
-                    if (access == null || refresh == null) null
-                    else BearerTokens(access, refresh)
+                    if (access == null || refresh == null) null else BearerTokens(access, refresh)
                 }
                 refreshTokens {
                     val oldRefresh = storage.getRefreshToken()
@@ -75,9 +71,8 @@ object ApiClient {
 
     val baseUrl get() = BASE
 
-    // Centralizamos la lógica de salida
     private suspend fun handleLogout() {
-        storage.clear()
-        logoutEvents.emit(Unit) // .emit() espera si es necesario, asegurando que llegue
+        storage.clearSession()
+        logoutEvents.emit(Unit)
     }
 }

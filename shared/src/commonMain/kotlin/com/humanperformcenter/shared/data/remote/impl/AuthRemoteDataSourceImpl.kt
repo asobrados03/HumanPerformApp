@@ -1,5 +1,6 @@
 package com.humanperformcenter.shared.data.remote.impl
 
+import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.model.auth.ChangePasswordRequest
 import com.humanperformcenter.shared.data.model.auth.LoginResponse
 import com.humanperformcenter.shared.data.model.auth.RegisterRequest
@@ -21,10 +22,10 @@ import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import com.humanperformcenter.shared.domain.storage.SecureStorage
 
 class AuthRemoteDataSourceImpl(
     private val clientProvider: HttpClientProvider,
+    private val localDataSource: AuthLocalDataSource,
 ) : AuthRemoteDataSource {
     override suspend fun login(email: String, password: String): Result<LoginResponse> = runCatching {
         val response = clientProvider.authClient.post("${clientProvider.baseUrl}/mobile/sessions") {
@@ -88,7 +89,7 @@ class AuthRemoteDataSourceImpl(
     }
 
     override suspend fun logout(): Result<Unit> = runCatching {
-        val accessToken = SecureStorage.getAccessToken().orEmpty()
+        val accessToken = localDataSource.getAccessToken().orEmpty()
         val response = clientProvider.authClient.delete("${clientProvider.baseUrl}/mobile/sessions/current") {
             bearerAuth(accessToken)
             expectSuccess = false

@@ -1,9 +1,9 @@
 package com.humanperformcenter.shared.presentation.viewmodel
 
 import com.diamondedge.logging.logging
+import com.humanperformcenter.shared.data.local.UserProfileLocalDataSource
 import com.humanperformcenter.shared.data.model.user.DeleteProfilePicRequest
 import com.humanperformcenter.shared.data.model.user.User
-import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.usecase.UserProfileUseCase
 import com.humanperformcenter.shared.domain.usecase.validation.EditValidationResult
 import com.humanperformcenter.shared.domain.usecase.validation.UserValidator
@@ -17,7 +17,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class UserProfileViewModel(
-    private val userProfileUseCase: UserProfileUseCase
+    private val userProfileUseCase: UserProfileUseCase,
+    private val localDataSource: UserProfileLocalDataSource,
 ) : ViewModel() {
     companion object {
         val log = logging()
@@ -80,7 +81,7 @@ class UserProfileViewModel(
             val result = userProfileUseCase.getUserById(user.id)
             result.onSuccess { updatedUser ->
                 currentUser.value = updatedUser
-                SecureStorage.saveUser(updatedUser)
+                localDataSource.saveUser(updatedUser)
             }.onFailure {
                 log.debug { "❌ Error al refrescar perfil: ${it.message}" }
             }
@@ -99,7 +100,7 @@ class UserProfileViewModel(
                 onSuccess = {
                     _deleteProfilePicState.value = DeleteProfilePicState.Success
                     currentUser.value = currentUser.value?.copy(profilePictureName = null)
-                    currentUser.value?.let { SecureStorage.saveUser(it) }
+                    currentUser.value?.let { localDataSource.saveUser(it) }
                 },
                 onFailure = { throwable ->
                     _deleteProfilePicState.value = DeleteProfilePicState.Error(
