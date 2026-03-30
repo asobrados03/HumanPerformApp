@@ -39,6 +39,7 @@ kotlinxCoroutinesTest = "1.10.2"
 logging = "2.1.0"
 ktorClientCio = "3.4.0"
 ktorClientLogging = "3.4.0"
+ktorClientMock = "3.4.0"
 composePayButton = "1.2.0"
 kotlinxCoroutinesPlayServices = "1.10.2"
 workRuntimeKtx = "2.11.1"
@@ -98,6 +99,7 @@ logging = { group = "com.diamondedge", name = "logging", version.ref = "logging"
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktorClientCio" }
 ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktorClientLogging" }
+ktor-client-mock = { group = "io.ktor", name = "ktor-client-mock", version.ref = "ktorClientMock" }
 compose-pay-button = { group = "com.google.pay.button", name = "compose-pay-button", version.ref = "composePayButton" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
