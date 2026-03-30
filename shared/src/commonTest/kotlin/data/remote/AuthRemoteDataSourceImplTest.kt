@@ -1,0 +1,228 @@
+package com.humanperformcenter.shared.data.remote
+
+import com.humanperformcenter.shared.data.local.AuthLocalDataSource
+import com.humanperformcenter.shared.data.model.auth.LoginResponse
+import com.humanperformcenter.shared.data.model.auth.RegisterRequest
+import com.humanperformcenter.shared.data.model.auth.RegisterResponse
+import com.humanperformcenter.shared.data.model.user.User
+import com.humanperformcenter.shared.data.network.HttpClientProvider
+import com.humanperformcenter.shared.data.remote.impl.AuthRemoteDataSourceImpl
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestData
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.ByteChannel
+import io.ktor.utils.io.core.readText
+import io.ktor.utils.io.readRemaining
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
+
+class AuthRemoteDataSourceImplTest {
+
+    @Test
+    fun login_builds_expected_request_and_deserializes_success() = runTest {
+        lateinit var capturedRequest: HttpRequestData
+        val provider = testProvider(
+            authEngine = MockEngine { request ->
+                capturedRequest = request
+                respond(
+                    content = """
+                        {
+                          "id": 1,
+                          "fullName": "Ana Perez",
+                          "email": "ana@test.com",
+                          "phone": "600000000",
+                          "sex": "F",
+                          "dateOfBirth": "1990-01-01",
+                          "postcode": 28001,
+                          "postAddress": "Calle Mayor",
+                          "dni": "12345678A",
+                          "profilePictureName": "ana.jpg",
+                          "accessToken": "access-token",
+                          "refreshToken": "refresh-token"
+                        }
+                    """.trimIndent(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            },
+        )
+
+        val dataSource = AuthRemoteDataSourceImpl(provider, FakeAuthLocalDataSource())
+        val result = dataSource.login(email = "ana@test.com", password = "secret")
+
+        assertTrue(result.isSuccess)
+        assertEquals(HttpMethod.Post, capturedRequest.method)
+        assertEquals("https://api.test/mobile/sessions", capturedRequest.url.toString())
+        assertEquals(ContentType.Application.Json.toString(), capturedRequest.headers[HttpHeaders.ContentType])
+
+        val body = capturedRequest.bodyAsText()
+        assertTrue(body.contains("\"email\":\"ana@test.com\""))
+        assertTrue(body.contains("\"password\":\"secret\""))
+
+        assertEquals(
+            LoginResponse(
+                id = 1,
+                fullName = "Ana Perez",
+                email = "ana@test.com",
+                phone = "600000000",
+                sex = "F",
+                dateOfBirth = "1990-01-01",
+                postcode = 28001,
+                postAddress = "Calle Mayor",
+                dni = "12345678A",
+                profilePictureName = "ana.jpg",
+                accessToken = "access-token",
+                refreshToken = "refresh-token",
+            ),
+            result.getOrNull(),
+        )
+    }
+
+    @Test
+    fun login_returns_failure_when_backend_returns_error_status() = runTest {
+        val provider = testProvider(
+            authEngine = MockEngine {
+                respond(
+                    content = "{\"message\":\"Unauthorized\"}",
+                    status = HttpStatusCode.Unauthorized,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            },
+        )
+
+        val dataSource = AuthRemoteDataSourceImpl(provider, FakeAuthLocalDataSource())
+        val result = dataSource.login(email = "ana@test.com", password = "bad-secret")
+
+        assertTrue(result.isFailure)
+        assertIs<IllegalStateException>(result.exceptionOrNull())
+        assertTrue(result.exceptionOrNull()?.message?.contains("HTTP 401") == true)
+    }
+
+    @Test
+    fun register_sends_multipart_request_and_deserializes_success() = runTest {
+        lateinit var capturedRequest: HttpRequestData
+        val provider = testProvider(
+            authEngine = MockEngine { request ->
+                capturedRequest = request
+                respond(
+                    content = "{\"message\":\"ok\"}",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            },
+        )
+
+        val dataSource = AuthRemoteDataSourceImpl(provider, FakeAuthLocalDataSource())
+        val request = RegisterRequest(
+            name = "Ana",
+            surnames = "Perez",
+            email = "ana@test.com",
+            phone = "600000000",
+            password = "secret",
+            sex = "F",
+            dateOfBirth = "1990-01-01",
+            postCode = "28001",
+            postAddress = "Calle Mayor",
+            dni = "12345678A",
+            deviceType = "android",
+            profilePicBytes = byteArrayOf(1, 2, 3),
+            profilePicName = "avatar.jpg",
+        )
+
+        val result = dataSource.register(request)
+
+        assertTrue(result.isSuccess)
+        assertEquals(HttpMethod.Post, capturedRequest.method)
+        assertEquals("https://api.test/mobile/users", capturedRequest.url.toString())
+
+        val contentType = capturedRequest.headers[HttpHeaders.ContentType].orEmpty()
+        assertTrue(contentType.startsWith(ContentType.MultiPart.FormData.toString()))
+
+        val multipartBody = capturedRequest.bodyAsText()
+        assertTrue(multipartBody.contains("name=\"nombre\""))
+        assertTrue(multipartBody.contains("Ana"))
+        assertTrue(multipartBody.contains("name=\"profile_pic\""))
+        assertTrue(multipartBody.contains("filename=\"avatar.jpg\""))
+
+        assertEquals(RegisterResponse("ok"), result.getOrNull())
+    }
+
+    @Test
+    fun logout_sends_bearer_token_in_auth_header() = runTest {
+        lateinit var capturedRequest: HttpRequestData
+        val localDataSource = FakeAuthLocalDataSource(accessToken = "abc.123")
+        val provider = testProvider(
+            authEngine = MockEngine { request ->
+                capturedRequest = request
+                respond(status = HttpStatusCode.NoContent)
+            },
+        )
+
+        val dataSource = AuthRemoteDataSourceImpl(provider, localDataSource)
+        val result = dataSource.logout()
+
+        assertTrue(result.isSuccess)
+        assertEquals(HttpMethod.Delete, capturedRequest.method)
+        assertEquals("https://api.test/mobile/sessions/current", capturedRequest.url.toString())
+        assertEquals("Bearer abc.123", capturedRequest.headers[HttpHeaders.Authorization])
+    }
+
+    private fun testProvider(authEngine: MockEngine, apiEngine: MockEngine = authEngine): HttpClientProvider {
+        val json = Json { ignoreUnknownKeys = true }
+        val authClient = HttpClient(authEngine) {
+            install(ContentNegotiation) { json(json) }
+        }
+        val apiClient = HttpClient(apiEngine) {
+            install(ContentNegotiation) { json(json) }
+        }
+
+        return object : HttpClientProvider {
+            override val apiClient: HttpClient = apiClient
+            override val authClient: HttpClient = authClient
+            override val baseUrl: String = "https://api.test"
+        }
+    }
+
+    private suspend fun HttpRequestData.bodyAsText(): String = when (val outgoing = body) {
+        is io.ktor.http.content.OutgoingContent.ByteArrayContent -> outgoing.bytes().decodeToString()
+        is io.ktor.http.content.OutgoingContent.ReadChannelContent -> outgoing.readFrom().readRemaining().readText()
+        is io.ktor.http.content.OutgoingContent.WriteChannelContent -> {
+            val channel = ByteChannel(autoFlush = true)
+            outgoing.writeTo(channel)
+            channel.close()
+            channel.readRemaining().readText()
+        }
+
+        is io.ktor.http.content.OutgoingContent.NoContent -> ""
+        else -> ""
+    }
+
+    private class FakeAuthLocalDataSource(
+        private val accessToken: String? = null,
+        private val refreshToken: String? = null,
+    ) : AuthLocalDataSource {
+        override suspend fun getAccessToken(): String? = accessToken
+        override suspend fun getRefreshToken(): String? = refreshToken
+        override fun accessTokenFlow(): Flow<String> = MutableStateFlow(accessToken.orEmpty())
+        override fun userFlow(): Flow<User?> = MutableStateFlow(null)
+        override suspend fun saveTokens(accessToken: String, refreshToken: String) = Unit
+        override suspend fun clearTokens() = Unit
+        override suspend fun saveUser(user: User) = Unit
+        override suspend fun clearUser() = Unit
+        override suspend fun clearSession() = Unit
+    }
+}
