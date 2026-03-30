@@ -3,7 +3,6 @@ package com.humanperformcenter.shared.presentation.viewmodel
 import com.diamondedge.logging.logging
 import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.model.user.User
-import com.humanperformcenter.shared.domain.storage.SessionStorage
 import com.humanperformcenter.shared.domain.usecase.UserAccountUseCase
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.presentation.ui.DeleteUserState
@@ -22,7 +21,6 @@ class UserSessionViewModel(
     private val userAccountUseCase: UserAccountUseCase,
     private val authUseCase: AuthUseCase,
     private val authLocalDataSource: AuthLocalDataSource,
-    private val sessionStorage: SessionStorage,
 ) : ViewModel() {
     companion object {
         val log = logging()
@@ -74,7 +72,7 @@ class UserSessionViewModel(
 
             userAccountUseCase.deleteUser(email).fold(
                 onSuccess = {
-                    sessionStorage.clearSession()
+                    authLocalDataSource.clearSession()
                     delay(1000)
                     _deleteState.value = DeleteUserState.Success
                 },
