@@ -29,7 +29,10 @@ class UserProfileRemoteDataSourceImpl(
             profilePicBytes?.let { bytes ->
                 append("profile_pic", bytes, Headers.build {
                     append(HttpHeaders.ContentType, "image/jpeg")
-                    append(HttpHeaders.ContentDisposition, "filename=\"${user.profilePictureName}\"")
+                    append(
+                        HttpHeaders.ContentDisposition,
+                        "form-data; name=\"profile_pic\"; filename=\"${user.profilePictureName}\"",
+                    )
                 })
             }
         }
