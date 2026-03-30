@@ -25,7 +25,7 @@ class AuthUseCase(
 
     suspend fun logout(): Result<Unit> {
         val remoteLogoutResult = authRepository.logout()
-        authLocalDataSource.clearSession()
+        authLocalDataSource.clear()
         return remoteLogoutResult
     }
 

@@ -223,6 +223,6 @@ class AuthRemoteDataSourceImplTest {
         override suspend fun clearTokens() = Unit
         override suspend fun saveUser(user: User) = Unit
         override suspend fun clearUser() = Unit
-        override suspend fun clearSession() = Unit
+        override suspend fun clear() = Unit
     }
 }

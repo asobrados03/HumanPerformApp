@@ -72,7 +72,7 @@ class UserSessionViewModel(
 
             userAccountUseCase.deleteUser(email).fold(
                 onSuccess = {
-                    authLocalDataSource.clearSession()
+                    authLocalDataSource.clear()
                     delay(1000)
                     _deleteState.value = DeleteUserState.Success
                 },

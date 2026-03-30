@@ -37,16 +37,8 @@ object SecureStorage : AuthLocalDataSource {
         AuthStorageCore.saveTokens(prefs, "", "")
     }
 
-    override suspend fun clearUser() {
-        AuthStorageCore.clear(prefs)
-    }
-
-    override suspend fun clearSession() {
-        AuthStorageCore.clear(prefs)
-    }
-
     /** Borra tokens (logout) */
-    suspend fun clear() {
-        clearSession()
+    override suspend fun clear() {
+        AuthStorageCore.clear(prefs)
     }
 }

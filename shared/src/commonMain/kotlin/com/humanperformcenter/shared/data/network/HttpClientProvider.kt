@@ -83,7 +83,7 @@ class DefaultHttpClientProvider(
     override val baseUrl: String = API_BASE_URL
 
     private suspend fun handleLogout() {
-        authLocalDataSource.clearSession()
+        authLocalDataSource.clear()
         logoutEventsMutable.emit(Unit)
     }
 }

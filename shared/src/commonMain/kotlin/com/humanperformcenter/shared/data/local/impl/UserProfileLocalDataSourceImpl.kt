@@ -15,6 +15,6 @@ class UserProfileLocalDataSourceImpl(
     override suspend fun getUser(): User? = authLocalDataSource.userFlow().firstOrNull()
 
     override suspend fun clearUser() {
-        authLocalDataSource.clearUser()
+        authLocalDataSource.clear()
     }
 }

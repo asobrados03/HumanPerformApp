@@ -11,6 +11,5 @@ interface AuthLocalDataSource {
     suspend fun saveTokens(accessToken: String, refreshToken: String)
     suspend fun clearTokens()
     suspend fun saveUser(user: User)
-    suspend fun clearUser()
-    suspend fun clearSession()
+    suspend fun clear()
 }

@@ -95,7 +95,7 @@ class UserSessionViewModelTest {
             user.value = null
         }
 
-        override suspend fun clearSession() {
+        override suspend fun clear() {
             token.value = ""
             user.value = null
         }

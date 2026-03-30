@@ -122,12 +122,12 @@ class AuthRepositoryImplTest {
             currentUserFlow.value = user
         }
 
-        override suspend fun clearUser() {
+        fun clearUser() {
             savedUser = null
             currentUserFlow.value = null
         }
 
-        override suspend fun clearSession() {
+        override suspend fun clear() {
             clearTokens()
             clearUser()
         }
