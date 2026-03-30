@@ -23,6 +23,8 @@ import io.ktor.utils.io.core.readText
 import io.ktor.utils.io.readRemaining
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -168,7 +170,7 @@ class AuthRemoteDataSourceImplTest {
         val provider = testProvider(
             authEngine = MockEngine { request ->
                 capturedRequest = request
-                respond(status = HttpStatusCode.NoContent)
+                respond(content = "", status = HttpStatusCode.NoContent)
             },
         )
 
@@ -194,6 +196,7 @@ class AuthRemoteDataSourceImplTest {
             override val apiClient: HttpClient = apiClient
             override val authClient: HttpClient = authClient
             override val baseUrl: String = "https://api.test"
+            override val logoutEvents: SharedFlow<Unit> = emptyFlow()
         }
     }
 
@@ -222,7 +225,6 @@ class AuthRemoteDataSourceImplTest {
         override suspend fun saveTokens(accessToken: String, refreshToken: String) = Unit
         override suspend fun clearTokens() = Unit
         override suspend fun saveUser(user: User) = Unit
-        override suspend fun clearUser() = Unit
         override suspend fun clear() = Unit
     }
 }

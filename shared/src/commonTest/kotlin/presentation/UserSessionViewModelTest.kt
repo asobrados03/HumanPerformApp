@@ -7,7 +7,6 @@ import com.humanperformcenter.shared.data.model.auth.RegisterResponse
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.repository.AuthRepository
 import com.humanperformcenter.shared.domain.repository.UserAccountRepository
-import com.humanperformcenter.shared.domain.storage.SessionStorage
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.domain.usecase.UserAccountUseCase
 import com.humanperformcenter.shared.presentation.ui.DeleteUserState
@@ -67,10 +66,6 @@ class UserSessionViewModelTest {
         override suspend fun logout(): Result<Unit> = logoutResult
     }
 
-    private class FakeSessionStorage : SessionStorage {
-        override suspend fun clearSession() = Unit
-    }
-
     private class FakeAuthLocalDataSource : AuthLocalDataSource {
         private val token = MutableStateFlow("")
         private val user = MutableStateFlow<User?>(null)
@@ -91,10 +86,6 @@ class UserSessionViewModelTest {
             this.user.value = user
         }
 
-        override suspend fun clearUser() {
-            user.value = null
-        }
-
         override suspend fun clear() {
             token.value = ""
             user.value = null
@@ -106,12 +97,10 @@ class UserSessionViewModelTest {
         logoutResult: Result<Unit> = Result.success(Unit)
     ): UserSessionViewModel {
         val localDataSource = FakeAuthLocalDataSource()
-        val sessionStorage = FakeSessionStorage()
         return UserSessionViewModel(
             userAccountUseCase = UserAccountUseCase(FakeUserAccountRepository(deleteResult)),
-            authUseCase = AuthUseCase(FakeAuthRepository(logoutResult), sessionStorage),
+            authUseCase = AuthUseCase(FakeAuthRepository(logoutResult), localDataSource),
             authLocalDataSource = localDataSource,
-            sessionStorage = sessionStorage,
         )
     }
 
