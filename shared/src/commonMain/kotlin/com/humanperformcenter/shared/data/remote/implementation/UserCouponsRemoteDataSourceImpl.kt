@@ -14,13 +14,17 @@ class UserCouponsRemoteDataSourceImpl(
     private val clientProvider: HttpClientProvider,
 ) : UserCouponsRemoteDataSource {
     override suspend fun addCouponToUser(userId: Int, couponCode: String): Result<Unit> = runCatching {
-        clientProvider.apiClient.post("${clientProvider.baseUrl}/mobile/users/$userId/coupons") {
+        clientProvider.apiClient.post(
+            "${clientProvider.baseUrl}/mobile/users/$userId/coupons"
+        ) {
             contentType(ContentType.Application.Json)
             setBody(mapOf("coupon_code" to couponCode))
         }
     }
 
     override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> = runCatching {
-        clientProvider.apiClient.get("${clientProvider.baseUrl}/mobile/users/$userId/coupons").body()
+        clientProvider.apiClient.get(
+            "${clientProvider.baseUrl}/mobile/users/$userId/coupons"
+        ).body()
     }
 }

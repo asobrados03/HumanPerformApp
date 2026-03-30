@@ -10,6 +10,8 @@ class UserStatsRemoteDataSourceImpl(
     private val clientProvider: HttpClientProvider,
 ) : UserStatsRemoteDataSource {
     override suspend fun getUserStats(customerId: Int): Result<UserStatistics> = runCatching {
-        clientProvider.apiClient.get("${clientProvider.baseUrl}/mobile/users/$customerId/stats").body()
+        clientProvider.apiClient.get(
+            "${clientProvider.baseUrl}/mobile/users/$customerId/stats"
+        ).body()
     }
 }

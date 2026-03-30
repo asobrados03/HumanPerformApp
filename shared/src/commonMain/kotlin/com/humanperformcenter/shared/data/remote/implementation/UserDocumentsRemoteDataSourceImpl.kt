@@ -14,7 +14,8 @@ import io.ktor.http.HttpHeaders
 class UserDocumentsRemoteDataSourceImpl(
     private val clientProvider: HttpClientProvider,
 ) : UserDocumentsRemoteDataSource {
-    override suspend fun uploadDocument(userId: Int, name: String, data: ByteArray): Result<String> = runCatching {
+    override suspend fun uploadDocument(userId: Int, name: String, data: ByteArray)
+    : Result<String> = runCatching {
         val contentType = when (name.substringAfterLast('.', "").lowercase()) {
             "png" -> "image/png"
             "jpg", "jpeg" -> "image/jpeg"
@@ -32,7 +33,9 @@ class UserDocumentsRemoteDataSourceImpl(
             })
         }
 
-        clientProvider.apiClient.post("${clientProvider.baseUrl}/mobile/users/$userId/documents") {
+        clientProvider.apiClient.post(
+            "${clientProvider.baseUrl}/mobile/users/$userId/documents"
+        ) {
             setBody(MultiPartFormDataContent(parts))
         }.body<UploadResponse>().message
     }

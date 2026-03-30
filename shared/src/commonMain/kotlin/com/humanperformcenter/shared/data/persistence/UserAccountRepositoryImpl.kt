@@ -6,5 +6,6 @@ import com.humanperformcenter.shared.domain.repository.UserAccountRepository
 class UserAccountRepositoryImpl(
     private val remote: UserAccountRemoteDataSource,
 ) : UserAccountRepository {
-    override suspend fun deleteUser(email: String): Result<Unit> = remote.deleteUser(email).mapDomainError()
+    override suspend fun deleteUser(email: String): Result<Unit> = remote.deleteUser(email)
+        .mapDomainError()
 }

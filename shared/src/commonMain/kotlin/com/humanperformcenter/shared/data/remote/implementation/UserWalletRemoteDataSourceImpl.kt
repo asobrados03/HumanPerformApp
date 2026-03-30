@@ -17,14 +17,17 @@ class UserWalletRemoteDataSourceImpl(
     private val clientProvider: HttpClientProvider,
 ) : UserWalletRemoteDataSource {
     override suspend fun getEwalletBalance(userId: Int): Result<Double?> = runCatching {
-        val response = clientProvider.apiClient.get("${clientProvider.baseUrl}/mobile/user/e-wallet-balance") {
+        val response = clientProvider.apiClient.get(
+            "${clientProvider.baseUrl}/mobile/user/e-wallet-balance"
+        ) {
             parameter("user_id", userId)
         }
         val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
         json["balance"]?.jsonPrimitive?.doubleOrNull
     }
 
-    override suspend fun getEwalletTransactions(userId: Int): Result<List<EwalletTransaction>> = runCatching {
+    override suspend fun getEwalletTransactions(userId: Int)
+    : Result<List<EwalletTransaction>> = runCatching {
         clientProvider.apiClient.get("${clientProvider.baseUrl}/mobile/user/transactions") {
             parameter("user_id", userId)
         }.body<EwalletResponse>().transactions

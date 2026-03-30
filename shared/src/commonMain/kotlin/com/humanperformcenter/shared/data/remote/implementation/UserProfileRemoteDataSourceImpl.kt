@@ -20,7 +20,8 @@ import kotlinx.serialization.json.Json
 class UserProfileRemoteDataSourceImpl(
     private val clientProvider: HttpClientProvider,
 ) : UserProfileRemoteDataSource {
-    override suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User> = runCatching {
+    override suspend fun updateUser(user: User, profilePicBytes: ByteArray?)
+    : Result<User> = runCatching {
         val userJson = Json.encodeToString(User.serializer(), user)
         val body = formData {
             append("user", userJson, Headers.build {
@@ -51,7 +52,9 @@ class UserProfileRemoteDataSourceImpl(
     override suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit> = runCatching {
         clientProvider.apiClient.delete("${clientProvider.baseUrl}/mobile/user/photo") {
             url {
-                parameters.append("profilePictureName", req.profilePictureName.toString())
+                parameters.append("profilePictureName", req.profilePictureName
+                    .toString()
+                )
                 parameters.append("email", req.email)
             }
         }

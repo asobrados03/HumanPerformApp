@@ -18,6 +18,8 @@ class UserBookingsRemoteDataSourceImpl(
     }
 
     override suspend fun cancelUserBooking(bookingId: Int): Result<Unit> = runCatching {
-        clientProvider.apiClient.delete("${clientProvider.baseUrl}/mobile/bookings/$bookingId")
+        clientProvider.apiClient.delete(
+            "${clientProvider.baseUrl}/mobile/bookings/$bookingId"
+        )
     }
 }

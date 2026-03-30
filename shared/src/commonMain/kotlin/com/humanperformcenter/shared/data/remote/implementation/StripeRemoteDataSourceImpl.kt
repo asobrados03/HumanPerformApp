@@ -26,14 +26,16 @@ class StripeRemoteDataSourceImpl(
     private val clientProvider: HttpClientProvider,
 ) : StripeRemoteDataSource {
     override suspend fun getPublishableKey(): Result<String> = runCatching {
-        clientProvider.apiClient.get("${clientProvider.baseUrl}/stripe/publishable-key").body<PublishableKeyResponse>().publishableKey.trim()
+        clientProvider.apiClient.get("${clientProvider.baseUrl}/stripe/publishable-key")
+            .body<PublishableKeyResponse>().publishableKey.trim()
     }
 
     override suspend fun createOrGetCustomer(): Result<CreateStripeCustomerResponse> = runCatching {
         clientProvider.apiClient.post("${clientProvider.baseUrl}/stripe/customer").body()
     }
 
-    override suspend fun createEphemeralKey(customerId: String): Result<StripeEphemeralKeyResponse> = runCatching {
+    override suspend fun createEphemeralKey(customerId: String)
+    : Result<StripeEphemeralKeyResponse> = runCatching {
         clientProvider.apiClient.post("${clientProvider.baseUrl}/stripe/ephemeral-keys") {
             contentType(ContentType.Application.Json)
             setBody(mapOf("customer_id" to customerId))
@@ -41,11 +43,15 @@ class StripeRemoteDataSourceImpl(
     }
 
     override suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit> = runCatching {
-        clientProvider.apiClient.delete("${clientProvider.baseUrl}/stripe/payment-method/$paymentMethodId")
+        clientProvider.apiClient.delete(
+            "${clientProvider.baseUrl}/stripe/payment-method/$paymentMethodId"
+        )
     }
 
     override suspend fun setDefaultPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit> = runCatching {
-        clientProvider.apiClient.put("${clientProvider.baseUrl}/stripe/payment-method/default") {
+        clientProvider.apiClient.put(
+            "${clientProvider.baseUrl}/stripe/payment-method/default"
+        ) {
             contentType(ContentType.Application.Json)
             setBody(mapOf("paymentMethodId" to paymentMethodId, "customerId" to customerId))
         }
@@ -59,7 +65,9 @@ class StripeRemoteDataSourceImpl(
     }
 
     override suspend fun createSetupConfig(userId: Int): Result<StripeSetupConfigResponse> = runCatching {
-        clientProvider.apiClient.post("${clientProvider.baseUrl}/stripe/payments/setup-config") {
+        clientProvider.apiClient.post(
+            "${clientProvider.baseUrl}/stripe/payments/setup-config"
+        ) {
             contentType(ContentType.Application.Json)
             setBody(mapOf("user_id" to userId))
         }.body()
@@ -85,7 +93,9 @@ class StripeRemoteDataSourceImpl(
     }
 
     override suspend fun cancelSubscription(subscriptionId: String, productId: Int, userId: Int): Result<Unit> = runCatching {
-        clientProvider.apiClient.delete("${clientProvider.baseUrl}/stripe/subscription/$subscriptionId") {
+        clientProvider.apiClient.delete(
+            "${clientProvider.baseUrl}/stripe/subscription/$subscriptionId"
+        ) {
             url {
                 parameters.append("user_id", userId.toString())
                 parameters.append("product_id", productId.toString())
@@ -98,6 +108,8 @@ class StripeRemoteDataSourceImpl(
     }
 
     override suspend fun getUserCards(customerId: String): Result<StripePaymentMethodsContainer> = runCatching {
-        clientProvider.apiClient.get("${clientProvider.baseUrl}/stripe/payment-methods/$customerId").body<StripePaymentMethodsResponse>().data
+        clientProvider.apiClient.get(
+            "${clientProvider.baseUrl}/stripe/payment-methods/$customerId"
+        ).body<StripePaymentMethodsResponse>().data
     }
 }

@@ -28,7 +28,9 @@ class AuthRemoteDataSourceImpl(
     private val localDataSource: AuthLocalDataSource,
 ) : AuthRemoteDataSource {
     override suspend fun login(email: String, password: String): Result<LoginResponse> = runCatching {
-        val response = clientProvider.authClient.post("${clientProvider.baseUrl}/mobile/sessions") {
+        val response = clientProvider.authClient.post(
+            "${clientProvider.baseUrl}/mobile/sessions"
+        ) {
             contentType(ContentType.Application.Json)
             setBody(mapOf("email" to email, "password" to password))
             expectSuccess = false
@@ -68,7 +70,9 @@ class AuthRemoteDataSourceImpl(
     }
 
     override suspend fun resetPassword(email: String): Result<Unit> = runCatching {
-        val response = clientProvider.apiClient.put("${clientProvider.baseUrl}/mobile/reset-password") {
+        val response = clientProvider.apiClient.put(
+            "${clientProvider.baseUrl}/mobile/reset-password"
+        ) {
             contentType(ContentType.Application.Json)
             setBody(ResetPasswordRequest(email))
             expectSuccess = false
@@ -81,7 +85,9 @@ class AuthRemoteDataSourceImpl(
         newPassword: String,
         userId: Int,
     ): Result<Unit> = runCatching {
-        val response = clientProvider.apiClient.put("${clientProvider.baseUrl}/mobile/change-password") {
+        val response = clientProvider.apiClient.put(
+            "${clientProvider.baseUrl}/mobile/change-password"
+        ) {
             contentType(ContentType.Application.Json)
             setBody(ChangePasswordRequest(currentPassword, newPassword, userId))
             expectSuccess = false
@@ -91,7 +97,9 @@ class AuthRemoteDataSourceImpl(
 
     override suspend fun logout(): Result<Unit> = runCatching {
         val accessToken = localDataSource.getAccessToken().orEmpty()
-        val response = clientProvider.authClient.delete("${clientProvider.baseUrl}/mobile/sessions/current") {
+        val response = clientProvider.authClient.delete(
+            "${clientProvider.baseUrl}/mobile/sessions/current"
+        ) {
             bearerAuth(accessToken)
             expectSuccess = false
         }

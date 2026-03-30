@@ -21,16 +21,22 @@ class UserFavoritesRemoteDataSourceImpl(
         clientProvider.apiClient.get("${clientProvider.baseUrl}/mobile/coaches").body()
     }
 
-    override suspend fun markFavorite(coachId: Int, serviceName: String?, userId: Int?): Result<String> = runCatching {
-        val response = clientProvider.apiClient.post("${clientProvider.baseUrl}/mobile/user/preferred-coach") {
+    override suspend fun markFavorite(coachId: Int, serviceName: String?, userId: Int?)
+    : Result<String> = runCatching {
+        val response = clientProvider.apiClient.post(
+            "${clientProvider.baseUrl}/mobile/user/preferred-coach"
+        ) {
             contentType(ContentType.Application.Json)
             setBody(AssignPreferredCoachRequest(serviceName.orEmpty(), userId ?: 0, coachId))
         }.body<AssignPreferredCoachResponse>()
         response.message
     }
 
-    override suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse> = runCatching {
-        clientProvider.apiClient.get("${clientProvider.baseUrl}/mobile/user/preferred-coach") {
+    override suspend fun getPreferredCoach(customerId: Int)
+    : Result<GetPreferredCoachResponse> = runCatching {
+        clientProvider.apiClient.get(
+            "${clientProvider.baseUrl}/mobile/user/preferred-coach"
+        ) {
             parameter("customer_id", customerId)
         }.body()
     }
