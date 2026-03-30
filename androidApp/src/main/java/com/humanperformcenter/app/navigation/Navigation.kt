@@ -18,7 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.humanperformcenter.app.SetStatusBarColor
-import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.data.network.HttpClientProvider
 import com.humanperformcenter.shared.presentation.viewmodel.AuthViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.DaySessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.StripeViewModel
@@ -54,6 +54,7 @@ import com.humanperformcenter.ui.screens.UserStatsScreen
 import com.humanperformcenter.ui.screens.ViewPaymentMethodScreen
 import com.humanperformcenter.ui.screens.WelcomeScreen
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Composable
 fun Navigation(
@@ -66,6 +67,7 @@ fun Navigation(
     )
 
     val stripeViewModel: StripeViewModel = koinViewModel()
+    val httpClientProvider: HttpClientProvider = koinInject()
 
     val sessionViewModel: UserSessionViewModel = koinViewModel()
     val couponsViewModel: UserCouponsViewModel = koinViewModel()
@@ -81,7 +83,7 @@ fun Navigation(
     val userData by sessionViewModel.userData.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        ApiClient.logoutEvents.collect {
+        httpClientProvider.logoutEvents.collect {
             navController.navigate(Welcome) {
                 popUpTo(0) { inclusive = true }
             }

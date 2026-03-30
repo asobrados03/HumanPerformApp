@@ -1,7 +1,7 @@
 package com.humanperformcenter.shared.presentation.ui.models
 
 import com.humanperformcenter.shared.data.model.product_service.ServiceAvailable
-import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.data.network.API_BASE_URL
 
 /**
  * Modelo optimizado para la Vista (HireView).
@@ -12,7 +12,7 @@ data class ServiceUiModel(
     val isHired: Boolean
 ) {
     // 💡 EXTRA: Movemos la lógica de formateo de URL aquí.
-    // Así la UI no tiene que saber nada de "ApiClient.baseUrl".
+    // Así la UI no tiene que saber nada de "API_BASE_URL".
     val fullImageUrl: String?
-        get() = service.image?.let { "${ApiClient.baseUrl}/service_images/$it" }
+        get() = service.image?.let { "$API_BASE_URL/service_images/$it" }
 }

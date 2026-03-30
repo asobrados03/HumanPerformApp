@@ -1,4 +1,4 @@
-package com.humanperformcenter.shared.data.persistence.common
+package com.humanperformcenter.shared.data.remote.common
 
 import com.humanperformcenter.shared.data.model.ErrorResponse
 import io.ktor.client.call.body

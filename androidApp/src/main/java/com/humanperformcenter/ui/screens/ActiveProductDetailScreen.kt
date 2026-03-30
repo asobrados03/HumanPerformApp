@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.humanperformcenter.shared.data.network.ApiClient
+import com.humanperformcenter.shared.data.network.API_BASE_URL
 import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.shared.presentation.viewmodel.ServiceProductViewModel
 import com.humanperformcenter.shared.presentation.ui.ActiveProductDetailState
@@ -85,7 +85,7 @@ fun ActiveProductDetailScreen(
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                 ) {
-                    val imageUrl = producto.image?.let { "${ApiClient.baseUrl}/product_images/$it" }
+                    val imageUrl = producto.image?.let { "${API_BASE_URL}/product_images/$it" }
 
                     imageUrl?.let {
                         AsyncImage(
