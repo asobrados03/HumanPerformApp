@@ -2,14 +2,12 @@ package com.humanperformcenter.shared.presentation.di
 
 import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.local.UserProfileLocalDataSource
-import com.humanperformcenter.shared.data.local.impl.AuthLocalDataSourceImpl
 import com.humanperformcenter.shared.data.local.impl.UserProfileLocalDataSourceImpl
 import com.humanperformcenter.shared.data.network.DefaultHttpClientProvider
 import com.humanperformcenter.shared.data.network.HttpClientProvider
 import com.humanperformcenter.shared.data.repository.AuthRepositoryImpl
 import com.humanperformcenter.shared.data.repository.DaySessionRepositoryImpl
 import com.humanperformcenter.shared.data.repository.ServiceProductRepositoryImpl
-import com.humanperformcenter.shared.data.local.impl.SessionStorageImpl
 import com.humanperformcenter.shared.data.repository.StripeRepositoryImpl
 import com.humanperformcenter.shared.data.repository.UserAccountRepositoryImpl
 import com.humanperformcenter.shared.data.repository.UserBookingsRepositoryImpl
@@ -55,7 +53,7 @@ import com.humanperformcenter.shared.domain.repository.UserFavoritesRepository
 import com.humanperformcenter.shared.domain.repository.UserProfileRepository
 import com.humanperformcenter.shared.domain.repository.UserStatsRepository
 import com.humanperformcenter.shared.domain.repository.UserWalletRepository
-import com.humanperformcenter.shared.domain.storage.SessionStorage
+import com.humanperformcenter.shared.domain.storage.SecureStorage
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
@@ -89,7 +87,7 @@ import org.koin.dsl.module
 expect val platformModule: Module
 
 val localStorageModule = module {
-    single<AuthLocalDataSource> { AuthLocalDataSourceImpl(get()) }
+    single<AuthLocalDataSource> { SecureStorage.apply { initialize(get()) } }
     single<UserProfileLocalDataSource> { UserProfileLocalDataSourceImpl(get()) }
 }
 
@@ -117,7 +115,6 @@ val userProfileModule = module {
 
 val userSessionModule = module {
     single<UserAccountRepository> { UserAccountRepositoryImpl(get()) }
-    single<SessionStorage> { SessionStorageImpl(get()) }
     singleOf(::UserAccountUseCase)
     viewModelOf(::UserSessionViewModel)
 }

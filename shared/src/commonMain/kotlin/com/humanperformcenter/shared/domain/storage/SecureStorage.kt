@@ -2,12 +2,12 @@ package com.humanperformcenter.shared.domain.storage
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.model.user.User
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.Flow
 
-object SecureStorage {
+object SecureStorage : AuthLocalDataSource {
     private lateinit var prefs: DataStore<Preferences>
 
     /** Inicializa el storage. Llama esto desde Android con tu prefs */
@@ -15,29 +15,38 @@ object SecureStorage {
         this.prefs = prefs
     }
 
-    /** Devuelve el access token actual o null si no hay */
-    fun getAccessToken(): String? = runBlocking { AuthStorageCore.getAccessToken(prefs) }
+    override suspend fun getAccessToken(): String? = AuthStorageCore.getAccessToken(prefs)
 
-    /** Devuelve el refresh token actual o null si no hay */
-    fun getRefreshToken(): String? = runBlocking { AuthStorageCore.getRefreshToken(prefs) }
+    override suspend fun getRefreshToken(): String? = AuthStorageCore.getRefreshToken(prefs)
 
-    /** Guarda ambos tokens (suspende) */
-    suspend fun saveTokens(access: String, refresh: String) {
-        AuthStorageCore.saveTokens(prefs, access, refresh)
+    override suspend fun saveTokens(accessToken: String, refreshToken: String) {
+        AuthStorageCore.saveTokens(prefs, accessToken, refreshToken)
     }
 
     @NativeCoroutines
-    fun accessTokenFlow(): Flow<String> = AuthStorageCore.accessTokenFlow(prefs)
+    override fun accessTokenFlow(): Flow<String> = AuthStorageCore.accessTokenFlow(prefs)
 
-    suspend fun saveUser(user: User) {
+    override suspend fun saveUser(user: User) {
         AuthStorageCore.saveUser(prefs, user)
     }
 
     @NativeCoroutines
-    fun userFlow(): Flow<User?> = AuthStorageCore.userFlow(prefs)
+    override fun userFlow(): Flow<User?> = AuthStorageCore.userFlow(prefs)
+
+    override suspend fun clearTokens() {
+        AuthStorageCore.saveTokens(prefs, "", "")
+    }
+
+    override suspend fun clearUser() {
+        AuthStorageCore.clear(prefs)
+    }
+
+    override suspend fun clearSession() {
+        AuthStorageCore.clear(prefs)
+    }
 
     /** Borra tokens (logout) */
     suspend fun clear() {
-        AuthStorageCore.clear(prefs)
+        clearSession()
     }
 }
