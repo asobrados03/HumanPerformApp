@@ -1,0 +1,14 @@
+{
+  "id": 1,
+  "fullName": "Ana Perez",
+  "email": "ana@test.com",
+  "phone": "600000000",
+  "sex": "F",
+  "dateOfBirth": "1990-01-01",
+  "postcode": 28001,
+  "postAddress": "Calle Mayor",
+  "dni": "12345678A",
+  "profilePictureName": "ana.jpg",
+  "accessToken": "access-token",
+  "refreshToken": "refresh-token"
+}

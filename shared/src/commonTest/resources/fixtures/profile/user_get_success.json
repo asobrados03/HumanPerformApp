@@ -1,0 +1,12 @@
+{
+  "id": 7,
+  "fullName": "Maria Lopez",
+  "email": "maria@test.com",
+  "phone": "611111111",
+  "sex": "F",
+  "dateOfBirth": "1989-10-10",
+  "postcode": 28080,
+  "postAddress": "Gran Via 10",
+  "dni": "00000000X",
+  "profilePictureName": "maria.jpg"
+}

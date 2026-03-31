@@ -21,7 +21,7 @@ class ServiceProductRemoteDataSourceImplTest {
         lateinit var request: HttpRequestData
         val provider = testProvider(apiEngine = MockEngine {
             request = it
-            respond("""{"assignedId":99}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("service", "assign_product_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
 
         val result = ServiceProductRemoteDataSourceImpl(provider)
@@ -41,7 +41,7 @@ class ServiceProductRemoteDataSourceImplTest {
     @Test
     fun assignProductToUser_returns_failure_on_http_error() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{}", HttpStatusCode.BadRequest, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("service", "assign_product_error_standard.json"), HttpStatusCode.BadRequest, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = ServiceProductRemoteDataSourceImpl(provider).assignProductToUser(1, 1, "card", null)
         assertTrue(result.isFailure)
@@ -50,7 +50,7 @@ class ServiceProductRemoteDataSourceImplTest {
     @Test
     fun getUserProducts_returns_failure_on_wrong_type_json() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("""[{"id":"bad"}]""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("service", "user_products_wrong_type.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = ServiceProductRemoteDataSourceImpl(provider).getUserProducts(3)
         assertTrue(result.isFailure)
@@ -61,7 +61,7 @@ class ServiceProductRemoteDataSourceImplTest {
         lateinit var request: HttpRequestData
         val provider = testProvider(apiEngine = MockEngine {
             request = it
-            respond("""{"assignedId":1}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("service", "assign_product_optional_nulls_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = ServiceProductRemoteDataSourceImpl(provider).assignProductToUser(1, 4, "cash", null)
         assertTrue(result.isSuccess)
@@ -71,7 +71,7 @@ class ServiceProductRemoteDataSourceImplTest {
     @Test
     fun assignProductToUser_edge_missing_assigned_id_defaults_to_zero() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{}", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("service", "assign_product_missing_id_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = ServiceProductRemoteDataSourceImpl(provider).assignProductToUser(1, 1, "cash", null)
         assertTrue(result.isSuccess)

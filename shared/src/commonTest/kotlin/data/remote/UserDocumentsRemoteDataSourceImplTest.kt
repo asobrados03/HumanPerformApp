@@ -22,7 +22,7 @@ class UserDocumentsRemoteDataSourceImplTest {
         lateinit var request: HttpRequestData
         val provider = testProvider(apiEngine = MockEngine {
             request = it
-            respond("""{"message":"uploaded"}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("documents", "upload_document_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
 
         val result = UserDocumentsRemoteDataSourceImpl(provider).uploadDocument(5, "report.pdf", byteArrayOf(1, 2))
@@ -40,7 +40,7 @@ class UserDocumentsRemoteDataSourceImplTest {
     @Test
     fun uploadDocument_returns_failure_on_http_error() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{}", HttpStatusCode.BadRequest, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("documents", "upload_document_error_standard.json"), HttpStatusCode.BadRequest, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserDocumentsRemoteDataSourceImpl(provider).uploadDocument(1, "a.pdf", byteArrayOf(1))
         assertTrue(result.isFailure)
@@ -49,7 +49,7 @@ class UserDocumentsRemoteDataSourceImplTest {
     @Test
     fun uploadDocument_returns_failure_on_wrong_json_type() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("""{"message":123}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("documents", "upload_document_wrong_type.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserDocumentsRemoteDataSourceImpl(provider).uploadDocument(1, "a.pdf", byteArrayOf(1))
         assertTrue(result.isFailure)
@@ -58,7 +58,7 @@ class UserDocumentsRemoteDataSourceImplTest {
     @Test
     fun uploadDocument_handles_optional_fields_absent_in_response() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("""{"message":"ok"}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("documents", "upload_document_optional_missing_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserDocumentsRemoteDataSourceImpl(provider).uploadDocument(1, "a.unknown", byteArrayOf(1))
         assertTrue(result.isSuccess)
@@ -69,7 +69,7 @@ class UserDocumentsRemoteDataSourceImplTest {
         lateinit var request: HttpRequestData
         val provider = testProvider(apiEngine = MockEngine {
             request = it
-            respond("""{"message":"ok"}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("documents", "upload_document_optional_missing_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
 
         val result = UserDocumentsRemoteDataSourceImpl(provider).uploadDocument(9, "noext", byteArrayOf(9))

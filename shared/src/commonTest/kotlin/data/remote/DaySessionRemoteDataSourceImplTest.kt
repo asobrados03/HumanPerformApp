@@ -23,7 +23,7 @@ class DaySessionRemoteDataSourceImplTest {
         val provider = testProvider(apiEngine = MockEngine {
             request = it
             respond(
-                """[{"product_id":10,"date":"2026-03-31","hour":"10:00","coach_id":2,"coach_name":"Ana","booked":1,"capacity":8}]""",
+                fixtureJson("booking", "daily_sessions_success.json"),
                 HttpStatusCode.OK,
                 headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
@@ -41,7 +41,7 @@ class DaySessionRemoteDataSourceImplTest {
     @Test
     fun getSessionsByDay_returns_failure_on_http_error() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{}", HttpStatusCode.InternalServerError, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("booking", "daily_sessions_error_standard.json"), HttpStatusCode.InternalServerError, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = DaySessionRemoteDataSourceImpl(provider)
             .getSessionsByDay(1, kotlinx.datetime.LocalDate.parse("2026-03-31"))
@@ -51,7 +51,7 @@ class DaySessionRemoteDataSourceImplTest {
     @Test
     fun getSessionsByDay_returns_failure_on_malformed_json() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{" , HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("booking", "daily_sessions_malformed.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = DaySessionRemoteDataSourceImpl(provider)
             .getSessionsByDay(1, kotlinx.datetime.LocalDate.parse("2026-03-31"))
@@ -62,7 +62,7 @@ class DaySessionRemoteDataSourceImplTest {
     fun getSessionsByDay_handles_optional_field_absent() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
             respond(
-                """[{"product_id":10,"date":"2026-03-31","hour":"10:00","coach_id":2,"booked":1,"capacity":8}]""",
+                fixtureJson("booking", "daily_sessions_optional_missing.json"),
                 HttpStatusCode.OK,
                 headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
@@ -78,7 +78,7 @@ class DaySessionRemoteDataSourceImplTest {
         lateinit var request: HttpRequestData
         val provider = testProvider(apiEngine = MockEngine {
             request = it
-            respond("""{"other":4}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("booking", "timeslots_missing_session_id.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
 
         val result = DaySessionRemoteDataSourceImpl(provider).getTimeslotId(8, "MONDAY", "09:00")

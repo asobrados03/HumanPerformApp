@@ -22,7 +22,7 @@ class UserBookingsRemoteDataSourceImplTest {
         val provider = testProvider(apiEngine = MockEngine {
             request = it
             respond(
-                """[{"id":1,"date":"2026-03-31","hour":"09:00","service":"PT","product":"Pack","service_id":7,"product_id":8,"coach_name":"Ana","coach_profile_pic":null}]""",
+                fixtureJson("booking", "user_bookings_success.json"),
                 HttpStatusCode.OK,
                 headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
@@ -39,7 +39,7 @@ class UserBookingsRemoteDataSourceImplTest {
     @Test
     fun getUserBookings_returns_failure_on_http_error() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{}", HttpStatusCode.InternalServerError, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("booking", "daily_sessions_error_standard.json"), HttpStatusCode.InternalServerError, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserBookingsRemoteDataSourceImpl(provider).getUserBookings(12)
         assertTrue(result.isFailure)
@@ -48,7 +48,7 @@ class UserBookingsRemoteDataSourceImplTest {
     @Test
     fun getUserBookings_returns_failure_on_wrong_type() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("""[{"id":"bad"}]""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("booking", "user_bookings_wrong_type.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserBookingsRemoteDataSourceImpl(provider).getUserBookings(12)
         assertTrue(result.isFailure)
@@ -58,7 +58,7 @@ class UserBookingsRemoteDataSourceImplTest {
     fun getUserBookings_handles_optional_fields_absent_or_null() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
             respond(
-                """[{"id":2,"date":"2026-03-31","hour":"10:00","service":"PT","product":"Pack","service_id":null,"product_id":null,"coach_name":"Ana"}]""",
+                fixtureJson("booking", "user_bookings_optional_nulls.json"),
                 HttpStatusCode.OK,
                 headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )

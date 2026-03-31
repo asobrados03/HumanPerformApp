@@ -21,7 +21,7 @@ class StripeRemoteDataSourceImplTest {
         lateinit var request: HttpRequestData
         val provider = testProvider(apiEngine = MockEngine {
             request = it
-            respond("""{"publishableKey":" pk_test_123  "}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("stripe", "publishable_key_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = StripeRemoteDataSourceImpl(provider).getPublishableKey()
         assertTrue(result.isSuccess)
@@ -33,7 +33,7 @@ class StripeRemoteDataSourceImplTest {
     @Test
     fun createOrGetCustomer_returns_failure_on_http_error() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{}", HttpStatusCode.InternalServerError, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("stripe", "error_payload_standard.json"), HttpStatusCode.InternalServerError, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = StripeRemoteDataSourceImpl(provider).createOrGetCustomer()
         assertTrue(result.isFailure)
@@ -42,7 +42,7 @@ class StripeRemoteDataSourceImplTest {
     @Test
     fun createEphemeralKey_returns_failure_on_malformed_json() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{" , HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("stripe", "ephemeral_key_malformed.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = StripeRemoteDataSourceImpl(provider).createEphemeralKey("cus_1")
         assertTrue(result.isFailure)
@@ -51,7 +51,7 @@ class StripeRemoteDataSourceImplTest {
     @Test
     fun createOrGetCustomer_allows_optional_fields_missing() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("""{"success":true}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("stripe", "customer_optional_missing_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = StripeRemoteDataSourceImpl(provider).createOrGetCustomer()
         assertTrue(result.isSuccess)
@@ -64,7 +64,7 @@ class StripeRemoteDataSourceImplTest {
         lateinit var request: HttpRequestData
         val provider = testProvider(apiEngine = MockEngine {
             request = it
-            respond("""{"id":"sub_1","status":"active"}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("stripe", "subscription_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = StripeRemoteDataSourceImpl(provider).createSubscription("price_1", 5, 3, "")
         assertTrue(result.isSuccess)

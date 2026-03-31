@@ -36,20 +36,7 @@ class UserProfileRemoteDataSourceImplTest {
             apiEngine = MockEngine { request ->
                 capturedRequest = request
                 respond(
-                    content = """
-                        {
-                          "id": 7,
-                          "fullName": "Maria Lopez",
-                          "email": "maria@test.com",
-                          "phone": "611111111",
-                          "sex": "F",
-                          "dateOfBirth": "1989-10-10",
-                          "postcode": 28080,
-                          "postAddress": "Gran Via 10",
-                          "dni": "00000000X",
-                          "profilePictureName": "maria.jpg"
-                        }
-                    """.trimIndent(),
+                    content = fixtureJson("profile", "user_get_success.json"),
                     status = HttpStatusCode.OK,
                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                 )
@@ -87,20 +74,7 @@ class UserProfileRemoteDataSourceImplTest {
             apiEngine = MockEngine { request ->
                 capturedRequest = request
                 respond(
-                    content = """
-                    {
-                      "id": 9,
-                      "fullName": "Carlos Ruiz",
-                      "email": "carlos@test.com",
-                      "phone": "622222222",
-                      "sex": "M",
-                      "dateOfBirth": "1992-02-02",
-                      "postcode": 28010,
-                      "postAddress": "Alcala 20",
-                      "dni": "11111111H",
-                      "profilePictureName": "profile.jpg"
-                    }
-                """.trimIndent(),
+                    content = fixtureJson("profile", "user_update_success.json"),
                     status = HttpStatusCode.OK,
                     headers = headersOf(
                         HttpHeaders.ContentType,
@@ -167,7 +141,7 @@ class UserProfileRemoteDataSourceImplTest {
         val provider = testProvider(
             apiEngine = MockEngine {
                 respond(
-                    content = "{\"id\":\"wrong-type\"}",
+                    content = fixtureJson("profile", "user_get_wrong_type.json"),
                     status = HttpStatusCode.OK,
                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                 )
