@@ -1,0 +1,12 @@
+{
+  "id": 9,
+  "fullName": "Carlos Ruiz",
+  "email": "carlos@test.com",
+  "phone": "622222222",
+  "sex": "M",
+  "dateOfBirth": "1992-02-02",
+  "postcode": 28010,
+  "postAddress": "Alcala 20",
+  "dni": "11111111H",
+  "profilePictureName": "profile.jpg"
+}

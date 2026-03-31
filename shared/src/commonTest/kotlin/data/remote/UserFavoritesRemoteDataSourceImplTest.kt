@@ -21,7 +21,7 @@ class UserFavoritesRemoteDataSourceImplTest {
         lateinit var request: HttpRequestData
         val provider = testProvider(apiEngine = MockEngine {
             request = it
-            respond("""{"message":"saved"}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("favorites", "mark_favorite_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
 
         val result = UserFavoritesRemoteDataSourceImpl(provider).markFavorite(3, "Pilates", 7)
@@ -38,7 +38,7 @@ class UserFavoritesRemoteDataSourceImplTest {
     @Test
     fun getCoaches_returns_failure_on_http_error() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("[]", HttpStatusCode.InternalServerError, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("favorites", "get_coaches_error_standard.json"), HttpStatusCode.InternalServerError, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserFavoritesRemoteDataSourceImpl(provider).getCoaches()
         assertTrue(result.isFailure)
@@ -47,7 +47,7 @@ class UserFavoritesRemoteDataSourceImplTest {
     @Test
     fun getCoaches_returns_failure_on_malformed_json() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{" , HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("favorites", "get_coaches_malformed.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserFavoritesRemoteDataSourceImpl(provider).getCoaches()
         assertTrue(result.isFailure)
@@ -56,7 +56,7 @@ class UserFavoritesRemoteDataSourceImplTest {
     @Test
     fun getCoaches_handles_optional_fields_absent() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("""[{"id":1,"name":"Ana"}]""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("favorites", "get_coaches_optional_missing.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserFavoritesRemoteDataSourceImpl(provider).getCoaches()
         assertTrue(result.isSuccess)
@@ -68,7 +68,7 @@ class UserFavoritesRemoteDataSourceImplTest {
         lateinit var request: HttpRequestData
         val provider = testProvider(apiEngine = MockEngine {
             request = it
-            respond("""{"message":"ok"}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("favorites", "mark_favorite_nulls_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
 
         val result = UserFavoritesRemoteDataSourceImpl(provider).markFavorite(4, null, null)

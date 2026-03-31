@@ -36,7 +36,7 @@ class UserCouponsRemoteDataSourceImplTest {
     @Test
     fun getUserCoupons_returns_failure_on_http_error() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("[]", HttpStatusCode.BadRequest, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("coupons", "get_user_coupons_error_standard.json"), HttpStatusCode.BadRequest, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserCouponsRemoteDataSourceImpl(provider).getUserCoupons(2)
         assertTrue(result.isFailure)
@@ -45,7 +45,7 @@ class UserCouponsRemoteDataSourceImplTest {
     @Test
     fun getUserCoupons_returns_failure_on_malformed_json() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{" , HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("coupons", "get_user_coupons_malformed.json") , HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserCouponsRemoteDataSourceImpl(provider).getUserCoupons(2)
         assertTrue(result.isFailure)
@@ -54,7 +54,7 @@ class UserCouponsRemoteDataSourceImplTest {
     @Test
     fun getUserCoupons_handles_optional_collection_field_missing() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("""[{"id":1,"code":"A","discount":20.0,"isPercentage":true,"expiryDate":"2026-12-31"}]""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("coupons", "get_user_coupons_optional_missing.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserCouponsRemoteDataSourceImpl(provider).getUserCoupons(2)
         assertTrue(result.isSuccess)

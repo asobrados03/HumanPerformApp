@@ -34,7 +34,7 @@ class UserAccountRemoteDataSourceImplTest {
     @Test
     fun deleteUser_returns_failure_on_http_error() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{}", HttpStatusCode.BadRequest, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("account", "delete_user_error_standard.json"), HttpStatusCode.BadRequest, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserAccountRemoteDataSourceImpl(provider).deleteUser("bad")
         assertTrue(result.isFailure)

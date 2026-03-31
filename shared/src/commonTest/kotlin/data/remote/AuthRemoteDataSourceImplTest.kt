@@ -43,22 +43,7 @@ class AuthRemoteDataSourceImplTest {
             authEngine = MockEngine { request ->
                 capturedRequest = request
                 respond(
-                    content = """
-                        {
-                          "id": 1,
-                          "fullName": "Ana Perez",
-                          "email": "ana@test.com",
-                          "phone": "600000000",
-                          "sex": "F",
-                          "dateOfBirth": "1990-01-01",
-                          "postcode": 28001,
-                          "postAddress": "Calle Mayor",
-                          "dni": "12345678A",
-                          "profilePictureName": "ana.jpg",
-                          "accessToken": "access-token",
-                          "refreshToken": "refresh-token"
-                        }
-                    """.trimIndent(),
+                    content = fixtureJson("auth", "sessions_login_success.json"),
                     status = HttpStatusCode.OK,
                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                 )
@@ -101,7 +86,7 @@ class AuthRemoteDataSourceImplTest {
         val provider = testProvider(
             authEngine = MockEngine {
                 respond(
-                    content = "{\"message\":\"Unauthorized\"}",
+                    content = fixtureJson("auth", "sessions_error_standard.json"),
                     status = HttpStatusCode.Unauthorized,
                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                 )
@@ -124,7 +109,7 @@ class AuthRemoteDataSourceImplTest {
             authEngine = MockEngine { request ->
                 capturedRequest = request
                 respond(
-                    content = "{\"message\":\"ok\"}",
+                    content = fixtureJson("auth", "users_register_success.json"),
                     status = HttpStatusCode.OK,
                     headers = headersOf(
                         HttpHeaders.ContentType,

@@ -21,7 +21,7 @@ class UserStatsRemoteDataSourceImplTest {
         lateinit var request: HttpRequestData
         val provider = testProvider(apiEngine = MockEngine {
             request = it
-            respond("""{"last_month_workouts":12,"most_frequent_trainer":"Ana","pending_bookings":2}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("stats", "user_stats_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
 
         val result = UserStatsRemoteDataSourceImpl(provider).getUserStats(11)
@@ -35,7 +35,7 @@ class UserStatsRemoteDataSourceImplTest {
     @Test
     fun getUserStats_returns_failure_on_http_error() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{}", HttpStatusCode.NotFound, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("stats", "user_stats_error_standard.json"), HttpStatusCode.NotFound, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserStatsRemoteDataSourceImpl(provider).getUserStats(1)
         assertTrue(result.isFailure)
@@ -44,7 +44,7 @@ class UserStatsRemoteDataSourceImplTest {
     @Test
     fun getUserStats_returns_failure_on_wrong_json_type() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("""{"last_month_workouts":"many"}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("stats", "user_stats_wrong_type.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserStatsRemoteDataSourceImpl(provider).getUserStats(1)
         assertTrue(result.isFailure)
@@ -53,7 +53,7 @@ class UserStatsRemoteDataSourceImplTest {
     @Test
     fun getUserStats_handles_optional_fields_missing_or_null() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("""{"last_month_workouts":3,"pending_bookings":1}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("stats", "user_stats_optional_missing.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserStatsRemoteDataSourceImpl(provider).getUserStats(1)
         assertTrue(result.isSuccess)
@@ -63,7 +63,7 @@ class UserStatsRemoteDataSourceImplTest {
     @Test
     fun getUserStats_edge_uses_default_values_when_numbers_absent() = runTest {
         val provider = testProvider(apiEngine = MockEngine {
-            respond("{}", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(fixtureJson("stats", "user_stats_defaults_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
         })
         val result = UserStatsRemoteDataSourceImpl(provider).getUserStats(1)
         assertTrue(result.isSuccess)
