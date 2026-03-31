@@ -6,6 +6,8 @@ Cuando escribas tests para este proyecto, sigue estas pautas estrictamente.
 - Prueba COMPORTAMIENTO, no implementación. Un test no debe romperse si se refactoriza
   el código interno sin cambiar lo que hace. Pregúntate siempre: "¿qué debe hacer
   esta unidad?" no "¿cómo lo hace?".
+- Prioriza **Sociable Unit Tests** en `commonTest`: prueba ViewModel + UseCase +
+  Repository fake en conjunto antes que aislar cada pieza con mocks.
 - Un test que conoce los detalles internos de una clase es un test frágil. Evita
   verificar que se llamó a un método interno concreto salvo que ese efecto sea
   observable desde fuera (p.ej. una llamada a la API o a la base de datos).
@@ -41,8 +43,8 @@ Cuando escribas tests para este proyecto, sigue estas pautas estrictamente.
 - Testea las transiciones de UiState, no los métodos internos del ViewModel.
 - Usa Turbine para consumir el StateFlow y verificar la secuencia de estados
   emitidos: Loading → Success(data) o Loading → Error(message).
-- Mockea los UseCases por su interfaz o función. Si el UseCase devuelve un Flow,
-  usa un fake que emita los valores que necesitas en cada test.
+- Evita mockear UseCases cuando sea posible. Inyecta UseCases reales con repositorios
+  fake en memoria para testear colaboración real entre capas.
 - No testees que el ViewModel llama a `useCase.execute()`; testea que ante
   una entrada concreta el estado final es el esperado.
 
@@ -50,6 +52,8 @@ Cuando escribas tests para este proyecto, sigue estas pautas estrictamente.
 - Usa MockK solo para dependencias externas (repositorios, servicios).
 - Para colaboradores simples (p.ej. un UseCase que solo transforma datos),
   prefiere un fake escrito a mano sobre un mock: es más legible y menos frágil.
+- Un fake ideal para KMM vive en `commonTest`, mantiene estado en memoria
+  (listas/maps), y expone resultados reales de lectura/escritura.
 - Nunca mockees clases del dominio (entidades, value objects): úsalas reales
   con builders o constructores de test.
 - Prohibido: `verify { cualquierCosa }` en tests de lógica de negocio. Solo

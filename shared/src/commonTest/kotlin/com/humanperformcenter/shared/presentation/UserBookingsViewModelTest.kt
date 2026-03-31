@@ -15,16 +15,25 @@ import kotlin.test.assertEquals
 class UserBookingsViewModelTest {
 
     private class FakeUserBookingsRepository(
-        private val bookingsResult: Result<List<UserBooking>> = Result.success(emptyList()),
-        private val cancelResult: Result<Unit> = Result.success(Unit)
+        initialBookingsByUser: Map<Int, List<UserBooking>> = emptyMap(),
+        private val failGetWithoutMessage: Boolean = false,
+        private val failCancelWithMessage: String? = null
     ) : UserBookingsRepository {
+        private val bookingsByUser = initialBookingsByUser.mapValues { it.value.toMutableList() }.toMutableMap()
         var getBookingsCalls = 0
         override suspend fun getUserBookings(userId: Int): Result<List<UserBooking>> {
             getBookingsCalls++
-            return bookingsResult
+            if (failGetWithoutMessage) return Result.failure(IllegalStateException())
+            return Result.success(bookingsByUser[userId].orEmpty().toList())
         }
 
-        override suspend fun cancelUserBooking(bookingId: Int): Result<Unit> = cancelResult
+        override suspend fun cancelUserBooking(bookingId: Int): Result<Unit> {
+            failCancelWithMessage?.let { return Result.failure(IllegalStateException(it)) }
+            bookingsByUser.values.forEach { bookings ->
+                bookings.removeAll { it.id == bookingId }
+            }
+            return Result.success(Unit)
+        }
     }
 
     private class FakeNotificationManager : SessionNotificationManager {
@@ -44,7 +53,7 @@ class UserBookingsViewModelTest {
     fun fetchUserBookings_when_success_emits_loading_then_success() = runTest {
         val booking = UserBooking(1, "2026-03-20", "10:00", "PT", "Pack", 1, 2, "Coach", null)
         val viewModel = buildViewModel(
-            repository = FakeUserBookingsRepository(bookingsResult = Result.success(listOf(booking)))
+            repository = FakeUserBookingsRepository(initialBookingsByUser = mapOf(1 to listOf(booking)))
         )
 
         viewModel.userBookings.test {
@@ -58,7 +67,7 @@ class UserBookingsViewModelTest {
     @Test
     fun fetchUserBookings_when_failure_without_message_emits_default_error() = runTest {
         val viewModel = buildViewModel(
-            repository = FakeUserBookingsRepository(bookingsResult = Result.failure(IllegalStateException()))
+            repository = FakeUserBookingsRepository(failGetWithoutMessage = true)
         )
 
         viewModel.userBookings.test {
@@ -71,7 +80,8 @@ class UserBookingsViewModelTest {
 
     @Test
     fun cancelUserBooking_when_success_cancels_notification_and_refreshes_bookings() = runTest {
-        val repository = FakeUserBookingsRepository(bookingsResult = Result.success(emptyList()))
+        val existing = UserBooking(99, "2026-03-20", "10:00", "PT", "Pack", 1, 2, "Coach", null)
+        val repository = FakeUserBookingsRepository(initialBookingsByUser = mapOf(7 to listOf(existing)))
         val notifications = FakeNotificationManager()
         val viewModel = buildViewModel(repository, notifications)
 
@@ -89,7 +99,7 @@ class UserBookingsViewModelTest {
 
     @Test
     fun cancelUserBooking_when_failure_does_not_refresh_or_cancel_notification() = runTest {
-        val repository = FakeUserBookingsRepository(cancelResult = Result.failure(IllegalStateException("fallo")))
+        val repository = FakeUserBookingsRepository(failCancelWithMessage = "fallo")
         val notifications = FakeNotificationManager()
         val viewModel = buildViewModel(repository, notifications)
 
