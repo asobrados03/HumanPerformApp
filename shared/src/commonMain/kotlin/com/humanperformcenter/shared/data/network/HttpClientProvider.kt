@@ -37,12 +37,14 @@ class DefaultHttpClientProvider(
     override val logoutEvents: SharedFlow<Unit> = logoutEventsMutable
 
     override val authClient: HttpClient = createHttpClient(authClientEngine) {
+        expectSuccess = true
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
     }
 
     override val apiClient: HttpClient = createHttpClient(apiClientEngine) {
+        expectSuccess = true
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
