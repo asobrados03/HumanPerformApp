@@ -46,13 +46,22 @@ class UserSessionViewModelTest {
     }
 
     private class FakeUserAccountRepository(
-        private val deleteResult: Result<Unit> = Result.success(Unit)
+        existingEmails: Set<String> = setOf("user@test.com"),
+        private val forceDeleteFailureMessage: String? = null
     ) : UserAccountRepository {
-        override suspend fun deleteUser(email: String): Result<Unit> = deleteResult
+        private val users = existingEmails.toMutableSet()
+
+        override suspend fun deleteUser(email: String): Result<Unit> {
+            forceDeleteFailureMessage?.let { return Result.failure(IllegalStateException(it)) }
+            if (!users.remove(email)) {
+                return Result.failure(IllegalStateException("usuario no encontrado"))
+            }
+            return Result.success(Unit)
+        }
     }
 
     private class FakeAuthRepository(
-        private val logoutResult: Result<Unit> = Result.success(Unit)
+        private val forceLogoutFailureMessage: String? = null
     ) : AuthRepository {
         override suspend fun login(email: String, password: String): Result<LoginResponse> =
             Result.failure(UnsupportedOperationException())
@@ -66,7 +75,10 @@ class UserSessionViewModelTest {
         override suspend fun changePassword(currentPassword: String, newPassword: String, userId: Int): Result<Unit> =
             Result.failure(UnsupportedOperationException())
 
-        override suspend fun logout(): Result<Unit> = logoutResult
+        override suspend fun logout(): Result<Unit> {
+            forceLogoutFailureMessage?.let { return Result.failure(IllegalStateException(it)) }
+            return Result.success(Unit)
+        }
     }
 
     private class FakeAuthLocalDataSource : AuthLocalDataSource {
@@ -96,13 +108,22 @@ class UserSessionViewModelTest {
     }
 
     private fun buildViewModel(
-        deleteResult: Result<Unit> = Result.success(Unit),
-        logoutResult: Result<Unit> = Result.success(Unit)
+        existingEmails: Set<String> = setOf("user@test.com"),
+        deleteFailureMessage: String? = null,
+        logoutFailureMessage: String? = null
     ): UserSessionViewModel {
         val localDataSource = FakeAuthLocalDataSource()
         return UserSessionViewModel(
-            userAccountUseCase = UserAccountUseCase(FakeUserAccountRepository(deleteResult)),
-            authUseCase = AuthUseCase(FakeAuthRepository(logoutResult), localDataSource),
+            userAccountUseCase = UserAccountUseCase(
+                FakeUserAccountRepository(
+                    existingEmails = existingEmails,
+                    forceDeleteFailureMessage = deleteFailureMessage
+                )
+            ),
+            authUseCase = AuthUseCase(
+                FakeAuthRepository(forceLogoutFailureMessage = logoutFailureMessage),
+                localDataSource
+            ),
             authLocalDataSource = localDataSource,
         )
     }
@@ -110,7 +131,7 @@ class UserSessionViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun deleteUser_when_success_emits_success_and_can_be_reset() = runTest {
-        val viewModel = buildViewModel(deleteResult = Result.success(Unit))
+        val viewModel = buildViewModel(existingEmails = setOf("user@test.com"))
 
         viewModel.deleteUser("user@test.com")
         advanceTimeBy(1000)
@@ -125,7 +146,7 @@ class UserSessionViewModelTest {
     @Test
     fun deleteUser_when_not_found_emits_notfound() = runTest {
         val viewModel = buildViewModel(
-            deleteResult = Result.failure(IllegalStateException("usuario no encontrado"))
+            existingEmails = emptySet()
         )
 
         viewModel.deleteUser("user@test.com")
@@ -138,7 +159,7 @@ class UserSessionViewModelTest {
     @Test
     fun deleteUser_when_generic_failure_emits_error() = runTest {
         val viewModel = buildViewModel(
-            deleteResult = Result.failure(IllegalStateException("fallo"))
+            deleteFailureMessage = "fallo"
         )
 
         viewModel.deleteUser("user@test.com")
@@ -150,7 +171,7 @@ class UserSessionViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun logout_when_success_invokes_callback_and_updates_state() = runTest {
-        val viewModel = buildViewModel(logoutResult = Result.success(Unit))
+        val viewModel = buildViewModel()
         var callbackCalled = false
 
         viewModel.logout { callbackCalled = true }

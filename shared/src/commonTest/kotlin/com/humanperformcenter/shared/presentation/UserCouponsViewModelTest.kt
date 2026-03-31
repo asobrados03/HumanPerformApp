@@ -13,14 +13,40 @@ import kotlin.test.assertEquals
 class UserCouponsViewModelTest {
 
     private class FakeUserCouponsRepository(
-        private val addResult: Result<Unit> = Result.success(Unit),
-        private val couponsResult: Result<List<Coupon>> = Result.success(emptyList())
+        seedCoupons: List<Coupon> = emptyList(),
+        private val failOnAddWithMessage: String? = null,
+        private val failOnLoadWithMessage: String? = null
     ) : UserCouponsRepository {
-        override suspend fun addCouponToUser(userId: Int, couponCode: String): Result<Unit> = addResult
-        override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> = couponsResult
+        private val couponsByUser = mutableMapOf<Int, MutableList<Coupon>>()
+        private var nextId = (seedCoupons.maxOfOrNull { it.id } ?: 0) + 1
+
+        init {
+            if (seedCoupons.isNotEmpty()) {
+                couponsByUser[1] = seedCoupons.toMutableList()
+            }
+        }
+
+        override suspend fun addCouponToUser(userId: Int, couponCode: String): Result<Unit> {
+            failOnAddWithMessage?.let { return Result.failure(IllegalStateException(it)) }
+            val coupons = couponsByUser.getOrPut(userId) { mutableListOf() }
+            coupons += Coupon(
+                id = nextId++,
+                code = couponCode,
+                discount = 10.0,
+                isPercentage = true,
+                expiryDate = LocalDate.parse("2026-12-31"),
+                productIds = listOf(11)
+            )
+            return Result.success(Unit)
+        }
+
+        override suspend fun getUserCoupons(userId: Int): Result<List<Coupon>> {
+            failOnLoadWithMessage?.let { return Result.failure(IllegalStateException(it)) }
+            return Result.success(couponsByUser[userId].orEmpty().toList())
+        }
     }
 
-    private fun buildViewModel(repository: FakeUserCouponsRepository) =
+    private fun buildViewModel(repository: UserCouponsRepository) =
         UserCouponsViewModel(UserCouponUseCase(repository))
 
     private val coupon = Coupon(
@@ -35,7 +61,7 @@ class UserCouponsViewModelTest {
     @Test
     fun loadUserCoupons_when_success_updates_list_and_clears_loading() = runTest {
         val viewModel = buildViewModel(
-            FakeUserCouponsRepository(couponsResult = Result.success(listOf(coupon)))
+            FakeUserCouponsRepository(seedCoupons = listOf(coupon))
         )
 
         viewModel.couponUiState.test {
@@ -54,7 +80,7 @@ class UserCouponsViewModelTest {
     @Test
     fun loadUserCoupons_when_failure_sets_error() = runTest {
         val viewModel = buildViewModel(
-            FakeUserCouponsRepository(couponsResult = Result.failure(IllegalStateException("No disponible")))
+            FakeUserCouponsRepository(failOnLoadWithMessage = "No disponible")
         )
 
         viewModel.couponUiState.test {
@@ -82,12 +108,7 @@ class UserCouponsViewModelTest {
 
     @Test
     fun addCouponToUser_when_add_and_refresh_succeed_clears_code_and_refreshes_coupons() = runTest {
-        val viewModel = buildViewModel(
-            FakeUserCouponsRepository(
-                addResult = Result.success(Unit),
-                couponsResult = Result.success(listOf(coupon))
-            )
-        )
+        val viewModel = buildViewModel(FakeUserCouponsRepository())
         viewModel.onCouponCodeChanged("WELCOME10")
 
         viewModel.couponUiState.test {
@@ -97,7 +118,8 @@ class UserCouponsViewModelTest {
             assertEquals(true, awaitItem().isLoading)
             val success = awaitItem()
             assertEquals(false, success.isLoading)
-            assertEquals(listOf(coupon), success.currentCoupons)
+            assertEquals("WELCOME10", success.currentCoupons.first().code)
+            assertEquals(1, success.currentCoupons.size)
             assertEquals("", success.code)
             cancelAndIgnoreRemainingEvents()
         }
@@ -106,7 +128,7 @@ class UserCouponsViewModelTest {
     @Test
     fun addCouponToUser_when_add_fails_sets_error() = runTest {
         val viewModel = buildViewModel(
-            FakeUserCouponsRepository(addResult = Result.failure(IllegalStateException("Cupón inválido")))
+            FakeUserCouponsRepository(failOnAddWithMessage = "Cupón inválido")
         )
 
         viewModel.couponUiState.test {
@@ -124,10 +146,7 @@ class UserCouponsViewModelTest {
     @Test
     fun addCouponToUser_when_refresh_fails_sets_refresh_error() = runTest {
         val viewModel = buildViewModel(
-            FakeUserCouponsRepository(
-                addResult = Result.success(Unit),
-                couponsResult = Result.failure(IllegalStateException("No se pudo refrescar"))
-            )
+            FakeUserCouponsRepository(failOnLoadWithMessage = "No se pudo refrescar")
         )
 
         viewModel.couponUiState.test {

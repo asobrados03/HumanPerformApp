@@ -13,21 +13,36 @@ import kotlin.test.assertEquals
 class UserWalletViewModelTest {
 
     private class FakeWalletRepository(
-        private val balanceResult: Result<Double?> = Result.success(10.0),
-        private val transactionsResult: Result<List<EwalletTransaction>> = Result.success(emptyList())
+        initialBalances: Map<Int, Double?> = mapOf(1 to 10.0),
+        initialTransactions: Map<Int, List<EwalletTransaction>> = emptyMap(),
+        private val failBalanceWithMessage: String? = null,
+        private val failTransactionsWithMessage: String? = null,
+        private val failTransactionsWithoutMessage: Boolean = false
     ) : UserWalletRepository {
-        override suspend fun getEwalletBalance(userId: Int): Result<Double?> = balanceResult
-        override suspend fun getEwalletTransactions(userId: Int): Result<List<EwalletTransaction>> = transactionsResult
+        private val balances = initialBalances.toMutableMap()
+        private val transactions = initialTransactions.toMutableMap()
+
+        override suspend fun getEwalletBalance(userId: Int): Result<Double?> {
+            failBalanceWithMessage?.let { return Result.failure(IllegalStateException(it)) }
+            return Result.success(balances[userId])
+        }
+
+        override suspend fun getEwalletTransactions(userId: Int): Result<List<EwalletTransaction>> {
+            if (failTransactionsWithoutMessage) return Result.failure(IllegalStateException())
+            failTransactionsWithMessage?.let { return Result.failure(IllegalStateException(it)) }
+            return Result.success(transactions[userId].orEmpty())
+        }
     }
 
     private fun buildViewModel(
-        balanceResult: Result<Double?> = Result.success(10.0),
-        transactionsResult: Result<List<EwalletTransaction>> = Result.success(emptyList())
-    ) = UserWalletViewModel(WalletUseCase(FakeWalletRepository(balanceResult, transactionsResult)))
+        repository: UserWalletRepository = FakeWalletRepository()
+    ) = UserWalletViewModel(WalletUseCase(repository))
 
     @Test
     fun loadBalance_when_success_updates_balance() = runTest {
-        val viewModel = buildViewModel(balanceResult = Result.success(42.5))
+        val viewModel = buildViewModel(
+            FakeWalletRepository(initialBalances = mapOf(1 to 42.5))
+        )
 
         viewModel.balance.test {
             assertEquals(0.0, awaitItem())
@@ -39,7 +54,9 @@ class UserWalletViewModelTest {
 
     @Test
     fun loadBalance_when_repository_returns_null_sets_zero() = runTest {
-        val viewModel = buildViewModel(balanceResult = Result.success(null))
+        val viewModel = buildViewModel(
+            FakeWalletRepository(initialBalances = mapOf(1 to null))
+        )
 
         viewModel.balance.test {
             assertEquals(0.0, awaitItem())
@@ -52,7 +69,7 @@ class UserWalletViewModelTest {
 
     @Test
     fun loadBalance_when_user_id_is_invalid_keeps_zero() = runTest {
-        val viewModel = buildViewModel(balanceResult = Result.success(99.9))
+        val viewModel = buildViewModel(FakeWalletRepository(initialBalances = mapOf(1 to 99.9)))
 
         viewModel.balance.test {
             assertEquals(0.0, awaitItem())
@@ -65,7 +82,9 @@ class UserWalletViewModelTest {
 
     @Test
     fun loadBalance_when_repository_fails_keeps_last_balance() = runTest {
-        val viewModel = buildViewModel(balanceResult = Result.failure(IllegalStateException("Sin conexión")))
+        val viewModel = buildViewModel(
+            FakeWalletRepository(failBalanceWithMessage = "Sin conexión")
+        )
 
         viewModel.balance.test {
             assertEquals(0.0, awaitItem())
@@ -78,7 +97,9 @@ class UserWalletViewModelTest {
     @Test
     fun loadEWalletTransactions_when_success_emits_loading_then_success() = runTest {
         val tx = EwalletTransaction(5.0, 10.0, "Recarga", "credit", "2026-03-01")
-        val viewModel = buildViewModel(transactionsResult = Result.success(listOf(tx)))
+        val viewModel = buildViewModel(
+            FakeWalletRepository(initialTransactions = mapOf(1 to listOf(tx)))
+        )
 
         viewModel.eWalletTransactions.test {
             assertEquals(EwalletUiState.Loading, awaitItem())
@@ -91,7 +112,7 @@ class UserWalletViewModelTest {
     @Test
     fun loadEWalletTransactions_when_failure_with_message_emits_error() = runTest {
         val viewModel = buildViewModel(
-            transactionsResult = Result.failure(IllegalStateException("Sin conexión"))
+            FakeWalletRepository(failTransactionsWithMessage = "Sin conexión")
         )
 
         viewModel.eWalletTransactions.test {
@@ -105,7 +126,7 @@ class UserWalletViewModelTest {
     @Test
     fun loadEWalletTransactions_when_failure_without_message_emits_unknown_error() = runTest {
         val viewModel = buildViewModel(
-            transactionsResult = Result.failure(IllegalStateException())
+            FakeWalletRepository(failTransactionsWithoutMessage = true)
         )
 
         viewModel.eWalletTransactions.test {

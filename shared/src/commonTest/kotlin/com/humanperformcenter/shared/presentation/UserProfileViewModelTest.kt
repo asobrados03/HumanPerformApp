@@ -44,13 +44,33 @@ class UserProfileViewModelTest {
     // ─────────────────────────────────────────────────────────────
 
     private class FakeUserProfileRepository(
-        private val updateResult: Result<User> = Result.success(sampleUser(1, "Updated")),
-        private val getByIdResult: Result<User> = Result.success(sampleUser(1, "Fetched")),
-        private val deletePicResult: Result<Unit> = Result.success(Unit)
+        initialUsers: Map<Int, User> = mapOf(1 to sampleUser(1, "Fetched")),
+        private val failUpdateWithMessage: String? = null,
+        private val failGetWithMessage: String? = null,
+        private val failDeletePicWithMessage: String? = null
     ) : UserProfileRepository {
-        override suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User> = updateResult
-        override suspend fun getUserById(id: Int): Result<User> = getByIdResult
-        override suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit> = deletePicResult
+        private val usersById = initialUsers.toMutableMap()
+
+        override suspend fun updateUser(user: User, profilePicBytes: ByteArray?): Result<User> {
+            failUpdateWithMessage?.let { return Result.failure(IllegalStateException(it)) }
+            usersById[user.id] = user
+            return Result.success(user)
+        }
+
+        override suspend fun getUserById(id: Int): Result<User> {
+            failGetWithMessage?.let { return Result.failure(IllegalStateException(it)) }
+            return usersById[id]?.let { Result.success(it) }
+                ?: Result.failure(IllegalStateException("Usuario no encontrado"))
+        }
+
+        override suspend fun deleteProfilePic(req: DeleteProfilePicRequest): Result<Unit> {
+            failDeletePicWithMessage?.let { return Result.failure(IllegalStateException(it)) }
+            val userId = usersById.values.firstOrNull { it.email == req.email }?.id
+            if (userId != null) {
+                usersById[userId] = usersById.getValue(userId).copy(profilePictureName = null)
+            }
+            return Result.success(Unit)
+        }
     }
 
 
@@ -82,7 +102,7 @@ class UserProfileViewModelTest {
     @Test
     fun updateUser_when_success_emits_loading_then_success_and_updates_current_user() = runTest {
         val viewModel = buildViewModel(
-            FakeUserProfileRepository(updateResult = Result.success(sampleUser(1, "New")))
+            FakeUserProfileRepository(initialUsers = mapOf(1 to sampleUser(1, "Old")))
         )
         val currentUser = MutableStateFlow<User?>(sampleUser(1, "Old"))
 
@@ -110,7 +130,7 @@ class UserProfileViewModelTest {
     @Test
     fun updateUser_when_repository_fails_emits_error() = runTest {
         val viewModel = buildViewModel(
-            FakeUserProfileRepository(updateResult = Result.failure(IllegalStateException("fail")))
+            FakeUserProfileRepository(failUpdateWithMessage = "fail")
         )
 
         viewModel.updateUser(sampleUser(1, "New"), null, MutableStateFlow(null))
@@ -145,7 +165,7 @@ class UserProfileViewModelTest {
     @Test
     fun deleteProfilePic_when_repository_fails_emits_error_and_can_be_reset() = runTest {
         val viewModel = buildViewModel(
-            FakeUserProfileRepository(deletePicResult = Result.failure(IllegalStateException("delete fail")))
+            FakeUserProfileRepository(failDeletePicWithMessage = "delete fail")
         )
 
         viewModel.deleteProfilePic(sampleUser(1, "User"), MutableStateFlow(sampleUser(1, "User")))

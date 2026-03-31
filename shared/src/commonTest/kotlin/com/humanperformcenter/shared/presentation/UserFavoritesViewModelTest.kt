@@ -16,23 +16,33 @@ import kotlin.test.assertEquals
 class UserFavoritesViewModelTest {
 
     private class FakeUserFavoritesRepository(
-        private val coachesResult: Result<List<Professional>> = Result.success(emptyList()),
-        private val markFavoriteResult: Result<String> = Result.success("ok"),
-        private val preferredCoachResult: Result<GetPreferredCoachResponse> = Result.success(GetPreferredCoachResponse(1))
+        initialCoaches: List<Professional> = emptyList(),
+        preferredCoachByUser: Map<Int, Int> = mapOf(1 to 1),
+        private val failOnMarkFavoriteWithoutMessage: Boolean = false
     ) : UserFavoritesRepository {
-        override suspend fun getCoaches(): Result<List<Professional>> = coachesResult
-        override suspend fun markFavorite(coachId: Int, serviceName: String?, userId: Int?): Result<String> = markFavoriteResult
-        override suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse> = preferredCoachResult
+        private val coaches = initialCoaches.toMutableList()
+        private val preferredCoach = preferredCoachByUser.toMutableMap()
+
+        override suspend fun getCoaches(): Result<List<Professional>> = Result.success(coaches.toList())
+
+        override suspend fun markFavorite(coachId: Int, serviceName: String?, userId: Int?): Result<String> {
+            if (failOnMarkFavoriteWithoutMessage) return Result.failure(IllegalStateException())
+            if (userId != null) preferredCoach[userId] = coachId
+            return Result.success("ok")
+        }
+
+        override suspend fun getPreferredCoach(customerId: Int): Result<GetPreferredCoachResponse> =
+            Result.success(GetPreferredCoachResponse(preferredCoach[customerId] ?: 0))
     }
 
-    private fun buildViewModel(repository: FakeUserFavoritesRepository = FakeUserFavoritesRepository()) =
+    private fun buildViewModel(repository: UserFavoritesRepository = FakeUserFavoritesRepository()) =
         UserFavoritesViewModel(UserCoachesUseCase(repository))
 
     @Test
     fun getCoaches_when_success_emits_loading_then_success() = runTest {
         val coaches = listOf(Professional(id = 1, name = "Ana"))
         val viewModel = buildViewModel(
-            FakeUserFavoritesRepository(coachesResult = Result.success(coaches))
+            FakeUserFavoritesRepository(initialCoaches = coaches)
         )
 
         viewModel.coachesState.test {
@@ -47,7 +57,7 @@ class UserFavoritesViewModelTest {
     @Test
     fun markFavorite_when_failure_without_message_emits_fallback_error_and_can_be_reset() = runTest {
         val viewModel = buildViewModel(
-            FakeUserFavoritesRepository(markFavoriteResult = Result.failure(IllegalStateException()))
+            FakeUserFavoritesRepository(failOnMarkFavoriteWithoutMessage = true)
         )
 
         viewModel.markFavoriteState.test {
@@ -74,7 +84,7 @@ class UserFavoritesViewModelTest {
     @Test
     fun getPreferredCoach_when_success_emits_loading_then_success_and_can_be_reset() = runTest {
         val viewModel = buildViewModel(
-            FakeUserFavoritesRepository(preferredCoachResult = Result.success(GetPreferredCoachResponse(7)))
+            FakeUserFavoritesRepository(preferredCoachByUser = mapOf(1 to 7))
         )
 
         viewModel.getPreferredCoachState.test {

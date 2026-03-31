@@ -12,17 +12,26 @@ import kotlin.test.assertEquals
 class UserDocumentsViewModelTest {
 
     private class FakeUserDocumentsRepository(
-        private val result: Result<String>
+        private val failWithMessage: String? = null,
+        private val failWithoutMessage: Boolean = false
     ) : UserDocumentsRepository {
-        override suspend fun uploadDocument(userId: Int, name: String, data: ByteArray): Result<String> = result
+        private val uploadedDocumentsByUser = mutableMapOf<Int, MutableList<String>>()
+
+        override suspend fun uploadDocument(userId: Int, name: String, data: ByteArray): Result<String> {
+            if (failWithoutMessage) return Result.failure(IllegalStateException())
+            failWithMessage?.let { return Result.failure(IllegalStateException(it)) }
+            val documents = uploadedDocumentsByUser.getOrPut(userId) { mutableListOf() }
+            documents += name
+            return Result.success("Subido")
+        }
     }
 
-    private fun buildViewModel(result: Result<String>) =
-        UserDocumentsViewModel(UserDocumentUseCase(FakeUserDocumentsRepository(result)))
+    private fun buildViewModel(repository: UserDocumentsRepository) =
+        UserDocumentsViewModel(UserDocumentUseCase(repository))
 
     @Test
     fun uploadDocument_when_success_emits_loading_then_success() = runTest {
-        val viewModel = buildViewModel(Result.success("Subido"))
+        val viewModel = buildViewModel(FakeUserDocumentsRepository())
 
         viewModel.uploadState.test {
             assertEquals(UploadState.Idle, awaitItem())
@@ -35,7 +44,7 @@ class UserDocumentsViewModelTest {
 
     @Test
     fun uploadDocument_when_failure_with_message_emits_error_with_that_message() = runTest {
-        val viewModel = buildViewModel(Result.failure(IllegalStateException("Fallo")))
+        val viewModel = buildViewModel(FakeUserDocumentsRepository(failWithMessage = "Fallo"))
 
         viewModel.uploadState.test {
             assertEquals(UploadState.Idle, awaitItem())
@@ -48,7 +57,7 @@ class UserDocumentsViewModelTest {
 
     @Test
     fun uploadDocument_when_failure_without_message_emits_fallback_error() = runTest {
-        val viewModel = buildViewModel(Result.failure(IllegalStateException()))
+        val viewModel = buildViewModel(FakeUserDocumentsRepository(failWithoutMessage = true))
 
         viewModel.uploadState.test {
             assertEquals(UploadState.Idle, awaitItem())
@@ -61,7 +70,7 @@ class UserDocumentsViewModelTest {
 
     @Test
     fun resetUploadState_after_success_emits_idle() = runTest {
-        val viewModel = buildViewModel(Result.success("Subido"))
+        val viewModel = buildViewModel(FakeUserDocumentsRepository())
 
         viewModel.uploadState.test {
             assertEquals(UploadState.Idle, awaitItem())

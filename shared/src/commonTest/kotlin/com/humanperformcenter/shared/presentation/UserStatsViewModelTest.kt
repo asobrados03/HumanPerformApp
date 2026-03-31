@@ -13,17 +13,26 @@ import kotlin.test.assertEquals
 class UserStatsViewModelTest {
 
     private class FakeUserStatsRepository(
-        private val statsResult: Result<UserStatistics>
+        initialStats: Map<Int, UserStatistics> = emptyMap(),
+        private val failWithMessage: String? = null,
+        private val failWithoutMessage: Boolean = false
     ) : UserStatsRepository {
-        override suspend fun getUserStats(customerId: Int): Result<UserStatistics> = statsResult
+        private val statsByUser = initialStats.toMutableMap()
+
+        override suspend fun getUserStats(customerId: Int): Result<UserStatistics> {
+            if (failWithoutMessage) return Result.failure(IllegalStateException())
+            failWithMessage?.let { return Result.failure(IllegalStateException(it)) }
+            return statsByUser[customerId]?.let { Result.success(it) }
+                ?: Result.failure(IllegalStateException("Sin estadísticas"))
+        }
     }
 
-    private fun buildViewModel(statsResult: Result<UserStatistics>) =
-        UserStatsViewModel(UserStatsUseCase(FakeUserStatsRepository(statsResult)))
+    private fun buildViewModel(repository: UserStatsRepository) =
+        UserStatsViewModel(UserStatsUseCase(repository))
 
     @Test
     fun loadStatistics_when_invalid_user_id_emits_error() = runTest {
-        val viewModel = buildViewModel(Result.success(UserStatistics()))
+        val viewModel = buildViewModel(FakeUserStatsRepository(initialStats = mapOf(1 to UserStatistics())))
 
         viewModel.uiState.test {
             assertEquals(UserStatsState.Loading, awaitItem())
@@ -36,7 +45,7 @@ class UserStatsViewModelTest {
     @Test
     fun loadStatistics_when_success_emits_loading_then_success() = runTest {
         val stats = UserStatistics(lastMonthWorkouts = 12, mostFrequentTrainer = "Ana", pendingBookings = 2)
-        val viewModel = buildViewModel(Result.success(stats))
+        val viewModel = buildViewModel(FakeUserStatsRepository(initialStats = mapOf(1 to stats)))
 
         viewModel.uiState.test {
             assertEquals(UserStatsState.Loading, awaitItem())
@@ -48,7 +57,7 @@ class UserStatsViewModelTest {
 
     @Test
     fun loadStatistics_when_failure_without_message_emits_unknown_error() = runTest {
-        val viewModel = buildViewModel(Result.failure(IllegalStateException()))
+        val viewModel = buildViewModel(FakeUserStatsRepository(failWithoutMessage = true))
 
         viewModel.uiState.test {
             assertEquals(UserStatsState.Loading, awaitItem())
