@@ -13,8 +13,10 @@ struct RootView: View {
         } else {
             if appState.isAuthenticated {
                 MainTabs()
+                    .accessibilityIdentifier("mainTabs")
             } else {
                 AuthFlow(onLoginSuccess: { appState.isAuthenticated = true })
+                    .accessibilityIdentifier("authFlow")
             }
         }
     }

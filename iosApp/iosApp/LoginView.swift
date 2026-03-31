@@ -19,6 +19,9 @@ struct LoginView: View {
     var onRegister: (() -> Void)? = nil
 
     @State private var passwordVisible = false
+    @State private var uiTestEmail = ""
+    @State private var uiTestPassword = ""
+    @State private var uiTestError: String?
 
     var body: some View {
         VStack(spacing: 16) {
@@ -30,7 +33,8 @@ struct LoginView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
                     Image(systemName: "envelope")
-                    TextField("Correo electrónico", text: $vm.loginEmail)
+                    TextField("Correo electrónico", text: loginEmailBinding)
+                        .accessibilityIdentifier("loginEmailField")
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
@@ -61,11 +65,13 @@ struct LoginView: View {
 
                     Group {
                         if passwordVisible {
-                            TextField("Contraseña", text: $vm.loginPassword)
+                            TextField("Contraseña", text: loginPasswordBinding)
+                                .accessibilityIdentifier("loginPasswordField")
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled(true)
                         } else {
-                            SecureField("Contraseña", text: $vm.loginPassword)
+                            SecureField("Contraseña", text: loginPasswordBinding)
+                                .accessibilityIdentifier("loginPasswordField")
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled(true)
                         }
@@ -96,7 +102,14 @@ struct LoginView: View {
             }
 
             // Error general (backend / red)
-            if case .error(let msg) = vm.loginState {
+            if let uiTestError {
+                Text(uiTestError)
+                    .font(.subheadline)
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 4)
+                    .accessibilityIdentifier("loginErrorMessage")
+            } else if case .error(let msg) = vm.loginState {
                 Text(msg)
                     .font(.subheadline)
                     .foregroundColor(.red)
@@ -106,7 +119,14 @@ struct LoginView: View {
 
             // Botón Login
             Button {
-                vm.login() // ahora login no es async/await
+                if UITestConfig.isUITesting && UITestConfig.forceAuthError {
+                    uiTestError = "Credenciales inválidas (mock)"
+                } else if UITestConfig.isUITesting {
+                    uiTestError = nil
+                    onSuccess?()
+                } else {
+                    vm.login() // ahora login no es async/await
+                }
             } label: {
                 HStack {
                     if case .loading = vm.loginState {
@@ -117,6 +137,7 @@ struct LoginView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
             }
+             .accessibilityIdentifier("loginSubmitButton")
             .disabled(isLoading)
             .buttonStyle(.borderedProminent)
             .tint(.accentColor)
@@ -149,6 +170,7 @@ struct LoginView: View {
                 NavBarLogo() 
             }
         }
+         .accessibilityIdentifier("loginView")
         .onChange(of: vm.loginState) { newValue in
             if case .success = newValue {
                 onSuccess?()
@@ -156,6 +178,26 @@ struct LoginView: View {
                 vm.resetStates()
             }
         }
+    }
+
+
+
+    private var loginEmailBinding: Binding<String> {
+        Binding(
+            get: { UITestConfig.isUITesting ? uiTestEmail : vm.loginEmail },
+            set: { newValue in
+                if UITestConfig.isUITesting { uiTestEmail = newValue } else { vm.loginEmail = newValue }
+            }
+        )
+    }
+
+    private var loginPasswordBinding: Binding<String> {
+        Binding(
+            get: { UITestConfig.isUITesting ? uiTestPassword : vm.loginPassword },
+            set: { newValue in
+                if UITestConfig.isUITesting { uiTestPassword = newValue } else { vm.loginPassword = newValue }
+            }
+        )
     }
 
     private var isLoading: Bool {

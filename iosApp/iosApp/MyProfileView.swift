@@ -14,6 +14,16 @@ struct MyProfileView: View {
 
     var body: some View {
         Group {
+            if UITestConfig.isMockNetworkEnabled {
+                List {
+                    Section(header: Text("Información Personal")) {
+                        ProfileRow(label: "Nombre completo", value: "Usuario Mock")
+                        ProfileRow(label: "Correo electrónico", value: "mock@humanperform.app")
+                    }
+                }
+                .listStyle(.insetGrouped)
+                .accessibilityIdentifier("myProfileLoadedMarker")
+            } else {
             if sessionVM.isLoading {
                 ProgressView()
             } else if let user = sessionVM.userData {
@@ -37,10 +47,12 @@ struct MyProfileView: View {
             } else {
                 Text("Sin usuario")
             }
+            }
         }
         .navigationTitle("Mi perfil")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
+        .accessibilityIdentifier("myProfileView")
     }
 }
 

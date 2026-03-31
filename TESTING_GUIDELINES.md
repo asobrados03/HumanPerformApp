@@ -74,3 +74,55 @@ Cuando escribas tests para este proyecto, sigue estas pautas estrictamente.
   El expected debe ser un valor literal conocido.
 - No ignores el orden de emisiones en un Flow. Si el contrato dice Loading primero,
   verifícalo explícitamente.
+
+## UI Tests iOS (XCUITest) con modo mock
+
+Se añadió el target `iosAppUITests` con casos que cubren:
+
+- `SplashView -> WelcomeView -> LoginView/RegisterView`
+- navegación principal (`RootView`, tabs de `MainTabs`)
+- carga de `ServicesView`, `CalendarView`, `MyProfileView`
+- visualización de error de autenticación en UI
+
+### Cómo funciona el modo mock (sin red)
+
+Los tests lanzan la app con:
+
+- launch argument: `-ui-testing`
+- launch environment: `MOCK_NETWORK=1`
+
+Y para escenarios concretos:
+
+- `UI_TEST_SPLASH_LOGGED_IN=0|1` (resolución del splash sin depender de sesión real)
+- `UI_TEST_FORCE_AUTH_ERROR=1` (fuerza error de login visible en pantalla)
+
+### Ejecutar localmente (macOS + Xcode)
+
+```bash
+xcodebuild \
+  -project iosApp/iosApp.xcodeproj \
+  -scheme iosApp \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -only-testing:iosAppUITests \
+  test
+```
+
+### Ejecutar en CI
+
+Ejemplo de paso para GitHub Actions/macOS runner:
+
+```bash
+xcodebuild \
+  -project iosApp/iosApp.xcodeproj \
+  -scheme iosApp \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -only-testing:iosAppUITests \
+  -resultBundlePath build/TestResults.xcresult \
+  test
+```
+
+Recomendaciones CI:
+
+- usar runner macOS con Xcode instalado
+- fijar simulador disponible (`xcrun simctl list devices`)
+- publicar `build/TestResults.xcresult` como artefacto

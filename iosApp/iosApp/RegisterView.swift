@@ -150,7 +150,8 @@ struct RegisterView: View {
             }
             .padding(.horizontal, 16)
         }
-        .navigationBarTitleDisplayMode(.inline) // importante para centrar el contenido del .principal
+         .navigationBarTitleDisplayMode(.inline)
+        .accessibilityIdentifier("registerView") // importante para centrar el contenido del .principal
         .toolbar {
             ToolbarItem(placement: .principal) {
                 NavBarLogo() // o NavBarLogo(name: "otro_asset", height: 24)
