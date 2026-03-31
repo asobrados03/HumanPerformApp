@@ -3,6 +3,7 @@ package com.humanperformcenter.shared.data.network
 import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.model.auth.RefreshResponse
 import io.ktor.client.HttpClient
+import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.Auth
@@ -35,13 +36,13 @@ class DefaultHttpClientProvider(
 
     override val logoutEvents: SharedFlow<Unit> = logoutEventsMutable
 
-    override val authClient: HttpClient = HttpClient(authClientEngine) {
+    override val authClient: HttpClient = createHttpClient(authClientEngine) {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
     }
 
-    override val apiClient: HttpClient = HttpClient(apiClientEngine) {
+    override val apiClient: HttpClient = createHttpClient(apiClientEngine) {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
@@ -84,6 +85,15 @@ class DefaultHttpClientProvider(
     }
 
     override val baseUrl: String = API_BASE_URL
+
+    private fun createHttpClient(
+        engine: HttpClientEngine?,
+        block: HttpClientConfig<*>.() -> Unit,
+    ): HttpClient = if (engine == null) {
+        HttpClient(block = block)
+    } else {
+        HttpClient(engine, block)
+    }
 
     private suspend fun handleLogout() {
         authLocalDataSource.clear()
