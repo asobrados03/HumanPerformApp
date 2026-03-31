@@ -1,6 +1,7 @@
 package com.humanperformcenter.shared.data.model.payment
 
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.json.JsonNames
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -10,5 +11,6 @@ data class Coupon(
     val discount: Double,
     val isPercentage: Boolean,
     val expiryDate: LocalDate,
-    val productIds: List<Int>
+    @JsonNames("product_ids", "productIds")
+    val productIds: List<Int> = emptyList(),
 )
