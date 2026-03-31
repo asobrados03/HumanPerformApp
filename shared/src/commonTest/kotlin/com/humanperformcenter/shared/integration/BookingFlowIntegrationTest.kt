@@ -1,10 +1,11 @@
-package integration
+package com.humanperformcenter.shared.integration
 
 import com.humanperformcenter.shared.data.model.booking.BookingRequest
 import com.humanperformcenter.shared.data.model.booking.ReserveUpdateRequest
 import com.humanperformcenter.shared.data.persistence.DaySessionRepositoryImpl
 import com.humanperformcenter.shared.data.remote.implementation.DaySessionRemoteDataSourceImpl
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
+import integration.integrationProvider
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.ContentType

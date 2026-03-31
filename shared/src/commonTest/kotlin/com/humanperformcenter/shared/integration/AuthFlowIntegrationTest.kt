@@ -1,8 +1,10 @@
-package integration
+package com.humanperformcenter.shared.integration
 
 import com.humanperformcenter.shared.data.persistence.AuthRepositoryImpl
 import com.humanperformcenter.shared.data.remote.implementation.AuthRemoteDataSourceImpl
 import com.humanperformcenter.shared.domain.usecase.AuthUseCase
+import integration.InMemoryAuthLocalDataSource
+import integration.integrationProvider
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.ContentType

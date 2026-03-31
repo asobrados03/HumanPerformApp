@@ -1,9 +1,10 @@
-package integration
+package com.humanperformcenter.shared.integration
 
 import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
 import com.humanperformcenter.shared.data.persistence.StripeRepositoryImpl
 import com.humanperformcenter.shared.data.remote.implementation.StripeRemoteDataSourceImpl
 import com.humanperformcenter.shared.domain.usecase.StripeUseCase
+import integration.integrationProvider
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.ContentType

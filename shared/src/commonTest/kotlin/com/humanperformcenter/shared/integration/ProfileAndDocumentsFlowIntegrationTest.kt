@@ -1,4 +1,4 @@
-package integration
+package com.humanperformcenter.shared.integration
 
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.persistence.UserDocumentsRepositoryImpl
@@ -7,6 +7,8 @@ import com.humanperformcenter.shared.data.remote.implementation.UserDocumentsRem
 import com.humanperformcenter.shared.data.remote.implementation.UserProfileRemoteDataSourceImpl
 import com.humanperformcenter.shared.domain.usecase.UserDocumentUseCase
 import com.humanperformcenter.shared.domain.usecase.UserProfileUseCase
+import integration.InMemoryUserProfileLocalDataSource
+import integration.integrationProvider
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.ContentType
