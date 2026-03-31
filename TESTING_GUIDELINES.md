@@ -126,3 +126,84 @@ Recomendaciones CI:
 - usar runner macOS con Xcode instalado
 - fijar simulador disponible (`xcrun simctl list devices`)
 - publicar `build/TestResults.xcresult` como artefacto
+
+## Pre-release Integration Gate
+
+Esta compuerta es **obligatoria** antes de etiquetar cualquier release (`release/*`, `hotfix/*`) o promover un build a producción.
+
+### 1) Suites obligatorias
+
+Para aprobar el gate deben ejecutarse y pasar las siguientes suites:
+
+- **Shared integration suite** (`shared/src/commonTest/kotlin/integration/*`)
+- **Android smoke suite** (`androidApp/src/androidTest/java/com/humanperformcenter/AppNavigationE2ETest.kt`)
+- **iOS smoke suite** (`iosApp/iosAppUITests/iosAppUITests.swift`)
+
+### 2) Criterio de aprobación
+
+Un release candidate se aprueba solo si se cumplen **todas** estas condiciones:
+
+- **100% pass rate** en flujos críticos de negocio (Auth, Catalog, Booking, Stripe, Profile, Documents).
+- **0 tests flaky** en la ejecución de gate (no se permiten reruns para “forzar verde”).
+- Ningún test en estado `ignored`, `skipped` o deshabilitado para cubrir una regresión abierta.
+
+### 3) Comandos exactos por plataforma
+
+> Ejecutar desde la raíz del repositorio.
+
+**Shared (integration):**
+
+```bash
+./gradlew :shared:allTests --tests "integration.*"
+```
+
+**Android (smoke):**
+
+```bash
+./gradlew :androidApp:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.humanperformcenter.AppNavigationE2ETest
+```
+
+**iOS (smoke):**
+
+```bash
+xcodebuild \
+  -project iosApp/iosApp.xcodeproj \
+  -scheme iosApp \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -only-testing:iosAppUITests/iosAppUITests \
+  test
+```
+
+### 4) Matriz de cobertura por feature
+
+| Feature | Shared integration | Android smoke | iOS smoke | Estado esperado gate |
+|---|---|---|---|---|
+| Auth | `AuthFlowIntegrationTest` | `AppNavigationE2ETest` (login path) | `iosAppUITests` (Welcome/Login) | 100% pass |
+| Catalog | `CatalogAndPurchaseFlowIntegrationTest` | `AppNavigationE2ETest` (main tabs/services) | `iosAppUITests` (MainTabs/ServicesView) | 100% pass |
+| Booking | `BookingFlowIntegrationTest` | `AppNavigationE2ETest` (calendar/reserva) | `iosAppUITests` (CalendarView) | 100% pass |
+| Stripe | `StripeFlowIntegrationTest` | `AppNavigationE2ETest` (flujo de pago básico) | `iosAppUITests` (navegación previa a pago) | 100% pass |
+| Profile | `ProfileAndDocumentsFlowIntegrationTest` (Profile scope) | `AppNavigationE2ETest` (MyProfile) | `iosAppUITests` (MyProfileView) | 100% pass |
+| Documents | `ProfileAndDocumentsFlowIntegrationTest` (Documents scope) | `AppNavigationE2ETest` (acceso desde profile) | `iosAppUITests` (perfil/documentos mock) | 100% pass |
+
+### 5) Política de bloqueo por cobertura de endpoints nuevos
+
+- Todo PR que añada o modifique endpoints (REST/GraphQL/webhook) debe incluir:
+  1. Test de integración en `shared/src/commonTest/kotlin/integration/` o test remoto/repositorio equivalente.
+  2. Actualización explícita de esta matriz de cobertura si impacta un feature crítico.
+- Si un endpoint nuevo no tiene cobertura de test asociada, el PR se marca con **release-blocker** y:
+  - no puede mergearse a rama de release,
+  - no puede entrar al corte de versión,
+  - y requiere plan de cobertura aprobado en la misma PR.
+
+## Tabla de trazabilidad feature -> test class (para PR review)
+
+Usar esta tabla como checklist rápida para detectar huecos de cobertura al revisar PRs.
+
+| Feature | Test classes obligatorias | Señal de hueco en PR |
+|---|---|---|
+| Auth | `AuthFlowIntegrationTest`, `AuthRemoteDataSourceImplTest`, `AuthRepositoryImplTest`, `AuthViewModelTest`, `AppNavigationE2ETest`, `iosAppUITests` | Cambios en login/session sin tocar al menos una prueba de integración + una de capa interna |
+| Catalog | `CatalogAndPurchaseFlowIntegrationTest`, `ServiceProductRemoteDataSourceImplTest`, `ServiceProductRepositoryImplTest`, `ServiceProductViewModelTest`, `AppNavigationE2ETest`, `iosAppUITests` | Cambios en catálogo/servicios sin evidencia de cobertura en shared + smoke |
+| Booking | `BookingFlowIntegrationTest`, `DaySessionRemoteDataSourceImplTest`, `UserBookingsRemoteDataSourceImplTest`, `UserBookingsRepositoryImplTest`, `DaySessionViewModelTest`, `UserBookingsViewModelTest`, `AppNavigationE2ETest`, `iosAppUITests` | Cambios en disponibilidad/reserva sin actualizar pruebas de flujo end-to-end |
+| Stripe | `StripeFlowIntegrationTest`, `StripeRemoteDataSourceImplTest`, `StripeRepositoryImplTest`, `StripeViewModelTest`, `AppNavigationE2ETest`, `iosAppUITests` | Cambios en pago sin test de integración Stripe y smoke cross-platform |
+| Profile | `ProfileAndDocumentsFlowIntegrationTest`, `UserProfileRemoteDataSourceImplTest`, `UserProfileRepositoryImplTest`, `UserProfileViewModelTest`, `AppNavigationE2ETest`, `iosAppUITests` | Cambios en perfil sin pruebas de persistencia/remoto + navegación |
+| Documents | `ProfileAndDocumentsFlowIntegrationTest`, `UserDocumentsRemoteDataSourceImplTest`, `UserDocumentsRepositoryImplTest`, `UserDocumentsViewModelTest`, `UserDocumentSelectionViewModelTest`, `AppNavigationE2ETest`, `iosAppUITests` | Cambios en documentos sin cobertura de carga/listado/selección |
