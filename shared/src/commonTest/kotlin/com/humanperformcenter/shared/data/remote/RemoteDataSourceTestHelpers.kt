@@ -18,9 +18,11 @@ import kotlinx.serialization.json.Json
 internal fun testProvider(authEngine: MockEngine? = null, apiEngine: MockEngine): HttpClientProvider {
     val json = Json { ignoreUnknownKeys = true }
     val apiClient = HttpClient(apiEngine) {
+        expectSuccess = true
         install(ContentNegotiation) { json(json) }
     }
     val authClient = HttpClient(authEngine ?: apiEngine) {
+        expectSuccess = true
         install(ContentNegotiation) { json(json) }
     }
 
