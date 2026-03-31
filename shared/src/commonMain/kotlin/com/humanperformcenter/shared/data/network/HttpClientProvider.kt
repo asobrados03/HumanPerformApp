@@ -3,6 +3,7 @@ package com.humanperformcenter.shared.data.network
 import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.model.auth.RefreshResponse
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
@@ -27,18 +28,20 @@ interface HttpClientProvider {
 
 class DefaultHttpClientProvider(
     private val authLocalDataSource: AuthLocalDataSource,
+    authClientEngine: HttpClientEngine? = null,
+    apiClientEngine: HttpClientEngine? = null,
 ) : HttpClientProvider {
     private val logoutEventsMutable = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     override val logoutEvents: SharedFlow<Unit> = logoutEventsMutable
 
-    override val authClient: HttpClient = HttpClient {
+    override val authClient: HttpClient = HttpClient(authClientEngine) {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
     }
 
-    override val apiClient: HttpClient = HttpClient {
+    override val apiClient: HttpClient = HttpClient(apiClientEngine) {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
