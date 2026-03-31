@@ -12,7 +12,7 @@ data class DaySession(
     @SerialName("coach_id")
     val coachId: Int,
     @SerialName("coach_name")
-    val coachName: String?,
+    val coachName: String? = null,
     val booked: Int,
     val capacity: Int,
 )

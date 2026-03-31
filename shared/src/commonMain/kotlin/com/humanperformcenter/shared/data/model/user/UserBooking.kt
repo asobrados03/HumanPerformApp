@@ -11,11 +11,11 @@ data class UserBooking(
     val service: String,
     val product: String,
     @SerialName("service_id")
-    val serviceId: Int?,
+    val serviceId: Int? = null,
     @SerialName("product_id")
-    val productId: Int?,
+    val productId: Int? = null,
     @SerialName("coach_name")
-    val coachName: String,
+    val coachName: String? = null,
     @SerialName("coach_profile_pic")
-    val coachProfilePic: String?
+    val coachProfilePic: String? = null,
 )

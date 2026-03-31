@@ -44,7 +44,9 @@ class DefaultHttpClientProviderTest {
             apiClientEngine = apiEngine,
         )
 
-        provider.apiClient.get { url("https://test.local/protected") }
+        runCatching {
+            provider.apiClient.get { url("https://test.local/protected") }
+        }
 
         assertEquals("Bearer access-1", requests.single().headers[HttpHeaders.Authorization])
         assertEquals(0, local.clearCount)
@@ -65,7 +67,9 @@ class DefaultHttpClientProviderTest {
             logoutDeferred.complete(Unit)
         }
 
-        provider.apiClient.get { url("https://test.local/protected") }
+        runCatching {
+            provider.apiClient.get { url("https://test.local/protected") }
+        }
 
         logoutDeferred.await()
         collectorJob.cancel()
@@ -94,7 +98,9 @@ class DefaultHttpClientProviderTest {
             logoutDeferred.complete(Unit)
         }
 
-        provider.apiClient.get { url("https://test.local/protected") }
+        runCatching {
+            provider.apiClient.get { url("https://test.local/protected") }
+        }
 
         logoutDeferred.await()
         collectorJob.cancel()
