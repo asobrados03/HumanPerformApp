@@ -15,10 +15,18 @@ struct SplashView: View {
 
     var body: some View {
         ZStack {
+            // UI Tests: evitar dependencias de red en splash
             Color(.systemBackground).ignoresSafeArea()
             ProgressView("Cargando…")
         }
-                .onChange(of: sessionVM.isLoggedIn) { value in
+                .accessibilityIdentifier("splashView")
+        .onAppear {
+            if UITestConfig.isUITesting {
+                onResolved(UITestConfig.splashResolvesToLoggedIn)
+            }
+        }
+        .onChange(of: sessionVM.isLoggedIn) { value in
+            guard !UITestConfig.isUITesting else { return }
             guard let value else { return }
             onResolved(value)
         }

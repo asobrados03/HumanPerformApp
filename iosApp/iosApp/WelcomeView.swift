@@ -14,11 +14,15 @@ struct WelcomeView: View {
             Button(action: onRegister) {
                 GradientPill(title: "Registro")
             }
+            .accessibilityIdentifier("welcomeRegisterButton")
+
             Button(action: onLogin) {
                 GradientPill(title: "Acceso")
             }
+            .accessibilityIdentifier("welcomeLoginButton")
         }
         .padding(.horizontal, 32)
+        .accessibilityIdentifier("welcomeView")
     }
 }
 

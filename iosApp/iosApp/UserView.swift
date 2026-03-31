@@ -32,6 +32,27 @@ struct UserView: View {
 
     var body: some View {
         Group {
+            if UITestConfig.isMockNetworkEnabled {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        Text("Mock User Loaded")
+                            .font(.headline)
+                            .accessibilityIdentifier("userLoadedMarker")
+
+                        NavigationLink {
+                            MyProfileView().environmentObject(sessionVM)
+                        } label: {
+                            Text("Mi perfil")
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.white)
+                                .cornerRadius(10)
+                        }
+                        .accessibilityIdentifier("myProfileButton")
+                    }
+                    .padding()
+                }
+            } else {
             if sessionVM.isLoading {
                 ProgressView()
             } else if let user = sessionVM.userData {
@@ -60,10 +81,13 @@ struct UserView: View {
             } else {
                 Text("Sin usuario")
             }
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
+        .accessibilityIdentifier("userView")
         .onAppear {
+            guard !UITestConfig.isMockNetworkEnabled else { return }
             refreshProfileAndBalance()
         }
     }

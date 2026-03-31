@@ -38,6 +38,13 @@ struct ServicesView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal)
 
+            if UITestConfig.isMockNetworkEnabled {
+                Text("Mock Services Loaded")
+                    .accessibilityIdentifier("servicesLoadedMarker")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+            }
+
             switch selected.wrappedValue {
             case .myProducts:
                 MyProductsView(onOpenProductDetail: onOpenProductDetail)
@@ -47,5 +54,6 @@ struct ServicesView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
+        .accessibilityIdentifier("servicesView")
     }
 }

@@ -23,6 +23,10 @@ struct CalendarView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
+                if UITestConfig.isMockNetworkEnabled {
+                    Text("Mock Calendar Loaded")
+                        .accessibilityIdentifier("calendarLoadedMarker")
+                }
                 monthHeader
                 weekDays
                 calendarGrid
@@ -42,7 +46,10 @@ struct CalendarView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
-        .onAppear(perform: bootstrap)
+        .onAppear {
+            if UITestConfig.isMockNetworkEnabled { return }
+            bootstrap()
+        }
         .onChange(of: selectedDate) { _ in
             selectedProduct = nil
             daySessionViewModel.clearSessions()
@@ -73,6 +80,7 @@ struct CalendarView: View {
         } message: {
             Text("¿Deseas confirmar tu sesión con \(selectedCoach?.coachName ?? "-") a las \(selectedHour?.prefix(5) ?? "")?")
         }
+        .accessibilityIdentifier("calendarView")
         .confirmationDialog(
             "Gestión de reserva",
             isPresented: Binding(get: { dialog == .changeExisting }, set: { if !$0 { dismissDialog() } }),
