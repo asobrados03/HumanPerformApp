@@ -8,6 +8,11 @@ Cuando escribas tests para este proyecto, sigue estas pautas estrictamente.
   esta unidad?" no "¿cómo lo hace?".
 - Prioriza **Sociable Unit Tests** en `commonTest`: prueba ViewModel + UseCase +
   Repository fake en conjunto antes que aislar cada pieza con mocks.
+- **Centralización de Fakes**: si un componente tiene un Fake (ej.
+  `InMemoryUserRepository`), úsalo siempre que esa dependencia sea necesaria en
+  capas superiores (UseCase/ViewModel). Evita crear mocks locales con MockK en
+  cada test; el Fake ya contiene la lógica de comportamiento deseada y reduce el
+  código boilerplate de configuración (`every`/`coEvery`).
 - Un test que conoce los detalles internos de una clase es un test frágil. Evita
   verificar que se llamó a un método interno concreto salvo que ese efecto sea
   observable desde fuera (p.ej. una llamada a la API o a la base de datos).
@@ -54,11 +59,23 @@ Cuando escribas tests para este proyecto, sigue estas pautas estrictamente.
   prefiere un fake escrito a mano sobre un mock: es más legible y menos frágil.
 - Un fake ideal para KMM vive en `commonTest`, mantiene estado en memoria
   (listas/maps), y expone resultados reales de lectura/escritura.
+- **Aislamiento de Estado**: todo Fake que mantenga colecciones en memoria
+  (`MutableList`, `MutableMap`) DEBE exponer un método `clear()` o reiniciarse
+  en el setup del test.
+- **Thread Safety**: en `commonTest`, define tus Fakes usando mecanismos que no
+  bloqueen el estado si se ejecutan en diferentes dispatchers (aunque la mayoría
+  de tests de unidad se ejecuten de forma secuencial).
 - Nunca mockees clases del dominio (entidades, value objects): úsalas reales
   con builders o constructores de test.
 - Prohibido: `verify { cualquierCosa }` en tests de lógica de negocio. Solo
   en tests donde el efecto lateral ES el comportamiento observable (guardar en
   BD, enviar evento de analytics).
+
+### Contrato de Datos (API)
+- **Golden Files para JSON**: no escribas JSON de respuesta como `String` dentro
+  de los tests. Almacénalos en ficheros `.json` en la carpeta de recursos de
+  test para facilitar su actualización cuando la API cambie y permitir validarlos
+  contra un esquema cuando sea necesario.
 
 ### Cobertura mínima esperada por componente
 - UseCase: happy path + al menos 2 edge cases + propagación de error
@@ -87,6 +104,15 @@ Se añadió el target `iosAppUITests` con casos que cubren:
 - navegación principal (`RootView`, tabs de `MainTabs`)
 - carga de `ServicesView`, `CalendarView`, `MyProfileView`
 - visualización de error de autenticación en UI
+
+### Estrategia Anti-Flakiness
+- **Determinismo en UI**: prohibido usar `Thread.sleep()` o esperas basadas en
+  tiempo fijo.
+- En Compose: usa `waitUntil` basado en nodos semánticos.
+- En SwiftUI/XCUITest: usa `waitForExistence(timeout:)`.
+- **Desactivación de Animaciones**: los tests deben lanzar la app con las
+  animaciones del sistema desactivadas mediante flags para evitar fallos por
+  frames intermedios.
 
 ### Cómo funciona el modo mock (sin red)
 
