@@ -10,6 +10,10 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -30,9 +34,9 @@ class UserFavoritesRemoteDataSourceImplTest {
         assertEquals("saved", result.getOrNull())
         assertEquals(HttpMethod.Post, request.method)
         assertEquals("https://api.test/mobile/user/preferred-coach", request.url.toString())
-        assertTrue(request.bodyAsText().contains("\"serviceName\":\"Pilates\""))
-        assertTrue(request.bodyAsText().contains("\"userId\":7"))
-        assertTrue(request.bodyAsText().contains("\"coachId\":3"))
+        assertTrue(request.bodyAsText().contains("\"service_name\":\"Pilates\""))
+        assertTrue(request.bodyAsText().contains("\"customer_id\":7"))
+        assertTrue(request.bodyAsText().contains("\"coach_id\":3"))
     }
 
     @Test
@@ -75,7 +79,10 @@ class UserFavoritesRemoteDataSourceImplTest {
 
         assertTrue(result.isSuccess)
         val body = request.bodyAsText()
-        assertTrue(body.contains("\"serviceName\":\"\""))
-        assertTrue(body.contains("\"userId\":0"))
+        val json = Json.parseToJsonElement(body).jsonObject
+
+        assertEquals("", json["service_name"]?.jsonPrimitive?.content)
+        assertEquals(0, json["customer_id"]?.jsonPrimitive?.int)
+        assertEquals(4, json["coach_id"]?.jsonPrimitive?.int)
     }
 }

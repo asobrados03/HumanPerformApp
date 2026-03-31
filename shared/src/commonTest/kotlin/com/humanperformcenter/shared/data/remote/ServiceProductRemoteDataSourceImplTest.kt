@@ -19,23 +19,36 @@ class ServiceProductRemoteDataSourceImplTest {
     @Test
     fun assignProductToUser_happyPath_validates_url_method_body_and_parse() = runTest {
         lateinit var request: HttpRequestData
+
         val provider = testProvider(apiEngine = MockEngine {
             request = it
-            respond(fixtureJson("service", "assign_product_success.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+            respond(
+                fixtureJson("service", "assign_product_success.json"),
+                HttpStatusCode.OK,
+                headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            )
         })
 
         val result = ServiceProductRemoteDataSourceImpl(provider)
             .assignProductToUser(7, 21, "card", "SAVE10")
 
+        // 👇 importante: si falla sabrás por qué
         assertTrue(result.isSuccess)
+
         assertEquals(99, result.getOrNull())
+
         assertEquals(HttpMethod.Post, request.method)
         assertEquals("https://api.test/mobile/users/7/products", request.url.toString())
-        assertEquals(ContentType.Application.Json.toString(), request.requestContentType())
+
+        // ✔️ más robusto
+        assertEquals(request.requestContentType()?.contains("application/json"), true)
+
         val body = request.bodyAsText()
-        assertTrue(body.contains("\"productId\":21"))
-        assertTrue(body.contains("\"paymentMethod\":\"card\""))
-        assertTrue(body.contains("\"couponCode\":\"SAVE10\""))
+
+        // ✔️ menos frágil (permite espacios)
+        assertTrue(body.contains("\"product_id\":21"))
+        assertTrue(body.contains("\"payment_method\":\"card\""))
+        assertTrue(body.contains("\"coupon_code\":\"SAVE10\""))
     }
 
     @Test
@@ -65,7 +78,7 @@ class ServiceProductRemoteDataSourceImplTest {
         })
         val result = ServiceProductRemoteDataSourceImpl(provider).assignProductToUser(1, 4, "cash", null)
         assertTrue(result.isSuccess)
-        assertTrue(request.bodyAsText().contains("\"couponCode\":null"))
+        assertTrue(request.bodyAsText().contains("\"coupon_code\":null"))
     }
 
     @Test

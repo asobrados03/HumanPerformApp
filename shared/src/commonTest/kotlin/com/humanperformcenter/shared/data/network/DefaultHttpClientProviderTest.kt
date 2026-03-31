@@ -23,6 +23,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertNull
 
 class DefaultHttpClientProviderTest {
@@ -111,7 +112,11 @@ class DefaultHttpClientProviderTest {
 
     @Test
     fun refreshTokens_when_refresh_succeeds_saves_and_returns_new_tokens() = runTest {
-        val local = FakeAuthLocalDataSource(accessToken = "expired-access", refreshToken = "refresh-old")
+        val local = FakeAuthLocalDataSource(
+            accessToken = "expired-access",
+            refreshToken = "refresh-old"
+        )
+
         val protectedAuthHeaders = mutableListOf<String?>()
         var protectedCalls = 0
 
@@ -119,6 +124,7 @@ class DefaultHttpClientProviderTest {
             if (request.url.host == "test.local") {
                 protectedCalls += 1
                 protectedAuthHeaders += request.headers[HttpHeaders.Authorization]
+
                 if (protectedCalls == 1) {
                     respond("unauthorized", HttpStatusCode.Unauthorized)
                 } else {
@@ -128,23 +134,35 @@ class DefaultHttpClientProviderTest {
                 error("Unexpected host: ${request.url.host}")
             }
         }
+
         val authEngine = MockEngine { request ->
             assertEquals("/api/mobile/tokens/refresh", request.url.fullPath)
             assertEquals("Bearer refresh-old", request.headers[HttpHeaders.Authorization])
-            val json = Json.encodeToString(RefreshResponse("new-access", "new-refresh"))
+
+            val json = Json.encodeToString(
+                RefreshResponse("new-access", "new-refresh")
+            )
+
             respond(
                 content = ByteReadChannel(json),
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                headers = headersOf(
+                    HttpHeaders.ContentType,
+                    ContentType.Application.Json.toString()
+                ),
             )
         }
 
         val provider = DefaultHttpClientProvider(local, authEngine, apiEngine)
 
-        provider.apiClient.get { url("https://test.local/protected") }
+        // ✅ SIN genéricos
+        provider.apiClient.get("https://test.local/protected")
 
         assertEquals(2, protectedCalls)
-        assertEquals(listOf("Bearer expired-access", "Bearer new-access"), protectedAuthHeaders)
+        assertEquals(
+            listOf<String?>("Bearer expired-access", "Bearer new-access"),
+            protectedAuthHeaders
+        )
         assertEquals(1, local.saveTokensCount)
         assertEquals("new-access", local.savedAccessToken)
         assertEquals("new-refresh", local.savedRefreshToken)
@@ -153,11 +171,18 @@ class DefaultHttpClientProviderTest {
 
     @Test
     fun refreshTokens_when_refresh_throws_exception_clears_storage_and_emits_logout() = runTest {
-        val local = FakeAuthLocalDataSource(accessToken = "expired-access", refreshToken = "refresh-old")
+        val local = FakeAuthLocalDataSource(
+            accessToken = "expired-access",
+            refreshToken = "refresh-old"
+        )
         val logoutDeferred = CompletableDeferred<Unit>()
 
-        val apiEngine = MockEngine { respond("unauthorized", HttpStatusCode.Unauthorized) }
-        val authEngine = MockEngine { throw RuntimeException("network timeout") }
+        val apiEngine = MockEngine {
+            respond("unauthorized", HttpStatusCode.Unauthorized)
+        }
+        val authEngine = MockEngine {
+            throw RuntimeException("network timeout")
+        }
 
         val provider = DefaultHttpClientProvider(local, authEngine, apiEngine)
 
@@ -166,7 +191,9 @@ class DefaultHttpClientProviderTest {
             logoutDeferred.complete(Unit)
         }
 
-        provider.apiClient.get { url("https://test.local/protected") }
+        assertFails {
+            provider.apiClient.get { url("https://test.local/protected") }
+        }
 
         logoutDeferred.await()
         collectorJob.cancel()

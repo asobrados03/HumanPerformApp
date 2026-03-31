@@ -1,8 +1,9 @@
-package integration
+package com.humanperformcenter.shared.integration
 
 import com.humanperformcenter.shared.data.persistence.ServiceProductRepositoryImpl
 import com.humanperformcenter.shared.data.remote.implementation.ServiceProductRemoteDataSourceImpl
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
+import integration.integrationProvider
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.ContentType
@@ -19,30 +20,26 @@ class CatalogAndPurchaseFlowIntegrationTest {
     @Test
     fun services_products_assign_and_unassign_runs_end_to_end() = runTest {
         val apiEngine = MockEngine { request ->
-            when {
-                request.method == HttpMethod.Get && request.url.encodedPath == "/mobile/services" -> respond(
+            when (request.method) {
+                HttpMethod.Get if request.url.encodedPath == "/mobile/services" -> respond(
                     """[{"id":1,"name":"Training"}]""",
                     HttpStatusCode.OK,
                     headersOf("Content-Type", ContentType.Application.Json.toString()),
                 )
-
-                request.method == HttpMethod.Get && request.url.encodedPath == "/mobile/service-products" -> respond(
-                    """[{"id":31,"name":"Pack 8","service_ids":[1],"isAvailable":true}]""",
+                HttpMethod.Get if request.url.encodedPath == "/mobile/service-products" -> respond(
+                    """[{"id":31,"name":"Pack 8","service_ids":[1],"is_available":true}]""",
                     HttpStatusCode.OK,
                     headersOf("Content-Type", ContentType.Application.Json.toString()),
                 )
-
-                request.method == HttpMethod.Post && request.url.encodedPath == "/mobile/users/22/products" -> respond(
-                    """{"assignedId":9001}""",
+                HttpMethod.Post if request.url.encodedPath == "/mobile/users/22/products" -> respond(
+                    """{"assigned_id":9001}""",
                     HttpStatusCode.OK,
                     headersOf("Content-Type", ContentType.Application.Json.toString()),
                 )
-
-                request.method == HttpMethod.Delete && request.url.encodedPath == "/mobile/users/22/products/31" -> respond(
+                HttpMethod.Delete if request.url.encodedPath == "/mobile/users/22/products/31" -> respond(
                     "",
                     HttpStatusCode.NoContent,
                 )
-
                 else -> error("Unhandled api endpoint: ${request.method} ${request.url}")
             }
         }
