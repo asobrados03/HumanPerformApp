@@ -17,8 +17,12 @@ import org.junit.Assert.*
 class ExampleInstrumentedTest {
     @Test
     fun useAppContext() {
+        // Arrange
         // Context of the app under test.
+        // Act
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+
+        // Assert
         assertEquals("com.humanperformcenter", appContext.packageName)
     }
 }

@@ -81,10 +81,13 @@ class StripeViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun checkout_state_transitions_ready_processing_completed_canceled_failed_and_reset_to_idle() = runTest(mainDispatcher.scheduler) {
+        // Arrange
         val viewModel = buildViewModel()
 
+        // Act
         viewModel.startStripeCheckout(amount = 10.0, currency = "eur", customerId = "cus_1")
         advanceUntilIdle()
+        // Assert
         assertTrue(viewModel.startStripeCheckout.value is StartStripeCheckoutState.Ready)
 
         viewModel.onSheetPresented()
@@ -109,10 +112,13 @@ class StripeViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun add_payment_method_flow_emits_ready_completed_canceled_failed_and_reset() = runTest(mainDispatcher.scheduler) {
+        // Arrange
         val viewModel = buildViewModel()
 
+        // Act
         viewModel.prepareAddPaymentMethod(7)
         advanceUntilIdle()
+        // Assert
         assertTrue(viewModel.addPaymentMethodUiState.value is AddPaymentMethodUiState.Ready)
 
         viewModel.onAddPaymentMethodCompleted()
@@ -135,9 +141,12 @@ class StripeViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun load_payment_methods_sets_success_empty_and_error_states() = runTest(mainDispatcher.scheduler) {
+        // Arrange
         val successViewModel = buildViewModel()
+        // Act
         successViewModel.loadPaymentMethods()
         advanceUntilIdle()
+        // Assert
         assertTrue(successViewModel.viewPaymentMethodsUiState.value is PaymentMethodsUiState.Success)
 
         val emptyViewModel = buildViewModel(
@@ -167,10 +176,13 @@ class StripeViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun subscription_refund_and_action_helpers_when_success_update_states() = runTest(mainDispatcher.scheduler) {
+        // Arrange
         val viewModel = buildViewModel()
 
+        // Act
         viewModel.startStripeSubscription("price_1", "cus_1", 10, 20)
         advanceUntilIdle()
+        // Assert
         assertTrue(viewModel.startStripeCheckout.value is StartStripeCheckoutState.Ready)
 
         viewModel.cancelSubscription("sub_1", 20, 10)
@@ -205,7 +217,9 @@ class StripeViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun failure_paths_emit_expected_failed_states() = runTest(mainDispatcher.scheduler) {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeStripeRepository(
                 paymentIntentResult = Result.failure(IllegalStateException("pi fail")),
                 setupConfigResult = Result.failure(IllegalStateException("setup fail")),
@@ -220,6 +234,7 @@ class StripeViewModelTest {
 
         viewModel.startStripeCheckout(amount = 10.0, currency = "eur", customerId = "cus_1")
         advanceUntilIdle()
+        // Assert
         assertEquals(StartStripeCheckoutState.Failed("pi fail"), viewModel.startStripeCheckout.value)
 
         viewModel.prepareAddPaymentMethod(7)

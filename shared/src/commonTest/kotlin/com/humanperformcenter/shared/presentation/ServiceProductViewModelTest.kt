@@ -84,9 +84,11 @@ class ServiceProductViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun loadServiceProducts_loadUserProducts_loadProductDetail_and_fetchActiveProductDetail_when_success_update_states() = runTest {
+        // Arrange
         val product = sampleProduct()
         val detail = sampleProductDetail()
         val viewModel = buildViewModel(
+        // Act
             serviceRepository = FakeServiceProductRepository(
                 serviceProductsResult = Result.success(listOf(product)),
                 userProductsResult = Result.success(listOf(product)),
@@ -101,6 +103,7 @@ class ServiceProductViewModelTest {
         viewModel.fetchActiveProductDetail(2, 1)
         advanceUntilIdle()
 
+        // Assert
         assertEquals(ServiceProductUiState.Success(listOf(product)), viewModel.serviceProducts.value[1])
         assertEquals(UserProductsUiState.Success(listOf(product)), viewModel.userProductsState.value)
         assertEquals(ProductDetailUiState.Success(product), viewModel.productDetailState.value)
@@ -110,9 +113,11 @@ class ServiceProductViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun loadAllServices_when_success_marks_owned_services() = runTest {
+        // Arrange
         val service = ServiceAvailable(id = 1, name = "PT")
         val product = sampleProduct(id = 1)
         val viewModel = buildViewModel(
+        // Act
             serviceRepository = FakeServiceProductRepository(
                 allServicesResult = Result.success(listOf(service)),
                 userProductsResult = Result.success(listOf(product))
@@ -122,6 +127,7 @@ class ServiceProductViewModelTest {
         viewModel.loadAllServices(userId = 7)
         advanceUntilIdle()
 
+        // Assert
         assertEquals(
             ServiceUiState.Success(listOf(ServiceUiModel(service, true))),
             viewModel.serviceUiState.value
@@ -130,7 +136,9 @@ class ServiceProductViewModelTest {
 
     @Test
     fun assignProductToUser_and_unassignProductFromUser_when_success_emit_success_events() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             serviceRepository = FakeServiceProductRepository(
                 assignResult = Result.success(1),
                 unassignResult = Result.success(Unit)
@@ -139,6 +147,7 @@ class ServiceProductViewModelTest {
 
         viewModel.assignEvent.test {
             viewModel.assignProductToUser(7, 1, "card", "PROMO")
+        // Assert
             assertEquals(AssignEvent.Success(1), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
@@ -153,19 +162,24 @@ class ServiceProductViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun loadUserCoupons_when_success_updates_coupons_list() = runTest {
+        // Arrange
         val coupon = Coupon(1, "PROMO", 10.0, true, LocalDate.parse("2026-12-31"), listOf(1))
         val viewModel = buildViewModel(couponsResult = Result.success(listOf(coupon)))
 
+        // Act
         viewModel.loadUserCoupons(7)
         advanceUntilIdle()
 
+        // Assert
         assertEquals(listOf(coupon), viewModel.userCoupons.value)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun error_branches_emit_expected_errors() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             serviceRepository = FakeServiceProductRepository(
                 serviceProductsResult = Result.failure(IllegalStateException("svc error")),
                 userProductsResult = Result.failure(IllegalStateException("user error")),
@@ -184,6 +198,7 @@ class ServiceProductViewModelTest {
         viewModel.loadAllServices(4)
         advanceUntilIdle()
 
+        // Assert
         assertEquals(ServiceProductUiState.Error("svc error"), viewModel.serviceProducts.value[3])
         assertEquals(UserProductsUiState.Error("user error"), viewModel.userProductsState.value)
         assertEquals(ProductDetailUiState.Error("detail error"), viewModel.productDetailState.value)
@@ -205,12 +220,15 @@ class ServiceProductViewModelTest {
 
     @Test
     fun helper_functions_filterProducts_and_calculatediscountedprice_return_expected_values() {
+        // Arrange
         val viewModel = buildViewModel()
         val products = listOf(
+        // Act
             sampleProduct(id = 1, type = "recurrent", sessions = 12),
             sampleProduct(id = 2, type = "single", sessions = 1)
         )
 
+        // Assert
         assertEquals(1, viewModel.filterProducts(products, ProductTypeFilter.RECURRENT, 0).size)
         assertEquals(2, viewModel.filterProducts(products, ProductTypeFilter.ALL, 0).size)
         assertEquals(

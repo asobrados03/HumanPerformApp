@@ -45,8 +45,11 @@ class AppNavigationE2ETest {
 
     @Test
     fun splash_to_welcome_and_login_invalid_valid() {
+        // Arrange
+        // Act
         ActivityScenario.launch(MainActivity::class.java)
 
+        // Assert
         composeRule.onNodeWithText("Acceso").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("Accede a tu cuenta").assertIsDisplayed()
 
@@ -66,6 +69,8 @@ class AppNavigationE2ETest {
 
     @Test
     fun tabs_navigation_services_calendar_user() {
+        // Arrange
+        // Act
         ActivityScenario.launch(MainActivity::class.java)
 
         composeRule.onNodeWithText("Acceso").performClick()
@@ -73,6 +78,7 @@ class AppNavigationE2ETest {
         composeRule.onNodeWithText("Contraseña").performTextInput("12345678Aa")
         composeRule.onNodeWithText("Iniciar sesión").performClick()
 
+        // Assert
         composeRule.onNodeWithText("Calendario").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("Tus sesiones reservadas").assertIsDisplayed()
 
@@ -85,6 +91,8 @@ class AppNavigationE2ETest {
 
     @Test
     fun hire_product_and_calendar_booking_section_visible() {
+        // Arrange
+        // Act
         ActivityScenario.launch(MainActivity::class.java)
 
         composeRule.onNodeWithText("Acceso").performClick()
@@ -93,6 +101,7 @@ class AppNavigationE2ETest {
         composeRule.onNodeWithText("Iniciar sesión").performClick()
 
         composeRule.onNodeWithText("Contratar").performClick()
+        // Assert
         composeRule.onNodeWithText("Services").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("Pack 8 sesiones").assertIsDisplayed().performClick()
         composeRule.onNodeWithText("Comprar").assertIsDisplayed()

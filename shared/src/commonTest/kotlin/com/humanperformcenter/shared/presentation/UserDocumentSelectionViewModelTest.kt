@@ -10,11 +10,14 @@ class UserDocumentSelectionViewModelTest {
 
     @Test
     fun setTempCameraUri_when_called_updates_only_temp_uri() {
+        // Arrange
         val viewModel = UserDocumentSelectionViewModel()
 
+        // Act
         viewModel.setTempCameraUri("content://camera/temp")
 
         val state = viewModel.uiState.value
+        // Assert
         assertEquals("content://camera/temp", state.tempCameraUri)
         assertEquals("", state.selectedDocumentName)
         assertNull(state.selectedDocumentBytes)
@@ -22,13 +25,16 @@ class UserDocumentSelectionViewModelTest {
 
     @Test
     fun onDocumentSelected_when_called_updates_document_and_clears_temp_uri() {
+        // Arrange
         val viewModel = UserDocumentSelectionViewModel()
         val bytes = byteArrayOf(1, 2, 3)
+        // Act
         viewModel.setTempCameraUri("content://camera/temp")
 
         viewModel.onDocumentSelected("dni.pdf", bytes)
 
         val state = viewModel.uiState.value
+        // Assert
         assertEquals("dni.pdf", state.selectedDocumentName)
         assertContentEquals(bytes, state.selectedDocumentBytes)
         assertNull(state.tempCameraUri)
@@ -36,13 +42,16 @@ class UserDocumentSelectionViewModelTest {
 
     @Test
     fun clearSelection_when_called_resets_all_fields() {
+        // Arrange
         val viewModel = UserDocumentSelectionViewModel()
+        // Act
         viewModel.setTempCameraUri("content://camera/temp")
         viewModel.onDocumentSelected("dni.pdf", byteArrayOf(1, 2, 3))
 
         viewModel.clearSelection()
 
         val state = viewModel.uiState.value
+        // Assert
         assertEquals("", state.selectedDocumentName)
         assertNull(state.selectedDocumentBytes)
         assertNull(state.tempCameraUri)

@@ -40,12 +40,15 @@ class UserFavoritesViewModelTest {
 
     @Test
     fun getCoaches_when_success_emits_loading_then_success() = runTest {
+        // Arrange
         val coaches = listOf(Professional(id = 1, name = "Ana"))
         val viewModel = buildViewModel(
+        // Act
             FakeUserFavoritesRepository(initialCoaches = coaches)
         )
 
         viewModel.coachesState.test {
+        // Assert
             assertEquals(CoachState.Idle, awaitItem())
             viewModel.getCoaches()
             assertEquals(CoachState.Loading, awaitItem())
@@ -56,11 +59,14 @@ class UserFavoritesViewModelTest {
 
     @Test
     fun markFavorite_when_failure_without_message_emits_fallback_error_and_can_be_reset() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeUserFavoritesRepository(failOnMarkFavoriteWithoutMessage = true)
         )
 
         viewModel.markFavoriteState.test {
+        // Assert
             assertEquals(MarkFavoriteState.Idle, awaitItem())
             viewModel.markFavorite(coachId = 1, serviceName = "PT", userId = 3)
             assertEquals(MarkFavoriteState.Loading, awaitItem())
@@ -74,20 +80,26 @@ class UserFavoritesViewModelTest {
 
     @Test
     fun getPreferredCoach_when_userid_is_null_keeps_idle() {
+        // Arrange
         val viewModel = buildViewModel()
 
+        // Act
         viewModel.getPreferredCoach(null)
 
+        // Assert
         assertEquals(GetPreferredCoachState.Idle, viewModel.getPreferredCoachState.value)
     }
 
     @Test
     fun getPreferredCoach_when_success_emits_loading_then_success_and_can_be_reset() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeUserFavoritesRepository(preferredCoachByUser = mapOf(1 to 7))
         )
 
         viewModel.getPreferredCoachState.test {
+        // Assert
             assertEquals(GetPreferredCoachState.Idle, awaitItem())
             viewModel.getPreferredCoach(1)
             assertEquals(GetPreferredCoachState.Loading, awaitItem())

@@ -131,11 +131,14 @@ class UserSessionViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun deleteUser_when_success_emits_success_and_can_be_reset() = runTest {
+        // Arrange
         val viewModel = buildViewModel(existingEmails = setOf("user@test.com"))
 
+        // Act
         viewModel.deleteUser("user@test.com")
         advanceTimeBy(1000)
         advanceUntilIdle()
+        // Assert
         assertEquals(DeleteUserState.Success, viewModel.deleteState.value)
 
         viewModel.resetDeleteState()
@@ -145,47 +148,58 @@ class UserSessionViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun deleteUser_when_not_found_emits_notfound() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             existingEmails = emptySet()
         )
 
         viewModel.deleteUser("user@test.com")
         advanceUntilIdle()
 
+        // Assert
         assertEquals(DeleteUserState.NotFound("user@test.com"), viewModel.deleteState.value)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun deleteUser_when_generic_failure_emits_error() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             deleteFailureMessage = "fallo"
         )
 
         viewModel.deleteUser("user@test.com")
         advanceUntilIdle()
 
+        // Assert
         assertEquals(DeleteUserState.Error("fallo"), viewModel.deleteState.value)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun logout_when_success_invokes_callback_and_updates_state() = runTest {
+        // Arrange
         val viewModel = buildViewModel()
         var callbackCalled = false
 
+        // Act
         viewModel.logout { callbackCalled = true }
         advanceTimeBy(800)
         advanceUntilIdle()
 
+        // Assert
         assertTrue(callbackCalled)
         assertEquals(false, viewModel.isLoggingOut.value)
     }
 
     @Test
     fun session_helpers_currentUserState_and_isLoggedInFlow_expose_expected_values() = runTest {
+        // Arrange
         val viewModel = buildViewModel()
 
+        // Assert
         assertEquals(viewModel.userData.value, viewModel.currentUserState().value)
         assertEquals(false, viewModel.isLoggedInFlow.map { it }.first())
     }

@@ -130,12 +130,15 @@ class AuthViewModelTest : KoinTest {
 
     @Test
     fun login_when_success_emits_loading_then_success() = runTest {
+        // Arrange
         val login = sampleLoginResponse()
         val viewModel = buildViewModel(
+        // Act
             FakeAuthRepository(loginResult = Result.success(login))
         )
 
         viewModel.loginState.test {
+        // Assert
             assertEquals(LoginState.Idle, awaitItem())
             viewModel.login("mail@test.com", "secret")
             assertEquals(LoginState.Loading, awaitItem())
@@ -146,11 +149,14 @@ class AuthViewModelTest : KoinTest {
 
     @Test
     fun login_when_failure_with_message_emits_error_with_that_message() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeAuthRepository(loginResult = Result.failure(IllegalStateException("Credenciales inválidas")))
         )
 
         viewModel.loginState.test {
+        // Assert
             assertEquals(LoginState.Idle, awaitItem())
             viewModel.login("mail@test.com", "wrong")
             assertEquals(LoginState.Loading, awaitItem())
@@ -161,11 +167,14 @@ class AuthViewModelTest : KoinTest {
 
     @Test
     fun login_when_failure_without_message_emits_unknown_error() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeAuthRepository(loginResult = Result.failure(IllegalStateException()))
         )
 
         viewModel.loginState.test {
+        // Assert
             assertEquals(LoginState.Idle, awaitItem())
             viewModel.login("mail@test.com", "secret")
             assertEquals(LoginState.Loading, awaitItem())
@@ -176,13 +185,16 @@ class AuthViewModelTest : KoinTest {
 
     @Test
     fun resetStates_after_login_success_restores_loginstate_to_idle() = runTest {
+        // Arrange
         val viewModel = buildViewModel()
 
+        // Act
         viewModel.login("mail@test.com", "secret")
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.resetStates()
 
+        // Assert
         assertEquals(LoginState.Idle, viewModel.loginState.value)
     }
 
@@ -192,11 +204,14 @@ class AuthViewModelTest : KoinTest {
 
     @Test
     fun register_when_success_emits_loading_then_success() = runTest {
+        // Arrange
         val response = RegisterResponse("Creado")
         val repository = FakeAuthRepository(registerResult = Result.success(response))
         val viewModel = buildViewModel(repository)
 
+        // Act
         viewModel.registerState.test {
+        // Assert
             assertEquals(RegisterState.Idle, awaitItem())
             viewModel.register(sampleRegisterRequest())
             assertEquals(RegisterState.Loading, awaitItem())
@@ -209,12 +224,15 @@ class AuthViewModelTest : KoinTest {
 
     @Test
     fun register_when_failure_with_message_emits_error_with_that_message() = runTest {
+        // Arrange
         val repository = FakeAuthRepository(
+        // Act
             registerResult = Result.failure(RuntimeException("Email ya registrado"))
         )
         val viewModel = buildViewModel(repository)
 
         viewModel.registerState.test {
+        // Assert
             assertEquals(RegisterState.Idle, awaitItem())
             viewModel.register(sampleRegisterRequest())
             assertEquals(RegisterState.Loading, awaitItem())
@@ -227,10 +245,13 @@ class AuthViewModelTest : KoinTest {
 
     @Test
     fun register_when_failure_without_message_emits_action_specific_fallback_error() = runTest {
+        // Arrange
         val repository = FakeAuthRepository(registerResult = Result.failure(RuntimeException()))
         val viewModel = buildViewModel(repository)
 
+        // Act
         viewModel.registerState.test {
+        // Assert
             assertEquals(RegisterState.Idle, awaitItem())
             viewModel.register(sampleRegisterRequest())
             assertEquals(RegisterState.Loading, awaitItem())
@@ -273,13 +294,16 @@ class AuthViewModelTest : KoinTest {
 
     @Test
     fun resetstates_after_register_success_restores_registerstate_to_idle() = runTest {
+        // Arrange
         val viewModel = buildViewModel()
 
+        // Act
         viewModel.register(sampleRegisterRequest())
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.resetStates()
 
+        // Assert
         assertEquals(RegisterState.Idle, viewModel.registerState.value)
     }
 
@@ -289,11 +313,14 @@ class AuthViewModelTest : KoinTest {
 
     @Test
     fun resetPassword_when_success_emits_loading_then_success() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeAuthRepository(resetPasswordResult = Result.success(Unit))
         )
 
         viewModel.isResettingPassword.test {
+        // Assert
             assertEquals(ResetPasswordState.Idle, awaitItem())
             viewModel.resetPassword("mail@test.com")
             assertEquals(ResetPasswordState.Loading, awaitItem())
@@ -362,11 +389,14 @@ class AuthViewModelTest : KoinTest {
 
     @Test
     fun changePassword_when_success_emits_loading_then_success() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeAuthRepository(changePasswordResult = Result.success(Unit))
         )
 
         viewModel.isChangingPassword.test {
+        // Assert
             assertEquals(ChangePasswordState.Idle, awaitItem())
             viewModel.changePassword("Oldpass1", "Newpass1", "Newpass1", 1)
             assertEquals(ChangePasswordState.Loading, awaitItem())

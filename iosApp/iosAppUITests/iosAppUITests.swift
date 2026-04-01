@@ -11,9 +11,12 @@ final class iosAppUITests: XCTestCase {
     }
 
     func testAuthFlowSplashWelcomeLoginRegister() {
+        // Arrange
+        // Act
         app.launchEnvironment["UI_TEST_SPLASH_LOGGED_IN"] = "0"
         app.launch()
 
+        // Assert
         XCTAssertTrue(app.otherElements["welcomeView"].waitForExistence(timeout: 5))
 
         app.buttons["welcomeRegisterButton"].tap()
@@ -27,9 +30,12 @@ final class iosAppUITests: XCTestCase {
     }
 
     func testMainNavigationLoadsServicesCalendarAndProfile() {
+        // Arrange
+        // Act
         app.launchEnvironment["UI_TEST_SPLASH_LOGGED_IN"] = "1"
         app.launch()
 
+        // Assert
         XCTAssertTrue(app.otherElements["mainTabs"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.otherElements["servicesView"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Mock Services Loaded"].waitForExistence(timeout: 5))
@@ -46,10 +52,13 @@ final class iosAppUITests: XCTestCase {
     }
 
     func testAuthenticationErrorIsVisibleOnUI() {
+        // Arrange
+        // Act
         app.launchEnvironment["UI_TEST_SPLASH_LOGGED_IN"] = "0"
         app.launchEnvironment["UI_TEST_FORCE_AUTH_ERROR"] = "1"
         app.launch()
 
+        // Assert
         XCTAssertTrue(app.otherElements["welcomeView"].waitForExistence(timeout: 5))
         app.buttons["welcomeLoginButton"].tap()
         XCTAssertTrue(app.otherElements["loginView"].waitForExistence(timeout: 5))
