@@ -27,27 +27,27 @@ class AuthUseCaseTest : KoinTest {
     fun tearDown() = stopKoin()
 
     @Test
-    fun login_cuandoCredencialesValidas_devuelveLoginResponse() = runTest {
+    fun login_whenCredentialsAreValid_returnsLoginResponse() = runTest {
         val expected = LoginResponse(1, "Ana", "ana@mail.com", "600", "F", "1990-01-01", 28001, "Calle 1", null, null, "at", "rt")
         val useCase = buildUseCase(FakeAuthRepository(loginResult = Result.success(expected)), FakeAuthLocalDataSource())
         assertEquals(expected, useCase.login("ana@mail.com", "Secret123").getOrNull())
     }
 
     @Test
-    fun register_cuandoDatosValidos_devuelveRegisterResponse() = runTest {
+    fun register_whenDataIsValid_returnsRegisterResponse() = runTest {
         val expected = RegisterResponse("ok")
         val useCase = buildUseCase(FakeAuthRepository(registerResult = Result.success(expected)), FakeAuthLocalDataSource())
         assertEquals(expected, useCase.register(sampleRequest()).getOrNull())
     }
 
     @Test
-    fun resetPassword_cuandoEmailValido_devuelveSuccess() = runTest {
+    fun resetPassword_whenEmailIsValid_returnsSuccess() = runTest {
         val useCase = buildUseCase(FakeAuthRepository(resetPasswordResult = Result.success(Unit)), FakeAuthLocalDataSource())
         assertTrue(useCase.resetPassword("ana@mail.com").isSuccess)
     }
 
     @Test
-    fun logout_cuandoRepositorioResponde_limpiaAuthLocalYDevuelveResultado() = runTest {
+    fun logout_whenRepositoryResponds_clearsLocalAuthAndReturnsResult() = runTest {
         val local = FakeAuthLocalDataSource()
         val useCase = buildUseCase(FakeAuthRepository(logoutResult = Result.success(Unit)), local)
         val result = useCase.logout()
@@ -56,7 +56,7 @@ class AuthUseCaseTest : KoinTest {
     }
 
     @Test
-    fun changePassword_cuandoNewPasswordVacio_devuelveNewRequired() = runTest {
+    fun changePassword_whenNewPasswordIsEmpty_returnsNewRequired() = runTest {
         val useCase = buildUseCase(FakeAuthRepository(), FakeAuthLocalDataSource())
         val result = useCase.changePassword("Actual123", "", "", 1)
         assertTrue(result.isFailure)
@@ -64,7 +64,7 @@ class AuthUseCaseTest : KoinTest {
     }
 
     @Test
-    fun changePassword_cuandoConfirmNoCoincide_devuelveNotMatching() = runTest {
+    fun changePassword_whenConfirmDoesNotMatch_returnsNotMatching() = runTest {
         val useCase = buildUseCase(FakeAuthRepository(), FakeAuthLocalDataSource())
         val result = useCase.changePassword("Actual123", "Nueva123A", "Nueva123B", 1)
         assertTrue(result.isFailure)
@@ -72,7 +72,7 @@ class AuthUseCaseTest : KoinTest {
     }
 
     @Test
-    fun changePassword_cuandoRepositorioFalla_devuelveRepoFailure() = runTest {
+    fun changePassword_whenRepositoryFails_returnsRepoFailure() = runTest {
         val repoError = IllegalStateException("network down")
         val useCase = buildUseCase(
             FakeAuthRepository(changePasswordResult = Result.failure(repoError)),

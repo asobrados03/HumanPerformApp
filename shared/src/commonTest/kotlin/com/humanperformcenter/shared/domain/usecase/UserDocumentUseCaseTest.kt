@@ -18,25 +18,25 @@ class UserDocumentUseCaseTest : KoinTest {
     fun tearDown() = stopKoin()
 
     @Test
-    fun uploadDocument_cuandoDatosValidos_devuelveRutaDocumento() = runTest {
+    fun uploadDocument_whenDataIsValid_returnsDocumentPath() = runTest {
         val useCase = buildUseCase(FakeRepo(Result.success("doc://123")))
         assertEquals("doc://123", useCase.uploadDocument(1, "dni.pdf", byteArrayOf(1)).getOrNull())
     }
 
     @Test
-    fun uploadDocument_cuandoNombreVacio_devuelveFailure() = runTest {
+    fun uploadDocument_whenNameIsEmpty_returnsFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(Result.failure(IllegalArgumentException("name required"))))
         assertTrue(useCase.uploadDocument(1, "", byteArrayOf(1)).isFailure)
     }
 
     @Test
-    fun uploadDocument_cuandoArchivoVacio_devuelveFailure() = runTest {
+    fun uploadDocument_whenFileIsEmpty_returnsFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(Result.failure(IllegalArgumentException("file empty"))))
         assertTrue(useCase.uploadDocument(1, "dni.pdf", byteArrayOf()).isFailure)
     }
 
     @Test
-    fun uploadDocument_cuandoRepositorioFalla_propagaFailure() = runTest {
+    fun uploadDocument_whenRepositoryFails_propagatesFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(Result.failure(RuntimeException("503"))))
         assertTrue(useCase.uploadDocument(1, "dni.pdf", byteArrayOf(2)).isFailure)
     }

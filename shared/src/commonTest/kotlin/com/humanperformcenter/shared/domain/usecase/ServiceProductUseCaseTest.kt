@@ -25,52 +25,52 @@ class ServiceProductUseCaseTest : KoinTest {
     fun tearDown() = stopKoin()
 
     @Test
-    fun getAllServices_cuandoHayServicios_devuelveLista() = runTest {
+    fun getAllServices_whenServicesExist_returnsList() = runTest {
         val expected = listOf(ServiceAvailable(1, "Fisioterapia", "img.png"))
         val useCase = buildUseCase(FakeRepo(getAllResult = Result.success(expected)))
         assertEquals(expected, useCase.getAllServices().getOrNull())
     }
 
     @Test
-    fun getServiceProducts_cuandoServicioValido_devuelveProductos() = runTest {
+    fun getServiceProducts_whenServiceIsValid_returnsProducts() = runTest {
         val expected = listOf(Product(1, "Plan mensual"))
         val useCase = buildUseCase(FakeRepo(getServiceProductsResult = Result.success(expected)))
         assertEquals(expected, useCase.getServiceProducts(1, 9).getOrNull())
     }
 
     @Test
-    fun getUserProducts_cuandoRepositorioFalla_propagaFailure() = runTest {
+    fun getUserProducts_whenRepositoryFails_propagatesFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(getUserProductsResult = Result.failure(RuntimeException("backend error"))))
         assertTrue(useCase.getUserProducts(99).isFailure)
     }
 
     @Test
-    fun assignProductToUser_cuandoDatosValidos_devuelveIdAsignacion() = runTest {
+    fun assignProductToUser_whenDataIsValid_returnsAssignmentId() = runTest {
         val useCase = buildUseCase(FakeRepo(assignResult = Result.success(321)))
         assertEquals(321, useCase.assignProductToUser(1, 2, "card", "WELCOME").getOrNull())
     }
 
     @Test
-    fun unassignProductFromUser_cuandoDatosValidos_devuelveSuccess() = runTest {
+    fun unassignProductFromUser_whenDataIsValid_returnsSuccess() = runTest {
         val useCase = buildUseCase(FakeRepo(unassignResult = Result.success(Unit)))
         assertTrue(useCase.unassignProductFromUser(1, 2).isSuccess)
     }
 
     @Test
-    fun getActiveProductDetail_cuandoExisteProducto_devuelveDetalle() = runTest {
+    fun getActiveProductDetail_whenProductExists_returnsDetail() = runTest {
         val detail = ProductDetailResponse("2026-01-01", name = "Plan", services = listOf(SimpleService(1, "S")))
         val useCase = buildUseCase(FakeRepo(activeDetailResult = Result.success(detail)))
         assertEquals("Plan", useCase.getActiveProductDetail(1, 2).getOrNull()?.name)
     }
 
     @Test
-    fun getProductDetailHireProduct_cuandoExisteProducto_devuelveProducto() = runTest {
+    fun getProductDetailHireProduct_whenProductExists_returnsProduct() = runTest {
         val useCase = buildUseCase(FakeRepo(hireProductResult = Result.success(Product(1, "Plan"))))
         assertEquals("Plan", useCase.getProductDetailHireProduct(1).getOrNull()?.name)
     }
 
     @Test
-    fun filterProducts_cuandoFiltroRecurrente_devuelveSoloRecurrentes() {
+    fun filterProducts_whenFilterIsRecurrent_returnsOnlyRecurring() {
         val useCase = buildUseCase(FakeRepo())
         val products = listOf(
             Product(1, "Plan mensual", typeOfProduct = "recurrent", session = 4),
@@ -81,7 +81,7 @@ class ServiceProductUseCaseTest : KoinTest {
     }
 
     @Test
-    fun calculateDiscountedPrice_cuandoDescuentoSuperaPrecio_devuelveCero() {
+    fun calculateDiscountedPrice_whenDiscountExceedsPrice_returnsZero() {
         val useCase = buildUseCase(FakeRepo())
         val coupons = listOf(Coupon(1, "BIG", 500.0, false, LocalDate.parse("2026-12-31"), listOf(3)))
         assertEquals(0.0, useCase.calculateDiscountedPrice(3, 120.0, coupons))

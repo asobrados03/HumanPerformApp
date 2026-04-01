@@ -20,26 +20,26 @@ class UserCouponUseCaseTest : KoinTest {
     fun tearDown() = stopKoin()
 
     @Test
-    fun addCouponToUser_cuandoCodigoValido_devuelveSuccess() = runTest {
+    fun addCouponToUser_whenCodeIsValid_returnsSuccess() = runTest {
         val useCase = buildUseCase(FakeRepo(addResult = Result.success(Unit)))
         assertTrue(useCase.addCouponToUser(1, "WELCOME10").isSuccess)
     }
 
     @Test
-    fun addCouponToUser_cuandoCodigoVacio_devuelveFailure() = runTest {
+    fun addCouponToUser_whenCodeIsEmpty_returnsFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(addResult = Result.failure(IllegalArgumentException("vacío"))))
         assertTrue(useCase.addCouponToUser(1, "").isFailure)
     }
 
     @Test
-    fun getUserCoupons_cuandoHayCupones_devuelveLista() = runTest {
+    fun getUserCoupons_whenCouponsExist_returnsList() = runTest {
         val expected = listOf(Coupon(1, "WELCOME10", 10.0, true, LocalDate.parse("2026-12-31"), listOf(5)))
         val useCase = buildUseCase(FakeRepo(getResult = Result.success(expected)))
         assertEquals(expected, useCase.getUserCoupons(1).getOrNull())
     }
 
     @Test
-    fun getUserCoupons_cuandoRepositorioFalla_propagaFailure() = runTest {
+    fun getUserCoupons_whenRepositoryFails_propagatesFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(getResult = Result.failure(RuntimeException("500"))))
         assertTrue(useCase.getUserCoupons(1).isFailure)
     }
