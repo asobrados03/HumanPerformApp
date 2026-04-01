@@ -1,12 +1,12 @@
 package com.humanperformcenter
 
-import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.filterToOne
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -55,11 +55,6 @@ class AppNavigationE2ETest {
         const val PROFILE_SECTION = "profile_section"
     }
 
-    private data class StableNode(
-        val tag: String,
-        val fallbackText: String? = null,
-    )
-
     @get:Rule
     val composeRule = createEmptyComposeRule()
 
@@ -90,105 +85,99 @@ class AppNavigationE2ETest {
     fun splash_to_welcome_and_login_invalid_valid() {
         ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.waitAndClick(StableNode(StableTags.WELCOME_ACCESS_CTA, "Acceso"))
-        composeRule.waitUntilVisible(StableNode(StableTags.LOGIN_SCREEN_TITLE, "Accede a tu cuenta"))
+        composeRule.waitAndClick(StableTags.WELCOME_ACCESS_CTA)
+        composeRule.waitUntilVisible(StableTags.LOGIN_SCREEN_TITLE)
 
-        composeRule.waitAndEnterText(StableNode(StableTags.LOGIN_EMAIL_FIELD, "Correo electrónico"), "wrong@user.com")
-        composeRule.waitAndEnterText(StableNode(StableTags.LOGIN_PASSWORD_FIELD, "Contraseña"), "bad")
-        composeRule.waitAndClick(StableNode(StableTags.LOGIN_SUBMIT_CTA, "Iniciar sesión"))
-        composeRule.waitUntilVisible(StableNode(StableTags.LOGIN_ERROR_INVALID_CREDENTIALS, "Email o contraseña inválidos"))
+        composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "wrong@user.com")
+        composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "bad")
+        composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
+        composeRule.waitUntilVisible(StableTags.LOGIN_ERROR_INVALID_CREDENTIALS)
 
-        composeRule.waitAndClearText(StableNode(StableTags.LOGIN_EMAIL_FIELD, "Correo electrónico"))
-        composeRule.waitAndEnterText(StableNode(StableTags.LOGIN_EMAIL_FIELD, "Correo electrónico"), "valid@humanperform.com")
-        composeRule.waitAndClearText(StableNode(StableTags.LOGIN_PASSWORD_FIELD, "Contraseña"))
-        composeRule.waitAndEnterText(StableNode(StableTags.LOGIN_PASSWORD_FIELD, "Contraseña"), "12345678Aa")
-        composeRule.waitAndClick(StableNode(StableTags.LOGIN_SUBMIT_CTA, "Iniciar sesión"))
+        composeRule.waitAndClearText(StableTags.LOGIN_EMAIL_FIELD)
+        composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")
+        composeRule.waitAndClearText(StableTags.LOGIN_PASSWORD_FIELD)
+        composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
+        composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
 
-        composeRule.waitUntilVisible(StableNode(StableTags.SERVICES_TAB_PRODUCTS, "Mis productos"))
+        composeRule.waitUntilVisible(StableTags.SERVICES_TAB_PRODUCTS)
     }
 
     @Test
     fun tabs_navigation_services_calendar_user() {
         ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.waitAndClick(StableNode(StableTags.WELCOME_ACCESS_CTA, "Acceso"))
-        composeRule.waitAndEnterText(StableNode(StableTags.LOGIN_EMAIL_FIELD, "Correo electrónico"), "valid@humanperform.com")
-        composeRule.waitAndEnterText(StableNode(StableTags.LOGIN_PASSWORD_FIELD, "Contraseña"), "12345678Aa")
-        composeRule.waitAndClick(StableNode(StableTags.LOGIN_SUBMIT_CTA, "Iniciar sesión"))
+        composeRule.waitAndClick(StableTags.WELCOME_ACCESS_CTA)
+        composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")
+        composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
+        composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
 
-        composeRule.waitAndClick(StableNode(StableTags.TAB_CALENDAR, "Calendario"))
-        composeRule.waitUntilVisible(StableNode(StableTags.CALENDAR_BOOKINGS_SECTION, "Tus sesiones reservadas"))
+        composeRule.waitAndClick(StableTags.TAB_CALENDAR)
+        composeRule.waitUntilVisible(StableTags.CALENDAR_BOOKINGS_SECTION)
 
-        composeRule.waitAndClick(StableNode(StableTags.TAB_USER, "Usuario"))
-        composeRule.waitUntilVisible(StableNode(StableTags.PROFILE_SECTION, "Mi perfil"))
+        composeRule.waitAndClick(StableTags.TAB_USER)
+        composeRule.waitUntilVisible(StableTags.PROFILE_SECTION)
 
-        composeRule.waitAndClick(StableNode(StableTags.TAB_PRODUCT, "Producto"))
-        composeRule.waitUntilVisible(StableNode(StableTags.SERVICES_TAB_PRODUCTS, "Mis productos"))
+        composeRule.waitAndClick(StableTags.TAB_PRODUCT)
+        composeRule.waitUntilVisible(StableTags.SERVICES_TAB_PRODUCTS)
     }
 
     @Test
     fun hire_product_and_calendar_booking_section_visible() {
         ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.waitAndClick(StableNode(StableTags.WELCOME_ACCESS_CTA, "Acceso"))
-        composeRule.waitAndEnterText(StableNode(StableTags.LOGIN_EMAIL_FIELD, "Correo electrónico"), "valid@humanperform.com")
-        composeRule.waitAndEnterText(StableNode(StableTags.LOGIN_PASSWORD_FIELD, "Contraseña"), "12345678Aa")
-        composeRule.waitAndClick(StableNode(StableTags.LOGIN_SUBMIT_CTA, "Iniciar sesión"))
+        composeRule.waitAndClick(StableTags.WELCOME_ACCESS_CTA)
+        composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")
+        composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
+        composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
 
-        composeRule.waitAndClick(StableNode(StableTags.SERVICES_TAB_HIRE, "Contratar"))
-        composeRule.waitAndClick(StableNode(StableTags.SERVICES_AVAILABLE_ITEM, "Services"))
-        composeRule.waitAndClick(StableNode(StableTags.SERVICE_PRODUCT_ITEM, "Pack 8 sesiones"))
-        composeRule.waitUntilVisible(StableNode(StableTags.SERVICE_PRODUCT_BUY_CTA, "Comprar"))
+        composeRule.waitAndClick(StableTags.SERVICES_TAB_HIRE)
+        composeRule.waitAndClick(StableTags.SERVICES_AVAILABLE_ITEM)
+        composeRule.waitAndClick(StableTags.SERVICE_PRODUCT_ITEM)
+        composeRule.waitUntilVisible(StableTags.SERVICE_PRODUCT_BUY_CTA)
 
-        composeRule.waitAndClick(StableNode(StableTags.TAB_CALENDAR, "Calendario"))
-        composeRule.waitUntilVisible(StableNode(StableTags.CALENDAR_BOOKINGS_SECTION, "Tus sesiones reservadas"))
+        composeRule.waitAndClick(StableTags.TAB_CALENDAR)
+        composeRule.waitUntilVisible(StableTags.CALENDAR_BOOKINGS_SECTION)
     }
 
-    private fun androidx.compose.ui.test.junit4.ComposeTestRule.waitUntilExists(
-        stableNode: StableNode,
+    private fun ComposeTestRule.waitUntilExists(
+        tag: String,
         timeoutMillis: Long = 10_000,
     ) {
         waitUntil(timeoutMillis) {
-            onAllNodes(stableNode.matcher(), useUnmergedTree = true)
+            onAllNodes(hasTestTag(tag))
                 .fetchSemanticsNodes().isNotEmpty()
         }
     }
 
-    private fun androidx.compose.ui.test.junit4.ComposeTestRule.waitUntilVisible(stableNode: StableNode) {
-        waitUntilExists(stableNode)
-        onAllNodes(stableNode.matcher(), useUnmergedTree = true)
+    private fun ComposeTestRule.waitUntilVisible(tag: String) {
+        waitUntilExists(tag)
+        onAllNodes(hasTestTag(tag))
             .filterToOne(isDisplayed())
             .assertIsDisplayed()
     }
 
-    private fun androidx.compose.ui.test.junit4.ComposeTestRule.waitAndClick(stableNode: StableNode) {
-        waitUntilVisible(stableNode)
-        onAllNodes(stableNode.matcher(), useUnmergedTree = true)
+    private fun ComposeTestRule.waitAndClick(tag: String) {
+        waitUntilVisible(tag)
+        onAllNodes(hasTestTag(tag) and hasClickAction())
             .filterToOne(isDisplayed())
             .performClick()
     }
 
-    private fun androidx.compose.ui.test.junit4.ComposeTestRule.waitAndEnterText(
-        stableNode: StableNode,
+    private fun ComposeTestRule.waitAndEnterText(
+        tag: String,
         value: String,
     ) {
-        waitUntilVisible(stableNode)
-        onAllNodes(stableNode.matcher(), useUnmergedTree = true)
+        waitUntilVisible(tag)
+        onAllNodes(hasTestTag(tag))
             .filterToOne(isDisplayed())
             .performClick()
             .performTextInput(value)
     }
 
-    private fun androidx.compose.ui.test.junit4.ComposeTestRule.waitAndClearText(stableNode: StableNode) {
-        waitUntilVisible(stableNode)
-        onAllNodes(stableNode.matcher(), useUnmergedTree = true)
+    private fun ComposeTestRule.waitAndClearText(tag: String) {
+        waitUntilVisible(tag)
+        onAllNodes(hasTestTag(tag))
             .filterToOne(isDisplayed())
             .performTextClearance()
-    }
-
-    private fun StableNode.matcher(): SemanticsMatcher {
-        val tagMatcher = hasTestTag(tag)
-        val fallbackMatcher = fallbackText?.let { hasText(it, substring = false) }
-        return fallbackMatcher?.let { tagMatcher or it } ?: tagMatcher
     }
 }
