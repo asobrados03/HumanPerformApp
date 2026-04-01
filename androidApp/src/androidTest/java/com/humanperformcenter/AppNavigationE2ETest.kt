@@ -13,7 +13,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.humanperformcenter.app.MainActivity
 import com.humanperformcenter.app.TestOverrides
 import com.humanperformcenter.shared.data.network.HttpClientProvider
-import com.humanperformcenter.shared.presentation.di.networkModule
+import com.humanperformcenter.shared.presentation.di.appModule
+import com.humanperformcenter.shared.presentation.di.platformModule
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -67,7 +68,8 @@ class AppNavigationE2ETest {
         TestOverrides.httpClientProviderOverride = mockProvider
         startKoin {
             modules(
-                networkModule,
+                appModule,
+                platformModule,
                 module {
                     single<HttpClientProvider> { mockProvider }
                 }
