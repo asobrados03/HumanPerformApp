@@ -89,6 +89,10 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation(libs.ktor.client.core)
+    androidTestImplementation(libs.ktor.client.mock)
+    androidTestImplementation(libs.ktor.client.content.negotiation)
+    androidTestImplementation(libs.ktor.serialization.kotlinx.json)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }

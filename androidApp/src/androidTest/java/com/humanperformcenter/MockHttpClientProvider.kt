@@ -1,6 +1,5 @@
 package com.humanperformcenter
 
-import android.net.http.HttpResponseCache.install
 import com.humanperformcenter.shared.data.network.HttpClientProvider
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
