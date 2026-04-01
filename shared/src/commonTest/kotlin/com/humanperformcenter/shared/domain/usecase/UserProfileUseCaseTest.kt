@@ -20,27 +20,27 @@ class UserProfileUseCaseTest : KoinTest {
     fun tearDown() = stopKoin()
 
     @Test
-    fun getUserById_cuandoIdValido_devuelveUsuario() = runTest {
+    fun getUserById_whenIdIsValid_returnsUser() = runTest {
         val expected = User(2, "Ana", "ana@mail.com", "600", "F", "1990-01-01", 28001, "Calle 1", "123", null)
         val useCase = buildUseCase(FakeRepo(getResult = Result.success(expected)))
         assertEquals(expected, useCase.getUserById(2).getOrNull())
     }
 
     @Test
-    fun updateUser_cuandoSinFoto_devuelveUsuarioActualizado() = runTest {
+    fun updateUser_whenNoPhoto_returnsUpdatedUser() = runTest {
         val expected = User(2, "Ana P", "ana@mail.com", "600", "F", "1990-01-01", 28001, "Calle 1", "123", null)
         val useCase = buildUseCase(FakeRepo(updateResult = Result.success(expected)))
         assertEquals(expected, useCase.updateUser(expected, null).getOrNull())
     }
 
     @Test
-    fun deleteProfilePicture_cuandoNombreNulo_devuelveSuccess() = runTest {
+    fun deleteProfilePicture_whenNameIsNull_returnsSuccess() = runTest {
         val useCase = buildUseCase(FakeRepo(deleteResult = Result.success(Unit)))
         assertTrue(useCase.deleteProfilePicture(DeleteProfilePicRequest("ana@mail.com", null)).isSuccess)
     }
 
     @Test
-    fun getUserById_cuandoRepositorioFalla_propagaFailure() = runTest {
+    fun getUserById_whenRepositoryFails_propagatesFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(getResult = Result.failure(RuntimeException("not found"))))
         assertTrue(useCase.getUserById(2).isFailure)
     }

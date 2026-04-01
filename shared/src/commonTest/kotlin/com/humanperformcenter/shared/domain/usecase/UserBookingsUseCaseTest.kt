@@ -19,26 +19,26 @@ class UserBookingsUseCaseTest : KoinTest {
     fun tearDown() = stopKoin()
 
     @Test
-    fun getUserBookings_cuandoHayReservas_devuelveLista() = runTest {
+    fun getUserBookings_whenBookingsExist_returnsList() = runTest {
         val expected = listOf(UserBooking(10, "2026-03-01", "09:00", "Pilates", "Bono 8"))
         val useCase = buildUseCase(FakeRepo(getResult = Result.success(expected)))
         assertEquals(expected, useCase.getUserBookings(7).getOrNull())
     }
 
     @Test
-    fun getUserBookings_cuandoNoHayReservas_devuelveListaVacia() = runTest {
+    fun getUserBookings_whenNoBookingsExist_returnsEmptyList() = runTest {
         val useCase = buildUseCase(FakeRepo(getResult = Result.success(emptyList())))
         assertEquals(emptyList(), useCase.getUserBookings(7).getOrNull())
     }
 
     @Test
-    fun cancelUserBooking_cuandoIdInvalido_devuelveFailure() = runTest {
+    fun cancelUserBooking_whenIdIsInvalid_returnsFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(cancelResult = Result.failure(IllegalArgumentException("id inválido"))))
         assertTrue(useCase.cancelUserBooking(-1).isFailure)
     }
 
     @Test
-    fun getUserBookings_cuandoRepositorioFalla_propagaFailure() = runTest {
+    fun getUserBookings_whenRepositoryFails_propagatesFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(getResult = Result.failure(RuntimeException("timeout"))))
         assertTrue(useCase.getUserBookings(7).isFailure)
     }

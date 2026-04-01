@@ -24,46 +24,46 @@ class DaySessionUseCaseTest : KoinTest {
     fun tearDown() = stopKoin()
 
     @Test
-    fun getSessionsByDay_cuandoHaySesiones_devuelveLista() = runTest {
+    fun getSessionsByDay_whenSessionsExist_returnsList() = runTest {
         val expected = listOf(DaySession(1, "2026-03-20", "10:00", 2, "Ana", 3, 10))
         val useCase = buildUseCase(FakeRepo(sessionsResult = Result.success(expected)))
         assertEquals(expected, useCase.getSessionsByDay(1, LocalDate.parse("2026-03-20")).getOrNull())
     }
 
     @Test
-    fun makeBooking_cuandoRequestValido_devuelveReserva() = runTest {
+    fun makeBooking_whenRequestIsValid_returnsBooking() = runTest {
         val req = BookingRequest(1, 2, 3, 4, 5, 6, "2026-04-01T10:00:00")
         val useCase = buildUseCase(FakeRepo(makeBookingResult = Result.success(ReserveResponse("ok", 77))))
         assertEquals(77, useCase.makeBooking(req).getOrNull()?.booking_id)
     }
 
     @Test
-    fun modifyBookingSession_cuandoRequestValido_devuelveMensaje() = runTest {
+    fun modifyBookingSession_whenRequestIsValid_returnsMessage() = runTest {
         val req = ReserveUpdateRequest(1, 2, 3, 4, 5, "2026-04-02")
         val useCase = buildUseCase(FakeRepo(modifyResult = Result.success(ReserveUpdateResponse("updated"))))
         assertEquals("updated", useCase.modifyBookingSession(req).getOrNull()?.message)
     }
 
     @Test
-    fun getTimeslotId_cuandoHoraInvalida_devuelveFailure() = runTest {
+    fun getTimeslotId_whenTimeIsInvalid_returnsFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(timeslotResult = Result.failure(IllegalArgumentException("hora inválida"))))
         assertTrue(useCase.getTimeslotId(1, "MONDAY", "99:99").isFailure)
     }
 
     @Test
-    fun fetchServiceIdForProduct_cuandoRepositorioResponde_devuelveIdServicio() = runTest {
+    fun fetchServiceIdForProduct_whenRepositoryResponds_returnsServiceId() = runTest {
         val useCase = buildUseCase(FakeRepo(productServiceResult = Result.success(45)))
         assertEquals(45, useCase.fetchServiceIdForProduct(9).getOrNull())
     }
 
     @Test
-    fun getHolidays_cuandoSinFestivos_devuelveListaVacia() = runTest {
+    fun getHolidays_whenNoHolidaysExist_returnsEmptyList() = runTest {
         val useCase = buildUseCase(FakeRepo(holidaysResult = Result.success(emptyList())))
         assertEquals(emptyList(), useCase.getHolidays().getOrNull())
     }
 
     @Test
-    fun makeBooking_cuandoRepositorioFalla_propagaFailure() = runTest {
+    fun makeBooking_whenRepositoryFails_propagatesFailure() = runTest {
         val req = BookingRequest(1, 2, 3, 4, 5, 6, "2026-04-01T10:00:00")
         val useCase = buildUseCase(FakeRepo(makeBookingResult = Result.failure(RuntimeException("timeout"))))
         assertTrue(useCase.makeBooking(req).isFailure)

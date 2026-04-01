@@ -20,26 +20,26 @@ class UserCoachesUseCaseTest : KoinTest {
     fun tearDown() = stopKoin()
 
     @Test
-    fun getCoaches_cuandoHayCoaches_devuelveLista() = runTest {
+    fun getCoaches_whenCoachesExist_returnsList() = runTest {
         val expected = listOf(Professional(1, "Coach Ana", "ana.jpg", "Yoga"))
         val useCase = buildUseCase(FakeRepo(getCoachesResult = Result.success(expected)))
         assertEquals(expected, useCase.getCoaches().getOrNull())
     }
 
     @Test
-    fun markFavorite_cuandoServiceNameNulo_devuelveMensaje() = runTest {
+    fun markFavorite_whenServiceNameIsNull_returnsMessage() = runTest {
         val useCase = buildUseCase(FakeRepo(markFavoriteResult = Result.success("favorite updated")))
         assertEquals("favorite updated", useCase.markFavorite(1, null, 10).getOrNull())
     }
 
     @Test
-    fun getPreferredCoach_cuandoCustomerIdValido_devuelveCoachId() = runTest {
+    fun getPreferredCoach_whenCustomerIdIsValid_returnsCoachId() = runTest {
         val useCase = buildUseCase(FakeRepo(preferredResult = Result.success(GetPreferredCoachResponse(7))))
         assertEquals(7, useCase.getPreferredCoach(5).getOrNull()?.coachId)
     }
 
     @Test
-    fun getPreferredCoach_cuandoRepositorioFalla_propagaFailure() = runTest {
+    fun getPreferredCoach_whenRepositoryFails_propagatesFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(preferredResult = Result.failure(RuntimeException("db"))))
         assertTrue(useCase.getPreferredCoach(5).isFailure)
     }

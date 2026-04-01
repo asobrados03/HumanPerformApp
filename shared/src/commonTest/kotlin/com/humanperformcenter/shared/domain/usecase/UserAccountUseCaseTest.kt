@@ -17,25 +17,25 @@ class UserAccountUseCaseTest : KoinTest {
     fun tearDown() = stopKoin()
 
     @Test
-    fun deleteUser_cuandoEmailValido_devuelveSuccess() = runTest {
+    fun deleteUser_whenEmailIsValid_returnsSuccess() = runTest {
         val useCase = buildUseCase(FakeRepo(Result.success(Unit)))
         assertTrue(useCase.deleteUser("ana@mail.com").isSuccess)
     }
 
     @Test
-    fun deleteUser_cuandoEmailVacio_devuelveFailure() = runTest {
+    fun deleteUser_whenEmailIsEmpty_returnsFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(Result.failure(IllegalArgumentException("email vacío"))))
         assertTrue(useCase.deleteUser("").isFailure)
     }
 
     @Test
-    fun deleteUser_cuandoEmailConEspacios_devuelveFailure() = runTest {
+    fun deleteUser_whenEmailHasSpaces_returnsFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(Result.failure(IllegalArgumentException("email inválido"))))
         assertTrue(useCase.deleteUser(" ").isFailure)
     }
 
     @Test
-    fun deleteUser_cuandoRepositorioFalla_propagaFailure() = runTest {
+    fun deleteUser_whenRepositoryFails_propagatesFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(Result.failure(RuntimeException("server"))))
         assertTrue(useCase.deleteUser("x@mail.com").isFailure)
     }

@@ -19,25 +19,25 @@ class WalletUseCaseTest : KoinTest {
     fun tearDown() = stopKoin()
 
     @Test
-    fun getEwalletBalance_cuandoHaySaldo_devuelveBalance() = runTest {
+    fun getEwalletBalance_whenBalanceExists_returnsBalance() = runTest {
         val useCase = buildUseCase(FakeRepo(balanceResult = Result.success(42.5)))
         assertEquals(42.5, useCase.getEwalletBalance(1).getOrNull())
     }
 
     @Test
-    fun getEwalletBalance_cuandoSaldoNulo_devuelveNull() = runTest {
+    fun getEwalletBalance_whenBalanceIsNull_returnsNull() = runTest {
         val useCase = buildUseCase(FakeRepo(balanceResult = Result.success(null)))
         assertEquals(null, useCase.getEwalletBalance(1).getOrNull())
     }
 
     @Test
-    fun getEwalletTransactions_cuandoNoHayMovimientos_devuelveListaVacia() = runTest {
+    fun getEwalletTransactions_whenNoMovementsExist_returnsEmptyList() = runTest {
         val useCase = buildUseCase(FakeRepo(transactionsResult = Result.success(emptyList())))
         assertEquals(emptyList(), useCase.getEwalletTransactions(1).getOrNull())
     }
 
     @Test
-    fun getEwalletTransactions_cuandoRepositorioFalla_propagaFailure() = runTest {
+    fun getEwalletTransactions_whenRepositoryFails_propagatesFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(transactionsResult = Result.failure(RuntimeException("db"))))
         assertTrue(useCase.getEwalletTransactions(1).isFailure)
     }

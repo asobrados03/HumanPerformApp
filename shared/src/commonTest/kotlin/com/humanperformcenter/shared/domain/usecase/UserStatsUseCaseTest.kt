@@ -19,27 +19,27 @@ class UserStatsUseCaseTest : KoinTest {
     fun tearDown() = stopKoin()
 
     @Test
-    fun getUserStats_cuandoRespuestaValida_devuelveEstadisticas() = runTest {
+    fun getUserStats_whenResponseIsValid_returnsStatistics() = runTest {
         val expected = UserStatistics(12, "Laura", 3)
         val useCase = buildUseCase(FakeRepo(Result.success(expected)))
         assertEquals(expected, useCase.getUserStats(1).getOrNull())
     }
 
     @Test
-    fun getUserStats_cuandoSinDatos_devuelveEstadisticasVacias() = runTest {
+    fun getUserStats_whenNoData_returnsEmptyStatistics() = runTest {
         val expected = UserStatistics(0, null, 0)
         val useCase = buildUseCase(FakeRepo(Result.success(expected)))
         assertEquals(expected, useCase.getUserStats(1).getOrNull())
     }
 
     @Test
-    fun getUserStats_cuandoCustomerIdInvalido_devuelveFailure() = runTest {
+    fun getUserStats_whenCustomerIdIsInvalid_returnsFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(Result.failure(IllegalArgumentException("id inválido"))))
         assertTrue(useCase.getUserStats(0).isFailure)
     }
 
     @Test
-    fun getUserStats_cuandoRepositorioFalla_propagaFailure() = runTest {
+    fun getUserStats_whenRepositoryFails_propagatesFailure() = runTest {
         val useCase = buildUseCase(FakeRepo(Result.failure(RuntimeException("down"))))
         assertTrue(useCase.getUserStats(1).isFailure)
     }
