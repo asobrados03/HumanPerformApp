@@ -1,6 +1,6 @@
 package com.humanperformcenter.shared.domain.usecase.validation
 
-sealed class ChangePasswordException(message: String) : Exception(message) {
+sealed class ChangePasswordException(message: String, cause: Throwable? = null) : Exception(message, cause) {
     object CurrentRequired   : ChangePasswordException("La contraseña actual es requerida")
     object NewRequired       : ChangePasswordException("La nueva contraseña es requerida")
     object ConfirmRequired   : ChangePasswordException("La confirmación de la nueva contraseña es requerida")
@@ -11,5 +11,5 @@ sealed class ChangePasswordException(message: String) : Exception(message) {
     object NoLowercase       : ChangePasswordException("La nueva contraseña debe contener al menos una minúscula")
     object SameAsCurrent     : ChangePasswordException("La nueva contraseña debe ser diferente a la actual")
     object ContainsSpace     : ChangePasswordException("La contraseña no puede contener espacios")
-    class  RepoFailure(cause: Throwable) : ChangePasswordException(cause.message ?: "Error al cambiar contraseña")
+    class  RepoFailure(cause: Throwable) : ChangePasswordException(cause.message ?: "Error al cambiar contraseña", cause)
 }

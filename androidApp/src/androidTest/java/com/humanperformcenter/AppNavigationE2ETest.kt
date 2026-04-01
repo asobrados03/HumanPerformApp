@@ -5,23 +5,22 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.onAllNodes
-import androidx.compose.ui.test.onNode
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.or
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.humanperformcenter.app.MainActivity
 import com.humanperformcenter.app.TestOverrides
+import com.humanperformcenter.shared.data.network.HttpClientProvider
 import com.humanperformcenter.shared.presentation.di.networkModule
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.koin.core.context.loadKoinModules
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 
 @RunWith(AndroidJUnit4::class)
@@ -63,19 +62,24 @@ class AppNavigationE2ETest {
 
     @Before
     fun setup() {
+        stopKoin()
         val mockProvider = MockHttpClientProvider()
         TestOverrides.httpClientProviderOverride = mockProvider
-        loadKoinModules(
-            module {
-                includes(networkModule)
-                single(override = true) { mockProvider }
-            }
-        )
+        startKoin {
+            modules(
+                networkModule,
+                module {
+                    single<HttpClientProvider> { mockProvider }
+                }
+            )
+            allowOverride(true)
+        }
     }
 
     @After
     fun tearDown() {
         TestOverrides.reset()
+        stopKoin()
     }
 
     @Test

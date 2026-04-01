@@ -20,12 +20,13 @@ class HumanPerformApp : Application() {
         initKoin {
             androidLogger()
             androidContext(this@HumanPerformApp)
+            allowOverride(true)
         }
 
         TestOverrides.httpClientProviderOverride?.let { provider ->
             loadKoinModules(
                 module {
-                    single<HttpClientProvider>(override = true) { provider }
+                    single<HttpClientProvider> { provider }
                 }
             )
         }
