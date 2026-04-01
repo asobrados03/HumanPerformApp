@@ -167,7 +167,9 @@ class AppNavigationE2ETest {
         value: String,
     ) {
         waitUntilVisible(stableNode)
-        onNode(stableNode.matcher(), useUnmergedTree = true).performTextInput(value)
+        onNode(stableNode.matcher(), useUnmergedTree = true)
+            .performClick()
+            .performTextInput(value)
     }
 
     private fun androidx.compose.ui.test.junit4.ComposeTestRule.waitAndClearText(stableNode: StableNode) {
