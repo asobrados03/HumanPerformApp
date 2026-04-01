@@ -2,8 +2,10 @@ package com.humanperformcenter
 
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
@@ -154,12 +156,16 @@ class AppNavigationE2ETest {
 
     private fun androidx.compose.ui.test.junit4.ComposeTestRule.waitUntilVisible(stableNode: StableNode) {
         waitUntilExists(stableNode)
-        onNode(stableNode.matcher(), useUnmergedTree = true).assertIsDisplayed()
+        onAllNodes(stableNode.matcher(), useUnmergedTree = true)
+            .filterToOne(isDisplayed())
+            .assertIsDisplayed()
     }
 
     private fun androidx.compose.ui.test.junit4.ComposeTestRule.waitAndClick(stableNode: StableNode) {
         waitUntilVisible(stableNode)
-        onNode(stableNode.matcher(), useUnmergedTree = true).performClick()
+        onAllNodes(stableNode.matcher(), useUnmergedTree = true)
+            .filterToOne(isDisplayed())
+            .performClick()
     }
 
     private fun androidx.compose.ui.test.junit4.ComposeTestRule.waitAndEnterText(
@@ -167,14 +173,17 @@ class AppNavigationE2ETest {
         value: String,
     ) {
         waitUntilVisible(stableNode)
-        onNode(stableNode.matcher(), useUnmergedTree = true)
+        onAllNodes(stableNode.matcher(), useUnmergedTree = true)
+            .filterToOne(isDisplayed())
             .performClick()
             .performTextInput(value)
     }
 
     private fun androidx.compose.ui.test.junit4.ComposeTestRule.waitAndClearText(stableNode: StableNode) {
         waitUntilVisible(stableNode)
-        onNode(stableNode.matcher(), useUnmergedTree = true).performTextClearance()
+        onAllNodes(stableNode.matcher(), useUnmergedTree = true)
+            .filterToOne(isDisplayed())
+            .performTextClearance()
     }
 
     private fun StableNode.matcher(): SemanticsMatcher {
