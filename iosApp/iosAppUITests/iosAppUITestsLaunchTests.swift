@@ -1,18 +1,16 @@
 import XCTest
 
-final class iosAppUITestsLaunchTests: XCTestCase {
+final class iosAppUITestsLaunchTests: BaseUITestCase {
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
     }
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
     }
 
     func testLaunch() throws {
-        let app = XCUIApplication()
-        app.launchArguments.append("-ui-testing")
-        app.launchEnvironment["MOCK_NETWORK"] = "1"
+        let app = makeConfiguredApp()
         app.launchEnvironment["UI_TEST_SPLASH_LOGGED_IN"] = "1"
         app.launch()
 
