@@ -32,9 +32,12 @@ class UserStatsViewModelTest {
 
     @Test
     fun loadStatistics_when_invalid_user_id_emits_error() = runTest {
+        // Arrange
         val viewModel = buildViewModel(FakeUserStatsRepository(initialStats = mapOf(1 to UserStatistics())))
 
+        // Act
         viewModel.uiState.test {
+        // Assert
             assertEquals(UserStatsState.Loading, awaitItem())
             viewModel.loadStatistics(0)
             assertEquals(UserStatsState.Error("ID de usuario inválido"), awaitItem())
@@ -44,10 +47,13 @@ class UserStatsViewModelTest {
 
     @Test
     fun loadStatistics_when_success_emits_loading_then_success() = runTest {
+        // Arrange
         val stats = UserStatistics(lastMonthWorkouts = 12, mostFrequentTrainer = "Ana", pendingBookings = 2)
         val viewModel = buildViewModel(FakeUserStatsRepository(initialStats = mapOf(1 to stats)))
 
+        // Act
         viewModel.uiState.test {
+        // Assert
             assertEquals(UserStatsState.Loading, awaitItem())
             viewModel.loadStatistics(1)
             assertEquals(UserStatsState.Success(stats), awaitItem())
@@ -57,9 +63,12 @@ class UserStatsViewModelTest {
 
     @Test
     fun loadStatistics_when_failure_without_message_emits_unknown_error() = runTest {
+        // Arrange
         val viewModel = buildViewModel(FakeUserStatsRepository(failWithoutMessage = true))
 
+        // Act
         viewModel.uiState.test {
+        // Assert
             assertEquals(UserStatsState.Loading, awaitItem())
             viewModel.loadStatistics(1)
             assertEquals(UserStatsState.Error("Error desconocido"), awaitItem())

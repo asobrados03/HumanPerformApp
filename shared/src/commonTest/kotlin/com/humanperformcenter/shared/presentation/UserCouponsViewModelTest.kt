@@ -60,11 +60,14 @@ class UserCouponsViewModelTest {
 
     @Test
     fun loadUserCoupons_when_success_updates_list_and_clears_loading() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeUserCouponsRepository(seedCoupons = listOf(coupon))
         )
 
         viewModel.couponUiState.test {
+        // Assert
             assertEquals(false, awaitItem().isLoading)
             viewModel.loadUserCoupons(1)
 
@@ -79,11 +82,14 @@ class UserCouponsViewModelTest {
 
     @Test
     fun loadUserCoupons_when_failure_sets_error() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeUserCouponsRepository(failOnLoadWithMessage = "No disponible")
         )
 
         viewModel.couponUiState.test {
+        // Assert
             assertEquals(false, awaitItem().isLoading)
             viewModel.loadUserCoupons(1)
 
@@ -97,24 +103,30 @@ class UserCouponsViewModelTest {
 
     @Test
     fun onCouponCodeChanged_when_called_updates_code_and_clears_error() {
+        // Arrange
         val viewModel = buildViewModel(FakeUserCouponsRepository())
 
+        // Act
         viewModel.onCouponCodeChanged("SPRING20")
 
         val state = viewModel.couponUiState.value
+        // Assert
         assertEquals("SPRING20", state.code)
         assertEquals(null, state.error)
     }
 
     @Test
     fun addCouponToUser_when_add_and_refresh_succeed_clears_code_and_refreshes_coupons() = runTest {
+        // Arrange
         val viewModel = buildViewModel(FakeUserCouponsRepository())
+        // Act
         viewModel.onCouponCodeChanged("WELCOME10")
 
         viewModel.couponUiState.test {
             awaitItem()
             viewModel.addCouponToUser(1, "WELCOME10")
 
+        // Assert
             assertEquals(true, awaitItem().isLoading)
             val success = awaitItem()
             assertEquals(false, success.isLoading)
@@ -127,7 +139,9 @@ class UserCouponsViewModelTest {
 
     @Test
     fun addCouponToUser_when_add_fails_sets_error() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeUserCouponsRepository(failOnAddWithMessage = "Cupón inválido")
         )
 
@@ -135,6 +149,7 @@ class UserCouponsViewModelTest {
             awaitItem()
             viewModel.addCouponToUser(1, "BAD")
 
+        // Assert
             assertEquals(true, awaitItem().isLoading)
             val failed = awaitItem()
             assertEquals(false, failed.isLoading)
@@ -145,7 +160,9 @@ class UserCouponsViewModelTest {
 
     @Test
     fun addCouponToUser_when_refresh_fails_sets_refresh_error() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeUserCouponsRepository(failOnLoadWithMessage = "No se pudo refrescar")
         )
 
@@ -153,6 +170,7 @@ class UserCouponsViewModelTest {
             awaitItem()
             viewModel.addCouponToUser(1, "WELCOME10")
 
+        // Assert
             assertEquals(true, awaitItem().isLoading)
             val failed = awaitItem()
             assertEquals(false, failed.isLoading)

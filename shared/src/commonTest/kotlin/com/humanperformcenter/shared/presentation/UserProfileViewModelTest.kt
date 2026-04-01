@@ -101,12 +101,15 @@ class UserProfileViewModelTest {
 
     @Test
     fun updateUser_when_success_emits_loading_then_success_and_updates_current_user() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeUserProfileRepository(initialUsers = mapOf(1 to sampleUser(1, "Old")))
         )
         val currentUser = MutableStateFlow<User?>(sampleUser(1, "Old"))
 
         viewModel.updateState.test {
+        // Assert
             assertEquals(UpdateState.Idle, awaitItem())
             viewModel.updateUser(sampleUser(1, "New"), null, currentUser)
             assertEquals(UpdateState.Loading, awaitItem())
@@ -119,32 +122,41 @@ class UserProfileViewModelTest {
 
     @Test
     fun updateUser_when_invalid_user_data_emits_validationerrors() = runTest {
+        // Arrange
         val viewModel = buildViewModel()
 
+        // Act
         viewModel.updateUser(sampleUser(1, ""), null, MutableStateFlow(null))
 
+        // Assert
         assertTrue(viewModel.updateState.value is UpdateState.ValidationErrors)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun updateUser_when_repository_fails_emits_error() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeUserProfileRepository(failUpdateWithMessage = "fail")
         )
 
         viewModel.updateUser(sampleUser(1, "New"), null, MutableStateFlow(null))
         advanceUntilIdle()
 
+        // Assert
         assertEquals(UpdateState.Error("fail"), viewModel.updateState.value)
     }
 
     @Test
     fun clearUpdateState_after_update_flow_restores_idle() = runTest {
+        // Arrange
         val viewModel = buildViewModel()
 
+        // Act
         viewModel.clearUpdateState()
 
+        // Assert
         assertEquals(UpdateState.Idle, viewModel.updateState.value)
     }
 
@@ -154,22 +166,28 @@ class UserProfileViewModelTest {
 
     @Test
     fun fetchUserProfile_when_currentUser_is_null_returns_safely() = runTest {
+        // Arrange
         val viewModel = buildViewModel()
 
+        // Act
         viewModel.fetchUserProfile(MutableStateFlow(null))
 
+        // Assert
         assertTrue(viewModel.updateState.value is UpdateState.Idle)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun deleteProfilePic_when_repository_fails_emits_error_and_can_be_reset() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             FakeUserProfileRepository(failDeletePicWithMessage = "delete fail")
         )
 
         viewModel.deleteProfilePic(sampleUser(1, "User"), MutableStateFlow(sampleUser(1, "User")))
         advanceUntilIdle()
+        // Assert
         assertEquals(DeleteProfilePicState.Error("delete fail"), viewModel.deleteProfilePicState.value)
 
         viewModel.clearDeleteProfilePicState()

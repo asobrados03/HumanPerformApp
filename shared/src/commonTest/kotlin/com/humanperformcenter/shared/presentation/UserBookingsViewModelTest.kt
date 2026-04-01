@@ -51,12 +51,15 @@ class UserBookingsViewModelTest {
 
     @Test
     fun fetchUserBookings_when_success_emits_loading_then_success() = runTest {
+        // Arrange
         val booking = UserBooking(1, "2026-03-20", "10:00", "PT", "Pack", 1, 2, "Coach", null)
         val viewModel = buildViewModel(
+        // Act
             repository = FakeUserBookingsRepository(initialBookingsByUser = mapOf(1 to listOf(booking)))
         )
 
         viewModel.userBookings.test {
+        // Assert
             assertEquals(FetchUserBookingsState.Loading, awaitItem())
             viewModel.fetchUserBookings(1)
             assertEquals(FetchUserBookingsState.Success(listOf(booking)), awaitItem())
@@ -66,11 +69,14 @@ class UserBookingsViewModelTest {
 
     @Test
     fun fetchUserBookings_when_failure_without_message_emits_default_error() = runTest {
+        // Arrange
         val viewModel = buildViewModel(
+        // Act
             repository = FakeUserBookingsRepository(failGetWithoutMessage = true)
         )
 
         viewModel.userBookings.test {
+        // Assert
             assertEquals(FetchUserBookingsState.Loading, awaitItem())
             viewModel.fetchUserBookings(1)
             assertEquals(FetchUserBookingsState.Error("Ocurrió un error inesperado"), awaitItem())
@@ -80,12 +86,15 @@ class UserBookingsViewModelTest {
 
     @Test
     fun cancelUserBooking_when_success_cancels_notification_and_refreshes_bookings() = runTest {
+        // Arrange
         val existing = UserBooking(99, "2026-03-20", "10:00", "PT", "Pack", 1, 2, "Coach", null)
         val repository = FakeUserBookingsRepository(initialBookingsByUser = mapOf(7 to listOf(existing)))
         val notifications = FakeNotificationManager()
         val viewModel = buildViewModel(repository, notifications)
 
+        // Act
         viewModel.userBookings.test {
+        // Assert
             assertEquals(FetchUserBookingsState.Loading, awaitItem()) // Loading inicial
 
             viewModel.cancelUserBooking(bookingId = 99, currentUser = sampleUser(id = 7))
@@ -99,12 +108,15 @@ class UserBookingsViewModelTest {
 
     @Test
     fun cancelUserBooking_when_failure_does_not_refresh_or_cancel_notification() = runTest {
+        // Arrange
         val repository = FakeUserBookingsRepository(failCancelWithMessage = "fallo")
         val notifications = FakeNotificationManager()
         val viewModel = buildViewModel(repository, notifications)
 
+        // Act
         viewModel.cancelUserBooking(bookingId = 99, currentUser = sampleUser())
 
+        // Assert
         assertEquals(null, notifications.canceledBookingId)
         assertEquals(0, repository.getBookingsCalls)
     }
