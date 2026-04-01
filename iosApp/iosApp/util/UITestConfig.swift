@@ -2,6 +2,9 @@ import Foundation
 
 enum UITestConfig {
     static let isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
+    static let shouldDisableAnimations =
+        ProcessInfo.processInfo.arguments.contains("-ui-testing-disable-animations")
+        || ProcessInfo.processInfo.environment["UI_TEST_DISABLE_ANIMATIONS"] == "1"
     static let isMockNetworkEnabled = ProcessInfo.processInfo.environment["MOCK_NETWORK"] == "1"
 
     static var splashResolvesToLoggedIn: Bool {

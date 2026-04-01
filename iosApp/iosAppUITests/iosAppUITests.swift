@@ -1,13 +1,12 @@
 import XCTest
 
-final class iosAppUITests: XCTestCase {
+final class iosAppUITests: BaseUITestCase {
     private var app: XCUIApplication!
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchArguments.append("-ui-testing")
-        app.launchEnvironment["MOCK_NETWORK"] = "1"
+        app = makeConfiguredApp()
     }
 
     func testAuthFlowSplashWelcomeLoginRegister() {

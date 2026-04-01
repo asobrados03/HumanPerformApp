@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import shared
 
 @main
@@ -8,6 +9,9 @@ struct iOSApp: App {
         let prefs = DataStoreProvider().get()
         CryptoCallbacks.register()
         SecureStorage.shared.initialize(prefs: prefs)
+        if UITestConfig.isUITesting && UITestConfig.shouldDisableAnimations {
+            UIView.setAnimationsEnabled(false)
+        }
     }
     
     @StateObject private var appState = AppState()
@@ -16,6 +20,12 @@ struct iOSApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(appState)
+                .transaction { transaction in
+                    if UITestConfig.isUITesting && UITestConfig.shouldDisableAnimations {
+                        transaction.disablesAnimations = true
+                        transaction.animation = nil
+                    }
+                }
         }
     }
 }

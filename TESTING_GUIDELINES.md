@@ -119,12 +119,18 @@ Se añadió el target `iosAppUITests` con casos que cubren:
 Los tests lanzan la app con:
 
 - launch argument: `-ui-testing`
+- launch argument: `-ui-testing-disable-animations`
 - launch environment: `MOCK_NETWORK=1`
+- launch environment: `UI_TEST_DISABLE_ANIMATIONS=1`
 
 Y para escenarios concretos:
 
 - `UI_TEST_SPLASH_LOGGED_IN=0|1` (resolución del splash sin depender de sesión real)
 - `UI_TEST_FORCE_AUTH_ERROR=1` (fuerza error de login visible en pantalla)
+
+El target `iosAppUITests` centraliza esta configuración en un `BaseUITestCase`, por lo que
+todas las clases de UI tests heredan automáticamente estos flags al crear la app con
+`makeConfiguredApp()`.
 
 ### Ejecutar localmente (macOS + Xcode)
 
