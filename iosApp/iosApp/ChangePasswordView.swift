@@ -27,8 +27,8 @@ struct ChangePasswordView: View {
             passwordField("Nueva contraseña", text: $newPassword, visible: $showNew)
             passwordField("Confirmar nueva contraseña", text: $confirmPassword, visible: $showConfirm)
 
-            if let error = authVM.isChangingPassword as? ChangePasswordStateError {
-                Text(error.message)
+            if let errorMessage {
+                Text(errorMessage)
                     .foregroundColor(.red)
                     .multilineTextAlignment(.center)
             }
@@ -44,7 +44,7 @@ struct ChangePasswordView: View {
                     )
                 }
             }) {
-                if authVM.isChangingPassword is ChangePasswordStateLoading {
+                if isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                 } else {
@@ -53,7 +53,7 @@ struct ChangePasswordView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
-            .disabled(authVM.isChangingPassword is ChangePasswordStateLoading)
+            .disabled(isLoading)
 
             Spacer()
         }
@@ -61,7 +61,7 @@ struct ChangePasswordView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
         .onChange(of: authVM.isChangingPassword) { state in
-            if state is ChangePasswordStateSuccess {
+            if isSuccessState(state) {
                 showSuccess = true
             }
         }
@@ -89,6 +89,26 @@ struct ChangePasswordView: View {
         }
         .padding(12)
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
+    }
+
+    private var isLoading: Bool {
+        isState(authVM.isChangingPassword, named: "Loading")
+    }
+
+    private var errorMessage: String? {
+        guard isState(authVM.isChangingPassword, named: "Error") else { return nil }
+        return Mirror(reflecting: authVM.isChangingPassword)
+            .children
+            .first(where: { $0.label == "message" })?
+            .value as? String
+    }
+
+    private func isSuccessState(_ state: Any) -> Bool {
+        isState(state, named: "Success")
+    }
+
+    private func isState(_ state: Any, named suffix: String) -> Bool {
+        String(describing: type(of: state)).hasSuffix(suffix)
     }
 }
 
