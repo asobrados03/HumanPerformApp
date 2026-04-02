@@ -13,16 +13,17 @@ struct MyProductsView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                switch serviceProductViewModel.userProductsState {
-                case is UserProductsUiStateLoading:
+                switch serviceProductViewModel.userProductsStateKind() {
+                case "loading":
                     ProgressView()
                         .frame(maxWidth: .infinity, alignment: .center)
-                case let success as UserProductsUiStateSuccess:
-                    if success.products.isEmpty {
+                case "success":
+                    let products = serviceProductViewModel.userProductsStateProducts()
+                    if products.isEmpty {
                         Text("No tienes productos contratados.")
                             .foregroundColor(.secondary)
                     } else {
-                        ForEach(success.products, id: \.id) { producto in
+                        ForEach(products, id: \.id) { producto in
                             ProductRow(producto: producto)
                                 .onTapGesture {
                                     selectedProduct = producto
@@ -30,15 +31,15 @@ struct MyProductsView: View {
                                 }
                         }
                     }
-                case let error as UserProductsUiStateError:
+                case "error":
                     VStack(spacing: 8) {
-                        Text(error.message)
+                        Text(serviceProductViewModel.userProductsStateMessage() ?? "Error desconocido")
                             .foregroundColor(.red)
                             .multilineTextAlignment(.center)
 
                         if let id = sessionViewModel.userData?.id {
                             Button("Reintentar") {
-                                serviceProductViewModel.loadUserProducts(userId: id)
+                                serviceProductViewModel.loadUserProducts(userId: Int(id))
                             }
                         }
                     }
@@ -50,12 +51,12 @@ struct MyProductsView: View {
         }
         .onAppear {
             if let id = sessionViewModel.userData?.id {
-                serviceProductViewModel.loadUserProducts(userId: id)
+                serviceProductViewModel.loadUserProducts(userId: Int(id))
             }
         }
         .onChange(of: sessionViewModel.userData?.id) { newId in
             if let id = newId {
-                serviceProductViewModel.loadUserProducts(userId: id)
+                serviceProductViewModel.loadUserProducts(userId: Int(id))
             }
         }
         .confirmationDialog(
@@ -65,7 +66,7 @@ struct MyProductsView: View {
         ) {
             Button("Ver detalles") {
                 if let productId = selectedProduct?.id {
-                    onOpenProductDetail(productId)
+                    onOpenProductDetail(Int(productId))
                 }
             }
             Button("Darse de baja", role: .destructive) {
@@ -79,7 +80,7 @@ struct MyProductsView: View {
             Button("Cancelar", role: .cancel) { }
             Button("Sí, darse de baja", role: .destructive) {
                 if let prod = selectedProduct, let userId = sessionViewModel.userData?.id {
-                    serviceProductViewModel.unassignProductFromUser(productId: prod.id, userId: userId)
+                    serviceProductViewModel.unassignProductFromUser(productId: Int(prod.id), userId: Int(userId))
                 }
                 selectedProduct = nil
             }
