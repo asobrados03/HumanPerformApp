@@ -1,4 +1,5 @@
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import Foundation
 import shared
 

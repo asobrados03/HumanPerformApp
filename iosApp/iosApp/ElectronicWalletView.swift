@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 /// Pantalla del monedero virtual del usuario.

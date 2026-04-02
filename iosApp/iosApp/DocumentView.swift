@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 /// Pantalla para la gestión de documentos del usuario, replicando la versión de Android.
