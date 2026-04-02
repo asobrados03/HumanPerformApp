@@ -63,7 +63,7 @@ struct CalendarView: View {
     }
 
     var body: some View {
-        ScrollView {
+        SwiftUI.ScrollView(.vertical) {
             VStack(spacing: 14) {
                 if UITestConfig.isMockNetworkEnabled {
                     Text("Mock Calendar Loaded")
@@ -121,7 +121,10 @@ struct CalendarView: View {
         ) {
             if let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess {
                 ForEach(success.bookings, id: \.id) { booking in
-                    Button("Cambiar #\(booking.id) (\(booking.date.prefix(10)) \(booking.hour.prefix(5)))") {
+                    let bookingDay = String(booking.date.prefix(10))
+                    let bookingHour = String(booking.hour.prefix(5))
+                    let title = "Cambiar #\(booking.id) (\(bookingDay) \(bookingHour))"
+                    Button(title) {
                         submitBookingChange(booking: booking)
                     }
                 }
@@ -185,36 +188,35 @@ struct CalendarView: View {
 
     @ViewBuilder
     private func dayCell(for maybeDate: Date?, today: Date) -> some View {
-        guard let date = maybeDate else {
+        if let date = maybeDate {
+            let isHoliday = isHolidayDate(date)
+            let isReserved = isReservedDate(date)
+            let selectable = isSelectable(date: date, today: today, isHoliday: isHoliday)
+            let dayText = "\(calendar.component(.day, from: date))"
+            let cellBackground = backgroundColor(
+                date: date,
+                isReserved: isReserved,
+                isHoliday: isHoliday,
+                selectable: selectable
+            )
+            let borderColor: Color = calendar.isDateInToday(date) ? .secondary : .clear
+
+            Text(dayText)
+                .fontWeight(.bold)
+                .frame(maxWidth: .infinity, minHeight: 34)
+                .padding(.vertical, 3)
+                .background(cellBackground)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(borderColor, lineWidth: 2))
+                .opacity(selectable ? 1 : 0.45)
+                .onTapGesture {
+                    guard selectable else { return }
+                    selectedDate = date
+                    onDayClicked(date)
+                }
+        } else {
             Color.clear.frame(height: 36)
-            return
         }
-
-        let isHoliday = isHolidayDate(date)
-        let isReserved = isReservedDate(date)
-        let selectable = isSelectable(date: date, today: today, isHoliday: isHoliday)
-        let dayText = "\(calendar.component(.day, from: date))"
-        let cellBackground = backgroundColor(
-            date: date,
-            isReserved: isReserved,
-            isHoliday: isHoliday,
-            selectable: selectable
-        )
-        let borderColor: Color = calendar.isDateInToday(date) ? .secondary : .clear
-
-        Text(dayText)
-            .fontWeight(.bold)
-            .frame(maxWidth: .infinity, minHeight: 34)
-            .padding(.vertical, 3)
-            .background(cellBackground)
-            .clipShape(Circle())
-            .overlay(Circle().stroke(borderColor, lineWidth: 2))
-            .opacity(selectable ? 1 : 0.45)
-            .onTapGesture {
-                guard selectable else { return }
-                selectedDate = date
-                onDayClicked(date)
-            }
     }
 
     @ViewBuilder
@@ -384,11 +386,20 @@ struct CalendarView: View {
     }
 
     private func isHolidayDate(_ date: Date) -> Bool {
-        daySessionViewModel.holidays.contains {
-            $0.year.int32Value == Int32(calendar.component(.year, from: date)) &&
-            $0.monthNumber.int32Value == Int32(calendar.component(.month, from: date)) &&
-            $0.dayOfMonth.int32Value == Int32(calendar.component(.day, from: date))
+        let year = Int32(calendar.component(.year, from: date))
+        let month = Int32(calendar.component(.month, from: date))
+        let day = Int32(calendar.component(.day, from: date))
+
+        for holiday in daySessionViewModel.holidays {
+            let holidayYear = holiday.year.int32Value
+            let holidayMonth = holiday.monthNumber.int32Value
+            let holidayDay = holiday.dayOfMonth.int32Value
+            if holidayYear == year && holidayMonth == month && holidayDay == day {
+                return true
+            }
         }
+
+        return false
     }
 
     private func isReservedDate(_ date: Date) -> Bool {
@@ -420,12 +431,14 @@ struct CalendarView: View {
         let nextMonth = calendar.component(.month, from: nextMonthDate)
         let nextYear = calendar.component(.year, from: nextMonthDate)
 
+        let isCurrentMonth = monthOfDate == currentMonth && yearOfDate == currentYear
+        let isNextMonth = monthOfDate == nextMonth && yearOfDate == nextYear
+
         if day < 15 {
-            return monthOfDate == currentMonth && yearOfDate == currentYear
+            return isCurrentMonth
         }
 
-        return (monthOfDate == currentMonth && yearOfDate == currentYear) ||
-            (isAfter15 && monthOfDate == nextMonth && yearOfDate == nextYear)
+        return isCurrentMonth || (isAfter15 && isNextMonth)
     }
 
     private func downloadICS(for booking: UserBooking) {
