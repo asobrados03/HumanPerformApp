@@ -312,7 +312,7 @@ struct RegisterView: View {
 
     private var loadingSection: some View {
         Group {
-            if vm.registerState is RegisterStateLoading {
+            if isLoadingState(vm.registerState) {
                 ProgressView().padding(.vertical, 8)
             } else {
                 EmptyView()
@@ -331,7 +331,7 @@ struct RegisterView: View {
                 .foregroundStyle(.white)
                 .clipShape(Capsule())
         }
-        .disabled(vm.registerState is RegisterStateLoading)
+        .disabled(isLoadingState(vm.registerState))
     }
 
     private var loginLink: some View {
@@ -355,29 +355,31 @@ struct RegisterView: View {
     private func handleStateChange(_ newState: shared.RegisterState) {
         print("🟡 RegisterState changed to: \(newState)")
 
-        if newState is RegisterStateIdle {
+        if isIdleState(newState) {
             print("🟡 State: idle")
             return
         }
 
-        if newState is RegisterStateLoading {
+        if isLoadingState(newState) {
             print("🟡 State: loading")
             return
         }
 
-        if let validationState = newState as? RegisterStateValidationErrors {
-            print("🟡 State: validationErrors - \(validationState.fieldErrors)")
-            fieldErrors = mapValidationErrors(validationState.fieldErrors)
+        if isValidationErrorsState(newState) {
+            let rawErrors = propertyValue(named: "fieldErrors", from: newState)
+            print("🟡 State: validationErrors - \(String(describing: rawErrors))")
+            fieldErrors = mapValidationErrors(rawErrors as Any)
             return
         }
 
-        if let errorState = newState as? RegisterStateError {
-            print("🟡 State: error - \(errorState.message)")
-            errorMessage = errorState.message
+        if isErrorState(newState) {
+            let rawMessage = propertyValue(named: "message", from: newState) as? String
+            print("🟡 State: error - \(rawMessage ?? "")")
+            errorMessage = rawMessage
             return
         }
 
-        if newState is RegisterStateSuccess {
+        if isSuccessState(newState) {
             print("🟡 State: success")
             clearForm()
             showSuccessAlert = true
@@ -427,11 +429,40 @@ struct RegisterView: View {
         print("  - sex: \(req.sex)")
         print("  - dobText: \(req.dateOfBirth) (original: \(dobText))")
         
-        vm.register(req)
+        vm.register(data: req)
         print("🔵 vm.register called")
     }
 
 
+
+
+    private func stateTypeName(_ state: shared.RegisterState) -> String {
+        String(describing: type(of: state))
+    }
+
+    private func isIdleState(_ state: shared.RegisterState) -> Bool {
+        stateTypeName(state).contains("Idle")
+    }
+
+    private func isLoadingState(_ state: shared.RegisterState) -> Bool {
+        stateTypeName(state).contains("Loading")
+    }
+
+    private func isValidationErrorsState(_ state: shared.RegisterState) -> Bool {
+        stateTypeName(state).contains("ValidationErrors")
+    }
+
+    private func isErrorState(_ state: shared.RegisterState) -> Bool {
+        stateTypeName(state).contains("Error")
+    }
+
+    private func isSuccessState(_ state: shared.RegisterState) -> Bool {
+        stateTypeName(state).contains("Success")
+    }
+
+    private func propertyValue(named key: String, from state: Any) -> Any? {
+        Mirror(reflecting: state).children.first { $0.label == key }?.value
+    }
     private func mapValidationErrors(_ rawErrors: Any) -> [RegisterField: String] {
         var mapped: [RegisterField: String] = [:]
 
