@@ -21,7 +21,7 @@ struct FavoritesView: View {
     private let avatarSize: CGFloat = 36
 
     private var currentUserId: KotlinInt? {
-        sessionVM.userData?.id.map { KotlinInt(value: $0) }
+        sessionVM.userData.map { KotlinInt(value: $0.id) }
     }
 
     private var coachRows: [CoachUI] {
