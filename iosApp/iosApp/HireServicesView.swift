@@ -1,10 +1,9 @@
 import SwiftUI
 import shared
-import KMPObservableViewModelSwiftUI
 
 struct HireServicesView: View {
-    @StateViewModel var viewModel: shared.ServiceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
-    @StateViewModel var sessionViewModel: shared.UserSessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
+    @State var viewModel: shared.ServiceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
+    @State var sessionViewModel: shared.UserSessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
 
     var onOpenHireProducts: (Int) -> Void = { _ in }
 

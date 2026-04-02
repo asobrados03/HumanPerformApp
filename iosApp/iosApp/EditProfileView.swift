@@ -1,12 +1,11 @@
 import SwiftUI
 import Foundation
-import KMPObservableViewModelSwiftUI
 import shared
 
 /// Permite editar campos del perfil de usuario y la foto.
 struct EditProfileView: View {
-    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
-    @StateViewModel private var profileVM = SharedDependencies.shared.makeUserProfileViewModel()
+    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @State private var profileVM = SharedDependencies.shared.makeUserProfileViewModel()
 
     @Environment(\.dismiss) private var dismiss
     @State private var pendingDismiss = false

@@ -1,11 +1,10 @@
 import SwiftUI
-import KMPObservableViewModelSwiftUI
 import shared
 
 /// Pantalla de configuración del usuario.
 struct ConfigurationView: View {
     @EnvironmentObject var appState: AppState
-    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
 
     @State private var showLogoutAlert = false
     @State private var showDeleteAlert = false
@@ -50,7 +49,7 @@ struct ConfigurationView: View {
                     Button("Eliminar cuenta") { showDeleteAlert = true }
                         .foregroundColor(.red)
                     NavigationLink("Cambiar contraseña") {
-                        ChangePasswordView().environmentObject(sessionVM)
+                        ChangePasswordView()
                     }
                 }
             }

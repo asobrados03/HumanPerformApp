@@ -6,12 +6,11 @@
 //
 
 import SwiftUI
-import KMPObservableViewModelSwiftUI
 import shared
 
 struct AddCouponView: View {
-    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
-    @StateViewModel private var couponsVM = SharedDependencies.shared.makeUserCouponsViewModel()
+    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @State private var couponsVM = SharedDependencies.shared.makeUserCouponsViewModel()
 
     var body: some View {
         VStack(spacing: 12) {

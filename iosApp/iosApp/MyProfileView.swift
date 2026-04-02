@@ -10,7 +10,7 @@ import shared
 
 /// Muestra la información personal del usuario actual.
 struct MyProfileView: View {
-    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
+    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
 
     var body: some View {
         Group {

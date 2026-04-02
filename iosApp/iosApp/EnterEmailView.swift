@@ -1,11 +1,10 @@
 import SwiftUI
 import shared
-import KMPObservableViewModelSwiftUI
 
 struct EnterEmailView: View {
     @State private var email: String = ""
     @State private var isEmailValid: Bool = true
-    @StateViewModel private var vm = SharedDependencies.shared.makeAuthViewModel()
+    @State private var vm = SharedDependencies.shared.makeAuthViewModel()
 
     var onSuccess: () -> Void = {}
     @State private var errorMessage: String?

@@ -6,15 +6,13 @@
 //
 
 import SwiftUI
-import KMPObservableViewModelSwiftUI
 import shared
 
-extension PaymentMethod: Identifiable {}
+extension StripePaymentMethod: Identifiable {}
 
 /// Pantalla para visualizar los métodos de pago del usuario.
 struct PaymentMethodsView: View {
-    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
-    @StateViewModel private var vm = SharedDependencies.shared.makeStripeViewModel()
+    @State private var vm = SharedDependencies.shared.makeStripeViewModel()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -29,38 +27,40 @@ struct PaymentMethodsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
         .onAppear {
-            if let id = sessionVM.userData?.id {
-                vm.loadMethods(for: id)
-            }
+            vm.loadPaymentMethods()
         }
     }
 
     @ViewBuilder
     private var content: some View {
-        switch vm.uiState {
-        case .idle, .loading:
+        switch vm.viewPaymentMethodsUiState {
+        case is PaymentMethodsUiStateLoading:
             PaymentMethodsShimmerView()
-        case .error(let message):
-            ErrorStateView(message: message) {
-                if let id = sessionVM.userData?.id {
-                    vm.loadMethods(for: id)
-                }
-            }
-        case .empty:
+        case let error as PaymentMethodsUiStateError:
+            ErrorStateView(message: error.message) { vm.loadPaymentMethods() }
+        case is PaymentMethodsUiStateEmpty:
             EmptyStateView(
                 title: "No hay métodos todavía",
                 subtitle: "Añade tu primera tarjeta para pagar más rápido."
             )
-        case .success(let methods):
+        case let success as PaymentMethodsUiStateSuccess:
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(methods) { pm in
-                        PaymentMethodCard(paymentMethod: pm)
+                    ForEach(success.paymentMethods) { pm in
+                        PaymentMethodCard(
+                            paymentMethod: pm,
+                            isDefault: pm.id == success.defaultPaymentMethodId
+                        )
                     }
                     Spacer().frame(height: 32)
                 }
                 .padding(.horizontal, 16)
             }
+        default:
+            EmptyStateView(
+                title: "No hay métodos todavía",
+                subtitle: "Añade tu primera tarjeta para pagar más rápido."
+            )
         }
     }
 }
@@ -68,23 +68,19 @@ struct PaymentMethodsView: View {
 /* --------- Componentes --------- */
 
 struct PaymentMethodCard: View {
-    let paymentMethod: PaymentMethod
+    let paymentMethod: StripePaymentMethod
+    let isDefault: Bool
 
     private var brand: String {
-        (paymentMethod.brand ?? "Tarjeta").uppercased()
+        paymentMethod.card.brand.uppercased()
     }
 
     private var last4: String {
-        let digits = paymentMethod.last4 ?? ""
-        return digits.isEmpty ? "••••" : digits
+        paymentMethod.card.last4
     }
 
     private var exp: String {
-        if let mm = paymentMethod.expMonth?.intValue {
-            let yy = paymentMethod.expYear?.intValue ?? 0
-            return String(format: "%02d/%02d", mm, yy % 100)
-        }
-        return "—"
+        String(format: "%02d/%02d", paymentMethod.card.expMonth, paymentMethod.card.expYear % 100)
     }
 
     var body: some View {
@@ -98,7 +94,7 @@ struct PaymentMethodCard: View {
                     .foregroundColor(.secondary)
             }
             Spacer()
-            if paymentMethod.isDefault {
+            if isDefault {
                 DefaultChip()
             }
         }
@@ -243,4 +239,3 @@ extension View {
         self.modifier(Shimmer())
     }
 }
-

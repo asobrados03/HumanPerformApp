@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-import KMPObservableViewModelSwiftUI
 import shared
 
 private enum UserMenuOption: String, CaseIterable, Identifiable {
@@ -22,9 +21,9 @@ private enum UserMenuOption: String, CaseIterable, Identifiable {
 }
 
 struct UserView: View {
-    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
-    @StateViewModel private var walletVM = SharedDependencies.shared.makeUserWalletViewModel()
-    @StateViewModel private var profileVM = SharedDependencies.shared.makeUserProfileViewModel()
+    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @State private var walletVM = SharedDependencies.shared.makeUserWalletViewModel()
+    @State private var profileVM = SharedDependencies.shared.makeUserProfileViewModel()
 
     private var balanceValue: Double {
         walletVM.balance?.doubleValue ?? 0
@@ -40,7 +39,7 @@ struct UserView: View {
                             .accessibilityIdentifier("userLoadedMarker")
 
                         NavigationLink {
-                            MyProfileView().environmentObject(sessionVM)
+                            MyProfileView()
                         } label: {
                             Text("Mi perfil")
                                 .frame(maxWidth: .infinity)
@@ -126,11 +125,11 @@ struct UserView: View {
 
             HStack(spacing: 12) {
                 actionButton(title: "Mi perfil", isPrimary: true) {
-                    MyProfileView().environmentObject(sessionVM)
+                    MyProfileView()
                 }
 
                 actionButton(title: "Editar perfil", isPrimary: false) {
-                    EditProfileView().environmentObject(sessionVM)
+                    EditProfileView()
                 }
             }
             .padding(.horizontal, 16)
@@ -193,15 +192,15 @@ struct UserView: View {
         case .configuracion:
             ConfigurationView()
         case .favoritos:
-            FavoritesView().environmentObject(sessionVM)
+            FavoritesView()
         case .documento:
-            DocumentView().environmentObject(sessionVM)
+            DocumentView()
         case .verPago:
-            PaymentMethodsView().environmentObject(sessionVM)
+            PaymentMethodsView()
         case .monederoVirtual:
-            ElectronicWalletView().environmentObject(sessionVM)
+            ElectronicWalletView()
         case .anadirCupon:
-            AddCouponView().environmentObject(sessionVM)
+            AddCouponView()
         }
     }
 }
