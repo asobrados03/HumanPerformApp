@@ -23,31 +23,27 @@ class BookingFlowIntegrationTest {
     @Test
     fun daily_sessions_reserve_modify_and_holidays_flow_is_consistent() = runTest {
         val apiEngine = MockEngine { request ->
-            when {
-                request.method == HttpMethod.Get && request.url.encodedPath == "/mobile/daily" -> respond(
+            when (request.method) {
+                HttpMethod.Get if request.url.encodedPath == "/mobile/daily" -> respond(
                     """[{"product_id":31,"date":"2026-03-31","hour":"10:00","coach_id":3,"coach_name":"Paula","booked":2,"capacity":8}]""",
                     HttpStatusCode.OK,
                     headersOf("Content-Type", ContentType.Application.Json.toString()),
                 )
-
-                request.method == HttpMethod.Post && request.url.encodedPath == "/mobile/bookings" -> respond(
+                HttpMethod.Post if request.url.encodedPath == "/mobile/bookings" -> respond(
                     """{"message":"reserved","booking_id":701}""",
                     HttpStatusCode.OK,
                     headersOf("Content-Type", ContentType.Application.Json.toString()),
                 )
-
-                request.method == HttpMethod.Patch && request.url.encodedPath == "/mobile/bookings/701" -> respond(
+                HttpMethod.Patch if request.url.encodedPath == "/mobile/bookings/701" -> respond(
                     """{"message":"updated"}""",
                     HttpStatusCode.OK,
                     headersOf("Content-Type", ContentType.Application.Json.toString()),
                 )
-
-                request.method == HttpMethod.Get && request.url.encodedPath == "/mobile/holidays" -> respond(
+                HttpMethod.Get if request.url.encodedPath == "/mobile/holidays" -> respond(
                     """["2026-04-03","2026-05-01"]""",
                     HttpStatusCode.OK,
                     headersOf("Content-Type", ContentType.Application.Json.toString()),
                 )
-
                 else -> error("Unhandled api endpoint: ${request.method} ${request.url}")
             }
         }

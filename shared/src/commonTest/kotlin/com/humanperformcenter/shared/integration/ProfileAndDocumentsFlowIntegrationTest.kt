@@ -26,51 +26,48 @@ class ProfileAndDocumentsFlowIntegrationTest {
     fun fetch_update_profile_and_upload_documents_flow_returns_expected_state() = runTest {
         val profileLocal = InMemoryUserProfileLocalDataSource()
         val apiEngine = MockEngine { request ->
-            when {
-                request.method == HttpMethod.Get && request.url.encodedPath == "/mobile/user" -> respond(
+            when (request.method) {
+                HttpMethod.Get if request.url.encodedPath == "/mobile/user" -> respond(
                     """
-                    {
-                      "id": 22,
-                      "fullName": "Ana Integracion",
-                      "email": "ana@integration.test",
-                      "phone": "600000001",
-                      "sex": "F",
-                      "dateOfBirth": "1991-01-01",
-                      "postcode": 28001,
-                      "postAddress": "Calle Test 1",
-                      "dni": "12345678A",
-                      "profilePictureName": "ana.jpg"
-                    }
-                    """.trimIndent(),
+                            {
+                              "id": 22,
+                              "fullName": "Ana Integracion",
+                              "email": "ana@integration.test",
+                              "phone": "600000001",
+                              "sex": "F",
+                              "dateOfBirth": "1991-01-01",
+                              "postcode": 28001,
+                              "postAddress": "Calle Test 1",
+                              "dni": "12345678A",
+                              "profilePictureName": "ana.jpg"
+                            }
+                            """.trimIndent(),
                     HttpStatusCode.OK,
                     headersOf("Content-Type", ContentType.Application.Json.toString()),
                 )
-
-                request.method == HttpMethod.Put && request.url.encodedPath == "/mobile/user" -> respond(
+                HttpMethod.Put if request.url.encodedPath == "/mobile/user" -> respond(
                     """
-                    {
-                      "id": 22,
-                      "fullName": "Ana Integracion Updated",
-                      "email": "ana@integration.test",
-                      "phone": "600000001",
-                      "sex": "F",
-                      "dateOfBirth": "1991-01-01",
-                      "postcode": 28001,
-                      "postAddress": "Calle Test 99",
-                      "dni": "12345678A",
-                      "profilePictureName": "ana_updated.jpg"
-                    }
-                    """.trimIndent(),
+                            {
+                              "id": 22,
+                              "fullName": "Ana Integracion Updated",
+                              "email": "ana@integration.test",
+                              "phone": "600000001",
+                              "sex": "F",
+                              "dateOfBirth": "1991-01-01",
+                              "postcode": 28001,
+                              "postAddress": "Calle Test 99",
+                              "dni": "12345678A",
+                              "profilePictureName": "ana_updated.jpg"
+                            }
+                            """.trimIndent(),
                     HttpStatusCode.OK,
                     headersOf("Content-Type", ContentType.Application.Json.toString()),
                 )
-
-                request.method == HttpMethod.Post && request.url.encodedPath == "/mobile/users/22/documents" -> respond(
+                HttpMethod.Post if request.url.encodedPath == "/mobile/users/22/documents" -> respond(
                     """{"message":"uploaded"}""",
                     HttpStatusCode.OK,
                     headersOf("Content-Type", ContentType.Application.Json.toString()),
                 )
-
                 else -> error("Unhandled api endpoint: ${request.method} ${request.url}")
             }
         }

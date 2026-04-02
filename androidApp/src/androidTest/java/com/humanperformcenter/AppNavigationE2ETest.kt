@@ -1,12 +1,10 @@
 package com.humanperformcenter
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.isDisplayed
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -151,15 +149,16 @@ class AppNavigationE2ETest {
 
     private fun ComposeTestRule.waitUntilVisible(tag: String) {
         waitUntilExists(tag)
-        onAllNodes(hasTestTag(tag))
-            .filterToOne(isDisplayed())
+
+        onNode(hasTestTag(tag))
             .assertIsDisplayed()
     }
 
     private fun ComposeTestRule.waitAndClick(tag: String) {
-        waitUntilVisible(tag)
-        onAllNodes(hasTestTag(tag) and hasClickAction())
-            .filterToOne(isDisplayed())
+        waitUntilExists(tag)
+
+        onNode(hasTestTag(tag) and hasClickAction())
+            .assertIsDisplayed()
             .performClick()
     }
 
@@ -167,17 +166,19 @@ class AppNavigationE2ETest {
         tag: String,
         value: String,
     ) {
-        waitUntilVisible(tag)
-        onAllNodes(hasTestTag(tag))
-            .filterToOne(isDisplayed())
+        waitUntilExists(tag)
+
+        onNode(hasTestTag(tag))
+            .assertIsDisplayed()
             .performClick()
             .performTextInput(value)
     }
 
     private fun ComposeTestRule.waitAndClearText(tag: String) {
-        waitUntilVisible(tag)
-        onAllNodes(hasTestTag(tag))
-            .filterToOne(isDisplayed())
+        waitUntilExists(tag)
+
+        onNode(hasTestTag(tag))
+            .assertIsDisplayed()
             .performTextClearance()
     }
 }
