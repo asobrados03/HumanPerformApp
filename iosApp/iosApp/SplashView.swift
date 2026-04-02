@@ -27,7 +27,7 @@ struct SplashView: View {
         .onChange(of: sessionVM.isLoggedIn) { value in
             guard !UITestConfig.isUITesting else { return }
             guard let value else { return }
-            onResolved(value)
+            onResolved(value.boolValue)
         }
     }
 }
