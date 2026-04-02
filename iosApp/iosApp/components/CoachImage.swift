@@ -11,46 +11,51 @@ import shared
 
 struct CoachImage: View {
 
-    let coach: Professional
+    let photoName: String?
     let isSelected: Bool
     let avatarSize: CGFloat
 
-    var body: some View {
+    private var imageURL: URL? {
+        guard let photoName,
+              let encoded = photoName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
+        else {
+            return nil
+        }
+
         let base = "\(HttpClientProviderKt.API_BASE_URL)/profile_pic/"
-        let circleStroke = isSelected ? Color.white.opacity(0.7) : Color.secondary.opacity(0.25)
+        return URL(string: base + encoded)
+    }
 
+    private var circleStroke: Color {
+        isSelected ? Color.white.opacity(0.7) : Color.secondary.opacity(0.25)
+    }
+
+    var body: some View {
         Group {
-            if let photo = coach.photoName,
-               let encoded = photo.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-               let url = URL(string: base + encoded) {
-
-                AsyncImage(url: url) { phase in
+            if let imageURL {
+                AsyncImage(url: imageURL) { phase in
                     switch phase {
                     case .empty:
                         ProgressView()
                             .frame(width: avatarSize, height: avatarSize)
-
-                    case .success(let img):
-                        img.resizable()
+                    case .success(let image):
+                        image
+                            .resizable()
                             .scaledToFill()
                             .frame(width: avatarSize, height: avatarSize)
                             .clipShape(Circle())
-                            .overlay(
-                                Circle().stroke(circleStroke, lineWidth: 1)
-                            )
-
+                            .overlay(Circle().stroke(circleStroke, lineWidth: 1))
                     default:
-                        placeholder(circleStroke: circleStroke)
+                        placeholder
                     }
                 }
-
             } else {
-                placeholder(circleStroke: circleStroke)
+                placeholder
             }
         }
     }
 
-    private func placeholder(circleStroke: Color) -> some View {
+    private var placeholder: some View {
         ZStack {
             Circle()
                 .fill(isSelected ? Color.white.opacity(0.18) : Color(.systemGray5))
@@ -60,8 +65,6 @@ struct CoachImage: View {
                 .foregroundColor(isSelected ? .white : .secondary)
         }
         .frame(width: avatarSize, height: avatarSize)
-        .overlay(
-            Circle().stroke(circleStroke, lineWidth: 1)
-        )
+        .overlay(Circle().stroke(circleStroke, lineWidth: 1))
     }
 }
