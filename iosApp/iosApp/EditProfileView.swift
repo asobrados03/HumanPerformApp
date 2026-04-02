@@ -21,7 +21,7 @@ struct EditProfileView: View {
     @State private var dni: String = ""
 
     @State private var image: UIImage? = nil
-    @State private var imageData: Data? = nil
+    @State private var imageData: Foundation.Data? = nil
     @State private var showPicker = false
     @State private var pickerSource: UIImagePickerController.SourceType = .photoLibrary
     @State private var showDialog = false
@@ -128,35 +128,23 @@ struct EditProfileView: View {
     }
 
     private var profileStateKey: String {
-        switch profileVM.updateState {
-        case is UpdateStateIdle:
-            return "idle"
-        case is UpdateStateLoading:
-            return "loading"
-        case is UpdateStateSuccess:
-            return "success"
-        case let error as UpdateStateError:
-            return "error:\(error.message)"
-        case let validation as UpdateStateValidationErrors:
-            return "validation:\(validation.fieldErrors.description)"
-        default:
-            return "unknown"
+        let kind = profileVM.updateStateKind()
+        if kind == "error", let message = profileVM.updateStateMessage() {
+            return "error:\(message)"
         }
+        if kind == "validation" {
+            let fieldErrors = profileVM.updateValidationFieldErrors()
+            return "validation:\(fieldErrors.description)"
+        }
+        return kind
     }
 
     private var deletePhotoStateKey: String {
-        switch profileVM.deleteProfilePicState {
-        case is DeleteProfilePicStateIdle:
-            return "idle"
-        case is DeleteProfilePicStateLoading:
-            return "loading"
-        case is DeleteProfilePicStateSuccess:
-            return "success"
-        case let error as DeleteProfilePicStateError:
-            return "error:\(error.message)"
-        default:
-            return "unknown"
+        let kind = profileVM.deleteProfilePicStateKind()
+        if kind == "error", let message = profileVM.deleteProfilePicStateMessage() {
+            return "error:\(message)"
         }
+        return kind
     }
 
     private func save(user: User) {
@@ -165,15 +153,9 @@ struct EditProfileView: View {
             guard !postcode.isEmpty, let v = Int32(postcode) else { return user.postcode }
             return KotlinInt(value: v)
         }()
-        let parts = dateOfBirth.split(separator: "/")
-        let backendDate: String = {
-            if parts.count == 3 {
-                let d = parts[0].padding(toLength: 2, withPad: "0", startingAt: 0)
-                let m = parts[1].padding(toLength: 2, withPad: "0", startingAt: 0)
-                let y = parts[2].padding(toLength: 4, withPad: "0", startingAt: 0)
-                return "\(y)-\(m)-\(d)"
-            } else { return user.dateOfBirth }
-        }()
+        // Android envía dd/MM/yyyy al ViewModel (UserValidator valida ese formato).
+        // Para mantener el comportamiento equivalente entre plataformas, iOS debe enviar el mismo formato.
+        let dateForValidation = dateOfBirth.trimmingCharacters(in: .whitespacesAndNewlines)
         let newSex = selectedSexIndex >= 0 ? sexOptions[selectedSexIndex].1 : user.sex
         var picName = user.profilePictureName
         if image != nil {
@@ -185,7 +167,7 @@ struct EditProfileView: View {
             email: user.email,
             phone: phone,
             sex: newSex,
-            dateOfBirth: backendDate,
+            dateOfBirth: dateForValidation.isEmpty ? user.dateOfBirth : dateForValidation,
             postcode: kPostcode,
             postAddress: postAddress,
             dni: dni.isEmpty ? nil : dni,
@@ -199,45 +181,39 @@ struct EditProfileView: View {
     }
 
     private func handleProfileStateChange() {
-        switch profileVM.updateState {
-        case is UpdateStateLoading:
+        if profileVM.updateStateKind() == "loading" {
             isSaving = true
-        case is UpdateStateSuccess:
+        } else if profileVM.updateStateKind() == "success" {
             isSaving = false
             alertMessage = "Perfil actualizado"
             pendingDismiss = true
             showAlert = true
             profileVM.clearUpdateState()
-        case let error as UpdateStateError:
+        } else if profileVM.updateStateKind() == "error" {
             isSaving = false
-            alertMessage = error.message
+            alertMessage = profileVM.updateStateMessage() ?? "Error desconocido"
             showAlert = true
             profileVM.clearUpdateState()
-        case let validation as UpdateStateValidationErrors:
+        } else if profileVM.updateStateKind() == "validation" {
             isSaving = false
-            alertMessage = validation.fieldErrors.values.joined(separator: "\n")
+            let fieldErrors = profileVM.updateValidationMessages()
+            alertMessage = fieldErrors.isEmpty ? "Revisa los campos del formulario" : fieldErrors.joined(separator: "\n")
             showAlert = true
-            profileVM.clearUpdateState()
-        default:
-            break
         }
     }
 
     private func handleDeletePhotoStateChange() {
-        switch profileVM.deleteProfilePicState {
-        case is DeleteProfilePicStateSuccess:
+        if profileVM.deleteProfilePicStateKind() == "success" {
             alertMessage = "Foto eliminada"
             showAlert = true
             image = nil
             imageFileName = nil
             imageData = nil
             profileVM.clearDeleteProfilePicState()
-        case let error as DeleteProfilePicStateError:
-            alertMessage = error.message
+        } else if profileVM.deleteProfilePicStateKind() == "error" {
+            alertMessage = profileVM.deleteProfilePicStateMessage() ?? "Error desconocido"
             showAlert = true
             profileVM.clearDeleteProfilePicState()
-        default:
-            break
         }
     }
 }
