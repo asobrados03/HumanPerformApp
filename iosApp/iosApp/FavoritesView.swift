@@ -55,7 +55,7 @@ struct FavoritesView: View {
             } else {
                 List {
                     Section {
-                        ForEach(coaches, id: \.id) { coach in
+                        ForEach(Array(coaches.enumerated()), id: \.offset) { _, coach in
                             CoachRow(
                                 coach: coach,
                                 isSelected: coach.id == preferredCoachId,
