@@ -9,8 +9,8 @@ import SwiftUI
 import shared
 
 struct AddCouponView: View {
-    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
-    @State private var couponsVM = SharedDependencies.shared.makeUserCouponsViewModel()
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @StateViewModel private var couponsVM = SharedDependencies.shared.makeUserCouponsViewModel()
 
     var body: some View {
         VStack(spacing: 12) {

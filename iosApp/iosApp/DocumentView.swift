@@ -10,7 +10,7 @@ import shared
 
 /// Pantalla para la gestión de documentos del usuario, replicando la versión de Android.
 struct DocumentView: View {
-    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
     @Environment(\.dismiss) private var dismiss
 
     @State private var documentsVM = SharedDependencies.shared.makeUserDocumentsViewModel()

@@ -12,7 +12,7 @@ extension StripePaymentMethod: Identifiable {}
 
 /// Pantalla para visualizar los métodos de pago del usuario.
 struct PaymentMethodsView: View {
-    @State private var vm = SharedDependencies.shared.makeStripeViewModel()
+    @StateViewModel private var vm = SharedDependencies.shared.makeStripeViewModel()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

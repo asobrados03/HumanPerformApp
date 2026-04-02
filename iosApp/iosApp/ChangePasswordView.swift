@@ -2,8 +2,8 @@ import SwiftUI
 import shared
 
 struct ChangePasswordView: View {
-    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
-    @State private var authVM = SharedDependencies.shared.makeAuthViewModel()
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @StateViewModel private var authVM = SharedDependencies.shared.makeAuthViewModel()
 
     @State private var currentPassword = ""
     @State private var newPassword = ""

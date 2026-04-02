@@ -6,11 +6,12 @@
 //
 
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 /// Muestra la información personal del usuario actual.
 struct MyProfileView: View {
-    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
 
     var body: some View {
         Group {
