@@ -11,11 +11,40 @@ struct ConfigurationView: View {
     @State private var errorMessage: String?
 
     private var isProcessing: Bool {
-        sessionVM.isLoggingOut || sessionVM.deleteStateKind() == "loading"
+        sessionVM.isLoggingOut || resolvedDeleteStateKind == "loading"
     }
 
     private var deleteStateChangeKey: String {
-        "\(sessionVM.deleteStateKind()):\(sessionVM.deleteStateMessage() ?? "")"
+        "\(resolvedDeleteStateKind):\(resolvedDeleteStateMessage ?? "")"
+    }
+
+    /// Evita depender de nombres de clases generadas por Kotlin/Native
+    /// (por ejemplo, `DeleteUserStateLoading`) que cambian entre versiones.
+    private var resolvedDeleteStateKind: String {
+        let kind = sessionVM.deleteStateKind()
+        if !kind.isEmpty {
+            return kind
+        }
+
+        let rawState = String(describing: sessionVM.deleteState)
+        if rawState.localizedCaseInsensitiveContains("Loading") { return "loading" }
+        if rawState.localizedCaseInsensitiveContains("Success") { return "success" }
+        if rawState.localizedCaseInsensitiveContains("NotFound") { return "notFound" }
+        if rawState.localizedCaseInsensitiveContains("Error") { return "error" }
+        return "idle"
+    }
+
+    private var resolvedDeleteStateMessage: String? {
+        let message = sessionVM.deleteStateMessage()
+        if let message, !message.isEmpty {
+            return message
+        }
+
+        if resolvedDeleteStateKind == "error" {
+            return "Error desconocido"
+        }
+
+        return nil
     }
 
     var body: some View {
@@ -65,12 +94,12 @@ struct ConfigurationView: View {
             Button("OK", role: .cancel) { }
         }
         .onChange(of: deleteStateChangeKey) { _ in
-            switch sessionVM.deleteStateKind() {
+            switch resolvedDeleteStateKind {
             case "success":
                 appState.isAuthenticated = false
                 sessionVM.resetDeleteState()
             case "notFound", "error":
-                errorMessage = sessionVM.deleteStateMessage() ?? "Error desconocido"
+                errorMessage = resolvedDeleteStateMessage ?? "Error desconocido"
                 sessionVM.resetDeleteState()
             default:
                 break
