@@ -121,7 +121,10 @@ struct CalendarView: View {
         ) {
             if let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess {
                 ForEach(success.bookings, id: \.id) { booking in
-                    Button("Cambiar #\(booking.id) (\(booking.date.prefix(10)) \(booking.hour.prefix(5)))") {
+                    let bookingDay = String(booking.date.prefix(10))
+                    let bookingHour = String(booking.hour.prefix(5))
+                    let title = "Cambiar #\(booking.id) (\(bookingDay) \(bookingHour))"
+                    Button(title) {
                         submitBookingChange(booking: booking)
                     }
                 }
@@ -185,36 +188,35 @@ struct CalendarView: View {
 
     @ViewBuilder
     private func dayCell(for maybeDate: Date?, today: Date) -> some View {
-        guard let date = maybeDate else {
+        if let date = maybeDate {
+            let isHoliday = isHolidayDate(date)
+            let isReserved = isReservedDate(date)
+            let selectable = isSelectable(date: date, today: today, isHoliday: isHoliday)
+            let dayText = "\(calendar.component(.day, from: date))"
+            let cellBackground = backgroundColor(
+                date: date,
+                isReserved: isReserved,
+                isHoliday: isHoliday,
+                selectable: selectable
+            )
+            let borderColor: Color = calendar.isDateInToday(date) ? .secondary : .clear
+
+            Text(dayText)
+                .fontWeight(.bold)
+                .frame(maxWidth: .infinity, minHeight: 34)
+                .padding(.vertical, 3)
+                .background(cellBackground)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(borderColor, lineWidth: 2))
+                .opacity(selectable ? 1 : 0.45)
+                .onTapGesture {
+                    guard selectable else { return }
+                    selectedDate = date
+                    onDayClicked(date)
+                }
+        } else {
             Color.clear.frame(height: 36)
-            return
         }
-
-        let isHoliday = isHolidayDate(date)
-        let isReserved = isReservedDate(date)
-        let selectable = isSelectable(date: date, today: today, isHoliday: isHoliday)
-        let dayText = "\(calendar.component(.day, from: date))"
-        let cellBackground = backgroundColor(
-            date: date,
-            isReserved: isReserved,
-            isHoliday: isHoliday,
-            selectable: selectable
-        )
-        let borderColor: Color = calendar.isDateInToday(date) ? .secondary : .clear
-
-        Text(dayText)
-            .fontWeight(.bold)
-            .frame(maxWidth: .infinity, minHeight: 34)
-            .padding(.vertical, 3)
-            .background(cellBackground)
-            .clipShape(Circle())
-            .overlay(Circle().stroke(borderColor, lineWidth: 2))
-            .opacity(selectable ? 1 : 0.45)
-            .onTapGesture {
-                guard selectable else { return }
-                selectedDate = date
-                onDayClicked(date)
-            }
     }
 
     @ViewBuilder
