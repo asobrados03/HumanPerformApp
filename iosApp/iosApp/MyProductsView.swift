@@ -10,6 +10,13 @@ struct MyProductsView: View {
 
     var onOpenProductDetail: (Int) -> Void = { _ in }
 
+    private var productOptionsTitle: String {
+        if let product = selectedProduct {
+            return "Producto: \(product.name)"
+        }
+        return ""
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
@@ -39,7 +46,7 @@ struct MyProductsView: View {
 
                         if let id = sessionViewModel.userData?.id {
                             Button("Reintentar") {
-                                serviceProductViewModel.loadUserProducts(userId: Int(id))
+                                serviceProductViewModel.loadUserProducts(userId: id)
                             }
                         }
                     }
@@ -51,16 +58,16 @@ struct MyProductsView: View {
         }
         .onAppear {
             if let id = sessionViewModel.userData?.id {
-                serviceProductViewModel.loadUserProducts(userId: Int(id))
+                serviceProductViewModel.loadUserProducts(userId: id)
             }
         }
         .onChange(of: sessionViewModel.userData?.id) { newId in
             if let id = newId {
-                serviceProductViewModel.loadUserProducts(userId: Int(id))
+                serviceProductViewModel.loadUserProducts(userId: id)
             }
         }
         .confirmationDialog(
-            selectedProduct.map { "Producto: \($0.name)" } ?? "",
+            productOptionsTitle,
             isPresented: $showProductOptions,
             titleVisibility: .visible
         ) {
@@ -80,7 +87,7 @@ struct MyProductsView: View {
             Button("Cancelar", role: .cancel) { }
             Button("Sí, darse de baja", role: .destructive) {
                 if let prod = selectedProduct, let userId = sessionViewModel.userData?.id {
-                    serviceProductViewModel.unassignProductFromUser(productId: Int(prod.id), userId: Int(userId))
+                    serviceProductViewModel.unassignProductFromUser(productId: prod.id, userId: userId)
                 }
                 selectedProduct = nil
             }

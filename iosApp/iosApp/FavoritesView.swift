@@ -20,6 +20,10 @@ struct FavoritesView: View {
     private let selectedColor = Color(red: 170/255, green: 246/255, blue: 131/255)
     private let avatarSize: CGFloat = 36
 
+    private var currentUserId: KotlinInt? {
+        sessionVM.userData?.id.map { KotlinInt(value: $0) }
+    }
+
     private var coachRows: [CoachUI] {
         vm.coachesList().toCoachUIs()
     }
@@ -41,7 +45,7 @@ struct FavoritesView: View {
 
     var body: some View {
         content
-            .task {                          // ✅ Fix 1: removed 'perform:' label
+            .task {
                 await loadInitialData()
             }
             .onChange(of: vm.markFavoriteState) { _ in
@@ -79,9 +83,9 @@ struct FavoritesView: View {
                         selectedColor: selectedColor
                     ) {
                         vm.markFavorite(
-                            coachId: KotlinInt(value: Int32(coach.id)),  // ✅ Fix 3
+                            coachId: Int32(coach.id),
                             serviceName: coach.serviceName,
-                            userId: sessionVM.userData?.id
+                            userId: currentUserId
                         )
                     }
                 }
@@ -94,9 +98,9 @@ struct FavoritesView: View {
         .listStyle(.insetGrouped)
     }
 
-    private func loadInitialData() async {          // ✅ Fix 2: marked async
+    private func loadInitialData() async {
         vm.getCoaches()
-        if let userId = sessionVM.userData?.id {
+        if let userId = currentUserId {
             vm.getPreferredCoach(userId: userId)
         }
     }
@@ -106,7 +110,7 @@ struct FavoritesView: View {
         case "success":
             alertMessage = vm.markFavoriteStateMessage()
             preferredCoachId = nil
-            if let userId = sessionVM.userData?.id {
+            if let userId = currentUserId {
                 vm.getPreferredCoach(userId: userId)
             }
             vm.clearMarkFavoriteState()
@@ -121,7 +125,7 @@ struct FavoritesView: View {
     private func handlePreferredCoachStateChange() {
         switch vm.preferredCoachStateKind() {
         case "success":
-            preferredCoachId = vm.preferredCoachId().map { Int($0) }  // ✅ Fix 4
+            preferredCoachId = vm.preferredCoachId().map { Int($0.int32Value) }
         case "error":
             preferredCoachId = nil
         default:
