@@ -15,6 +15,7 @@ import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.shared.presentation.ui.models.ServiceUiModel
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import com.rickclephas.kmp.observableviewmodel.stateIn
@@ -22,6 +23,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -55,19 +57,19 @@ class ServiceProductViewModel(
         ProductDetailUiState.Idle
     )
     @NativeCoroutinesState
-    val productDetailState = _productDetailState.asStateFlow()
+    val productDetailState: StateFlow<ProductDetailUiState> = _productDetailState.asStateFlow()
 
     private val _userCoupons = MutableStateFlow<List<Coupon>>(emptyList())
     @NativeCoroutinesState
     val userCoupons: StateFlow<List<Coupon>> = _userCoupons
 
     private val _assignEvent = Channel<AssignEvent>()
-    @NativeCoroutinesState
-    val assignEvent = _assignEvent.receiveAsFlow()
+    @NativeCoroutines
+    val assignEvent: Flow<AssignEvent> = _assignEvent.receiveAsFlow()
 
     private val _unassignEvent = Channel<UnassignEvent>()
-    @NativeCoroutinesState
-    val unassignEvent = _unassignEvent.receiveAsFlow()
+    @NativeCoroutines
+    val unassignEvent: Flow<UnassignEvent> = _unassignEvent.receiveAsFlow()
 
     var selectedProduct: Product? = null
 

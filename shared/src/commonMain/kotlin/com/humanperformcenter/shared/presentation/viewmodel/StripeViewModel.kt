@@ -42,7 +42,7 @@ class StripeViewModel(
     // Estado para acciones puntuales (Borrar tarjeta, guardar tarjeta, cancelar sub, refund)
     private val _actionUiState = MutableStateFlow<ActionUiState>(ActionUiState.Idle)
     @NativeCoroutinesState
-    val actionUiState = _actionUiState.asStateFlow()
+    val actionUiState: StateFlow<ActionUiState> = _actionUiState.asStateFlow()
 
     private val _addPaymentMethodUiState = MutableStateFlow<AddPaymentMethodUiState>(
         AddPaymentMethodUiState.Idle
