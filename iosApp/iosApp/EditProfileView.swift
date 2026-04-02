@@ -1,6 +1,5 @@
 import SwiftUI
 import Foundation
-import KMPObservableViewModelSwiftUI
 import shared
 
 /// Permite editar campos del perfil de usuario y la foto.

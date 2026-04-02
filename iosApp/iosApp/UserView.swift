@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-import KMPObservableViewModelSwiftUI
 import shared
 
 private enum UserMenuOption: String, CaseIterable, Identifiable {
@@ -22,9 +21,9 @@ private enum UserMenuOption: String, CaseIterable, Identifiable {
 }
 
 struct UserView: View {
-    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
-    @StateViewModel private var walletVM = SharedDependencies.shared.makeUserWalletViewModel()
-    @StateViewModel private var profileVM = SharedDependencies.shared.makeUserProfileViewModel()
+    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @State private var walletVM = SharedDependencies.shared.makeUserWalletViewModel()
+    @State private var profileVM = SharedDependencies.shared.makeUserProfileViewModel()
 
     private var balanceValue: Double {
         walletVM.balance?.doubleValue ?? 0

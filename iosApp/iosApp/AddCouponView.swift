@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import KMPObservableViewModelSwiftUI
 import shared
 
 struct AddCouponView: View {

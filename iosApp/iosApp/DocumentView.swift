@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import KMPObservableViewModelSwiftUI
 import shared
 
 /// Pantalla para la gestión de documentos del usuario, replicando la versión de Android.
@@ -14,7 +13,7 @@ struct DocumentView: View {
     @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
     @Environment(\.dismiss) private var dismiss
 
-    @StateViewModel private var documentsVM = SharedDependencies.shared.makeUserDocumentsViewModel()
+    @State private var documentsVM = SharedDependencies.shared.makeUserDocumentsViewModel()
 
     @State private var showOptions = false
     @State private var showImagePicker = false

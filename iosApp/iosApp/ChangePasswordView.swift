@@ -1,6 +1,5 @@
 import SwiftUI
 import shared
-import KMPObservableViewModelSwiftUI
 
 struct ChangePasswordView: View {
     @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
