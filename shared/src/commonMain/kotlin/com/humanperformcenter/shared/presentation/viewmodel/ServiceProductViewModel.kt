@@ -17,6 +17,7 @@ import com.humanperformcenter.shared.presentation.ui.models.ServiceUiModel
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import com.rickclephas.kmp.observableviewmodel.stateIn
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 
+@NativeCoroutinesIgnore
 class ServiceProductViewModel(
     private val serviceProductUseCase: ServiceProductUseCase,
     private val userCouponUseCase: UserCouponUseCase
