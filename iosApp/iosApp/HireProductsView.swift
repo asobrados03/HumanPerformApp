@@ -9,16 +9,21 @@ struct HireProductsView: View {
     @State private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
 
     @State private var selectedType: String = "all"
-    @State private var selectedSessions: Int = 0
+    @State private var selectedSessions: Int32 = 0
 
-    private var productsState: ServiceProductUiState {
-        if let state = serviceProductViewModel.serviceProducts[serviceId] {
-            return state
-        }
-        return ServiceProductUiStateLoading()
+    private func flowValue<T>(_ flow: Any, as type: T.Type) -> T? {
+        Mirror(reflecting: flow)
+            .children
+            .first(where: { $0.label == "value" })?
+            .value as? T
     }
 
-    private var hiredIds: Set<Int> {
+    private var productsState: ServiceProductUiState {
+        let map = flowValue(serviceProductViewModel.serviceProducts, as: [Int32: ServiceProductUiState].self) ?? [:]
+        return map[Int32(serviceId)] ?? ServiceProductUiStateLoading()
+    }
+
+    private var hiredIds: Set<Int32> {
         guard let state = serviceProductViewModel.userProductsState as? UserProductsUiStateSuccess else {
             return []
         }
@@ -40,14 +45,14 @@ struct HireProductsView: View {
                 typeOk = true
             }
 
-            let sessionOk = selectedSessions == 0 || product.session?.intValue == selectedSessions
+            let sessionOk = selectedSessions == 0 || product.session?.int32Value == selectedSessions
             return typeOk && sessionOk
         }
     }
 
-    private var availableSessions: [Int] {
+    private var availableSessions: [Int32] {
         guard let state = productsState as? ServiceProductUiStateSuccess else { return [] }
-        return Array(Set(state.services.compactMap { $0.session?.intValue })).sorted()
+        return Array(Set(state.services.compactMap { $0.session?.int32Value })).sorted()
     }
 
     var body: some View {
@@ -62,7 +67,7 @@ struct HireProductsView: View {
                     Text(error.message).foregroundColor(.red).multilineTextAlignment(.center)
                     Button("Reintentar") {
                         guard let userId = sessionViewModel.userData?.id else { return }
-                        serviceProductViewModel.loadServiceProducts(serviceId: serviceId, userId: userId)
+                        serviceProductViewModel.loadServiceProducts(serviceId: Int32(serviceId), userId: userId)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -80,7 +85,7 @@ struct HireProductsView: View {
                                     }
                                 }
                                 .onTapGesture {
-                                    onOpenProductDetail(product.id)
+                                    onOpenProductDetail(Int(product.id))
                                 }
                         }
                     }
@@ -94,7 +99,7 @@ struct HireProductsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             guard let userId = sessionViewModel.userData?.id else { return }
-            serviceProductViewModel.loadServiceProducts(serviceId: serviceId, userId: userId)
+            serviceProductViewModel.loadServiceProducts(serviceId: Int32(serviceId), userId: userId)
             serviceProductViewModel.loadUserProducts(userId: userId)
             serviceProductViewModel.loadUserCoupons(userId: userId)
         }
@@ -110,7 +115,7 @@ struct HireProductsView: View {
             .pickerStyle(.segmented)
 
             Picker("Sesiones", selection: $selectedSessions) {
-                Text("Todas").tag(0)
+                Text("Todas").tag(Int32(0))
                 ForEach(availableSessions, id: \.self) { s in
                     Text("\(s)").tag(s)
                 }
