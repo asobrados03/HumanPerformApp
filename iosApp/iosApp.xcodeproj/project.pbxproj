@@ -38,6 +38,7 @@
 		DBE9A1252E606CB20006E288 /* EnterEmailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE9A1242E606CB20006E288 /* EnterEmailView.swift */; };
 		DBE9A1272E606CBF0006E288 /* PasswordResetInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE9A1262E606CBF0006E288 /* PasswordResetInfoView.swift */; };
 		DBF0C0022E6A0001000B0001 /* ChangePasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */; };
+		DCB100112E90011100AAA111 /* ViewModelConformanceFix.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB100102E90011000AAA111 /* ViewModelConformanceFix.swift */; };
 		DCA100012E70000100AAA001 /* HireProductsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA100002E70000100AAA001 /* HireProductsView.swift */; };
 		DCA100032E70000200AAA001 /* ProductDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA100022E70000200AAA001 /* ProductDetailView.swift */; };
 		E1A100012E80000100AA0001 /* iosAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100112E80000100AA0001 /* iosAppUITests.swift */; };
@@ -98,6 +99,7 @@
 		DBE9A1242E606CB20006E288 /* EnterEmailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnterEmailView.swift; sourceTree = "<group>"; };
 		DBE9A1262E606CBF0006E288 /* PasswordResetInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordResetInfoView.swift; sourceTree = "<group>"; };
 		DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
+		DCB100102E90011000AAA111 /* ViewModelConformanceFix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelConformanceFix.swift; sourceTree = "<group>"; };
 		DCA100002E70000100AAA001 /* HireProductsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HireProductsView.swift; sourceTree = "<group>"; };
 		DCA100022E70000200AAA001 /* ProductDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductDetailView.swift; sourceTree = "<group>"; };
 		E1A100102E80000100AA0001 /* iosAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iosAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -178,6 +180,7 @@
 				DBC55FF12E5F0F4600E13D63 /* AddCouponView.swift */,
 				DBC55FF32E5F0F5600E13D63 /* ConfigurationView.swift */,
 				DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */,
+				DCB100102E90011000AAA111 /* ViewModelConformanceFix.swift */,
 				DBC55FF52E5F0F6100E13D63 /* DocumentView.swift */,
 				DBC55FF72E5F0F6D00E13D63 /* ElectronicWalletView.swift */,
 				DBC55FF92E5F0F7A00E13D63 /* FavoritesView.swift */,
@@ -365,6 +368,7 @@
 				DB39E42D2E5CC87B002CB3B0 /* HireServicesView.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				DBC55FF62E5F0F6100E13D63 /* DocumentView.swift in Sources */,
+				DCB100112E90011100AAA111 /* ViewModelConformanceFix.swift in Sources */,
 				DBE9A1272E606CBF0006E288 /* PasswordResetInfoView.swift in Sources */,
 				DBC55FF22E5F0F4600E13D63 /* AddCouponView.swift in Sources */,
 				DBC55FFA2E5F0F7A00E13D63 /* FavoritesView.swift in Sources */,
