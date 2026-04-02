@@ -35,7 +35,7 @@ struct HireServicesView: View {
                     ForEach(services, id: \.service.id) { model in
                         ServiceRow(model: model)
                             .onTapGesture {
-                                onOpenHireProducts(model.service.id)
+                                onOpenHireProducts(Int(model.service.id))
                             }
                     }
                 } else if serviceStateName.contains("Error") {
