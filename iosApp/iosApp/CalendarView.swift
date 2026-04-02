@@ -298,7 +298,7 @@ struct CalendarView: View {
             daySessionViewModel.makeBookingAsync(
                 customerId: userId,
                 coachId: coach.coachId,
-                serviceId: serviceId,
+                serviceId: Int32(serviceId),
                 productId: productId,
                 dayOfWeek: englishDay(from: selectedDate),
                 centerId: 1,
@@ -321,7 +321,7 @@ struct CalendarView: View {
             daySessionViewModel.modifyBookingSessionAsync(
                 bookingId: booking.id,
                 newCoachId: coach.coachId,
-                newServiceId: serviceId,
+                newServiceId: Int32(serviceId),
                 newProductId: productId,
                 newDayOfWeek: englishDay(from: selectedDate),
                 newStartDate: ymd(selectedDate),
