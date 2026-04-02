@@ -1,6 +1,7 @@
 package com.humanperformcenter.shared.presentation.viewmodel
 
 import com.humanperformcenter.shared.domain.usecase.UserCoachesUseCase
+import com.humanperformcenter.shared.data.model.user.Professional
 import com.humanperformcenter.shared.presentation.ui.CoachState
 import com.humanperformcenter.shared.presentation.ui.GetPreferredCoachState
 import com.humanperformcenter.shared.presentation.ui.MarkFavoriteState
@@ -81,5 +82,52 @@ class UserFavoritesViewModel(
 
     fun clearGetPreferredCoachState() {
         _getPreferredCoachState.value = GetPreferredCoachState.Idle
+    }
+
+    fun coachesStateKind(): String = when (_coachesState.value) {
+        CoachState.Idle -> "idle"
+        CoachState.Loading -> "loading"
+        is CoachState.Success -> "success"
+        is CoachState.Error -> "error"
+    }
+
+    fun coachesStateMessage(): String? = when (val state = _coachesState.value) {
+        is CoachState.Error -> state.message
+        else -> null
+    }
+
+    fun coachesList(): List<Professional> = when (val state = _coachesState.value) {
+        is CoachState.Success -> state.coaches
+        else -> emptyList()
+    }
+
+    fun markFavoriteStateKind(): String = when (_markFavoriteState.value) {
+        MarkFavoriteState.Idle -> "idle"
+        MarkFavoriteState.Loading -> "loading"
+        is MarkFavoriteState.Success -> "success"
+        is MarkFavoriteState.Error -> "error"
+    }
+
+    fun markFavoriteStateMessage(): String? = when (val state = _markFavoriteState.value) {
+        is MarkFavoriteState.Success -> state.message
+        is MarkFavoriteState.Error -> state.message
+        else -> null
+    }
+
+    fun preferredCoachStateKind(): String = when (_getPreferredCoachState.value) {
+        GetPreferredCoachState.Idle -> "idle"
+        GetPreferredCoachState.Loading -> "loading"
+        is GetPreferredCoachState.Success -> "success"
+        is GetPreferredCoachState.Error -> "error"
+    }
+
+    fun preferredCoachStateMessage(): String? = when (val state = _getPreferredCoachState.value) {
+        is GetPreferredCoachState.Error -> state.message
+        else -> null
+    }
+
+    fun preferredCoachId(): Int? = when (val state = _getPreferredCoachState.value) {
+        is GetPreferredCoachState.Success -> state.coachId
+        else -> null
     }
 }

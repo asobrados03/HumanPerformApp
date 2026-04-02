@@ -1,29 +1,36 @@
 import SwiftUI
-import KMPObservableViewModelSwiftUI
 import shared
 
 struct MyProductsView: View {
-    @StateViewModel var serviceProductViewModel: shared.ServiceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
-    @StateViewModel var sessionViewModel: shared.UserSessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
+    @State var serviceProductViewModel: shared.ServiceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
+    @State var sessionViewModel: shared.UserSessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
     @State private var selectedProduct: Product? = nil
     @State private var showProductOptions = false
     @State private var showUnsubscribeConfirm = false
 
     var onOpenProductDetail: (Int) -> Void = { _ in }
 
+    private var productOptionsTitle: String {
+        if let product = selectedProduct {
+            return "Producto: \(product.name)"
+        }
+        return ""
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                switch serviceProductViewModel.userProductsState {
-                case is UserProductsUiStateLoading:
+                switch serviceProductViewModel.userProductsStateKind() {
+                case "loading":
                     ProgressView()
                         .frame(maxWidth: .infinity, alignment: .center)
-                case let success as UserProductsUiStateSuccess:
-                    if success.products.isEmpty {
+                case "success":
+                    let products = serviceProductViewModel.userProductsStateProducts()
+                    if products.isEmpty {
                         Text("No tienes productos contratados.")
                             .foregroundColor(.secondary)
                     } else {
-                        ForEach(success.products, id: \.id) { producto in
+                        ForEach(products, id: \.id) { producto in
                             ProductRow(producto: producto)
                                 .onTapGesture {
                                     selectedProduct = producto
@@ -31,9 +38,9 @@ struct MyProductsView: View {
                                 }
                         }
                     }
-                case let error as UserProductsUiStateError:
+                case "error":
                     VStack(spacing: 8) {
-                        Text(error.message)
+                        Text(serviceProductViewModel.userProductsStateMessage() ?? "Error desconocido")
                             .foregroundColor(.red)
                             .multilineTextAlignment(.center)
 
@@ -60,13 +67,13 @@ struct MyProductsView: View {
             }
         }
         .confirmationDialog(
-            selectedProduct.map { "Producto: \($0.name)" } ?? "",
+            productOptionsTitle,
             isPresented: $showProductOptions,
             titleVisibility: .visible
         ) {
             Button("Ver detalles") {
                 if let productId = selectedProduct?.id {
-                    onOpenProductDetail(productId)
+                    onOpenProductDetail(Int(productId))
                 }
             }
             Button("Darse de baja", role: .destructive) {

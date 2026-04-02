@@ -1,12 +1,11 @@
 import SwiftUI
-import KMPObservableViewModelSwiftUI
 import shared
 
 struct CalendarView: View {
-    @StateViewModel private var daySessionViewModel = SharedDependencies.shared.makeDaySessionViewModel()
-    @StateViewModel private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
-    @StateViewModel private var bookingsViewModel = SharedDependencies.shared.makeUserBookingsViewModel()
-    @StateViewModel private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
+    @State private var daySessionViewModel = SharedDependencies.shared.makeDaySessionViewModel()
+    @State private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
+    @State private var bookingsViewModel = SharedDependencies.shared.makeUserBookingsViewModel()
+    @State private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
 
     @State private var currentMonth: Date = Date()
     @State private var selectedDate: Date = Date()
@@ -19,6 +18,49 @@ struct CalendarView: View {
     @State private var bookingsFilter: String = "Todos"
 
     private let calendar = Calendar.current
+
+    private var userProducts: [Product] {
+        serviceProductViewModel.userProductsStateProducts()
+    }
+
+    private var sessionsStateName: String {
+        String(describing: type(of: daySessionViewModel.sessions))
+    }
+
+    private var isReservationPresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { dialog == .reservation },
+            set: { if !$0 { dismissDialog() } }
+        )
+    }
+
+    private var isConfirmContinuePresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { dialog == .confirmContinue },
+            set: { if !$0 { dismissDialog() } }
+        )
+    }
+
+    private var isConfirmBookingPresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { dialog == .confirmBooking },
+            set: { if !$0 { dismissDialog() } }
+        )
+    }
+
+    private var isChangeExistingPresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { dialog == .changeExisting },
+            set: { if !$0 { dismissDialog() } }
+        )
+    }
+
+    private var isBookingMenuPresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { bookingMenuTarget != nil },
+            set: { if !$0 { bookingMenuTarget = nil } }
+        )
+    }
 
     var body: some View {
         ScrollView {
@@ -54,36 +96,27 @@ struct CalendarView: View {
             selectedProduct = nil
             daySessionViewModel.clearSessions()
         }
-        .sheet(isPresented: Binding(
-            get: { dialog == .reservation },
-            set: { if !$0 { dismissDialog() } }
-        )) {
+        .sheet(isPresented: isReservationPresented) {
             reservationSheet
                 .presentationDetents([.medium, .large])
         }
-        .alert("Aviso", isPresented: Binding(
-            get: { dialog == .confirmContinue },
-            set: { if !$0 { dismissDialog() } }
-        )) {
+        .alert("Aviso", isPresented: isConfirmContinuePresented) {
             Button("No", role: .cancel) { dismissDialog() }
             Button("Sí") { dialog = .reservation }
         } message: {
             Text("Ya tienes una reserva hoy. ¿Continuar?")
         }
-        .alert("Confirmar reserva", isPresented: Binding(
-            get: { dialog == .confirmBooking },
-            set: { if !$0 { dismissDialog() } }
-        )) {
+        .alert("Confirmar reserva", isPresented: isConfirmBookingPresented) {
             Button("Cancelar", role: .cancel) { dismissDialog() }
             Button("Reservar") { submitBooking() }
             Button("Cambiar") { dialog = .changeExisting }
         } message: {
-            Text("¿Deseas confirmar tu sesión con \(selectedCoach?.coachName ?? "-") a las \(selectedHour?.prefix(5) ?? "")?")
+            Text(confirmBookingMessage)
         }
         .accessibilityIdentifier("calendarView")
         .confirmationDialog(
             "Gestión de reserva",
-            isPresented: Binding(get: { dialog == .changeExisting }, set: { if !$0 { dismissDialog() } }),
+            isPresented: isChangeExistingPresented,
             titleVisibility: .visible
         ) {
             if let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess {
@@ -97,7 +130,7 @@ struct CalendarView: View {
         }
         .confirmationDialog(
             "Reserva",
-            isPresented: Binding(get: { bookingMenuTarget != nil }, set: { if !$0 { bookingMenuTarget = nil } }),
+            isPresented: isBookingMenuPresented,
             titleVisibility: .visible
         ) {
             if let booking = bookingMenuTarget {
@@ -144,32 +177,44 @@ struct CalendarView: View {
         let today = Date()
 
         return LazyVGrid(columns: columns, spacing: 8) {
-            ForEach(Array(days.enumerated()), id: \.offset) { _, date in
-                if let date {
-                    let isHoliday = isHolidayDate(date)
-                    let isReserved = isReservedDate(date)
-                    let selectable = isSelectable(date: date, today: today, isHoliday: isHoliday)
-
-                    Text("\(calendar.component(.day, from: date))")
-                        .fontWeight(.bold)
-                        .frame(maxWidth: .infinity, minHeight: 34)
-                        .padding(.vertical, 3)
-                        .background(backgroundColor(date: date, isReserved: isReserved, isHoliday: isHoliday, selectable: selectable))
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle().stroke(calendar.isDateInToday(date) ? Color.secondary : Color.clear, lineWidth: 2)
-                        )
-                        .opacity(selectable ? 1 : 0.45)
-                        .onTapGesture {
-                            guard selectable else { return }
-                            selectedDate = date
-                            onDayClicked(date)
-                        }
-                } else {
-                    Color.clear.frame(height: 36)
-                }
+            ForEach(days.indices, id: \.self) { index in
+                dayCell(for: days[index], today: today)
             }
         }
+    }
+
+    @ViewBuilder
+    private func dayCell(for maybeDate: Date?, today: Date) -> some View {
+        guard let date = maybeDate else {
+            Color.clear.frame(height: 36)
+            return
+        }
+
+        let isHoliday = isHolidayDate(date)
+        let isReserved = isReservedDate(date)
+        let selectable = isSelectable(date: date, today: today, isHoliday: isHoliday)
+        let dayText = "\(calendar.component(.day, from: date))"
+        let cellBackground = backgroundColor(
+            date: date,
+            isReserved: isReserved,
+            isHoliday: isHoliday,
+            selectable: selectable
+        )
+        let borderColor: Color = calendar.isDateInToday(date) ? .secondary : .clear
+
+        Text(dayText)
+            .fontWeight(.bold)
+            .frame(maxWidth: .infinity, minHeight: 34)
+            .padding(.vertical, 3)
+            .background(cellBackground)
+            .clipShape(Circle())
+            .overlay(Circle().stroke(borderColor, lineWidth: 2))
+            .opacity(selectable ? 1 : 0.45)
+            .onTapGesture {
+                guard selectable else { return }
+                selectedDate = date
+                onDayClicked(date)
+            }
     }
 
     @ViewBuilder
@@ -180,7 +225,9 @@ struct CalendarView: View {
 
             let filterValues = ["Todos"] + Array(Set(bookings.map { $0.service })).sorted()
             Picker("Servicio", selection: $bookingsFilter) {
-                ForEach(filterValues, id: \.self) { Text($0).tag($0) }
+                ForEach(filterValues, id: \.self) { filter in
+                    Text(filter).tag(filter as String)
+                }
             }
             .pickerStyle(.menu)
 
@@ -210,18 +257,12 @@ struct CalendarView: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Seleccionar servicio").font(.headline)
 
-            if let productsState = serviceProductViewModel.userProductsState as? UserProductsUiStateSuccess {
-                Picker("Servicio", selection: Binding(
-                    get: { selectedProduct?.id ?? -1 },
-                    set: { newId in
-                        selectedProduct = productsState.products.first(where: { $0.id == newId })
-                        if let product = selectedProduct {
-                            daySessionViewModel.fetchAvailableSessions(productId: product.id, date: kmmDate(from: selectedDate))
-                        }
+            if !userProducts.isEmpty {
+                Picker("Servicio", selection: selectedProductBinding) {
+                    Text("Seleccionar").tag(Int32(-1))
+                    ForEach(userProducts, id: \.id) { product in
+                        Text(product.name).tag(productIdInt32(product))
                     }
-                )) {
-                    Text("Seleccionar").tag(-1)
-                    ForEach(productsState.products, id: \.id) { p in Text(p.name).tag(p.id) }
                 }
                 .pickerStyle(.menu)
             }
@@ -237,12 +278,12 @@ struct CalendarView: View {
         if selectedProduct == nil {
             Text("Selecciona un servicio para ver horarios.")
                 .foregroundColor(.secondary)
-        } else if daySessionViewModel.sessions is DailySessionsUiStateLoading {
+        } else if sessionsStateName.contains("Loading") {
             ProgressView().frame(maxWidth: .infinity)
-        } else if let success = daySessionViewModel.sessions as? DailySessionsUiStateSuccess {
-            let hours = Array(Set(success.sessions.map { $0.hour })).sorted()
+        } else if sessionsStateName.contains("Success") {
+            let hours = availableSessionHours()
             ForEach(hours, id: \.self) { hour in
-                Button(hour.prefix(5)) {
+                Button(String(hour.prefix(5))) {
                     let coaches = daySessionViewModel.getAvailableCoachesForHour(hour: hour)
                     if let coach = coaches.first {
                         selectedHour = hour
@@ -252,12 +293,26 @@ struct CalendarView: View {
                 }
                 .buttonStyle(.borderedProminent)
             }
-        } else if daySessionViewModel.sessions is DailySessionsUiStateEmpty {
+        } else if sessionsStateName.contains("Empty") {
             Text("No hay horarios disponibles.")
                 .foregroundColor(.secondary)
-        } else if let error = daySessionViewModel.sessions as? DailySessionsUiStateError {
-            Text(error.message).foregroundColor(.red)
+        } else if let message = sessionsErrorMessage() {
+            Text(message).foregroundColor(.red)
         }
+    }
+
+    private var selectedProductBinding: Binding<Int32> {
+        Binding<Int32>(
+            get: { selectedProduct.map(productIdInt32) ?? -1 },
+            set: { newId in
+                selectedProduct = userProducts.first(where: { productIdInt32($0) == newId })
+                guard let product = selectedProduct else { return }
+                daySessionViewModel.fetchAvailableSessions(
+                    productId: productIdInt32(product),
+                    date: kmmDate(from: selectedDate)
+                )
+            }
+        )
     }
 
     private func onDayClicked(_ date: Date) {
@@ -276,13 +331,15 @@ struct CalendarView: View {
             let coach = selectedCoach
         else { return }
 
-        daySessionViewModel.fetchServiceIdForProductAsync(productId: product.id) { serviceId in
-            guard let serviceId, serviceId > 0 else { return }
+        let productId = productIdInt32(product)
+
+        daySessionViewModel.fetchServiceIdForProductAsync(productId: productId) { serviceId in
+            guard let serviceId, serviceId.int32Value > 0 else { return }
             daySessionViewModel.makeBookingAsync(
                 customerId: userId,
                 coachId: coach.coachId,
-                serviceId: serviceId,
-                productId: product.id,
+                serviceId: Int32(serviceId),
+                productId: productId,
                 dayOfWeek: englishDay(from: selectedDate),
                 centerId: 1,
                 selectedDate: ymd(selectedDate),
@@ -297,13 +354,15 @@ struct CalendarView: View {
     private func submitBookingChange(booking: UserBooking) {
         guard let product = selectedProduct, let hour = selectedHour, let coach = selectedCoach else { return }
 
-        daySessionViewModel.fetchServiceIdForProductAsync(productId: product.id) { serviceId in
-            guard let serviceId, serviceId > 0 else { return }
+        let productId = productIdInt32(product)
+
+        daySessionViewModel.fetchServiceIdForProductAsync(productId: productId) { serviceId in
+            guard let serviceId, serviceId.int32Value > 0 else { return }
             daySessionViewModel.modifyBookingSessionAsync(
                 bookingId: booking.id,
                 newCoachId: coach.coachId,
-                newServiceId: serviceId,
-                newProductId: product.id,
+                newServiceId: Int32(serviceId),
+                newProductId: productId,
                 newDayOfWeek: englishDay(from: selectedDate),
                 newStartDate: ymd(selectedDate),
                 hour: hour
@@ -326,9 +385,9 @@ struct CalendarView: View {
 
     private func isHolidayDate(_ date: Date) -> Bool {
         daySessionViewModel.holidays.contains {
-            $0.year == Int32(calendar.component(.year, from: date)) &&
-            $0.monthNumber == Int32(calendar.component(.month, from: date)) &&
-            $0.dayOfMonth == Int32(calendar.component(.day, from: date))
+            $0.year.int32Value == Int32(calendar.component(.year, from: date)) &&
+            $0.monthNumber.int32Value == Int32(calendar.component(.month, from: date)) &&
+            $0.dayOfMonth.int32Value == Int32(calendar.component(.day, from: date))
         }
     }
 
@@ -380,8 +439,8 @@ struct CalendarView: View {
     private func kmmDate(from date: Date) -> Kotlinx_datetimeLocalDate {
         Kotlinx_datetimeLocalDate(
             year: Int32(calendar.component(.year, from: date)),
-            monthNumber: Int32(calendar.component(.month, from: date)),
-            dayOfMonth: Int32(calendar.component(.day, from: date))
+            month: Int32(calendar.component(.month, from: date)),
+            day: Int32(calendar.component(.day, from: date))
         )
     }
 
@@ -430,6 +489,31 @@ struct CalendarView: View {
     private func nextMonth() {
         currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? currentMonth
     }
+
+    private func productIdInt32(_ product: Product) -> Int32 {
+        let rawId = product.id
+        if let id = rawId as? Int32 { return id }
+        if let id = rawId as? Int { return Int32(id) }
+        if let id = mirrorValue(from: rawId, label: "int32Value") as? Int32 { return id }
+        return 0
+    }
+
+    private func availableSessionHours() -> [String] {
+        guard let sessions = mirrorValue(from: daySessionViewModel.sessions, label: "sessions") as? [DaySession] else {
+            return []
+        }
+        return Array(Set(sessions.map { $0.hour })).sorted()
+    }
+
+    private func sessionsErrorMessage() -> String? {
+        mirrorValue(from: daySessionViewModel.sessions, label: "message") as? String
+    }
+
+    private var confirmBookingMessage: String {
+        let coachName = selectedCoach?.coachName ?? "-"
+        let hour = selectedHour.map { String($0.prefix(5)) } ?? ""
+        return "¿Deseas confirmar tu sesión con \(coachName) a las \(hour)?"
+    }
 }
 
 private enum CalendarDialog {
@@ -438,4 +522,8 @@ private enum CalendarDialog {
     case reservation
     case confirmBooking
     case changeExisting
+}
+
+private func mirrorValue(from state: Any, label: String) -> Any? {
+    Mirror(reflecting: state).children.first(where: { $0.label == label })?.value
 }

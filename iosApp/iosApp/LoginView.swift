@@ -1,26 +1,16 @@
 import SwiftUI
-import KMPObservableViewModelSwiftUI
 import shared
 
-// Enum de estados posibles del proceso de login
-enum LoginState: Equatable {
-    case idle
-    case loading
-    case validationErrors([LoginField: String])
-    case success
-    case error(message: String)
-}
-
 struct LoginView: View {
-    @StateViewModel var vm = SharedDependencies.shared.makeAuthViewModel()
+    @State var vm = SharedDependencies.shared.makeAuthViewModel()
 
     var onSuccess: (() -> Void)? = nil
     var onForgot: (() -> Void)? = nil
     var onRegister: (() -> Void)? = nil
 
     @State private var passwordVisible = false
-    @State private var uiTestEmail = ""
-    @State private var uiTestPassword = ""
+    @State private var email = ""
+    @State private var password = ""
     @State private var uiTestError: String?
 
     var body: some View {
@@ -33,14 +23,11 @@ struct LoginView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
                     Image(systemName: "envelope")
-                    TextField("Correo electrónico", text: loginEmailBinding)
+                    TextField("Correo electrónico", text: $email)
                         .accessibilityIdentifier("loginEmailField")
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
-                        .onChange(of: vm.loginEmail) { _ in
-                            // el VM ya limpia errores en didSet -> clearLoginErrorsIfNeeded()
-                        }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 14)
@@ -48,14 +35,6 @@ struct LoginView: View {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(Color.gray.opacity(0.35), lineWidth: 1)
                 )
-
-                // Error específico de email
-                if case .validationErrors(let errs) = vm.loginState,
-                   let msg = errs[.email], !msg.isEmpty {
-                    Text(msg)
-                        .font(.footnote)
-                        .foregroundColor(.red)
-                }
             }
 
             // Password
@@ -65,12 +44,12 @@ struct LoginView: View {
 
                     Group {
                         if passwordVisible {
-                            TextField("Contraseña", text: loginPasswordBinding)
+                            TextField("Contraseña", text: $password)
                                 .accessibilityIdentifier("loginPasswordField")
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled(true)
                         } else {
-                            SecureField("Contraseña", text: loginPasswordBinding)
+                            SecureField("Contraseña", text: $password)
                                 .accessibilityIdentifier("loginPasswordField")
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled(true)
@@ -88,17 +67,6 @@ struct LoginView: View {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(Color.gray.opacity(0.35), lineWidth: 1)
                 )
-                .onChange(of: vm.loginPassword) { _ in
-                    // el VM ya limpia errores en didSet -> clearLoginErrorsIfNeeded()
-                }
-
-                // Error específico de password
-                if case .validationErrors(let errs) = vm.loginState,
-                   let msg = errs[.password], !msg.isEmpty {
-                    Text(msg)
-                        .font(.footnote)
-                        .foregroundColor(.red)
-                }
             }
 
             // Error general (backend / red)
@@ -109,8 +77,8 @@ struct LoginView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 4)
                     .accessibilityIdentifier("loginErrorMessage")
-            } else if case .error(let msg) = vm.loginState {
-                Text(msg)
+            } else if let message = errorMessage {
+                Text(message)
                     .font(.subheadline)
                     .foregroundColor(.red)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -119,17 +87,10 @@ struct LoginView: View {
 
             // Botón Login
             Button {
-                if UITestConfig.isUITesting && UITestConfig.forceAuthError {
-                    uiTestError = "Credenciales inválidas (mock)"
-                } else if UITestConfig.isUITesting {
-                    uiTestError = nil
-                    onSuccess?()
-                } else {
-                    vm.login() // ahora login no es async/await
-                }
+                handleLoginTap()
             } label: {
                 HStack {
-                    if case .loading = vm.loginState {
+                    if isLoading {
                         ProgressView().tint(.white)
                     }
                     Text("Iniciar sesión").fontWeight(.semibold)
@@ -137,7 +98,7 @@ struct LoginView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
             }
-             .accessibilityIdentifier("loginSubmitButton")
+            .accessibilityIdentifier("loginSubmitButton")
             .disabled(isLoading)
             .buttonStyle(.borderedProminent)
             .tint(.accentColor)
@@ -164,49 +125,51 @@ struct LoginView: View {
         }
         .padding(.horizontal, 24)
         .padding(.top, 12)
-        .navigationBarTitleDisplayMode(.inline) // importante para centrar el contenido del .principal
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                NavBarLogo() 
+                NavBarLogo()
             }
         }
-         .accessibilityIdentifier("loginView")
+        .accessibilityIdentifier("loginView")
         .onChange(of: vm.loginState) { newValue in
-            if case .success = newValue {
+            if newValue is LoginState.Success {
                 onSuccess?()
-                // Si quieres limpiar tras navegar:
                 vm.resetStates()
             }
         }
     }
 
-
-
-    private var loginEmailBinding: Binding<String> {
-        Binding(
-            get: { UITestConfig.isUITesting ? uiTestEmail : vm.loginEmail },
-            set: { newValue in
-                if UITestConfig.isUITesting { uiTestEmail = newValue } else { vm.loginEmail = newValue }
-            }
-        )
-    }
-
-    private var loginPasswordBinding: Binding<String> {
-        Binding(
-            get: { UITestConfig.isUITesting ? uiTestPassword : vm.loginPassword },
-            set: { newValue in
-                if UITestConfig.isUITesting { uiTestPassword = newValue } else { vm.loginPassword = newValue }
-            }
-        )
-    }
+    // MARK: - Computed properties
 
     private var isLoading: Bool {
-        if case .loading = vm.loginState { return true }
-        return false
+        vm.loginState is LoginState.Loading
+    }
+
+    private var errorMessage: String? {
+        (vm.loginState as? LoginState.Error)?.message
+    }
+
+    // MARK: - Helpers
+
+    private func handleLoginTap() {
+        if UITestConfig.isUITesting && UITestConfig.forceAuthError {
+            uiTestError = "Credenciales inválidas (mock)"
+            return
+        }
+
+        if UITestConfig.isUITesting {
+            uiTestError = nil
+            onSuccess?()
+            return
+        }
+
+        vm.login(email: email, password: password)
     }
 }
 
-// Preview
+// MARK: - Preview
+
 #Preview {
     NavigationStack {
         LoginView(

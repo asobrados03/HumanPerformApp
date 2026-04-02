@@ -7,10 +7,9 @@
 //
 import SwiftUI
 import shared
-import KMPObservableViewModelSwiftUI
 
 struct SplashView: View {
-    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
     let onResolved: (_ isLoggedIn: Bool) -> Void
 
     var body: some View {
@@ -28,7 +27,7 @@ struct SplashView: View {
         .onChange(of: sessionVM.isLoggedIn) { value in
             guard !UITestConfig.isUITesting else { return }
             guard let value else { return }
-            onResolved(value)
+            onResolved(value.boolValue)
         }
     }
 }

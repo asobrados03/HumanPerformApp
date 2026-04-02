@@ -10,7 +10,7 @@ import KMPObservableViewModelSwiftUI
 import shared
 
 struct AddCouponView: View {
-    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
     @StateViewModel private var couponsVM = SharedDependencies.shared.makeUserCouponsViewModel()
 
     var body: some View {
@@ -26,7 +26,7 @@ struct AddCouponView: View {
                 TextField(
                     "Código de cupón",
                     text: Binding(
-                        get: { couponsVM.couponUiState.code },
+                        get: { couponsVM.couponUiState.code ?? "" },
                         set: { couponsVM.onCouponCodeChanged(code: $0) }
                     )
                 )
@@ -37,9 +37,11 @@ struct AddCouponView: View {
 
             Button(action: {
                 if let userId = sessionVM.userData?.id {
+                    let trimmedCode = (couponsVM.couponUiState.code ?? "")
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
                     couponsVM.addCouponToUser(
                         userId: userId,
-                        code: couponsVM.couponUiState.code.trimmingCharacters(in: .whitespacesAndNewlines)
+                        code: trimmedCode
                     )
                 }
             }) {

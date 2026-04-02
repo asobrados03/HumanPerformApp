@@ -1,35 +1,50 @@
 import SwiftUI
-import KMPObservableViewModelSwiftUI
 import shared
 
 /// Pantalla de configuración del usuario.
 struct ConfigurationView: View {
     @EnvironmentObject var appState: AppState
-    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
 
     @State private var showLogoutAlert = false
     @State private var showDeleteAlert = false
     @State private var errorMessage: String?
 
     private var isProcessing: Bool {
-        sessionVM.isLoggingOut || sessionVM.deleteState is DeleteUserStateLoading
+        sessionVM.isLoggingOut || resolvedDeleteStateKind == "loading"
     }
 
     private var deleteStateChangeKey: String {
-        switch sessionVM.deleteState {
-        case is DeleteUserStateIdle:
-            return "idle"
-        case is DeleteUserStateLoading:
-            return "loading"
-        case is DeleteUserStateSuccess:
-            return "success"
-        case let notFound as DeleteUserStateNotFound:
-            return "notFound:\(notFound.email)"
-        case let error as DeleteUserStateError:
-            return "error:\(error.message)"
-        default:
-            return "unknown"
+        "\(resolvedDeleteStateKind):\(resolvedDeleteStateMessage ?? "")"
+    }
+
+    /// Evita depender de nombres de clases generadas por Kotlin/Native
+    /// (por ejemplo, `DeleteUserStateLoading`) que cambian entre versiones.
+    private var resolvedDeleteStateKind: String {
+        let kind = sessionVM.deleteStateKind()
+        if !kind.isEmpty {
+            return kind
         }
+
+        let rawState = String(describing: sessionVM.deleteState)
+        if rawState.localizedCaseInsensitiveContains("Loading") { return "loading" }
+        if rawState.localizedCaseInsensitiveContains("Success") { return "success" }
+        if rawState.localizedCaseInsensitiveContains("NotFound") { return "notFound" }
+        if rawState.localizedCaseInsensitiveContains("Error") { return "error" }
+        return "idle"
+    }
+
+    private var resolvedDeleteStateMessage: String? {
+        let message = sessionVM.deleteStateMessage()
+        if let message, !message.isEmpty {
+            return message
+        }
+
+        if resolvedDeleteStateKind == "error" {
+            return "Error desconocido"
+        }
+
+        return nil
     }
 
     var body: some View {
@@ -50,7 +65,7 @@ struct ConfigurationView: View {
                     Button("Eliminar cuenta") { showDeleteAlert = true }
                         .foregroundColor(.red)
                     NavigationLink("Cambiar contraseña") {
-                        ChangePasswordView().environmentObject(sessionVM)
+                        ChangePasswordView()
                     }
                 }
             }
@@ -79,15 +94,12 @@ struct ConfigurationView: View {
             Button("OK", role: .cancel) { }
         }
         .onChange(of: deleteStateChangeKey) { _ in
-            switch sessionVM.deleteState {
-            case is DeleteUserStateSuccess:
+            switch resolvedDeleteStateKind {
+            case "success":
                 appState.isAuthenticated = false
                 sessionVM.resetDeleteState()
-            case let notFound as DeleteUserStateNotFound:
-                errorMessage = "No se encontró la cuenta para \(notFound.email)."
-                sessionVM.resetDeleteState()
-            case let error as DeleteUserStateError:
-                errorMessage = error.message
+            case "notFound", "error":
+                errorMessage = resolvedDeleteStateMessage ?? "Error desconocido"
                 sessionVM.resetDeleteState()
             default:
                 break

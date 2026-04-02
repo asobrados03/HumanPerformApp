@@ -1,50 +1,62 @@
 import SwiftUI
 import shared
-import KMPObservableViewModelSwiftUI
 
 struct ProductDetailView: View {
     let productId: Int
     var onPaymentSuccess: () -> Void = {}
 
-    @StateViewModel private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
-    @StateViewModel private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
+    @State private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
+    @State private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
 
     @State private var showPaymentOptions = false
     @State private var showWalletConfirm = false
     @State private var openStripeCheckout = false
 
+    private func flowValue<T>(_ flow: Any, as type: T.Type) -> T? {
+        Mirror(reflecting: flow)
+            .children
+            .first(where: { $0.label == "value" })?
+            .value as? T
+    }
+
+    private var productDetailState: ProductDetailUiState? {
+        flowValue(serviceProductViewModel.productDetailState, as: ProductDetailUiState.self)
+    }
+
     private var userCoupons: [Coupon] {
-        serviceProductViewModel.userCoupons
+        flowValue(serviceProductViewModel.userCoupons, as: [Coupon].self) ?? []
     }
 
     private var isAlreadyHired: Bool {
-        serviceProductViewModel.isAlreadyHired
+        flowValue(serviceProductViewModel.isAlreadyHired, as: Bool.self) ?? false
     }
 
     var body: some View {
         Group {
-            switch serviceProductViewModel.productDetailState {
-            case is ProductDetailUiStateLoading:
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            if let state = productDetailState {
+                let stateName = String(describing: type(of: state))
 
-            case let error as ProductDetailUiStateError:
-                VStack(spacing: 8) {
-                    Text(error.message).foregroundColor(.red)
-                    Button("Reintentar") { serviceProductViewModel.loadProductDetail(productId: productId) }
+                if stateName.contains("Loading") || stateName.contains("Idle") {
+                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let message = mirrorValue(from: state, label: "message") as? String {
+                    VStack(spacing: 8) {
+                        Text(message).foregroundColor(.red)
+                        Button("Reintentar") { serviceProductViewModel.loadProductDetail(productId: Int32(productId)) }
+                    }
+                } else if let product = mirrorValue(from: state, label: "product") as? Product {
+                    detailContent(product: product)
+                } else {
+                    EmptyView()
                 }
-
-            case let success as ProductDetailUiStateSuccess:
-                detailContent(product: success.product)
-
-            default:
-                EmptyView()
+            } else {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .navigationTitle("Detalle")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             guard let userId = sessionViewModel.userData?.id else { return }
-            serviceProductViewModel.loadProductDetail(productId: productId)
+            serviceProductViewModel.loadProductDetail(productId: Int32(productId))
             serviceProductViewModel.loadUserCoupons(userId: userId)
             serviceProductViewModel.loadUserProducts(userId: userId)
         }
@@ -128,16 +140,18 @@ struct ProductDetailView: View {
     private func discountedPrice(for product: Product) -> Double {
         serviceProductViewModel.calculateDiscountedPrice(
             productId: product.id,
-            productPrice: product.price ?? 0,
+            originalPrice: product.price?.doubleValue ?? 0,
             coupons: userCoupons
         )
     }
 
     private func bestCouponCode(for product: Product) -> String? {
         let bestCoupon = userCoupons
-            .filter { $0.productIds.isEmpty || $0.productIds.contains(Int32(product.id)) }
+            .filter { coupon in
+                coupon.productIds.isEmpty || coupon.productIds.contains { $0.int32Value == product.id }
+            }
             .max { left, right in
-                let base = product.price ?? 0
+                let base = product.price?.doubleValue ?? 0
                 let leftDiscount = left.isPercentage ? (base * left.discount / 100) : left.discount
                 let rightDiscount = right.isPercentage ? (base * right.discount / 100) : right.discount
                 return leftDiscount < rightDiscount
@@ -147,13 +161,17 @@ struct ProductDetailView: View {
     }
 }
 
+private func mirrorValue(from state: Any, label: String) -> Any? {
+    Mirror(reflecting: state).children.first(where: { $0.label == label })?.value
+}
+
 struct StripeCheckoutView: View {
     let product: Product
     let couponCode: String?
     var onSuccess: () -> Void
 
-    @StateViewModel private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
-    @StateViewModel private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
+    @State private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
+    @State private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
     @State private var isProcessing = false
     @State private var errorMessage: String?
 

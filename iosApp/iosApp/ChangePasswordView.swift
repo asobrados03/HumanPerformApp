@@ -1,9 +1,9 @@
 import SwiftUI
-import shared
 import KMPObservableViewModelSwiftUI
+import shared
 
 struct ChangePasswordView: View {
-    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
     @StateViewModel private var authVM = SharedDependencies.shared.makeAuthViewModel()
 
     @State private var currentPassword = ""
@@ -27,8 +27,8 @@ struct ChangePasswordView: View {
             passwordField("Nueva contraseña", text: $newPassword, visible: $showNew)
             passwordField("Confirmar nueva contraseña", text: $confirmPassword, visible: $showConfirm)
 
-            if case let .error(message) = authVM.changePasswordState {
-                Text(message)
+            if let errorMessage {
+                Text(errorMessage)
                     .foregroundColor(.red)
                     .multilineTextAlignment(.center)
             }
@@ -37,14 +37,14 @@ struct ChangePasswordView: View {
                 authVM.resetChangePasswordState()
                 if let id = sessionVM.userData?.id {
                     authVM.changePassword(
-                        current: currentPassword,
-                        new: newPassword,
-                        confirm: confirmPassword,
+                        currentPassword: currentPassword,
+                        newPassword: newPassword,
+                        confirmPassword: confirmPassword,
                         userId: id
                     )
                 }
             }) {
-                if case .loading = authVM.changePasswordState {
+                if isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                 } else {
@@ -53,15 +53,15 @@ struct ChangePasswordView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
-            .disabled(authVM.changePasswordState == .loading)
+            .disabled(isLoading)
 
             Spacer()
         }
         .padding(16)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
-        .onChange(of: authVM.changePasswordState) { state in
-            if case .success = state {
+        .onChange(of: authVM.isChangingPassword) { state in
+            if isSuccessState(state) {
                 showSuccess = true
             }
         }
@@ -90,10 +90,30 @@ struct ChangePasswordView: View {
         .padding(12)
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.4)))
     }
+
+    private var isLoading: Bool {
+        isState(authVM.isChangingPassword, named: "Loading")
+    }
+
+    private var errorMessage: String? {
+        guard isState(authVM.isChangingPassword, named: "Error") else { return nil }
+        return Mirror(reflecting: authVM.isChangingPassword)
+            .children
+            .first(where: { $0.label == "message" })?
+            .value as? String
+    }
+
+    private func isSuccessState(_ state: Any) -> Bool {
+        isState(state, named: "Success")
+    }
+
+    private func isState(_ state: Any, named suffix: String) -> Bool {
+        String(describing: type(of: state)).hasSuffix(suffix)
+    }
 }
 
 #Preview {
     NavigationStack {
-        ChangePasswordView().environmentObject(SharedDependencies.shared.makeUserSessionViewModel())
+        ChangePasswordView()
     }
 }

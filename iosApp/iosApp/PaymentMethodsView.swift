@@ -9,11 +9,10 @@ import SwiftUI
 import KMPObservableViewModelSwiftUI
 import shared
 
-extension PaymentMethod: Identifiable {}
+extension StripePaymentMethod: Identifiable {}
 
 /// Pantalla para visualizar los métodos de pago del usuario.
 struct PaymentMethodsView: View {
-    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
     @StateViewModel private var vm = SharedDependencies.shared.makeStripeViewModel()
 
     var body: some View {
@@ -29,38 +28,45 @@ struct PaymentMethodsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
         .onAppear {
-            if let id = sessionVM.userData?.id {
-                vm.loadMethods(for: id)
-            }
+            vm.loadPaymentMethods()
         }
     }
 
     @ViewBuilder
     private var content: some View {
-        switch vm.uiState {
-        case .idle, .loading:
+        let state = vm.viewPaymentMethodsUiState
+        let stateName = String(describing: type(of: state))
+
+        if stateName.contains("Loading") {
             PaymentMethodsShimmerView()
-        case .error(let message):
-            ErrorStateView(message: message) {
-                if let id = sessionVM.userData?.id {
-                    vm.loadMethods(for: id)
-                }
-            }
-        case .empty:
+        } else if let message = mirrorValue(from: state, label: "message") as? String {
+            ErrorStateView(message: message) { vm.loadPaymentMethods() }
+        } else if stateName.contains("Empty") {
             EmptyStateView(
                 title: "No hay métodos todavía",
                 subtitle: "Añade tu primera tarjeta para pagar más rápido."
             )
-        case .success(let methods):
+        } else if
+            let paymentMethods = mirrorValue(from: state, label: "paymentMethods") as? [StripePaymentMethod],
+            let defaultPaymentMethodId = mirrorValue(from: state, label: "defaultPaymentMethodId") as? String?
+        {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(methods) { pm in
-                        PaymentMethodCard(paymentMethod: pm)
+                    ForEach(paymentMethods) { pm in
+                        PaymentMethodCard(
+                            paymentMethod: pm,
+                            isDefault: pm.id == defaultPaymentMethodId
+                        )
                     }
                     Spacer().frame(height: 32)
                 }
                 .padding(.horizontal, 16)
             }
+        } else {
+            EmptyStateView(
+                title: "No hay métodos todavía",
+                subtitle: "Añade tu primera tarjeta para pagar más rápido."
+            )
         }
     }
 }
@@ -68,23 +74,19 @@ struct PaymentMethodsView: View {
 /* --------- Componentes --------- */
 
 struct PaymentMethodCard: View {
-    let paymentMethod: PaymentMethod
+    let paymentMethod: StripePaymentMethod
+    let isDefault: Bool
 
     private var brand: String {
-        (paymentMethod.brand ?? "Tarjeta").uppercased()
+        paymentMethod.card.brand.uppercased()
     }
 
     private var last4: String {
-        let digits = paymentMethod.last4 ?? ""
-        return digits.isEmpty ? "••••" : digits
+        paymentMethod.card.last4
     }
 
     private var exp: String {
-        if let mm = paymentMethod.expMonth?.intValue {
-            let yy = paymentMethod.expYear?.intValue ?? 0
-            return String(format: "%02d/%02d", mm, yy % 100)
-        }
-        return "—"
+        String(format: "%02d/%02d", paymentMethod.card.expMonth, paymentMethod.card.expYear % 100)
     }
 
     var body: some View {
@@ -98,7 +100,7 @@ struct PaymentMethodCard: View {
                     .foregroundColor(.secondary)
             }
             Spacer()
-            if paymentMethod.isDefault {
+            if isDefault {
                 DefaultChip()
             }
         }
@@ -240,7 +242,10 @@ private struct Shimmer: ViewModifier {
 
 extension View {
     func shimmer() -> some View {
-        self.modifier(Shimmer())
+        modifier(Shimmer())
     }
 }
 
+private func mirrorValue(from state: Any, label: String) -> Any? {
+    Mirror(reflecting: state).children.first(where: { $0.label == label })?.value
+}

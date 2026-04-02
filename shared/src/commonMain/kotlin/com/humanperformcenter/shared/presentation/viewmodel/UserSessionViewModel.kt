@@ -92,6 +92,20 @@ class UserSessionViewModel(
         _deleteState.value = DeleteUserState.Idle
     }
 
+    fun deleteStateKind(): String = when (_deleteState.value) {
+        is DeleteUserState.Idle -> "idle"
+        is DeleteUserState.Loading -> "loading"
+        is DeleteUserState.Success -> "success"
+        is DeleteUserState.NotFound -> "notFound"
+        is DeleteUserState.Error -> "error"
+    }
+
+    fun deleteStateMessage(): String? = when (val state = _deleteState.value) {
+        is DeleteUserState.NotFound -> "No se encontró la cuenta para ${state.email}."
+        is DeleteUserState.Error -> state.message
+        else -> null
+    }
+
     fun logout(onSuccess: () -> Unit) {
         if (_isLoggingOut.value) return
 

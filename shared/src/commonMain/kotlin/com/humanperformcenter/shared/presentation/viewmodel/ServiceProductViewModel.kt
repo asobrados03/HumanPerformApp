@@ -17,6 +17,7 @@ import com.humanperformcenter.shared.presentation.ui.models.ServiceUiModel
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import com.rickclephas.kmp.observableviewmodel.stateIn
+import kotlin.collections.emptyList
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -121,6 +122,24 @@ class ServiceProductViewModel(
             }
         }
     }
+
+    fun userProductsStateKind(): String = when (_userProductsState.value) {
+        is UserProductsUiState.Loading -> "loading"
+        is UserProductsUiState.Success -> "success"
+        is UserProductsUiState.Error -> "error"
+    }
+
+    fun userProductsStateProducts(): List<Product> =
+        when (val state = _userProductsState.value) {
+            is UserProductsUiState.Success -> state.products
+            else -> emptyList()
+        }
+
+    fun userProductsStateMessage(): String? =
+        when (val state = _userProductsState.value) {
+            is UserProductsUiState.Error -> state.message
+            else -> null
+        }
 
     fun loadProductDetail(productId: Int) {
         _productDetailState.value = ProductDetailUiState.Loading

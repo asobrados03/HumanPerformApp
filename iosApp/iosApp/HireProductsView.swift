@@ -1,34 +1,41 @@
 import SwiftUI
 import shared
-import KMPObservableViewModelSwiftUI
 
 struct HireProductsView: View {
     let serviceId: Int
     var onOpenProductDetail: (Int) -> Void = { _ in }
 
-    @StateViewModel private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
-    @StateViewModel private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
+    @State private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
+    @State private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
 
     @State private var selectedType: String = "all"
-    @State private var selectedSessions: Int = 0
+    @State private var selectedSessions: Int32 = 0
 
-    private var productsState: ServiceProductUiState {
-        if let state = serviceProductViewModel.serviceProducts[serviceId] {
-            return state
-        }
-        return ServiceProductUiStateLoading()
+    private func flowValue<T>(_ flow: Any, as type: T.Type) -> T? {
+        Mirror(reflecting: flow)
+            .children
+            .first(where: { $0.label == "value" })?
+            .value as? T
     }
 
-    private var hiredIds: Set<Int> {
-        guard let state = serviceProductViewModel.userProductsState as? UserProductsUiStateSuccess else {
-            return []
-        }
-        return Set(state.products.map { $0.id })
+    private var productsState: ServiceProductUiState? {
+        let map = flowValue(serviceProductViewModel.serviceProducts, as: [Int32: ServiceProductUiState].self) ?? [:]
+        return map[Int32(serviceId)] ?? map.values.first
+    }
+
+    private var hiredIds: Set<Int32> {
+        let state = serviceProductViewModel.userProductsState
+        guard
+            let products = mirrorValue(from: state, label: "products") as? [Product]
+        else { return [] }
+        return Set(products.map { $0.id })
     }
 
     private var availableProducts: [Product] {
-        guard let state = productsState as? ServiceProductUiStateSuccess else { return [] }
-        let base = state.services
+        guard
+            let state = productsState,
+            let base = mirrorValue(from: state, label: "services") as? [Product]
+        else { return [] }
 
         return base.filter { product in
             let typeOk: Bool
@@ -41,53 +48,61 @@ struct HireProductsView: View {
                 typeOk = true
             }
 
-            let sessionOk = selectedSessions == 0 || product.session?.intValue == selectedSessions
+            let sessionOk = selectedSessions == 0 || product.session?.int32Value == selectedSessions
             return typeOk && sessionOk
         }
     }
 
-    private var availableSessions: [Int] {
-        guard let state = productsState as? ServiceProductUiStateSuccess else { return [] }
-        return Array(Set(state.services.compactMap { $0.session?.intValue })).sorted()
+    private var availableSessions: [Int32] {
+        guard
+            let state = productsState,
+            let services = mirrorValue(from: state, label: "services") as? [Product]
+        else { return [] }
+        return Array(Set(services.compactMap { $0.session?.int32Value })).sorted()
     }
 
     var body: some View {
         VStack(spacing: 10) {
             filtersView
 
-            switch productsState {
-            case is ServiceProductUiStateLoading:
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-            case let error as ServiceProductUiStateError:
-                VStack(spacing: 8) {
-                    Text(error.message).foregroundColor(.red).multilineTextAlignment(.center)
-                    Button("Reintentar") {
-                        guard let userId = sessionViewModel.userData?.id else { return }
-                        serviceProductViewModel.loadServiceProducts(serviceId: serviceId, userId: userId)
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case is ServiceProductUiStateSuccess:
-                ScrollView {
-                    LazyVStack(spacing: 8) {
-                        ForEach(availableProducts, id: \.id) { product in
-                            ProductRow(producto: product)
-                                .overlay(alignment: .trailing) {
-                                    if hiredIds.contains(product.id) {
-                                        Text("Adquirido")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                            .padding(.trailing, 8)
-                                    }
-                                }
-                                .onTapGesture {
-                                    onOpenProductDetail(product.id)
-                                }
+            if let state = productsState {
+                let stateName = String(describing: type(of: state))
+
+                if stateName.contains("Loading") {
+                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let message = mirrorValue(from: state, label: "message") as? String {
+                    VStack(spacing: 8) {
+                        Text(message).foregroundColor(.red).multilineTextAlignment(.center)
+                        Button("Reintentar") {
+                            guard let userId = sessionViewModel.userData?.id else { return }
+                            serviceProductViewModel.loadServiceProducts(serviceId: Int32(serviceId), userId: userId)
                         }
                     }
-                    .padding(12)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if stateName.contains("Success") {
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            ForEach(availableProducts, id: \.id) { product in
+                                ProductRow(producto: product)
+                                    .overlay(alignment: .trailing) {
+                                        if hiredIds.contains(product.id) {
+                                            Text("Adquirido")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                                .padding(.trailing, 8)
+                                        }
+                                    }
+                                    .onTapGesture {
+                                        onOpenProductDetail(Int(product.id))
+                                    }
+                            }
+                        }
+                        .padding(12)
+                    }
+                } else {
+                    EmptyView()
                 }
-            default:
+            } else {
                 EmptyView()
             }
         }
@@ -95,7 +110,7 @@ struct HireProductsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             guard let userId = sessionViewModel.userData?.id else { return }
-            serviceProductViewModel.loadServiceProducts(serviceId: serviceId, userId: userId)
+            serviceProductViewModel.loadServiceProducts(serviceId: Int32(serviceId), userId: userId)
             serviceProductViewModel.loadUserProducts(userId: userId)
             serviceProductViewModel.loadUserCoupons(userId: userId)
         }
@@ -111,7 +126,7 @@ struct HireProductsView: View {
             .pickerStyle(.segmented)
 
             Picker("Sesiones", selection: $selectedSessions) {
-                Text("Todas").tag(0)
+                Text("Todas").tag(Int32(0))
                 ForEach(availableSessions, id: \.self) { s in
                     Text("\(s)").tag(s)
                 }
@@ -120,4 +135,8 @@ struct HireProductsView: View {
         }
         .padding(.horizontal, 12)
     }
+}
+
+private func mirrorValue(from state: Any, label: String) -> Any? {
+    Mirror(reflecting: state).children.first(where: { $0.label == label })?.value
 }

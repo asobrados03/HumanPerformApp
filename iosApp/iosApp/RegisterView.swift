@@ -1,6 +1,5 @@
 import SwiftUI
 import shared
-import KMPObservableViewModelSwiftUI
 import PhotosUI
 
 // MARK: - Modelos equivalentes
@@ -14,15 +13,7 @@ struct SexOption: Identifiable, Hashable {
 
 
 enum RegisterField: String, CaseIterable, Hashable {
-    case FIRST_NAME, LAST_NAME, EMAIL, PHONE, PASSWORD, DATE_OF_BIRTH, SEX, POSTCODE, POSTAL_ADDRESS, DNI
-}
-
-enum RegisterState: Equatable {
-    case idle
-    case loading
-    case success
-    case error(message: String)
-    case validationErrors([RegisterField: String])
+    case firstName, lastName, email, phone, password, dateOfBirth, sex, postcode, postalAddress, dni
 }
 
 // MARK: - Helpers
@@ -86,7 +77,7 @@ struct RegisterView: View {
     @Environment(\.dismiss) private var dismiss
 
     // VM
-    @StateViewModel private var vm = SharedDependencies.shared.makeAuthViewModel()
+    @State private var vm = SharedDependencies.shared.makeAuthViewModel()
     
     // Inicializador por defecto (sin parámetros)
     init(onNavigateToLogin: @escaping () -> Void = {}) {
@@ -217,27 +208,27 @@ struct RegisterView: View {
     private var personalInfoFields: some View {
         VStack(spacing: 12) {
             TextFieldIcon("Nombre", text: $firstName, systemImage: "person")
-            FieldError(field: .FIRST_NAME, errors: fieldErrors)
+            FieldError(field: .firstName, errors: fieldErrors)
             
             TextFieldIcon("Apellidos", text: $lastName, systemImage: "person")
-            FieldError(field: .LAST_NAME, errors: fieldErrors)
+            FieldError(field: .lastName, errors: fieldErrors)
         }
     }
 
     private var contactFields: some View {
         VStack(spacing: 12) {
             TextFieldIcon("Correo electrónico", text: $email, systemImage: "envelope", keyboard: .emailAddress, textContentType: .emailAddress)
-            FieldError(field: .EMAIL, errors: fieldErrors)
+            FieldError(field: .email, errors: fieldErrors)
             
             TextFieldIcon("Teléfono", text: $phone, systemImage: "phone", keyboard: .phonePad, textContentType: .telephoneNumber)
-            FieldError(field: .PHONE, errors: fieldErrors)
+            FieldError(field: .phone, errors: fieldErrors)
         }
     }
 
     private var securityFields: some View {
         VStack(spacing: 12) {
             SecureFieldIcon(placeholder: "Contraseña", text: $password, isVisible: $passwordVisible)
-            FieldError(field: .PASSWORD, errors: fieldErrors)
+            FieldError(field: .password, errors: fieldErrors)
             
             // Sexo (Picker estilo menú)
             VStack(alignment: .leading, spacing: 4) {
@@ -254,7 +245,7 @@ struct RegisterView: View {
                 }
                 .padding(12)
                 .background(RoundedRectangle(cornerRadius: 12).strokeBorder(.quaternary))
-                FieldError(field: .SEX, errors: fieldErrors)
+                FieldError(field: .sex, errors: fieldErrors)
             }
             
             // Fecha de nacimiento (máscara simple dd/MM/yyyy)
@@ -270,7 +261,7 @@ struct RegisterView: View {
                 }
                 .padding(12)
                 .background(RoundedRectangle(cornerRadius: 12).strokeBorder(.quaternary))
-                FieldError(field: .DATE_OF_BIRTH, errors: fieldErrors)
+                FieldError(field: .dateOfBirth, errors: fieldErrors)
             }
         }
     }
@@ -278,13 +269,13 @@ struct RegisterView: View {
     private var addressFields: some View {
         VStack(spacing: 12) {
             TextFieldIcon("Dirección Postal", text: $postalAddress, systemImage: "mappin.and.ellipse")
-            FieldError(field: .POSTAL_ADDRESS, errors: fieldErrors)
+            FieldError(field: .postalAddress, errors: fieldErrors)
             
             TextFieldIcon("Código Postal", text: $postalCode, systemImage: "building.2", keyboard: .numberPad)
-            FieldError(field: .POSTCODE, errors: fieldErrors)
+            FieldError(field: .postcode, errors: fieldErrors)
             
             TextFieldIcon("DNI", text: $dni, systemImage: "person.text.rectangle")
-            FieldError(field: .DNI, errors: fieldErrors)
+            FieldError(field: .dni, errors: fieldErrors)
         }
     }
 
@@ -321,10 +312,9 @@ struct RegisterView: View {
 
     private var loadingSection: some View {
         Group {
-            switch vm.registerState {
-            case .loading:
+            if isLoadingState(vm.registerState) {
                 ProgressView().padding(.vertical, 8)
-            default:
+            } else {
                 EmptyView()
             }
         }
@@ -341,7 +331,7 @@ struct RegisterView: View {
                 .foregroundStyle(.white)
                 .clipShape(Capsule())
         }
-        .disabled(vm.registerState == .loading)
+        .disabled(isLoadingState(vm.registerState))
     }
 
     private var loginLink: some View {
@@ -362,21 +352,34 @@ struct RegisterView: View {
 
     // MARK: - Actions
 
-    private func handleStateChange(_ newState: RegisterState) {
+    private func handleStateChange(_ newState: shared.RegisterState) {
         print("🟡 RegisterState changed to: \(newState)")
-        
-        switch newState {
-        case .idle:
+
+        if isIdleState(newState) {
             print("🟡 State: idle")
-        case .loading:
+            return
+        }
+
+        if isLoadingState(newState) {
             print("🟡 State: loading")
-        case .validationErrors(let fe):
-            print("🟡 State: validationErrors - \(fe)")
-            fieldErrors = fe
-        case .error(let message):
-            print("🟡 State: error - \(message)")
-            errorMessage = message
-        case .success:
+            return
+        }
+
+        if isValidationErrorsState(newState) {
+            let rawErrors = propertyValue(named: "fieldErrors", from: newState)
+            print("🟡 State: validationErrors - \(String(describing: rawErrors))")
+            fieldErrors = mapValidationErrors(rawErrors as Any)
+            return
+        }
+
+        if isErrorState(newState) {
+            let rawMessage = propertyValue(named: "message", from: newState) as? String
+            print("🟡 State: error - \(rawMessage ?? "")")
+            errorMessage = rawMessage
+            return
+        }
+
+        if isSuccessState(newState) {
             print("🟡 State: success")
             clearForm()
             showSuccessAlert = true
@@ -402,31 +405,86 @@ struct RegisterView: View {
         errorMessage = nil
         fieldErrors = [:]
 
-        let req = RegisterFormData(
-            firstName: firstName,
-            lastName: lastName,
+        let req = RegisterRequest(
+            name: firstName,
+            surnames: lastName,
             email: email,
             phone: phone,
             password: password,
             sex: selectedSexBackend,
-            dateOfBirthText: convertDateForBackend(dobText), // Convertir formato
-            postalCode: postalCode,
-            postalAddress: postalAddress,
+            dateOfBirth: convertDateForBackend(dobText),
+            postCode: postalCode,
+            postAddress: postalAddress,
             dni: dni,
-            profilePicBytes: profilePicBytes,
+            deviceType: "IOS",
+            profilePicBytes: profilePicBytes?.asKotlinByteArray(),
             profilePicName: profilePicName
         )
         
         print("🔵 Calling vm.register with data:")
-        print("  - firstName: \(req.firstName)")
-        print("  - lastName: \(req.lastName)")
+        print("  - firstName: \(req.name)")
+        print("  - lastName: \(req.surnames)")
         print("  - email: \(req.email)")
         print("  - phone: \(req.phone)")
         print("  - sex: \(req.sex)")
-        print("  - dobText: \(req.dateOfBirthText) (original: \(dobText))")
+        print("  - dobText: \(req.dateOfBirth) (original: \(dobText))")
         
-        vm.register(req)
+        vm.register(data: req)
         print("🔵 vm.register called")
+    }
+
+
+
+
+    private func stateTypeName(_ state: shared.RegisterState) -> String {
+        String(describing: type(of: state))
+    }
+
+    private func isIdleState(_ state: shared.RegisterState) -> Bool {
+        stateTypeName(state).contains("Idle")
+    }
+
+    private func isLoadingState(_ state: shared.RegisterState) -> Bool {
+        stateTypeName(state).contains("Loading")
+    }
+
+    private func isValidationErrorsState(_ state: shared.RegisterState) -> Bool {
+        stateTypeName(state).contains("ValidationErrors")
+    }
+
+    private func isErrorState(_ state: shared.RegisterState) -> Bool {
+        stateTypeName(state).contains("Error")
+    }
+
+    private func isSuccessState(_ state: shared.RegisterState) -> Bool {
+        stateTypeName(state).contains("Success")
+    }
+
+    private func propertyValue(named key: String, from state: Any) -> Any? {
+        Mirror(reflecting: state).children.first { $0.label == key }?.value
+    }
+    private func mapValidationErrors(_ rawErrors: Any) -> [RegisterField: String] {
+        var mapped: [RegisterField: String] = [:]
+
+        guard let errors = rawErrors as? [AnyHashable: Any] else {
+            return mapped
+        }
+
+        for (key, value) in errors {
+            guard let message = value as? String else { continue }
+            let raw = String(describing: key).uppercased()
+            if raw.contains("FIRST_NAME") { mapped[.firstName] = message }
+            else if raw.contains("LAST_NAME") { mapped[.lastName] = message }
+            else if raw.contains("EMAIL") { mapped[.email] = message }
+            else if raw.contains("PHONE") { mapped[.phone] = message }
+            else if raw.contains("PASSWORD") { mapped[.password] = message }
+            else if raw.contains("DATE_OF_BIRTH") { mapped[.dateOfBirth] = message }
+            else if raw.contains("SEX") { mapped[.sex] = message }
+            else if raw.contains("POSTCODE") { mapped[.postcode] = message }
+            else if raw.contains("POSTAL_ADDRESS") { mapped[.postalAddress] = message }
+            else if raw.contains("DNI") { mapped[.dni] = message }
+        }
+        return mapped
     }
 
     private func clearForm() {
