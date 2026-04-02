@@ -14,8 +14,6 @@ import com.humanperformcenter.shared.presentation.ui.UnassignEvent
 import com.humanperformcenter.shared.presentation.ui.UserProductsUiState
 import com.humanperformcenter.shared.presentation.ui.models.ProductTypeFilter
 import com.humanperformcenter.shared.presentation.ui.models.ServiceUiModel
-import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
-import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import com.rickclephas.kmp.observableviewmodel.stateIn
@@ -38,42 +36,33 @@ class ServiceProductViewModel(
     }
 
     private val _serviceUiState = MutableStateFlow<ServiceUiState>(ServiceUiState.Loading)
-    @NativeCoroutinesState
     val serviceUiState: StateFlow<ServiceUiState> = _serviceUiState.asStateFlow()
 
     private val _serviceProducts = MutableStateFlow<Map<Int, ServiceProductUiState>>(emptyMap())
-    @NativeCoroutinesState
     val serviceProducts: StateFlow<Map<Int, ServiceProductUiState>> = _serviceProducts.asStateFlow()
 
     private val _userProductsState = MutableStateFlow<UserProductsUiState>(UserProductsUiState.Loading)
-    @NativeCoroutinesState
     val userProductsState: StateFlow<UserProductsUiState> = _userProductsState.asStateFlow()
 
     private val _activeProductDetails = MutableStateFlow<ActiveProductDetailState>(ActiveProductDetailState.Loading)
-    @NativeCoroutinesState
-    val activeProductDetails: StateFlow<ActiveProductDetailState> get() = _activeProductDetails
+    val activeProductDetails: StateFlow<ActiveProductDetailState> = _activeProductDetails.asStateFlow()
 
     private val _productDetailState = MutableStateFlow<ProductDetailUiState>(
         ProductDetailUiState.Idle
     )
-    @NativeCoroutinesState
     val productDetailState: StateFlow<ProductDetailUiState> = _productDetailState.asStateFlow()
 
     private val _userCoupons = MutableStateFlow<List<Coupon>>(emptyList())
-    @NativeCoroutinesState
-    val userCoupons: StateFlow<List<Coupon>> = _userCoupons
+    val userCoupons: StateFlow<List<Coupon>> = _userCoupons.asStateFlow()
 
     private val _assignEvent = Channel<AssignEvent>()
-    @NativeCoroutines
     val assignEvent: Flow<AssignEvent> = _assignEvent.receiveAsFlow()
 
     private val _unassignEvent = Channel<UnassignEvent>()
-    @NativeCoroutines
     val unassignEvent: Flow<UnassignEvent> = _unassignEvent.receiveAsFlow()
 
     var selectedProduct: Product? = null
 
-    @NativeCoroutinesState
     val isAlreadyHired: StateFlow<Boolean> = combine(
         productDetailState,
         userProductsState

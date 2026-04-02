@@ -12,33 +12,36 @@ import com.humanperformcenter.shared.presentation.viewmodel.UserProfileViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserWalletViewModel
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
+import org.koin.core.Koin
 
 private var isKoinInitialized = false
 
+private var koinInstance: Koin? = null
+
 fun initKoinIfNeeded() {
     if (!isKoinInitialized) {
-        initKoin()
+        koinInstance = initKoin().koin
         isKoinInitialized = true
     }
 }
 
-object SharedDependencies : KoinComponent {
+object SharedDependencies {
     init {
         initKoinIfNeeded()
     }
 
-    fun makeAuthViewModel(): AuthViewModel = get()
-    fun makeDaySessionViewModel(): DaySessionViewModel = get()
-    fun makeServiceProductViewModel(): ServiceProductViewModel = get()
-    fun makeUserSessionViewModel(): UserSessionViewModel = get()
-    fun makeUserProfileViewModel(): UserProfileViewModel = get()
-    fun makeUserFavoritesViewModel(): UserFavoritesViewModel = get()
-    fun makeUserCouponsViewModel(): UserCouponsViewModel = get()
-    fun makeUserDocumentsViewModel(): UserDocumentsViewModel = get()
-    fun makeUserBookingsViewModel(): UserBookingsViewModel = get()
-    fun makeUserWalletViewModel(): UserWalletViewModel = get()
-    fun makeUserStatsViewModel(): UserStatsViewModel = get()
-    fun makeStripeViewModel(): StripeViewModel = get()
+    private fun koin(): Koin = koinInstance ?: error("Koin no está inicializado")
+
+    fun makeAuthViewModel(): AuthViewModel = koin().get()
+    fun makeDaySessionViewModel(): DaySessionViewModel = koin().get()
+    fun makeServiceProductViewModel(): ServiceProductViewModel = koin().get()
+    fun makeUserSessionViewModel(): UserSessionViewModel = koin().get()
+    fun makeUserProfileViewModel(): UserProfileViewModel = koin().get()
+    fun makeUserFavoritesViewModel(): UserFavoritesViewModel = koin().get()
+    fun makeUserCouponsViewModel(): UserCouponsViewModel = koin().get()
+    fun makeUserDocumentsViewModel(): UserDocumentsViewModel = koin().get()
+    fun makeUserBookingsViewModel(): UserBookingsViewModel = koin().get()
+    fun makeUserWalletViewModel(): UserWalletViewModel = koin().get()
+    fun makeUserStatsViewModel(): UserStatsViewModel = koin().get()
+    fun makeStripeViewModel(): StripeViewModel = koin().get()
 }

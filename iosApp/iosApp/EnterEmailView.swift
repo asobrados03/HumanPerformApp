@@ -46,7 +46,7 @@ struct EnterEmailView: View {
                 }
             } label: {
                 HStack {
-                    if case .loading = vm.resetPasswordState {
+                    if case .loading = vm.isResettingPassword {
                         ProgressView().tint(.white)
                     }
                     Text("Enviar").fontWeight(.semibold)
@@ -70,15 +70,15 @@ struct EnterEmailView: View {
         .alert(errorMessage ?? "", isPresented: $showError) {
             Button("OK", role: .cancel) {}
         }
-        .onChange(of: vm.resetPasswordState) { newValue in
+        .onChange(of: vm.isResettingPassword) { newValue in
             switch newValue {
             case .success:
                 onSuccess()
-                vm.resetResetPasswordState()
+                vm.resetResettingPasswordState()
             case .error(let msg):
                 errorMessage = msg
                 showError = true
-                vm.resetResetPasswordState()
+                vm.resetResettingPasswordState()
             default:
                 break
             }
@@ -86,7 +86,7 @@ struct EnterEmailView: View {
     }
 
     private var isLoading: Bool {
-        if case .loading = vm.resetPasswordState { return true }
+        if case .loading = vm.isResettingPassword { return true }
         return false
     }
 
