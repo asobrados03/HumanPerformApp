@@ -35,7 +35,6 @@ struct LoginView: View {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(Color.gray.opacity(0.35), lineWidth: 1)
                 )
-
             }
 
             // Password
@@ -78,7 +77,7 @@ struct LoginView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 4)
                     .accessibilityIdentifier("loginErrorMessage")
-            } else if case let .error(message) = vm.loginState {
+            } else if let message = errorMessage {
                 Text(message)
                     .font(.subheadline)
                     .foregroundColor(.red)
@@ -99,7 +98,7 @@ struct LoginView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
             }
-             .accessibilityIdentifier("loginSubmitButton")
+            .accessibilityIdentifier("loginSubmitButton")
             .disabled(isLoading)
             .buttonStyle(.borderedProminent)
             .tint(.accentColor)
@@ -126,28 +125,32 @@ struct LoginView: View {
         }
         .padding(.horizontal, 24)
         .padding(.top, 12)
-        .navigationBarTitleDisplayMode(.inline) // importante para centrar el contenido del .principal
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                NavBarLogo() 
+                NavBarLogo()
             }
         }
         .accessibilityIdentifier("loginView")
         .onChange(of: vm.loginState) { newValue in
-            if case .success = newValue {
+            if newValue is LoginState.Success {
                 onSuccess?()
-                // Si quieres limpiar tras navegar:
                 vm.resetStates()
             }
         }
     }
 
-
+    // MARK: - Computed properties
 
     private var isLoading: Bool {
-        if case .loading = vm.loginState { return true }
-        return false
+        vm.loginState is LoginState.Loading
     }
+
+    private var errorMessage: String? {
+        (vm.loginState as? LoginState.Error)?.message
+    }
+
+    // MARK: - Helpers
 
     private func handleLoginTap() {
         if UITestConfig.isUITesting && UITestConfig.forceAuthError {
@@ -165,7 +168,8 @@ struct LoginView: View {
     }
 }
 
-// Preview
+// MARK: - Preview
+
 #Preview {
     NavigationStack {
         LoginView(

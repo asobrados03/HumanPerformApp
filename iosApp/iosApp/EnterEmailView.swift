@@ -5,7 +5,6 @@ struct EnterEmailView: View {
     @State private var email: String = ""
     @State private var isEmailValid: Bool = true
     @State private var vm = SharedDependencies.shared.makeAuthViewModel()
-
     var onSuccess: () -> Void = {}
     @State private var errorMessage: String?
     @State private var showError = false
@@ -31,7 +30,7 @@ struct EnterEmailView: View {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(Color.gray.opacity(0.35), lineWidth: 1)
             )
-            
+
             if !isEmailValid {
                 Text("Introduce un correo válido")
                     .font(.footnote)
@@ -45,7 +44,7 @@ struct EnterEmailView: View {
                 }
             } label: {
                 HStack {
-                    if case .loading = vm.isResettingPassword {
+                    if isLoading {
                         ProgressView().tint(.white)
                     }
                     Text("Enviar").fontWeight(.semibold)
@@ -70,24 +69,24 @@ struct EnterEmailView: View {
             Button("OK", role: .cancel) {}
         }
         .onChange(of: vm.isResettingPassword) { newValue in
-            switch newValue {
-            case .success:
+            if newValue is ResetPasswordState.Success {
                 onSuccess()
                 vm.resetResettingPasswordState()
-            case .error(let msg):
-                errorMessage = msg
+            } else if let error = newValue as? ResetPasswordState.Error {
+                errorMessage = error.message
                 showError = true
                 vm.resetResettingPasswordState()
-            default:
-                break
             }
         }
     }
 
+    // MARK: - Computed properties
+
     private var isLoading: Bool {
-        if case .loading = vm.isResettingPassword { return true }
-        return false
+        vm.isResettingPassword is ResetPasswordState.Loading
     }
+
+    // MARK: - Helpers
 
     private func isValidEmail(_ email: String) -> Bool {
         let emailRegex = "^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
