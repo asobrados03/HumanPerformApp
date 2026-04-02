@@ -18,21 +18,24 @@ struct HireProductsView: View {
             .value as? T
     }
 
-    private var productsState: ServiceProductUiState {
+    private var productsState: ServiceProductUiState? {
         let map = flowValue(serviceProductViewModel.serviceProducts, as: [Int32: ServiceProductUiState].self) ?? [:]
-        return map[Int32(serviceId)] ?? ServiceProductUiStateLoading()
+        return map[Int32(serviceId)] ?? map.values.first
     }
 
     private var hiredIds: Set<Int32> {
-        guard let state = serviceProductViewModel.userProductsState as? UserProductsUiStateSuccess else {
-            return []
-        }
-        return Set(state.products.map { $0.id })
+        let state = serviceProductViewModel.userProductsState
+        guard
+            let products = mirrorValue(from: state, label: "products") as? [Product]
+        else { return [] }
+        return Set(products.map { $0.id })
     }
 
     private var availableProducts: [Product] {
-        guard let state = productsState as? ServiceProductUiStateSuccess else { return [] }
-        let base = state.services
+        guard
+            let state = productsState,
+            let base = mirrorValue(from: state, label: "services") as? [Product]
+        else { return [] }
 
         return base.filter { product in
             let typeOk: Bool
@@ -51,47 +54,55 @@ struct HireProductsView: View {
     }
 
     private var availableSessions: [Int32] {
-        guard let state = productsState as? ServiceProductUiStateSuccess else { return [] }
-        return Array(Set(state.services.compactMap { $0.session?.int32Value })).sorted()
+        guard
+            let state = productsState,
+            let services = mirrorValue(from: state, label: "services") as? [Product]
+        else { return [] }
+        return Array(Set(services.compactMap { $0.session?.int32Value })).sorted()
     }
 
     var body: some View {
         VStack(spacing: 10) {
             filtersView
 
-            switch productsState {
-            case is ServiceProductUiStateLoading:
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-            case let error as ServiceProductUiStateError:
-                VStack(spacing: 8) {
-                    Text(error.message).foregroundColor(.red).multilineTextAlignment(.center)
-                    Button("Reintentar") {
-                        guard let userId = sessionViewModel.userData?.id else { return }
-                        serviceProductViewModel.loadServiceProducts(serviceId: Int32(serviceId), userId: userId)
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case is ServiceProductUiStateSuccess:
-                ScrollView {
-                    LazyVStack(spacing: 8) {
-                        ForEach(availableProducts, id: \.id) { product in
-                            ProductRow(producto: product)
-                                .overlay(alignment: .trailing) {
-                                    if hiredIds.contains(product.id) {
-                                        Text("Adquirido")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                            .padding(.trailing, 8)
-                                    }
-                                }
-                                .onTapGesture {
-                                    onOpenProductDetail(Int(product.id))
-                                }
+            if let state = productsState {
+                let stateName = String(describing: type(of: state))
+
+                if stateName.contains("Loading") {
+                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let message = mirrorValue(from: state, label: "message") as? String {
+                    VStack(spacing: 8) {
+                        Text(message).foregroundColor(.red).multilineTextAlignment(.center)
+                        Button("Reintentar") {
+                            guard let userId = sessionViewModel.userData?.id else { return }
+                            serviceProductViewModel.loadServiceProducts(serviceId: Int32(serviceId), userId: userId)
                         }
                     }
-                    .padding(12)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if stateName.contains("Success") {
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            ForEach(availableProducts, id: \.id) { product in
+                                ProductRow(producto: product)
+                                    .overlay(alignment: .trailing) {
+                                        if hiredIds.contains(product.id) {
+                                            Text("Adquirido")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                                .padding(.trailing, 8)
+                                        }
+                                    }
+                                    .onTapGesture {
+                                        onOpenProductDetail(Int(product.id))
+                                    }
+                            }
+                        }
+                        .padding(12)
+                    }
+                } else {
+                    EmptyView()
                 }
-            default:
+            } else {
                 EmptyView()
             }
         }
@@ -124,4 +135,8 @@ struct HireProductsView: View {
         }
         .padding(.horizontal, 12)
     }
+}
+
+private func mirrorValue(from state: Any, label: String) -> Any? {
+    Mirror(reflecting: state).children.first(where: { $0.label == label })?.value
 }
