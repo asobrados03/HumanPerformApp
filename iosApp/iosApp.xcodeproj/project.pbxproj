@@ -26,7 +26,6 @@
 		DB9F31982E5DAE4700BE1BAA /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9F31972E5DAE3F00BE1BAA /* AppState.swift */; };
 		DB9F31A32E5DB23600BE1BAA /* KMPNativeCoroutinesAsync in Frameworks */ = {isa = PBXBuildFile; productRef = DB9F31A22E5DB23600BE1BAA /* KMPNativeCoroutinesAsync */; };
 		DB9F31BD2E5DEFDE00BE1BAA /* KMPNativeCoroutinesCombine in Frameworks */ = {isa = PBXBuildFile; productRef = DB9F31BC2E5DEFDE00BE1BAA /* KMPNativeCoroutinesCombine */; };
-		DDA100012E90000100BB0001 /* KMPObservableViewModelSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = DDA100032E90000100BB0001 /* KMPObservableViewModelSwiftUI */; };
 		DBC55FF22E5F0F4600E13D63 /* AddCouponView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FF12E5F0F4600E13D63 /* AddCouponView.swift */; };
 		DBC55FF42E5F0F5600E13D63 /* ConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FF32E5F0F5600E13D63 /* ConfigurationView.swift */; };
 		DBC55FF62E5F0F6100E13D63 /* DocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC55FF52E5F0F6100E13D63 /* DocumentView.swift */; };
@@ -38,9 +37,10 @@
 		DBE9A1252E606CB20006E288 /* EnterEmailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE9A1242E606CB20006E288 /* EnterEmailView.swift */; };
 		DBE9A1272E606CBF0006E288 /* PasswordResetInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE9A1262E606CBF0006E288 /* PasswordResetInfoView.swift */; };
 		DBF0C0022E6A0001000B0001 /* ChangePasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */; };
-		DCB100112E90011100AAA111 /* ViewModelConformanceFix.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB100102E90011000AAA111 /* ViewModelConformanceFix.swift */; };
 		DCA100012E70000100AAA001 /* HireProductsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA100002E70000100AAA001 /* HireProductsView.swift */; };
 		DCA100032E70000200AAA001 /* ProductDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA100022E70000200AAA001 /* ProductDetailView.swift */; };
+		DCB100112E90011100AAA111 /* ViewModelConformanceFix.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB100102E90011000AAA111 /* ViewModelConformanceFix.swift */; };
+		DDA100012E90000100BB0001 /* KMPObservableViewModelSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = DDA100032E90000100BB0001 /* KMPObservableViewModelSwiftUI */; };
 		DDFE00012F00000100ABC001 /* Data+KotlinByteArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDFE00022F00000100ABC001 /* Data+KotlinByteArray.swift */; };
 		E1A100012E80000100AA0001 /* iosAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100112E80000100AA0001 /* iosAppUITests.swift */; };
 		E1A100022E80000100AA0001 /* iosAppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100122E80000100AA0001 /* iosAppUITestsLaunchTests.swift */; };
@@ -100,9 +100,9 @@
 		DBE9A1242E606CB20006E288 /* EnterEmailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnterEmailView.swift; sourceTree = "<group>"; };
 		DBE9A1262E606CBF0006E288 /* PasswordResetInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordResetInfoView.swift; sourceTree = "<group>"; };
 		DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
-		DCB100102E90011000AAA111 /* ViewModelConformanceFix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelConformanceFix.swift; sourceTree = "<group>"; };
 		DCA100002E70000100AAA001 /* HireProductsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HireProductsView.swift; sourceTree = "<group>"; };
 		DCA100022E70000200AAA001 /* ProductDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductDetailView.swift; sourceTree = "<group>"; };
+		DCB100102E90011000AAA111 /* ViewModelConformanceFix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelConformanceFix.swift; sourceTree = "<group>"; };
 		DDFE00022F00000100ABC001 /* Data+KotlinByteArray.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+KotlinByteArray.swift"; sourceTree = "<group>"; };
 		E1A100102E80000100AA0001 /* iosAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iosAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A100112E80000100AA0001 /* iosAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosAppUITests.swift; sourceTree = "<group>"; };
