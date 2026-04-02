@@ -241,7 +241,7 @@ struct CalendarView: View {
         } else if let success = daySessionViewModel.sessions as? DailySessionsUiStateSuccess {
             let hours = Array(Set(success.sessions.map { $0.hour })).sorted()
             ForEach(hours, id: \.self) { hour in
-                Button(hour.prefix(5)) {
+                Button(String(hour.prefix(5))) {
                     let coaches = daySessionViewModel.getAvailableCoachesForHour(hour: hour)
                     if let coach = coaches.first {
                         selectedHour = hour
@@ -276,7 +276,7 @@ struct CalendarView: View {
         else { return }
 
         daySessionViewModel.fetchServiceIdForProductAsync(productId: product.id) { serviceId in
-            guard let serviceId, serviceId > 0 else { return }
+            guard let serviceId, serviceId.int32Value > 0 else { return }
             daySessionViewModel.makeBookingAsync(
                 customerId: userId,
                 coachId: coach.coachId,
@@ -297,7 +297,7 @@ struct CalendarView: View {
         guard let product = selectedProduct, let hour = selectedHour, let coach = selectedCoach else { return }
 
         daySessionViewModel.fetchServiceIdForProductAsync(productId: product.id) { serviceId in
-            guard let serviceId, serviceId > 0 else { return }
+            guard let serviceId, serviceId.int32Value > 0 else { return }
             daySessionViewModel.modifyBookingSessionAsync(
                 bookingId: booking.id,
                 newCoachId: coach.coachId,
@@ -325,9 +325,9 @@ struct CalendarView: View {
 
     private func isHolidayDate(_ date: Date) -> Bool {
         daySessionViewModel.holidays.contains {
-            $0.year == Int32(calendar.component(.year, from: date)) &&
-            $0.monthNumber == Int32(calendar.component(.month, from: date)) &&
-            $0.dayOfMonth == Int32(calendar.component(.day, from: date))
+            $0.year.int32Value == Int32(calendar.component(.year, from: date)) &&
+            $0.monthNumber.int32Value == Int32(calendar.component(.month, from: date)) &&
+            $0.dayOfMonth.int32Value == Int32(calendar.component(.day, from: date))
         }
     }
 
@@ -379,8 +379,8 @@ struct CalendarView: View {
     private func kmmDate(from date: Date) -> Kotlinx_datetimeLocalDate {
         Kotlinx_datetimeLocalDate(
             year: Int32(calendar.component(.year, from: date)),
-            monthNumber: Int32(calendar.component(.month, from: date)),
-            dayOfMonth: Int32(calendar.component(.day, from: date))
+            month: Int32(calendar.component(.month, from: date)),
+            day: Int32(calendar.component(.day, from: date))
         )
     }
 
