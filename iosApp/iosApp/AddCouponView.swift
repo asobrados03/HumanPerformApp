@@ -26,7 +26,7 @@ struct AddCouponView: View {
                 TextField(
                     "Código de cupón",
                     text: Binding(
-                        get: { couponsVM.couponUiState.code },
+                        get: { couponsVM.couponUiState.code ?? default value },
                         set: { couponsVM.onCouponCodeChanged(code: $0) }
                     )
                 )
