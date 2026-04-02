@@ -20,110 +20,120 @@ struct FavoritesView: View {
 
     /// Color de fondo para el entrenador seleccionado (0xAAF683).
     private let selectedColor = Color(red: 170/255, green: 246/255, blue: 131/255)
-
     private let avatarSize: CGFloat = 36
+
+    private var coachRows: [CoachUI] {
+        vm.coachesList().toCoachUIs()
+    }
 
     private var isLoading: Bool {
         vm.coachesStateKind() == "loading"
-        || vm.preferredCoachStateKind() == "loading"
-        || vm.markFavoriteStateKind() == "loading"
-    }
-
-    private var coaches: [Professional] {
-        vm.coachesList()
+            || vm.preferredCoachStateKind() == "loading"
+            || vm.markFavoriteStateKind() == "loading"
     }
 
     private var isAlertPresented: Binding<Bool> {
         Binding(
             get: { alertMessage != nil },
-            set: { newValue in
-                if !newValue {
+            set: { shouldPresent in
+                if !shouldPresent {
                     alertMessage = nil
                 }
             }
         )
     }
 
-    private var alertTitle: String {
-        alertMessage ?? ""
+    var body: some View {
+        content
+            .task(perform: loadInitialData)
+            .onChange(of: vm.markFavoriteState) { _ in
+                handleMarkFavoriteStateChange()
+            }
+            .onChange(of: vm.getPreferredCoachState) { _ in
+                handlePreferredCoachStateChange()
+            }
+            .alert(alertMessage ?? "", isPresented: isAlertPresented) {
+                Button("OK", role: .cancel) {
+                    alertMessage = nil
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    NavBarLogo()
+                }
+            }
     }
 
-    var body: some View {
-        Group {
-            if isLoading && coaches.isEmpty {
-                ProgressView()
-            } else {
-                List {
-                    Section {
-                        ForEach(Array(coaches.enumerated()), id: \.offset) { _, coach in
-                            CoachRow(
-                                coach: coach,
-                                isSelected: coach.id == preferredCoachId,
-                                avatarSize: avatarSize,
-                                selectedColor: selectedColor
-                            ) {
-                                vm.markFavorite(
-                                    coachId: coach.id,
-                                    serviceName: nil,
-                                    userId: sessionVM.userData?.id
-                                )
-                            }
-                        }
-                    } header: {
-                        Text("Profesionales del deporte")
-                            .font(.headline)
-                            .textCase(nil)
+    @ViewBuilder
+    private var content: some View {
+        if isLoading && coachRows.isEmpty {
+            ProgressView()
+        } else {
+            coachList
+        }
+    }
+
+    private var coachList: some View {
+        List {
+            Section {
+                ForEach(coachRows) { coach in
+                    CoachRow(
+                        coach: coach,
+                        isSelected: coach.id == preferredCoachId,
+                        avatarSize: avatarSize,
+                        selectedColor: selectedColor
+                    ) {
+                        vm.markFavorite(
+                            coachId: Int32(coach.id),
+                            serviceName: coach.serviceName,
+                            userId: sessionVM.userData?.id
+                        )
                     }
                 }
-                .listStyle(.insetGrouped)
+            } header: {
+                Text("Profesionales del deporte")
+                    .font(.headline)
+                    .textCase(nil)
             }
         }
-        .task {
-            vm.getCoaches()
-            if let id = sessionVM.userData?.id {
-                vm.getPreferredCoach(userId: id)
-            }
-        }
-        .onChange(of: vm.markFavoriteState) { _ in
-            switch vm.markFavoriteStateKind() {
-            case "success":
-                alertMessage = vm.markFavoriteStateMessage()
-                preferredCoachId = nil
-                if let id = sessionVM.userData?.id {
-                    vm.getPreferredCoach(userId: id)
-                }
-                vm.clearMarkFavoriteState()
+        .listStyle(.insetGrouped)
+    }
 
-            case "error":
-                alertMessage = vm.markFavoriteStateMessage()
-                vm.clearMarkFavoriteState()
-
-            default:
-                break
-            }
+    private func loadInitialData() {
+        vm.getCoaches()
+        if let userId = sessionVM.userData?.id {
+            vm.getPreferredCoach(userId: userId)
         }
-        .onChange(of: vm.getPreferredCoachState) { _ in
-            switch vm.preferredCoachStateKind() {
-            case "success":
-                preferredCoachId = vm.preferredCoachId().map(Int.init)
+    }
 
-            case "error":
-                preferredCoachId = nil
+    private func handleMarkFavoriteStateChange() {
+        switch vm.markFavoriteStateKind() {
+        case "success":
+            alertMessage = vm.markFavoriteStateMessage()
+            preferredCoachId = nil
+            if let userId = sessionVM.userData?.id {
+                vm.getPreferredCoach(userId: userId)
+            }
+            vm.clearMarkFavoriteState()
 
-            default:
-                break
-            }
+        case "error":
+            alertMessage = vm.markFavoriteStateMessage()
+            vm.clearMarkFavoriteState()
+
+        default:
+            break
         }
-        .alert(alertTitle, isPresented: isAlertPresented) {
-            Button("OK", role: .cancel) {
-                alertMessage = nil
-            }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                NavBarLogo()
-            }
+    }
+
+    private func handlePreferredCoachStateChange() {
+        switch vm.preferredCoachStateKind() {
+        case "success":
+            preferredCoachId = vm.preferredCoachId().map(Int.init)
+        case "error":
+            preferredCoachId = nil
+        default:
+            break
         }
     }
 }

@@ -7,11 +7,10 @@
 //
 
 import SwiftUI
-import shared
 
 struct CoachRow: View {
 
-    let coach: Professional
+    let coach: CoachUI
     let isSelected: Bool
     let avatarSize: CGFloat
     let selectedColor: Color
@@ -20,7 +19,7 @@ struct CoachRow: View {
     var body: some View {
         HStack(spacing: 12) {
             CoachImage(
-                coach: coach,
+                photoName: coach.photoName,
                 isSelected: isSelected,
                 avatarSize: avatarSize
             )
@@ -35,8 +34,6 @@ struct CoachRow: View {
         .contentShape(Rectangle())
         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 12))
         .listRowBackground(isSelected ? selectedColor : Color(.systemBackground))
-        .onTapGesture {
-            onTap()
-        }
+        .onTapGesture(perform: onTap)
     }
 }
