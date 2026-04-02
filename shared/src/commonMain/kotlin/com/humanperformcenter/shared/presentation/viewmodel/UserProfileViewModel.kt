@@ -75,6 +75,29 @@ class UserProfileViewModel(
         _updateState.value = UpdateState.Idle
     }
 
+    /**
+     * Helpers para iOS/Swift: evitan depender de nombres de clases generadas.
+     */
+    fun updateStateKind(): String = when (_updateState.value) {
+        is UpdateState.Idle -> "idle"
+        is UpdateState.Loading -> "loading"
+        is UpdateState.Success -> "success"
+        is UpdateState.Error -> "error"
+        is UpdateState.ValidationErrors -> "validation"
+    }
+
+    fun updateStateMessage(): String? = when (val state = _updateState.value) {
+        is UpdateState.Error -> state.message
+        else -> null
+    }
+
+    fun updateValidationFieldErrors(): Map<String, String> = when (val state = _updateState.value) {
+        is UpdateState.ValidationErrors -> state.fieldErrors.mapKeys { (field, _) -> field.name }
+        else -> emptyMap()
+    }
+
+    fun updateValidationMessages(): List<String> = updateValidationFieldErrors().values.toList()
+
     fun fetchUserProfile(currentUser: MutableStateFlow<User?>) {
         val user = currentUser.value ?: return
         viewModelScope.launch {
@@ -113,5 +136,17 @@ class UserProfileViewModel(
 
     fun clearDeleteProfilePicState() {
         _deleteProfilePicState.value = DeleteProfilePicState.Idle
+    }
+
+    fun deleteProfilePicStateKind(): String = when (_deleteProfilePicState.value) {
+        is DeleteProfilePicState.Idle -> "idle"
+        is DeleteProfilePicState.Loading -> "loading"
+        is DeleteProfilePicState.Success -> "success"
+        is DeleteProfilePicState.Error -> "error"
+    }
+
+    fun deleteProfilePicStateMessage(): String? = when (val state = _deleteProfilePicState.value) {
+        is DeleteProfilePicState.Error -> state.message
+        else -> null
     }
 }

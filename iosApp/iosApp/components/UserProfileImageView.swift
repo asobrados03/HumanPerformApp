@@ -16,7 +16,7 @@ struct UserProfileImageView: View {
                     .scaledToFill()
             } else if let photoName = photoName,
                       let encoded = photoName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-                      let url = URL(string: "\(ApiClient.shared.baseUrl)/profile_pic/\(encoded)") {
+                      let url = URL(string: "\(HttpClientProviderKt.API_BASE_URL)/profile_pic/\(encoded)") {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:

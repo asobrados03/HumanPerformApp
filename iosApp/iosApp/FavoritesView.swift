@@ -102,7 +102,7 @@ struct FavoritesView: View {
     }
 
     private func coachImage(for coach: Professional, selected: Bool) -> some View {
-        let base = "\(ApiClient.shared.baseUrl)/profile_pic/"
+        let base = "\(HttpClientProviderKt.API_BASE_URL)/profile_pic/"
         let circleStroke = selected ? Color.white.opacity(0.7) : Color.secondary.opacity(0.25)
 
         if let photo = coach.photoName,
