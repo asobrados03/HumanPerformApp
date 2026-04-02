@@ -14,11 +14,13 @@ import com.humanperformcenter.shared.presentation.viewmodel.UserStatsViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserWalletViewModel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
-import org.koin.core.context.GlobalContext
+
+private var isKoinInitialized = false
 
 fun initKoinIfNeeded() {
-    if (GlobalContext.getOrNull() == null) {
+    if (!isKoinInitialized) {
         initKoin()
+        isKoinInitialized = true
     }
 }
 
