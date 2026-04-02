@@ -37,9 +37,11 @@ struct AddCouponView: View {
 
             Button(action: {
                 if let userId = sessionVM.userData?.id {
+                    let trimmedCode = (couponsVM.couponUiState.code ?? "")
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
                     couponsVM.addCouponToUser(
                         userId: userId,
-                        code: couponsVM.couponUiState.code.trimmingCharacters(in: .whitespacesAndNewlines)
+                        code: trimmedCode
                     )
                 }
             }) {
