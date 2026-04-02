@@ -88,17 +88,10 @@ struct LoginView: View {
 
             // Botón Login
             Button {
-                if UITestConfig.isUITesting && UITestConfig.forceAuthError {
-                    uiTestError = "Credenciales inválidas (mock)"
-                } else if UITestConfig.isUITesting {
-                    uiTestError = nil
-                    onSuccess?()
-                } else {
-                    vm.login(email: email, password: password)
-                }
+                handleLoginTap()
             } label: {
                 HStack {
-                    if case .loading = vm.loginState {
+                    if isLoading {
                         ProgressView().tint(.white)
                     }
                     Text("Iniciar sesión").fontWeight(.semibold)
@@ -154,6 +147,21 @@ struct LoginView: View {
     private var isLoading: Bool {
         if case .loading = vm.loginState { return true }
         return false
+    }
+
+    private func handleLoginTap() {
+        if UITestConfig.isUITesting && UITestConfig.forceAuthError {
+            uiTestError = "Credenciales inválidas (mock)"
+            return
+        }
+
+        if UITestConfig.isUITesting {
+            uiTestError = nil
+            onSuccess?()
+            return
+        }
+
+        vm.login(email: email, password: password)
     }
 }
 
