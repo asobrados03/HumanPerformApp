@@ -63,7 +63,8 @@ struct CalendarView: View {
     }
 
     var body: some View {
-        ScrollView {
+        // FIX 1: Explicitly specify .vertical to resolve ambiguous ScrollView init
+        ScrollView(.vertical) {
             VStack(spacing: 14) {
                 if UITestConfig.isMockNetworkEnabled {
                     Text("Mock Calendar Loaded")
@@ -406,6 +407,8 @@ struct CalendarView: View {
         return selectable ? Color(.systemBackground) : Color(.systemGray5)
     }
 
+    // FIX 2: Break up the complex boolean expression into named constants
+    // to resolve "compiler unable to type-check in reasonable time"
     private func isSelectable(date: Date, today: Date, isHoliday: Bool) -> Bool {
         if isHoliday || calendar.isDateInWeekend(date) || date < calendar.startOfDay(for: today) { return false }
 
@@ -422,12 +425,14 @@ struct CalendarView: View {
         let nextMonth = calendar.component(.month, from: nextMonthDate)
         let nextYear = calendar.component(.year, from: nextMonthDate)
 
+        let isCurrentMonth = monthOfDate == currentMonth && yearOfDate == currentYear
+        let isNextMonth = monthOfDate == nextMonth && yearOfDate == nextYear
+
         if day < 15 {
-            return monthOfDate == currentMonth && yearOfDate == currentYear
+            return isCurrentMonth
         }
 
-        return (monthOfDate == currentMonth && yearOfDate == currentYear) ||
-            (isAfter15 && monthOfDate == nextMonth && yearOfDate == nextYear)
+        return isCurrentMonth || (isAfter15 && isNextMonth)
     }
 
     private func downloadICS(for booking: UserBooking) {
