@@ -27,6 +27,41 @@ struct CalendarView: View {
         String(describing: type(of: daySessionViewModel.sessions))
     }
 
+    private var isReservationPresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { dialog == .reservation },
+            set: { if !$0 { dismissDialog() } }
+        )
+    }
+
+    private var isConfirmContinuePresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { dialog == .confirmContinue },
+            set: { if !$0 { dismissDialog() } }
+        )
+    }
+
+    private var isConfirmBookingPresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { dialog == .confirmBooking },
+            set: { if !$0 { dismissDialog() } }
+        )
+    }
+
+    private var isChangeExistingPresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { dialog == .changeExisting },
+            set: { if !$0 { dismissDialog() } }
+        )
+    }
+
+    private var isBookingMenuPresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { bookingMenuTarget != nil },
+            set: { if !$0 { bookingMenuTarget = nil } }
+        )
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
@@ -61,26 +96,17 @@ struct CalendarView: View {
             selectedProduct = nil
             daySessionViewModel.clearSessions()
         }
-        .sheet(isPresented: Binding(
-            get: { dialog == .reservation },
-            set: { if !$0 { dismissDialog() } }
-        )) {
+        .sheet(isPresented: isReservationPresented) {
             reservationSheet
                 .presentationDetents([.medium, .large])
         }
-        .alert("Aviso", isPresented: Binding(
-            get: { dialog == .confirmContinue },
-            set: { if !$0 { dismissDialog() } }
-        )) {
+        .alert("Aviso", isPresented: isConfirmContinuePresented) {
             Button("No", role: .cancel) { dismissDialog() }
             Button("Sí") { dialog = .reservation }
         } message: {
             Text("Ya tienes una reserva hoy. ¿Continuar?")
         }
-        .alert("Confirmar reserva", isPresented: Binding(
-            get: { dialog == .confirmBooking },
-            set: { if !$0 { dismissDialog() } }
-        )) {
+        .alert("Confirmar reserva", isPresented: isConfirmBookingPresented) {
             Button("Cancelar", role: .cancel) { dismissDialog() }
             Button("Reservar") { submitBooking() }
             Button("Cambiar") { dialog = .changeExisting }
@@ -90,7 +116,7 @@ struct CalendarView: View {
         .accessibilityIdentifier("calendarView")
         .confirmationDialog(
             "Gestión de reserva",
-            isPresented: Binding(get: { dialog == .changeExisting }, set: { if !$0 { dismissDialog() } }),
+            isPresented: isChangeExistingPresented,
             titleVisibility: .visible
         ) {
             if let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess {
@@ -104,7 +130,7 @@ struct CalendarView: View {
         }
         .confirmationDialog(
             "Reserva",
-            isPresented: Binding(get: { bookingMenuTarget != nil }, set: { if !$0 { bookingMenuTarget = nil } }),
+            isPresented: isBookingMenuPresented,
             titleVisibility: .visible
         ) {
             if let booking = bookingMenuTarget {
@@ -152,32 +178,43 @@ struct CalendarView: View {
 
         return LazyVGrid(columns: columns, spacing: 8) {
             ForEach(days.indices, id: \.self) { index in
-                let date = days[index]
-                if let date {
-                    let isHoliday = isHolidayDate(date)
-                    let isReserved = isReservedDate(date)
-                    let selectable = isSelectable(date: date, today: today, isHoliday: isHoliday)
-
-                    Text("\(calendar.component(.day, from: date))")
-                        .fontWeight(.bold)
-                        .frame(maxWidth: .infinity, minHeight: 34)
-                        .padding(.vertical, 3)
-                        .background(backgroundColor(date: date, isReserved: isReserved, isHoliday: isHoliday, selectable: selectable))
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle().stroke(calendar.isDateInToday(date) ? Color.secondary : Color.clear, lineWidth: 2)
-                        )
-                        .opacity(selectable ? 1 : 0.45)
-                        .onTapGesture {
-                            guard selectable else { return }
-                            selectedDate = date
-                            onDayClicked(date)
-                        }
-                } else {
-                    Color.clear.frame(height: 36)
-                }
+                dayCell(for: days[index], today: today)
             }
         }
+    }
+
+    @ViewBuilder
+    private func dayCell(for maybeDate: Date?, today: Date) -> some View {
+        guard let date = maybeDate else {
+            Color.clear.frame(height: 36)
+            return
+        }
+
+        let isHoliday = isHolidayDate(date)
+        let isReserved = isReservedDate(date)
+        let selectable = isSelectable(date: date, today: today, isHoliday: isHoliday)
+        let dayText = "\(calendar.component(.day, from: date))"
+        let cellBackground = backgroundColor(
+            date: date,
+            isReserved: isReserved,
+            isHoliday: isHoliday,
+            selectable: selectable
+        )
+        let borderColor: Color = calendar.isDateInToday(date) ? .secondary : .clear
+
+        Text(dayText)
+            .fontWeight(.bold)
+            .frame(maxWidth: .infinity, minHeight: 34)
+            .padding(.vertical, 3)
+            .background(cellBackground)
+            .clipShape(Circle())
+            .overlay(Circle().stroke(borderColor, lineWidth: 2))
+            .opacity(selectable ? 1 : 0.45)
+            .onTapGesture {
+                guard selectable else { return }
+                selectedDate = date
+                onDayClicked(date)
+            }
     }
 
     @ViewBuilder
