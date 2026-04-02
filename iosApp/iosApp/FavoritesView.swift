@@ -9,7 +9,6 @@ import SwiftUI
 import KMPObservableViewModelSwiftUI
 import shared
 
-/// Pantalla que muestra la lista de entrenadores y permite marcar un favorito.
 struct FavoritesView: View {
 
     @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
@@ -18,7 +17,6 @@ struct FavoritesView: View {
     @State private var preferredCoachId: Int?
     @State private var alertMessage: String?
 
-    /// Color de fondo para el entrenador seleccionado (0xAAF683).
     private let selectedColor = Color(red: 170/255, green: 246/255, blue: 131/255)
     private let avatarSize: CGFloat = 36
 
@@ -36,16 +34,16 @@ struct FavoritesView: View {
         Binding(
             get: { alertMessage != nil },
             set: { shouldPresent in
-                if !shouldPresent {
-                    alertMessage = nil
-                }
+                if !shouldPresent { alertMessage = nil }
             }
         )
     }
 
     var body: some View {
         content
-            .task(perform: loadInitialData)
+            .task {                          // ✅ Fix 1: removed 'perform:' label
+                await loadInitialData()
+            }
             .onChange(of: vm.markFavoriteState) { _ in
                 handleMarkFavoriteStateChange()
             }
@@ -53,15 +51,11 @@ struct FavoritesView: View {
                 handlePreferredCoachStateChange()
             }
             .alert(alertMessage ?? "", isPresented: isAlertPresented) {
-                Button("OK", role: .cancel) {
-                    alertMessage = nil
-                }
+                Button("OK", role: .cancel) { alertMessage = nil }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    NavBarLogo()
-                }
+                ToolbarItem(placement: .principal) { NavBarLogo() }
             }
     }
 
@@ -85,7 +79,7 @@ struct FavoritesView: View {
                         selectedColor: selectedColor
                     ) {
                         vm.markFavorite(
-                            coachId: Int32(coach.id),
+                            coachId: KotlinInt(value: Int32(coach.id)),  // ✅ Fix 3
                             serviceName: coach.serviceName,
                             userId: sessionVM.userData?.id
                         )
@@ -100,7 +94,7 @@ struct FavoritesView: View {
         .listStyle(.insetGrouped)
     }
 
-    private func loadInitialData() {
+    private func loadInitialData() async {          // ✅ Fix 2: marked async
         vm.getCoaches()
         if let userId = sessionVM.userData?.id {
             vm.getPreferredCoach(userId: userId)
@@ -116,11 +110,9 @@ struct FavoritesView: View {
                 vm.getPreferredCoach(userId: userId)
             }
             vm.clearMarkFavoriteState()
-
         case "error":
             alertMessage = vm.markFavoriteStateMessage()
             vm.clearMarkFavoriteState()
-
         default:
             break
         }
@@ -129,7 +121,7 @@ struct FavoritesView: View {
     private func handlePreferredCoachStateChange() {
         switch vm.preferredCoachStateKind() {
         case "success":
-            preferredCoachId = vm.preferredCoachId().map(Int.init)
+            preferredCoachId = vm.preferredCoachId().map { Int($0) }  // ✅ Fix 4
         case "error":
             preferredCoachId = nil
         default:
