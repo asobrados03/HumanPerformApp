@@ -4,7 +4,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.humanperformcenter.shared.data.local.AuthLocalDataSource
 import com.humanperformcenter.shared.data.model.user.User
-import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesIgnore
 import kotlinx.coroutines.flow.Flow
 
 object SecureStorage : AuthLocalDataSource {
@@ -23,14 +22,12 @@ object SecureStorage : AuthLocalDataSource {
         AuthStorageCore.saveTokens(prefs, accessToken, refreshToken)
     }
 
-    @NativeCoroutinesIgnore
     override fun accessTokenFlow(): Flow<String> = AuthStorageCore.accessTokenFlow(prefs)
 
     override suspend fun saveUser(user: User) {
         AuthStorageCore.saveUser(prefs, user)
     }
 
-    @NativeCoroutinesIgnore
     override fun userFlow(): Flow<User?> = AuthStorageCore.userFlow(prefs)
 
     override suspend fun clearTokens() {
