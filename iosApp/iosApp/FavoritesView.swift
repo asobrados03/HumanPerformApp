@@ -33,6 +33,21 @@ struct FavoritesView: View {
         vm.coachesList()
     }
 
+    private var isAlertPresented: Binding<Bool> {
+        Binding(
+            get: { alertMessage != nil },
+            set: { newValue in
+                if !newValue {
+                    alertMessage = nil
+                }
+            }
+        )
+    }
+
+    private var alertTitle: String {
+        alertMessage ?? ""
+    }
+
     var body: some View {
         Group {
             if isLoading && coaches.isEmpty {
@@ -40,7 +55,7 @@ struct FavoritesView: View {
             } else {
                 List {
                     Section {
-                        ForEach(Array(coaches.enumerated()), id: \.offset) { _, coach in
+                        ForEach(coaches, id: \.id) { coach in
                             CoachRow(
                                 coach: coach,
                                 isSelected: coach.id == preferredCoachId,
@@ -99,10 +114,7 @@ struct FavoritesView: View {
                 break
             }
         }
-        .alert(alertMessage ?? "", isPresented: Binding(
-            get: { alertMessage != nil },
-            set: { if !$0 { alertMessage = nil } }
-        )) {
+        .alert(alertTitle, isPresented: isAlertPresented) {
             Button("OK", role: .cancel) {
                 alertMessage = nil
             }
