@@ -23,11 +23,13 @@ struct FavoritesView: View {
     private let avatarSize: CGFloat = 36
 
     private var isLoading: Bool {
-        vm.coachesState is CoachStateLoading || vm.getPreferredCoachState is GetPreferredCoachStateLoading || vm.markFavoriteState is MarkFavoriteStateLoading
+        vm.coachesStateKind() == "loading"
+            || vm.preferredCoachStateKind() == "loading"
+            || vm.markFavoriteStateKind() == "loading"
     }
 
     private var coaches: [Professional] {
-        (vm.coachesState as? CoachStateSuccess)?.coaches ?? []
+        vm.coachesList()
     }
 
     var body: some View {
@@ -67,25 +69,25 @@ struct FavoritesView: View {
             vm.getCoaches()
             if let id = sessionVM.userData?.id { vm.getPreferredCoach(userId: id) }
         }
-        .onChange(of: vm.markFavoriteState) { state in
-            switch state {
-            case let success as MarkFavoriteStateSuccess:
-                alertMessage = success.message
+        .onChange(of: vm.markFavoriteState) { _ in
+            switch vm.markFavoriteStateKind() {
+            case "success":
+                alertMessage = vm.markFavoriteStateMessage()
                 preferredCoachId = nil
                 if let id = sessionVM.userData?.id { vm.getPreferredCoach(userId: id) }
                 vm.clearMarkFavoriteState()
-            case let error as MarkFavoriteStateError:
-                alertMessage = error.message
+            case "error":
+                alertMessage = vm.markFavoriteStateMessage()
                 vm.clearMarkFavoriteState()
             default:
                 break
             }
         }
-        .onChange(of: vm.getPreferredCoachState) { state in
-            switch state {
-            case let success as GetPreferredCoachStateSuccess:
-                preferredCoachId = Int(success.coachId)
-            case is GetPreferredCoachStateError:
+        .onChange(of: vm.getPreferredCoachState) { _ in
+            switch vm.preferredCoachStateKind() {
+            case "success":
+                preferredCoachId = vm.preferredCoachId().map(Int.init)
+            case "error":
                 preferredCoachId = nil
             default:
                 break
