@@ -10,7 +10,7 @@ import KMPObservableViewModelSwiftUI
 import shared
 
 struct AddCouponView: View {
-    @EnvironmentObject var sessionVM: shared.UserSessionViewModel
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
     @StateViewModel private var couponsVM = SharedDependencies.shared.makeUserCouponsViewModel()
 
     var body: some View {

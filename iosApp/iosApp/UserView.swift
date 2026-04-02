@@ -40,7 +40,7 @@ struct UserView: View {
                             .accessibilityIdentifier("userLoadedMarker")
 
                         NavigationLink {
-                            MyProfileView().environmentObject(sessionVM)
+                            MyProfileView()
                         } label: {
                             Text("Mi perfil")
                                 .frame(maxWidth: .infinity)
@@ -126,11 +126,11 @@ struct UserView: View {
 
             HStack(spacing: 12) {
                 actionButton(title: "Mi perfil", isPrimary: true) {
-                    MyProfileView().environmentObject(sessionVM)
+                    MyProfileView()
                 }
 
                 actionButton(title: "Editar perfil", isPrimary: false) {
-                    EditProfileView().environmentObject(sessionVM)
+                    EditProfileView()
                 }
             }
             .padding(.horizontal, 16)
@@ -193,15 +193,15 @@ struct UserView: View {
         case .configuracion:
             ConfigurationView()
         case .favoritos:
-            FavoritesView().environmentObject(sessionVM)
+            FavoritesView()
         case .documento:
-            DocumentView().environmentObject(sessionVM)
+            DocumentView()
         case .verPago:
-            PaymentMethodsView().environmentObject(sessionVM)
+            PaymentMethodsView()
         case .monederoVirtual:
-            ElectronicWalletView().environmentObject(sessionVM)
+            ElectronicWalletView()
         case .anadirCupon:
-            AddCouponView().environmentObject(sessionVM)
+            AddCouponView()
         }
     }
 }
