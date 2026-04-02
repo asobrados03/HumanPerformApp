@@ -28,7 +28,22 @@ struct DocumentView: View {
     @State private var alertMessage = ""
 
     private var isUploading: Bool {
-        documentsVM.uploadState is UploadStateLoading
+        uploadStateTypeName.contains("Loading")
+    }
+
+    private var uploadStateTypeName: String {
+        String(describing: type(of: documentsVM.uploadState))
+    }
+
+    private var uploadErrorMessage: String? {
+        messageField(from: documentsVM.uploadState)
+    }
+
+    private func messageField(from state: Any) -> String? {
+        Mirror(reflecting: state)
+            .children
+            .first(where: { $0.label == "message" })?
+            .value as? String
     }
 
     var body: some View {
@@ -94,15 +109,13 @@ struct DocumentView: View {
             }
         }
         .onChange(of: documentsVM.uploadState) { state in
-            switch state {
-            case is UploadStateSuccess:
+            let stateName = String(describing: type(of: state))
+            if stateName.contains("Success") {
                 alertMessage = "Archivo subido correctamente"
                 showAlert = true
-            case let error as UploadStateError:
-                alertMessage = "Error al subir: \(error.message)"
+            } else if stateName.contains("Error") {
+                alertMessage = "Error al subir: \(uploadErrorMessage ?? "Error desconocido")"
                 showAlert = true
-            default:
-                break
             }
         }
     }
@@ -112,4 +125,3 @@ struct DocumentView: View {
         documentsVM.uploadDocument(userId: userId, name: documentName, data: data.asKotlinByteArray())
     }
 }
-

@@ -7,23 +7,40 @@ struct HireServicesView: View {
 
     var onOpenHireProducts: (Int) -> Void = { _ in }
 
+    private var serviceStateName: String {
+        String(describing: type(of: viewModel.serviceUiState))
+    }
+
+    private var services: [ServiceUiModel] {
+        Mirror(reflecting: viewModel.serviceUiState)
+            .children
+            .first(where: { $0.label == "services" })?
+            .value as? [ServiceUiModel] ?? []
+    }
+
+    private var serviceErrorMessage: String? {
+        Mirror(reflecting: viewModel.serviceUiState)
+            .children
+            .first(where: { $0.label == "message" })?
+            .value as? String
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                switch viewModel.serviceUiState {
-                case is ServiceUiStateLoading:
+                if serviceStateName.contains("Loading") {
                     ProgressView()
                         .frame(maxWidth: .infinity, alignment: .center)
-                case let success as ServiceUiStateSuccess:
-                    ForEach(success.services, id: \.service.id) { model in
+                } else if serviceStateName.contains("Success") {
+                    ForEach(services, id: \.service.id) { model in
                         ServiceRow(model: model)
                             .onTapGesture {
                                 onOpenHireProducts(model.service.id)
                             }
                     }
-                case let error as ServiceUiStateError:
+                } else if serviceStateName.contains("Error") {
                     VStack(spacing: 8) {
-                        Text(error.message)
+                        Text(serviceErrorMessage ?? "Error desconocido")
                             .foregroundColor(.red)
                             .multilineTextAlignment(.center)
 
@@ -33,7 +50,7 @@ struct HireServicesView: View {
                             }
                         }
                     }
-                default:
+                } else {
                     EmptyView()
                 }
             }
