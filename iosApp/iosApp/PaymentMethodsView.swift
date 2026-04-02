@@ -34,30 +34,35 @@ struct PaymentMethodsView: View {
 
     @ViewBuilder
     private var content: some View {
-        switch vm.viewPaymentMethodsUiState {
-        case is PaymentMethodsUiStateLoading:
+        let state = vm.viewPaymentMethodsUiState
+        let stateName = String(describing: type(of: state))
+
+        if stateName.contains("Loading") {
             PaymentMethodsShimmerView()
-        case let error as PaymentMethodsUiStateError:
-            ErrorStateView(message: error.message) { vm.loadPaymentMethods() }
-        case is PaymentMethodsUiStateEmpty:
+        } else if let message = mirrorValue(from: state, label: "message") as? String {
+            ErrorStateView(message: message) { vm.loadPaymentMethods() }
+        } else if stateName.contains("Empty") {
             EmptyStateView(
                 title: "No hay métodos todavía",
                 subtitle: "Añade tu primera tarjeta para pagar más rápido."
             )
-        case let success as PaymentMethodsUiStateSuccess:
+        } else if
+            let paymentMethods = mirrorValue(from: state, label: "paymentMethods") as? [StripePaymentMethod],
+            let defaultPaymentMethodId = mirrorValue(from: state, label: "defaultPaymentMethodId") as? String?
+        {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(success.paymentMethods) { pm in
+                    ForEach(paymentMethods) { pm in
                         PaymentMethodCard(
                             paymentMethod: pm,
-                            isDefault: pm.id == success.defaultPaymentMethodId
+                            isDefault: pm.id == defaultPaymentMethodId
                         )
                     }
                     Spacer().frame(height: 32)
                 }
                 .padding(.horizontal, 16)
             }
-        default:
+        } else {
             EmptyStateView(
                 title: "No hay métodos todavía",
                 subtitle: "Añade tu primera tarjeta para pagar más rápido."
@@ -239,4 +244,8 @@ extension View {
     func shimmer() -> some View {
         modifier(Shimmer())
     }
+}
+
+private func mirrorValue(from state: Any, label: String) -> Any? {
+    Mirror(reflecting: state).children.first(where: { $0.label == label })?.value
 }

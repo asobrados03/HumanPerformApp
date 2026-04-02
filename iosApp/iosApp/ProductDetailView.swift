@@ -19,9 +19,8 @@ struct ProductDetailView: View {
             .value as? T
     }
 
-    private var productDetailState: ProductDetailUiState {
+    private var productDetailState: ProductDetailUiState? {
         flowValue(serviceProductViewModel.productDetailState, as: ProductDetailUiState.self)
-            ?? ProductDetailUiStateLoading()
     }
 
     private var userCoupons: [Coupon] {
@@ -34,21 +33,23 @@ struct ProductDetailView: View {
 
     var body: some View {
         Group {
-            switch productDetailState {
-            case is ProductDetailUiStateLoading:
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            if let state = productDetailState {
+                let stateName = String(describing: type(of: state))
 
-            case let error as ProductDetailUiStateError:
-                VStack(spacing: 8) {
-                    Text(error.message).foregroundColor(.red)
-                    Button("Reintentar") { serviceProductViewModel.loadProductDetail(productId: Int32(productId)) }
+                if stateName.contains("Loading") || stateName.contains("Idle") {
+                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let message = mirrorValue(from: state, label: "message") as? String {
+                    VStack(spacing: 8) {
+                        Text(message).foregroundColor(.red)
+                        Button("Reintentar") { serviceProductViewModel.loadProductDetail(productId: Int32(productId)) }
+                    }
+                } else if let product = mirrorValue(from: state, label: "product") as? Product {
+                    detailContent(product: product)
+                } else {
+                    EmptyView()
                 }
-
-            case let success as ProductDetailUiStateSuccess:
-                detailContent(product: success.product)
-
-            default:
-                EmptyView()
+            } else {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .navigationTitle("Detalle")
@@ -158,6 +159,10 @@ struct ProductDetailView: View {
 
         return bestCoupon?.code
     }
+}
+
+private func mirrorValue(from state: Any, label: String) -> Any? {
+    Mirror(reflecting: state).children.first(where: { $0.label == label })?.value
 }
 
 struct StripeCheckoutView: View {
