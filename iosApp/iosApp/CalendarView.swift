@@ -85,7 +85,7 @@ struct CalendarView: View {
             Button("Reservar") { submitBooking() }
             Button("Cambiar") { dialog = .changeExisting }
         } message: {
-            Text("¿Deseas confirmar tu sesión con \(selectedCoach?.coachName ?? "-") a las \(selectedHour?.prefix(5) ?? "")?")
+            Text(confirmBookingMessage)
         }
         .accessibilityIdentifier("calendarView")
         .confirmationDialog(
@@ -151,7 +151,8 @@ struct CalendarView: View {
         let today = Date()
 
         return LazyVGrid(columns: columns, spacing: 8) {
-            ForEach(Array(days.enumerated()), id: \.offset) { _, date in
+            ForEach(days.indices, id: \.self) { index in
+                let date = days[index]
                 if let date {
                     let isHoliday = isHolidayDate(date)
                     let isReserved = isReservedDate(date)
@@ -187,7 +188,9 @@ struct CalendarView: View {
 
             let filterValues = ["Todos"] + Array(Set(bookings.map { $0.service })).sorted()
             Picker("Servicio", selection: $bookingsFilter) {
-                ForEach(filterValues, id: \.self) { Text($0).tag($0) }
+                ForEach(filterValues, id: \.self) { filter in
+                    Text(filter).tag(filter as String)
+                }
             }
             .pickerStyle(.menu)
 
@@ -467,6 +470,12 @@ struct CalendarView: View {
 
     private func sessionsErrorMessage() -> String? {
         mirrorValue(from: daySessionViewModel.sessions, label: "message") as? String
+    }
+
+    private var confirmBookingMessage: String {
+        let coachName = selectedCoach?.coachName ?? "-"
+        let hour = selectedHour.map { String($0.prefix(5)) } ?? ""
+        return "¿Deseas confirmar tu sesión con \(coachName) a las \(hour)?"
     }
 }
 
