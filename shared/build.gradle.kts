@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.kotlinxSerialization)
-    id("com.rickclephas.kmp.nativecoroutines") version "1.0.2"
+    alias(libs.plugins.kmp.nativecoroutines)
 }
 
 kotlin {
