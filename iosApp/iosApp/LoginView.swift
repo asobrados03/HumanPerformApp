@@ -78,8 +78,8 @@ struct LoginView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 4)
                     .accessibilityIdentifier("loginErrorMessage")
-            } else if let loginError = vm.loginState as? LoginStateError {
-                Text(loginError.message)
+            } else if case let .error(message) = vm.loginState {
+                Text(message)
                     .font(.subheadline)
                     .foregroundColor(.red)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -98,7 +98,7 @@ struct LoginView: View {
                 }
             } label: {
                 HStack {
-                    if vm.loginState is LoginStateLoading {
+                    if case .loading = vm.loginState {
                         ProgressView().tint(.white)
                     }
                     Text("Iniciar sesión").fontWeight(.semibold)
@@ -141,7 +141,7 @@ struct LoginView: View {
         }
         .accessibilityIdentifier("loginView")
         .onChange(of: vm.loginState) { newValue in
-            if newValue is LoginStateSuccess {
+            if case .success = newValue {
                 onSuccess?()
                 // Si quieres limpiar tras navegar:
                 vm.resetStates()
@@ -152,7 +152,8 @@ struct LoginView: View {
 
 
     private var isLoading: Bool {
-        vm.loginState is LoginStateLoading
+        if case .loading = vm.loginState { return true }
+        return false
     }
 }
 
