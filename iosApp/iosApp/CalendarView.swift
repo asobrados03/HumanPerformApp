@@ -19,6 +19,14 @@ struct CalendarView: View {
 
     private let calendar = Calendar.current
 
+    private var userProducts: [Product] {
+        serviceProductViewModel.userProductsStateProducts()
+    }
+
+    private var sessionsStateName: String {
+        String(describing: type(of: daySessionViewModel.sessions))
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
@@ -209,18 +217,12 @@ struct CalendarView: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Seleccionar servicio").font(.headline)
 
-            if let productsState = serviceProductViewModel.userProductsState as? UserProductsUiStateSuccess {
-                Picker("Servicio", selection: Binding(
-                    get: { selectedProduct?.id ?? -1 },
-                    set: { newId in
-                        selectedProduct = productsState.products.first(where: { $0.id == newId })
-                        if let product = selectedProduct {
-                            daySessionViewModel.fetchAvailableSessions(productId: product.id, date: kmmDate(from: selectedDate))
-                        }
+            if !userProducts.isEmpty {
+                Picker("Servicio", selection: selectedProductBinding) {
+                    Text("Seleccionar").tag(Int32(-1))
+                    ForEach(userProducts, id: \.id) { product in
+                        Text(product.name).tag(productIdInt32(product))
                     }
-                )) {
-                    Text("Seleccionar").tag(-1)
-                    ForEach(productsState.products, id: \.id) { p in Text(p.name).tag(p.id) }
                 }
                 .pickerStyle(.menu)
             }
@@ -236,10 +238,10 @@ struct CalendarView: View {
         if selectedProduct == nil {
             Text("Selecciona un servicio para ver horarios.")
                 .foregroundColor(.secondary)
-        } else if daySessionViewModel.sessions is DailySessionsUiStateLoading {
+        } else if sessionsStateName.contains("Loading") {
             ProgressView().frame(maxWidth: .infinity)
-        } else if let success = daySessionViewModel.sessions as? DailySessionsUiStateSuccess {
-            let hours = Array(Set(success.sessions.map { $0.hour })).sorted()
+        } else if sessionsStateName.contains("Success") {
+            let hours = availableSessionHours()
             ForEach(hours, id: \.self) { hour in
                 Button(String(hour.prefix(5))) {
                     let coaches = daySessionViewModel.getAvailableCoachesForHour(hour: hour)
@@ -251,12 +253,26 @@ struct CalendarView: View {
                 }
                 .buttonStyle(.borderedProminent)
             }
-        } else if daySessionViewModel.sessions is DailySessionsUiStateEmpty {
+        } else if sessionsStateName.contains("Empty") {
             Text("No hay horarios disponibles.")
                 .foregroundColor(.secondary)
-        } else if let error = daySessionViewModel.sessions as? DailySessionsUiStateError {
-            Text(error.message).foregroundColor(.red)
+        } else if let message = sessionsErrorMessage() {
+            Text(message).foregroundColor(.red)
         }
+    }
+
+    private var selectedProductBinding: Binding<Int32> {
+        Binding<Int32>(
+            get: { selectedProduct.map(productIdInt32) ?? -1 },
+            set: { newId in
+                selectedProduct = userProducts.first(where: { productIdInt32($0) == newId })
+                guard let product = selectedProduct else { return }
+                daySessionViewModel.fetchAvailableSessions(
+                    productId: productIdInt32(product),
+                    date: kmmDate(from: selectedDate)
+                )
+            }
+        )
     }
 
     private func onDayClicked(_ date: Date) {
@@ -275,13 +291,15 @@ struct CalendarView: View {
             let coach = selectedCoach
         else { return }
 
-        daySessionViewModel.fetchServiceIdForProductAsync(productId: product.id) { serviceId in
+        let productId = productIdInt32(product)
+
+        daySessionViewModel.fetchServiceIdForProductAsync(productId: productId) { serviceId in
             guard let serviceId, serviceId.int32Value > 0 else { return }
             daySessionViewModel.makeBookingAsync(
                 customerId: userId,
                 coachId: coach.coachId,
                 serviceId: serviceId,
-                productId: product.id,
+                productId: productId,
                 dayOfWeek: englishDay(from: selectedDate),
                 centerId: 1,
                 selectedDate: ymd(selectedDate),
@@ -296,13 +314,15 @@ struct CalendarView: View {
     private func submitBookingChange(booking: UserBooking) {
         guard let product = selectedProduct, let hour = selectedHour, let coach = selectedCoach else { return }
 
-        daySessionViewModel.fetchServiceIdForProductAsync(productId: product.id) { serviceId in
+        let productId = productIdInt32(product)
+
+        daySessionViewModel.fetchServiceIdForProductAsync(productId: productId) { serviceId in
             guard let serviceId, serviceId.int32Value > 0 else { return }
             daySessionViewModel.modifyBookingSessionAsync(
                 bookingId: booking.id,
                 newCoachId: coach.coachId,
                 newServiceId: serviceId,
-                newProductId: product.id,
+                newProductId: productId,
                 newDayOfWeek: englishDay(from: selectedDate),
                 newStartDate: ymd(selectedDate),
                 hour: hour
@@ -429,6 +449,25 @@ struct CalendarView: View {
     private func nextMonth() {
         currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? currentMonth
     }
+
+    private func productIdInt32(_ product: Product) -> Int32 {
+        let rawId = product.id
+        if let id = rawId as? Int32 { return id }
+        if let id = rawId as? Int { return Int32(id) }
+        if let id = mirrorValue(from: rawId, label: "int32Value") as? Int32 { return id }
+        return 0
+    }
+
+    private func availableSessionHours() -> [String] {
+        guard let sessions = mirrorValue(from: daySessionViewModel.sessions, label: "sessions") as? [DaySession] else {
+            return []
+        }
+        return Array(Set(sessions.map { $0.hour })).sorted()
+    }
+
+    private func sessionsErrorMessage() -> String? {
+        mirrorValue(from: daySessionViewModel.sessions, label: "message") as? String
+    }
 }
 
 private enum CalendarDialog {
@@ -437,4 +476,8 @@ private enum CalendarDialog {
     case reservation
     case confirmBooking
     case changeExisting
+}
+
+private func mirrorValue(from state: Any, label: String) -> Any? {
+    Mirror(reflecting: state).children.first(where: { $0.label == label })?.value
 }
