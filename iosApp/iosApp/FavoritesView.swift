@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 /// Pantalla que muestra la lista de entrenadores y permite marcar un favorito.

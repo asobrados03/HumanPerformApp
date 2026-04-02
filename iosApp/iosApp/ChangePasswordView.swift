@@ -1,4 +1,5 @@
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 struct ChangePasswordView: View {
