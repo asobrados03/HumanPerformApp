@@ -50,7 +50,7 @@ struct ConfigurationView: View {
                     Button("Eliminar cuenta") { showDeleteAlert = true }
                         .foregroundColor(.red)
                     NavigationLink("Cambiar contraseña") {
-                        ChangePasswordView().environmentObject(sessionVM)
+                        ChangePasswordView()
                     }
                 }
             }
