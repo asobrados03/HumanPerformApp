@@ -11,24 +11,11 @@ struct ConfigurationView: View {
     @State private var errorMessage: String?
 
     private var isProcessing: Bool {
-        sessionVM.isLoggingOut || sessionVM.deleteState is DeleteUserStateLoading
+        sessionVM.isLoggingOut || sessionVM.deleteStateKind() == "loading"
     }
 
     private var deleteStateChangeKey: String {
-        switch sessionVM.deleteState {
-        case is DeleteUserStateIdle:
-            return "idle"
-        case is DeleteUserStateLoading:
-            return "loading"
-        case is DeleteUserStateSuccess:
-            return "success"
-        case let notFound as DeleteUserStateNotFound:
-            return "notFound:\(notFound.email)"
-        case let error as DeleteUserStateError:
-            return "error:\(error.message)"
-        default:
-            return "unknown"
-        }
+        "\(sessionVM.deleteStateKind()):\(sessionVM.deleteStateMessage() ?? "")"
     }
 
     var body: some View {
@@ -78,15 +65,12 @@ struct ConfigurationView: View {
             Button("OK", role: .cancel) { }
         }
         .onChange(of: deleteStateChangeKey) { _ in
-            switch sessionVM.deleteState {
-            case is DeleteUserStateSuccess:
+            switch sessionVM.deleteStateKind() {
+            case "success":
                 appState.isAuthenticated = false
                 sessionVM.resetDeleteState()
-            case let notFound as DeleteUserStateNotFound:
-                errorMessage = "No se encontró la cuenta para \(notFound.email)."
-                sessionVM.resetDeleteState()
-            case let error as DeleteUserStateError:
-                errorMessage = error.message
+            case "notFound", "error":
+                errorMessage = sessionVM.deleteStateMessage() ?? "Error desconocido"
                 sessionVM.resetDeleteState()
             default:
                 break
