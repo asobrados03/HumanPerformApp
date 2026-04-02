@@ -23,7 +23,7 @@ junitJupiter = "6.0.2"
 coreKtxVersion = "1.7.0"
 coil = "2.7.0"
 kotlinStdlib = "2.3.0"
-kotlinTest = "2.1.21"
+kotlinTest = "2.3.0"
 runner = "1.7.0"
 core = "1.7.0"
 ktorClientCore = "3.4.0"
@@ -45,7 +45,7 @@ kotlinxCoroutinesPlayServices = "1.10.2"
 workRuntimeKtx = "2.11.1"
 appcompat = "1.7.1"
 materialVersion = "1.13.0"
-kmpNativecoroutinesCore = "1.0.0"
+kmpNativecoroutines = "1.0.1"
 koin = "4.1.1"
 turbine = "1.2.1"
 
@@ -105,7 +105,7 @@ kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "ko
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "materialVersion" }
-kmp-nativecoroutines-core = { group = "com.rickclephas.kmp", name = "kmp-nativecoroutines-core", version.ref = "kmpNativecoroutinesCore" }
+kmp-nativecoroutines-core = { group = "com.rickclephas.kmp", name = "kmp-nativecoroutines-core", version.ref = "kmpNativecoroutines" }
 koin-bom = { group = "io.insert-koin", name = "koin-bom", version.ref = "koin" }
 koin-core = { group = "io.insert-koin", name = "koin-core" }
 koin-core-viewmodel = { group = "io.insert-koin", name = "koin-core-viewmodel" }
@@ -120,3 +120,4 @@ compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+kmp-nativecoroutines = { id = "com.rickclephas.kmp.nativecoroutines", version.ref = "kmpNativecoroutines" }
