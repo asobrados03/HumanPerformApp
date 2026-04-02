@@ -63,8 +63,7 @@ struct CalendarView: View {
     }
 
     var body: some View {
-        // FIX 1: Explicitly specify .vertical to resolve ambiguous ScrollView init
-        ScrollView(.vertical) {
+        SwiftUI.ScrollView(.vertical) {
             VStack(spacing: 14) {
                 if UITestConfig.isMockNetworkEnabled {
                     Text("Mock Calendar Loaded")
@@ -387,11 +386,20 @@ struct CalendarView: View {
     }
 
     private func isHolidayDate(_ date: Date) -> Bool {
-        daySessionViewModel.holidays.contains {
-            $0.year.int32Value == Int32(calendar.component(.year, from: date)) &&
-            $0.monthNumber.int32Value == Int32(calendar.component(.month, from: date)) &&
-            $0.dayOfMonth.int32Value == Int32(calendar.component(.day, from: date))
+        let year = Int32(calendar.component(.year, from: date))
+        let month = Int32(calendar.component(.month, from: date))
+        let day = Int32(calendar.component(.day, from: date))
+
+        for holiday in daySessionViewModel.holidays {
+            let holidayYear = holiday.year.int32Value
+            let holidayMonth = holiday.monthNumber.int32Value
+            let holidayDay = holiday.dayOfMonth.int32Value
+            if holidayYear == year && holidayMonth == month && holidayDay == day {
+                return true
+            }
         }
+
+        return false
     }
 
     private func isReservedDate(_ date: Date) -> Bool {
@@ -407,8 +415,6 @@ struct CalendarView: View {
         return selectable ? Color(.systemBackground) : Color(.systemGray5)
     }
 
-    // FIX 2: Break up the complex boolean expression into named constants
-    // to resolve "compiler unable to type-check in reasonable time"
     private func isSelectable(date: Date, today: Date, isHoliday: Bool) -> Bool {
         if isHoliday || calendar.isDateInWeekend(date) || date < calendar.startOfDay(for: today) { return false }
 
