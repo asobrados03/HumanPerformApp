@@ -11,3 +11,7 @@ extension UserWalletViewModel: ViewModel {}
 extension UserFavoritesViewModel: ViewModel {}
 extension StripeViewModel: ViewModel {}
 extension ServiceProductViewModel: ViewModel {}
+extension UserDocumentsViewModel: ViewModel {}
+extension UserStatsViewModel: ViewModel {}
+extension DaySessionViewModel: ViewModel {}
+extension UserBookingsViewModel: ViewModel {}
