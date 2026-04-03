@@ -1,5 +1,6 @@
 import SwiftUI
 import shared
+import KMPObservableViewModelSwiftUI
 import PhotosUI
 
 // MARK: - Modelos equivalentes
@@ -77,7 +78,7 @@ struct RegisterView: View {
     @Environment(\.dismiss) private var dismiss
 
     // VM
-    @State private var vm = SharedDependencies.shared.makeAuthViewModel()
+    @StateViewModel private var vm = SharedDependencies.shared.makeAuthViewModel()
     
     // Inicializador por defecto (sin parámetros)
     init(onNavigateToLogin: @escaping () -> Void = {}) {

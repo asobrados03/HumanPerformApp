@@ -1,8 +1,9 @@
 import SwiftUI
 import shared
+import KMPObservableViewModelSwiftUI
 
 struct LoginView: View {
-    @State var vm = SharedDependencies.shared.makeAuthViewModel()
+    @StateViewModel var vm = SharedDependencies.shared.makeAuthViewModel()
 
     var onSuccess: (() -> Void)? = nil
     var onForgot: (() -> Void)? = nil
