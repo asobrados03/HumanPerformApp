@@ -32,6 +32,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class ServiceProductViewModelTest {
     private val mainDispatcher = StandardTestDispatcher()
@@ -239,6 +240,29 @@ class ServiceProductViewModelTest {
                 listOf(Coupon(1, "P10", 10.0, true, LocalDate.parse("2026-12-31"), listOf(1)))
             )
         )
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun service_state_helpers_return_expected_values() = runTest {
+        val service = ServiceAvailable(id = 1, name = "PT")
+        val viewModel = buildViewModel(
+            serviceRepository = FakeServiceProductRepository(
+                allServicesResult = Result.success(listOf(service)),
+                userProductsResult = Result.success(emptyList())
+            )
+        )
+
+        assertEquals("loading", viewModel.serviceStateKind())
+        assertEquals(emptyList(), viewModel.serviceStateServices())
+        assertNull(viewModel.serviceStateMessage())
+
+        viewModel.loadAllServices(userId = 7)
+        advanceUntilIdle()
+
+        assertEquals("success", viewModel.serviceStateKind())
+        assertEquals(listOf(ServiceUiModel(service, false)), viewModel.serviceStateServices())
+        assertNull(viewModel.serviceStateMessage())
     }
 
     private companion object {
