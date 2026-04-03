@@ -11,7 +11,7 @@ import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -30,23 +30,23 @@ class UserSessionViewModel(
         .map { token -> token.isNotBlank() }
         .distinctUntilChanged()
 
-    private val _isLoggedIn = MutableStateFlow<Boolean?>(null)
+    private val _isLoggedIn = MutableStateFlow<Boolean?>(viewModelScope, null)
     @NativeCoroutinesState
     val isLoggedIn: StateFlow<Boolean?> = _isLoggedIn.asStateFlow()
 
-    private val _userData = MutableStateFlow<User?>(null)
+    private val _userData = MutableStateFlow<User?>(viewModelScope, null)
     @NativeCoroutinesState
     val userData: StateFlow<User?> = _userData.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(true)
+    private val _isLoading = MutableStateFlow(viewModelScope, true)
     @NativeCoroutinesState
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _deleteState = MutableStateFlow<DeleteUserState>(DeleteUserState.Idle)
+    private val _deleteState = MutableStateFlow<DeleteUserState>(viewModelScope, DeleteUserState.Idle)
     @NativeCoroutinesState
     val deleteState: StateFlow<DeleteUserState> = _deleteState.asStateFlow()
 
-    private val _isLoggingOut = MutableStateFlow(false)
+    private val _isLoggingOut = MutableStateFlow(viewModelScope, false)
     @NativeCoroutinesState
     val isLoggingOut: StateFlow<Boolean> = _isLoggingOut.asStateFlow()
 

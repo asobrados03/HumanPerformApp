@@ -12,7 +12,7 @@ import com.humanperformcenter.shared.presentation.ui.UpdateState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -24,11 +24,11 @@ class UserProfileViewModel(
         val log = logging()
     }
 
-    private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
+    private val _updateState = MutableStateFlow<UpdateState>(viewModelScope, UpdateState.Idle)
     @NativeCoroutinesState
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
-    private val _deleteProfilePicState = MutableStateFlow<DeleteProfilePicState>(DeleteProfilePicState.Idle)
+    private val _deleteProfilePicState = MutableStateFlow<DeleteProfilePicState>(viewModelScope, DeleteProfilePicState.Idle)
     @NativeCoroutinesState
     val deleteProfilePicState: StateFlow<DeleteProfilePicState> = _deleteProfilePicState
 

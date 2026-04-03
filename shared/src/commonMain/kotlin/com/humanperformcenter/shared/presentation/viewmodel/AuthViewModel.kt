@@ -11,7 +11,7 @@ import com.humanperformcenter.shared.presentation.ui.ResetPasswordState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -20,19 +20,19 @@ class AuthViewModel(
 ) : ViewModel() {
 
     // Usamos MutableStateFlow con un valor inicial obligatorio
-    private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
+    private val _loginState = MutableStateFlow<LoginState>(viewModelScope, LoginState.Idle)
     @NativeCoroutinesState
     val loginState: StateFlow<LoginState> = _loginState.asStateFlow()
 
-    private val _registerState = MutableStateFlow<RegisterState>(RegisterState.Idle)
+    private val _registerState = MutableStateFlow<RegisterState>(viewModelScope, RegisterState.Idle)
     @NativeCoroutinesState
     val registerState: StateFlow<RegisterState> = _registerState.asStateFlow()
 
-    private val _isChangingPassword = MutableStateFlow<ChangePasswordState>(ChangePasswordState.Idle)
+    private val _isChangingPassword = MutableStateFlow<ChangePasswordState>(viewModelScope, ChangePasswordState.Idle)
     @NativeCoroutinesState
     val isChangingPassword: StateFlow<ChangePasswordState> = _isChangingPassword.asStateFlow()
 
-    private val _isResettingPassword = MutableStateFlow<ResetPasswordState>(ResetPasswordState.Idle)
+    private val _isResettingPassword = MutableStateFlow<ResetPasswordState>(viewModelScope, ResetPasswordState.Idle)
     @NativeCoroutinesState
     val isResettingPassword: StateFlow<ResetPasswordState> = _isResettingPassword.asStateFlow()
 

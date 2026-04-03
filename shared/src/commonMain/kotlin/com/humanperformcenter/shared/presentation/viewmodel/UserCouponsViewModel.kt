@@ -5,7 +5,7 @@ import com.humanperformcenter.shared.presentation.ui.CouponUiState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.update
 class UserCouponsViewModel(
     private val userCouponUseCase: UserCouponUseCase,
 ) : ViewModel() {
-    private val _couponUiState = MutableStateFlow(CouponUiState())
+    private val _couponUiState = MutableStateFlow(viewModelScope, CouponUiState())
     @NativeCoroutinesState
     val couponUiState: StateFlow<CouponUiState> = _couponUiState.asStateFlow()
 

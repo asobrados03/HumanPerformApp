@@ -6,7 +6,7 @@ import com.humanperformcenter.shared.presentation.ui.UserStatsState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -17,7 +17,7 @@ class UserStatsViewModel(
         val log = logging() // Uses class name as tag
     }
 
-    private val _uiState = MutableStateFlow<UserStatsState>(UserStatsState.Loading)
+    private val _uiState = MutableStateFlow<UserStatsState>(viewModelScope, UserStatsState.Loading)
     @NativeCoroutinesState
     val uiState: StateFlow<UserStatsState> = _uiState.asStateFlow()
 

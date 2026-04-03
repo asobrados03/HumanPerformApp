@@ -15,7 +15,7 @@ import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -26,32 +26,32 @@ class StripeViewModel(
         val log = logging()
     }
 
-    private val _viewPaymentMethodsUiState = MutableStateFlow<PaymentMethodsUiState>(
+    private val _viewPaymentMethodsUiState = MutableStateFlow<PaymentMethodsUiState>(viewModelScope, 
         PaymentMethodsUiState.Empty
     )
     @NativeCoroutinesState
     val viewPaymentMethodsUiState: StateFlow<PaymentMethodsUiState> = _viewPaymentMethodsUiState
         .asStateFlow()
 
-    private val _startStripeCheckout = MutableStateFlow<StartStripeCheckoutState>(
+    private val _startStripeCheckout = MutableStateFlow<StartStripeCheckoutState>(viewModelScope, 
         StartStripeCheckoutState.Idle
     )
     @NativeCoroutinesState
     val startStripeCheckout: StateFlow<StartStripeCheckoutState> = _startStripeCheckout.asStateFlow()
 
     // Estado para acciones puntuales (Borrar tarjeta, guardar tarjeta, cancelar sub, refund)
-    private val _actionUiState = MutableStateFlow<ActionUiState>(ActionUiState.Idle)
+    private val _actionUiState = MutableStateFlow<ActionUiState>(viewModelScope, ActionUiState.Idle)
     @NativeCoroutinesState
     val actionUiState: StateFlow<ActionUiState> = _actionUiState.asStateFlow()
 
-    private val _addPaymentMethodUiState = MutableStateFlow<AddPaymentMethodUiState>(
+    private val _addPaymentMethodUiState = MutableStateFlow<AddPaymentMethodUiState>(viewModelScope, 
         AddPaymentMethodUiState.Idle
     )
     @NativeCoroutinesState
     val addPaymentMethodUiState: StateFlow<AddPaymentMethodUiState> = _addPaymentMethodUiState
         .asStateFlow()
 
-    private val _refundUiState = MutableStateFlow<RefundUiState>(RefundUiState.Idle)
+    private val _refundUiState = MutableStateFlow<RefundUiState>(viewModelScope, RefundUiState.Idle)
     @NativeCoroutinesState
     val refundUiState: StateFlow<RefundUiState> = _refundUiState.asStateFlow()
 

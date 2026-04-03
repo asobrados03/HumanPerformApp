@@ -12,7 +12,7 @@ import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.datetime.LocalDate
@@ -25,17 +25,17 @@ class DaySessionViewModel(
         private const val GENERIC_BOOKING_ERROR_MESSAGE = "No se pudo completar la reserva. Inténtalo de nuevo más tarde."
     }
 
-    private val _sessions = MutableStateFlow<DailySessionsUiState>(DailySessionsUiState.Idle)
+    private val _sessions = MutableStateFlow<DailySessionsUiState>(viewModelScope, DailySessionsUiState.Idle)
     private var fetchSessionsRequestId: Long = 0
     private var fetchSessionsJob: Job? = null
     @NativeCoroutinesState
     val sessions: StateFlow<DailySessionsUiState> = _sessions.asStateFlow()
 
-    private val _bookingErrorMessage = MutableStateFlow<String?>(null)
+    private val _bookingErrorMessage = MutableStateFlow<String?>(viewModelScope, null)
     @NativeCoroutinesState
     val bookingErrorMessage: StateFlow<String?> = _bookingErrorMessage.asStateFlow()
 
-    private val _holidays = MutableStateFlow<List<LocalDate>>(emptyList())
+    private val _holidays = MutableStateFlow<List<LocalDate>>(viewModelScope, emptyList())
     @NativeCoroutinesState
     val holidays: StateFlow<List<LocalDate>> get() = _holidays.asStateFlow()
 

@@ -21,7 +21,7 @@ import kotlin.collections.emptyList
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,24 +36,24 @@ class ServiceProductViewModel(
         val log = logging() // Uses class name as tag
     }
 
-    private val _serviceUiState = MutableStateFlow<ServiceUiState>(ServiceUiState.Loading)
+    private val _serviceUiState = MutableStateFlow<ServiceUiState>(viewModelScope, ServiceUiState.Loading)
     val serviceUiState: StateFlow<ServiceUiState> = _serviceUiState.asStateFlow()
 
-    private val _serviceProducts = MutableStateFlow<Map<Int, ServiceProductUiState>>(emptyMap())
+    private val _serviceProducts = MutableStateFlow<Map<Int, ServiceProductUiState>>(viewModelScope, emptyMap())
     val serviceProducts: StateFlow<Map<Int, ServiceProductUiState>> = _serviceProducts.asStateFlow()
 
-    private val _userProductsState = MutableStateFlow<UserProductsUiState>(UserProductsUiState.Loading)
+    private val _userProductsState = MutableStateFlow<UserProductsUiState>(viewModelScope, UserProductsUiState.Loading)
     val userProductsState: StateFlow<UserProductsUiState> = _userProductsState.asStateFlow()
 
-    private val _activeProductDetails = MutableStateFlow<ActiveProductDetailState>(ActiveProductDetailState.Loading)
+    private val _activeProductDetails = MutableStateFlow<ActiveProductDetailState>(viewModelScope, ActiveProductDetailState.Loading)
     val activeProductDetails: StateFlow<ActiveProductDetailState> = _activeProductDetails.asStateFlow()
 
-    private val _productDetailState = MutableStateFlow<ProductDetailUiState>(
+    private val _productDetailState = MutableStateFlow<ProductDetailUiState>(viewModelScope, 
         ProductDetailUiState.Idle
     )
     val productDetailState: StateFlow<ProductDetailUiState> = _productDetailState.asStateFlow()
 
-    private val _userCoupons = MutableStateFlow<List<Coupon>>(emptyList())
+    private val _userCoupons = MutableStateFlow<List<Coupon>>(viewModelScope, emptyList())
     val userCoupons: StateFlow<List<Coupon>> = _userCoupons.asStateFlow()
 
     private val _assignEvent = Channel<AssignEvent>()

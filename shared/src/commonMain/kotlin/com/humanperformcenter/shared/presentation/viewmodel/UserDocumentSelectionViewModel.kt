@@ -2,7 +2,7 @@ package com.humanperformcenter.shared.presentation.viewmodel
 
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -15,7 +15,7 @@ data class UserDocumentSelectionUiState(
 )
 
 class UserDocumentSelectionViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow(UserDocumentSelectionUiState())
+    private val _uiState = MutableStateFlow(viewModelScope, UserDocumentSelectionUiState())
 
     @NativeCoroutinesState
     val uiState: StateFlow<UserDocumentSelectionUiState> = _uiState.asStateFlow()
