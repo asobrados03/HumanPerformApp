@@ -54,6 +54,9 @@ struct FavoritesView: View {
             .onChange(of: vm.getPreferredCoachState) { _ in
                 handlePreferredCoachStateChange()
             }
+            .onChange(of: sessionVM.userData?.id) { _ in
+                Task { await loadPreferredCoach() }
+            }
             .alert(alertMessage ?? "", isPresented: isAlertPresented) {
                 Button("OK", role: .cancel) { alertMessage = nil }
             }
@@ -100,6 +103,10 @@ struct FavoritesView: View {
 
     private func loadInitialData() async {
         vm.getCoaches()
+        await loadPreferredCoach()
+    }
+
+    private func loadPreferredCoach() async {
         if let userId = currentUserId {
             vm.getPreferredCoach(userId: userId)
         }

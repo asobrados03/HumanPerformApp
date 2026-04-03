@@ -76,7 +76,10 @@ struct UserView: View {
                 }
                 .background(Color(.systemGroupedBackground).ignoresSafeArea())
                 .onChange(of: sessionVM.userData?.id) { id in
-                    if let id = id { walletVM.loadBalance(userId: id) }
+                    if let id = id {
+                        walletVM.loadBalance(userId: id)
+                        profileVM.fetchUserProfile(currentUser: sessionVM.currentUserState())
+                    }
                 }
             } else {
                 Text("Sin usuario")

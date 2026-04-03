@@ -93,6 +93,10 @@ struct CalendarView: View {
             if UITestConfig.isMockNetworkEnabled { return }
             bootstrap()
         }
+        .onChange(of: sessionViewModel.userData?.id) { _ in
+            if UITestConfig.isMockNetworkEnabled { return }
+            bootstrapUserData()
+        }
         .onChange(of: selectedDate) { _ in
             selectedProduct = nil
             daySessionViewModel.clearSessions()
@@ -150,6 +154,10 @@ struct CalendarView: View {
 
     private func bootstrap() {
         daySessionViewModel.fetchHolidays()
+        bootstrapUserData()
+    }
+
+    private func bootstrapUserData() {
         if let userId = sessionViewModel.userData?.id {
             bookingsViewModel.fetchUserBookings(userId: userId)
             serviceProductViewModel.loadUserProducts(userId: userId)

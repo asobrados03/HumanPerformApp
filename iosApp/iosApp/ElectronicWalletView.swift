@@ -50,10 +50,17 @@ struct ElectronicWalletView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
         .onAppear {
-            if let id = sessionVM.userData?.id {
-                walletVM.loadBalance(userId: id)
-                walletVM.loadEwalletTransactions(userId: id)
-            }
+            loadWalletData()
+        }
+        .onChange(of: sessionVM.userData?.id) { _ in
+            loadWalletData()
+        }
+    }
+
+    private func loadWalletData() {
+        if let id = sessionVM.userData?.id {
+            walletVM.loadBalance(userId: id)
+            walletVM.loadEwalletTransactions(userId: id)
         }
     }
 
