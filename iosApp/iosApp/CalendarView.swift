@@ -63,7 +63,7 @@ struct CalendarView: View {
     }
 
     var body: some View {
-        SwiftUI.ScrollView(.vertical) {
+        ScrollView(.vertical) {
             VStack(spacing: 14) {
                 if UITestConfig.isMockNetworkEnabled {
                     Text("Mock Calendar Loaded")
@@ -73,8 +73,8 @@ struct CalendarView: View {
                 weekDays
                 calendarGrid
 
-                if let state = bookingsViewModel.userBookings as? FetchUserBookingsStateLoading {
-                    _ = state
+                // CORRECCIÓN APLICADA AQUÍ:
+                if bookingsViewModel.userBookings is FetchUserBookingsStateLoading {
                     ProgressView().padding(.top, 12)
                 } else if let error = bookingsViewModel.userBookings as? FetchUserBookingsStateError {
                     Text("Error al cargar: \(error.message)")
@@ -340,7 +340,7 @@ struct CalendarView: View {
             daySessionViewModel.makeBookingAsync(
                 customerId: userId,
                 coachId: coach.coachId,
-                serviceId: Int32(serviceId),
+                serviceId: serviceId.int32Value,
                 productId: productId,
                 dayOfWeek: englishDay(from: selectedDate),
                 centerId: 1,
@@ -363,7 +363,7 @@ struct CalendarView: View {
             daySessionViewModel.modifyBookingSessionAsync(
                 bookingId: booking.id,
                 newCoachId: coach.coachId,
-                newServiceId: Int32(serviceId),
+                newServiceId: serviceId.int32Value,
                 newProductId: productId,
                 newDayOfWeek: englishDay(from: selectedDate),
                 newStartDate: ymd(selectedDate),
@@ -391,9 +391,11 @@ struct CalendarView: View {
         let day = Int32(calendar.component(.day, from: date))
 
         for holiday in daySessionViewModel.holidays {
-            let holidayYear = holiday.year.int32Value
-            let holidayMonth = holiday.monthNumber.int32Value
-            let holidayDay = holiday.dayOfMonth.int32Value
+            // FIXED: Removed the invalid .int32Value calls since KMP
+            // primitives are automatically bridged to Swift Int32.
+            let holidayYear = holiday.year
+            let holidayMonth = holiday.monthNumber
+            let holidayDay = holiday.dayOfMonth
             if holidayYear == year && holidayMonth == month && holidayDay == day {
                 return true
             }
