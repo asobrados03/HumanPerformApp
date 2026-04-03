@@ -92,11 +92,18 @@ struct AddCouponView: View {
         }
         .padding()
         .onAppear {
-            if let userId = sessionVM.userData?.id {
-                couponsVM.loadUserCoupons(userId: userId)
-            }
+            loadCoupons()
+        }
+        .onChange(of: sessionVM.userData?.id) { _ in
+            loadCoupons()
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
+    }
+
+    private func loadCoupons() {
+        if let userId = sessionVM.userData?.id {
+            couponsVM.loadUserCoupons(userId: userId)
+        }
     }
 }
