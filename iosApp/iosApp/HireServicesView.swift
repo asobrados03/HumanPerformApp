@@ -8,38 +8,32 @@ struct HireServicesView: View {
 
     var onOpenHireProducts: (Int) -> Void = { _ in }
 
-    private var serviceStateName: String {
-        String(describing: type(of: viewModel.serviceUiState))
+    private var serviceStateKind: String {
+        viewModel.serviceStateKind()
     }
 
     private var services: [ServiceUiModel] {
-        Mirror(reflecting: viewModel.serviceUiState)
-            .children
-            .first(where: { $0.label == "services" })?
-            .value as? [ServiceUiModel] ?? []
+        viewModel.serviceStateServices()
     }
 
     private var serviceErrorMessage: String? {
-        Mirror(reflecting: viewModel.serviceUiState)
-            .children
-            .first(where: { $0.label == "message" })?
-            .value as? String
+        viewModel.serviceStateMessage()
     }
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                if serviceStateName.contains("Loading") {
+                if serviceStateKind == "loading" {
                     ProgressView()
                         .frame(maxWidth: .infinity, alignment: .center)
-                } else if serviceStateName.contains("Success") {
+                } else if serviceStateKind == "success" {
                     ForEach(services, id: \.service.id) { model in
                         ServiceRow(model: model)
                             .onTapGesture {
                                 onOpenHireProducts(Int(model.service.id))
                             }
                     }
-                } else if serviceStateName.contains("Error") {
+                } else if serviceStateKind == "error" {
                     VStack(spacing: 8) {
                         Text(serviceErrorMessage ?? "Error desconocido")
                             .foregroundColor(.red)
