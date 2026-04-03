@@ -12,6 +12,7 @@ import shared
 struct SplashView: View {
     @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
     @State private var didResolve = false
+    @State private var fallbackTask: Task<Void, Never>?
 
     let onResolved: (_ isLoggedIn: Bool) -> Void
 
@@ -23,6 +24,13 @@ struct SplashView: View {
         }
         .accessibilityIdentifier("splashView")
         .onAppear {
+            fallbackTask?.cancel()
+            fallbackTask = Task {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                guard !Task.isCancelled else { return }
+                resolveOnce(sessionVM.isLoggedIn?.boolValue ?? false)
+            }
+
             if UITestConfig.isUITesting {
                 resolveOnce(UITestConfig.splashResolvesToLoggedIn)
                 return
@@ -39,11 +47,15 @@ struct SplashView: View {
             guard let value else { return }
             resolveOnce(value.boolValue)
         }
+        .onDisappear {
+            fallbackTask?.cancel()
+        }
     }
 
     private func resolveOnce(_ isLoggedIn: Bool) {
         guard !didResolve else { return }
         didResolve = true
+        fallbackTask?.cancel()
         onResolved(isLoggedIn)
     }
 }
