@@ -10,3 +10,4 @@ extension AuthViewModel: ViewModel {}
 extension UserWalletViewModel: ViewModel {}
 extension UserFavoritesViewModel: ViewModel {}
 extension StripeViewModel: ViewModel {}
+extension ServiceProductViewModel: ViewModel {}
