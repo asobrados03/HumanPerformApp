@@ -14,7 +14,7 @@ struct DocumentView: View {
     @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
     @Environment(\.dismiss) private var dismiss
 
-    @State private var documentsVM = SharedDependencies.shared.makeUserDocumentsViewModel()
+    @StateViewModel private var documentsVM = SharedDependencies.shared.makeUserDocumentsViewModel()
 
     @State private var showOptions = false
     @State private var showImagePicker = false

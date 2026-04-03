@@ -1,10 +1,11 @@
 import SwiftUI
 import shared
+import KMPObservableViewModelSwiftUI
 
 /// Pantalla de configuración del usuario.
 struct ConfigurationView: View {
     @EnvironmentObject var appState: AppState
-    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
 
     @State private var showLogoutAlert = false
     @State private var showDeleteAlert = false

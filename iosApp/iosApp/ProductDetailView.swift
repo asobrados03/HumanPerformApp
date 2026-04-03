@@ -1,12 +1,13 @@
 import SwiftUI
 import shared
+import KMPObservableViewModelSwiftUI
 
 struct ProductDetailView: View {
     let productId: Int
     var onPaymentSuccess: () -> Void = {}
 
-    @State private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
-    @State private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
+    @StateViewModel private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
+    @StateViewModel private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
 
     @State private var showPaymentOptions = false
     @State private var showWalletConfirm = false
@@ -170,8 +171,8 @@ struct StripeCheckoutView: View {
     let couponCode: String?
     var onSuccess: () -> Void
 
-    @State private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
-    @State private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
+    @StateViewModel private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
+    @StateViewModel private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
     @State private var isProcessing = false
     @State private var errorMessage: String?
 
