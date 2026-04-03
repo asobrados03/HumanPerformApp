@@ -6,10 +6,13 @@
 //  Copyright © 2025 orgName. All rights reserved.
 //
 import SwiftUI
+import KMPObservableViewModelSwiftUI
 import shared
 
 struct SplashView: View {
-    @State private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+    @State private var didResolve = false
+
     let onResolved: (_ isLoggedIn: Bool) -> Void
 
     var body: some View {
@@ -18,16 +21,29 @@ struct SplashView: View {
             Color(.systemBackground).ignoresSafeArea()
             ProgressView("Cargando…")
         }
-                .accessibilityIdentifier("splashView")
+        .accessibilityIdentifier("splashView")
         .onAppear {
             if UITestConfig.isUITesting {
-                onResolved(UITestConfig.splashResolvesToLoggedIn)
+                resolveOnce(UITestConfig.splashResolvesToLoggedIn)
+                return
+            }
+
+            // Importante: el primer valor de StateFlow puede llegar antes
+            // de que SwiftUI conecte el onChange, por lo que lo resolvemos aquí.
+            if let isLogged = sessionVM.isLoggedIn {
+                resolveOnce(isLogged.boolValue)
             }
         }
         .onChange(of: sessionVM.isLoggedIn) { value in
             guard !UITestConfig.isUITesting else { return }
             guard let value else { return }
-            onResolved(value.boolValue)
+            resolveOnce(value.boolValue)
         }
+    }
+
+    private func resolveOnce(_ isLoggedIn: Bool) {
+        guard !didResolve else { return }
+        didResolve = true
+        onResolved(isLoggedIn)
     }
 }
