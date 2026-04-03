@@ -5,13 +5,13 @@ import com.humanperformcenter.shared.presentation.ui.UploadState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class UserDocumentsViewModel(
     private val userDocumentUseCase: UserDocumentUseCase
 ) : ViewModel() {
-    private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
+    private val _uploadState = MutableStateFlow<UploadState>(viewModelScope, UploadState.Idle)
     @NativeCoroutinesState
     val uploadState: StateFlow<UploadState> = _uploadState
 

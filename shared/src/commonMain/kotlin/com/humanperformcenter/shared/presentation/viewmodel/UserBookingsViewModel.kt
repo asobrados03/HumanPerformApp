@@ -7,7 +7,7 @@ import com.humanperformcenter.shared.presentation.ui.FetchUserBookingsState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class UserBookingsViewModel(
@@ -15,7 +15,7 @@ class UserBookingsViewModel(
     private val notificationManager: SessionNotificationManager
 ) : ViewModel() {
 
-    private val _userBookings = MutableStateFlow<FetchUserBookingsState>(FetchUserBookingsState.Loading)
+    private val _userBookings = MutableStateFlow<FetchUserBookingsState>(viewModelScope, FetchUserBookingsState.Loading)
     @NativeCoroutinesState
     val userBookings: StateFlow<FetchUserBookingsState> = _userBookings
 

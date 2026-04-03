@@ -8,21 +8,21 @@ import com.humanperformcenter.shared.presentation.ui.MarkFavoriteState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class UserFavoritesViewModel(
     private val userCoachesUseCase: UserCoachesUseCase
 ) : ViewModel() {
-    private val _coachesState = MutableStateFlow<CoachState>(CoachState.Idle)
+    private val _coachesState = MutableStateFlow<CoachState>(viewModelScope, CoachState.Idle)
     @NativeCoroutinesState
     val coachesState: StateFlow<CoachState> = _coachesState
 
-    private val _markFavoriteState = MutableStateFlow<MarkFavoriteState>(MarkFavoriteState.Idle)
+    private val _markFavoriteState = MutableStateFlow<MarkFavoriteState>(viewModelScope, MarkFavoriteState.Idle)
     @NativeCoroutinesState
     val markFavoriteState: StateFlow<MarkFavoriteState> = _markFavoriteState
 
-    private val _getPreferredCoachState = MutableStateFlow<GetPreferredCoachState>(GetPreferredCoachState.Idle)
+    private val _getPreferredCoachState = MutableStateFlow<GetPreferredCoachState>(viewModelScope, GetPreferredCoachState.Idle)
     @NativeCoroutinesState
     val getPreferredCoachState: StateFlow<GetPreferredCoachState> = _getPreferredCoachState
 

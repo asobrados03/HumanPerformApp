@@ -5,18 +5,18 @@ import com.humanperformcenter.shared.presentation.ui.EwalletUiState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class UserWalletViewModel(
     private val walletUseCase: WalletUseCase
 ) : ViewModel() {
-    private val _balance = MutableStateFlow<Double?>(0.0)
+    private val _balance = MutableStateFlow<Double?>(viewModelScope, 0.0)
     @NativeCoroutinesState
     val balance: StateFlow<Double?> = _balance
 
-    private val _eWalletTransactions = MutableStateFlow<EwalletUiState>(EwalletUiState.Loading)
+    private val _eWalletTransactions = MutableStateFlow<EwalletUiState>(viewModelScope, EwalletUiState.Loading)
     @NativeCoroutinesState
     val eWalletTransactions: StateFlow<EwalletUiState> = _eWalletTransactions.asStateFlow()
 
