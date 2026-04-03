@@ -141,6 +141,24 @@ class ServiceProductViewModel(
             else -> null
         }
 
+    fun serviceProductsStateKind(serviceId: Int): String = when (_serviceProducts.value[serviceId] ?: ServiceProductUiState.Loading) {
+        is ServiceProductUiState.Loading -> "loading"
+        is ServiceProductUiState.Success -> "success"
+        is ServiceProductUiState.Error -> "error"
+    }
+
+    fun serviceProductsStateServices(serviceId: Int): List<Product> =
+        when (val state = _serviceProducts.value[serviceId]) {
+            is ServiceProductUiState.Success -> state.services
+            else -> emptyList()
+        }
+
+    fun serviceProductsStateMessage(serviceId: Int): String? =
+        when (val state = _serviceProducts.value[serviceId]) {
+            is ServiceProductUiState.Error -> state.message
+            else -> null
+        }
+
     fun serviceStateKind(): String = when (_serviceUiState.value) {
         is ServiceUiState.Loading -> "loading"
         is ServiceUiState.Success -> "success"
