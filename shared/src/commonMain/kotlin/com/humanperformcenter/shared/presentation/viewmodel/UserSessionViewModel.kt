@@ -52,6 +52,11 @@ class UserSessionViewModel(
 
     init {
         viewModelScope.launch {
+            val initialLoginState = runCatching {
+                authLocalDataSource.getAccessToken()?.isNotBlank() == true
+            }.getOrDefault(false)
+            _isLoggedIn.value = initialLoginState
+
             authLocalDataSource.accessTokenFlow()
                 .map { token -> token.isNotBlank() }
                 .distinctUntilChanged()
