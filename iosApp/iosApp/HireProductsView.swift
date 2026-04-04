@@ -93,11 +93,18 @@ struct HireProductsView: View {
         .navigationTitle("Contratar")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            guard let userId = sessionViewModel.userData?.id else { return }
-            serviceProductViewModel.loadServiceProducts(serviceId: Int32(serviceId), userId: userId)
-            serviceProductViewModel.loadUserProducts(userId: userId)
-            serviceProductViewModel.loadUserCoupons(userId: userId)
+            loadDataIfPossible()
         }
+        .onChange(of: sessionViewModel.userData?.id) { _ in
+            loadDataIfPossible()
+        }
+    }
+
+    private func loadDataIfPossible() {
+        guard let userId = sessionViewModel.userData?.id else { return }
+        serviceProductViewModel.loadServiceProducts(serviceId: Int32(serviceId), userId: userId)
+        serviceProductViewModel.loadUserProducts(userId: userId)
+        serviceProductViewModel.loadUserCoupons(userId: userId)
     }
 
     private var filtersView: some View {
