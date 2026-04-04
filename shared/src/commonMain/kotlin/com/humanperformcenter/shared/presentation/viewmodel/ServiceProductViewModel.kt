@@ -284,6 +284,27 @@ class ServiceProductViewModel(
         }
     }
 
+    fun productDetailStateKind(): String = when (_productDetailState.value) {
+        is ProductDetailUiState.Loading -> "loading"
+        is ProductDetailUiState.Success -> "success"
+        is ProductDetailUiState.Error -> "error"
+        is ProductDetailUiState.Idle -> "idle"
+    }
+
+    fun productDetailStateProduct(): Product? =
+        when (val state = _productDetailState.value) {
+            is ProductDetailUiState.Success -> state.product
+            else -> null
+        }
+
+    fun productDetailStateMessage(): String? =
+        when (val state = _productDetailState.value) {
+            is ProductDetailUiState.Error -> state.message
+            else -> null
+        }
+
+    fun userCouponsList(): List<Coupon> = _userCoupons.value
+
     fun loadUserCoupons(userId: Int) {
         viewModelScope.launch {
             val result = userCouponUseCase.getUserCoupons(userId)
