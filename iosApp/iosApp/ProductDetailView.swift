@@ -66,11 +66,18 @@ struct ProductDetailView: View {
         .navigationTitle("Detalle")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            guard let userId = sessionViewModel.userData?.id else { return }
             serviceProductViewModel.loadProductDetail(productId: Int32(productId))
-            serviceProductViewModel.loadUserCoupons(userId: userId)
-            serviceProductViewModel.loadUserProducts(userId: userId)
+            loadUserRelatedDataIfPossible()
         }
+        .onChange(of: sessionViewModel.userData?.id) { _ in
+            loadUserRelatedDataIfPossible()
+        }
+    }
+
+    private func loadUserRelatedDataIfPossible() {
+        guard let userId = sessionViewModel.userData?.id else { return }
+        serviceProductViewModel.loadUserCoupons(userId: userId)
+        serviceProductViewModel.loadUserProducts(userId: userId)
     }
 
     @ViewBuilder
