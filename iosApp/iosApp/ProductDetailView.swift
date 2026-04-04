@@ -23,42 +23,33 @@ struct ProductDetailView: View {
         return URL(string: "\(HttpClientProviderKt.API_BASE_URL)/product_images/\(encoded)")
     }
 
-    private func flowValue<T>(_ flow: Any, as type: T.Type) -> T? {
-        Mirror(reflecting: flow)
-            .children
-            .first(where: { $0.label == "value" })?
-            .value as? T
-    }
-
-    private var productDetailState: ProductDetailUiState? {
-        flowValue(serviceProductViewModel.productDetailState, as: ProductDetailUiState.self)
-    }
-
     private var userCoupons: [Coupon] {
-        flowValue(serviceProductViewModel.userCoupons, as: [Coupon].self) ?? []
+        serviceProductViewModel.userCouponsList()
     }
 
-    private var isAlreadyHired: Bool {
-        flowValue(serviceProductViewModel.isAlreadyHired, as: Bool.self) ?? false
+    private func isAlreadyHired(productId: Int32) -> Bool {
+        serviceProductViewModel
+            .userProductsStateProducts()
+            .contains(where: { $0.id == productId })
     }
 
     var body: some View {
         Group {
-            if let state = productDetailState {
-                let stateName = String(describing: type(of: state))
+            let stateKind = serviceProductViewModel.productDetailStateKind()
 
-                if stateName.contains("Loading") || stateName.contains("Idle") {
-                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let message = mirrorValue(from: state, label: "message") as? String {
+            if stateKind == "loading" || stateKind == "idle" {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if stateKind == "error" {
+                if let message = serviceProductViewModel.productDetailStateMessage() {
                     VStack(spacing: 8) {
                         Text(message).foregroundColor(.red)
                         Button("Reintentar") { serviceProductViewModel.loadProductDetail(productId: Int32(productId)) }
                     }
-                } else if let product = mirrorValue(from: state, label: "product") as? Product {
-                    detailContent(product: product)
                 } else {
                     EmptyView()
                 }
+            } else if let product = serviceProductViewModel.productDetailStateProduct() {
+                detailContent(product: product)
             } else {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -82,6 +73,8 @@ struct ProductDetailView: View {
 
     @ViewBuilder
     private func detailContent(product: Product) -> some View {
+        let alreadyHired = isAlreadyHired(productId: product.id)
+
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if let productImageURL = productImageURL(from: product.image) {
@@ -102,17 +95,17 @@ struct ProductDetailView: View {
                     .fontWeight(.bold)
                     .foregroundColor(.red)
 
-                if isAlreadyHired {
+                if alreadyHired {
                     Text("Ya has contratado este producto.")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
 
-                Button(isAlreadyHired ? "Producto adquirido" : "Comprar") {
+                Button(alreadyHired ? "Producto adquirido" : "Comprar") {
                     showPaymentOptions = true
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(isAlreadyHired)
+                .disabled(alreadyHired)
             }
             .padding(16)
         }
@@ -176,10 +169,6 @@ struct ProductDetailView: View {
 
         return bestCoupon?.code
     }
-}
-
-private func mirrorValue(from state: Any, label: String) -> Any? {
-    Mirror(reflecting: state).children.first(where: { $0.label == label })?.value
 }
 
 struct StripeCheckoutView: View {
