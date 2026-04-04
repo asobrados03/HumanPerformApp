@@ -13,6 +13,16 @@ struct ProductDetailView: View {
     @State private var showWalletConfirm = false
     @State private var openStripeCheckout = false
 
+    private func productImageURL(from imageName: String?) -> URL? {
+        guard let imageName,
+              let encoded = imageName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
+        else {
+            return nil
+        }
+
+        return URL(string: "\(HttpClientProviderKt.API_BASE_URL)/product_images/\(encoded)")
+    }
+
     private func flowValue<T>(_ flow: Any, as type: T.Type) -> T? {
         Mirror(reflecting: flow)
             .children
@@ -67,9 +77,8 @@ struct ProductDetailView: View {
     private func detailContent(product: Product) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                if let imageName = product.image,
-                   let url = URL(string: "https://apihuman.fransdata.com/api/product_images/\(imageName)") {
-                    AsyncImage(url: url) { image in
+                if let productImageURL = productImageURL(from: product.image) {
+                    AsyncImage(url: productImageURL) { image in
                         image.resizable().scaledToFill()
                     } placeholder: {
                         Color.gray.opacity(0.2)
