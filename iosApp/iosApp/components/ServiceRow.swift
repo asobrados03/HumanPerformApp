@@ -15,10 +15,20 @@ struct ServiceRow: View {
     private var servicio: ServiceAvailable { model.service }
     private var contratado: Bool { model.isHired }
 
+    private var serviceImageURL: URL? {
+        guard let imageName = servicio.image,
+              let encoded = imageName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
+        else {
+            return nil
+        }
+
+        return URL(string: "\(HttpClientProviderKt.API_BASE_URL)/service_images/\(encoded)")
+    }
+
     var body: some View {
         HStack(alignment: .center) {
-            if let imageName = servicio.image {
-                AsyncImage(url: URL(string: "https://apihuman.fransdata.com/api/service_images/\(imageName)")) { image in
+            if let serviceImageURL {
+                AsyncImage(url: serviceImageURL) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {
                     Color.gray.opacity(0.2)

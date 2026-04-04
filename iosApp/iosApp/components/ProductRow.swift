@@ -11,11 +11,21 @@ import shared
 
 struct ProductRow: View {
     let producto: Product
+
+    private var productImageURL: URL? {
+        guard let imageName = producto.image,
+              let encoded = imageName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
+        else {
+            return nil
+        }
+
+        return URL(string: "\(HttpClientProviderKt.API_BASE_URL)/product_images/\(encoded)")
+    }
+
     var body: some View {
         HStack(alignment: .center) {
-            if let imageName = producto.image {
-                // Cargar imagen desde URL (se puede usar AsyncImage de SwiftUI en iOS 15+)
-                AsyncImage(url: URL(string: "https://apihuman.fransdata.com/api/product_images/\(imageName)")) { image in
+            if let productImageURL {
+                AsyncImage(url: productImageURL) { image in
                     image.resizable().aspectRatio(contentMode: .fill)
                 } placeholder: {
                     Color.gray.opacity(0.2)
