@@ -379,7 +379,7 @@ struct CalendarView: View {
                 selectedDate: ymd(selectedDate),
                 hour: hour
             ) { success in
-                if success {
+                if success as! Bool {
                     DispatchQueue.main.async {
                         refreshBookings()
                         reservationFlow.dismissDialog()
@@ -407,7 +407,7 @@ struct CalendarView: View {
                 newStartDate: ymd(selectedDate),
                 hour: hour
             ) { success in
-                if success {
+                if success as! Bool {
                     DispatchQueue.main.async {
                         refreshBookings()
                         reservationFlow.dismissDialog()
