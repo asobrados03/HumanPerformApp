@@ -16,6 +16,7 @@ import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.datetime.LocalDate
+import kotlin.collections.emptyList
 
 class DaySessionViewModel(
     private val useCase: DaySessionUseCase
@@ -81,6 +82,26 @@ class DaySessionViewModel(
         val currentStatus = _sessions.value as? DailySessionsUiState.Success ?: return emptyList()
         return currentStatus.sessions.filter { it.hour == hour && it.booked < it.capacity }
     }
+
+    fun sessionsStateKind(): String = when (_sessions.value) {
+        is DailySessionsUiState.Idle -> "idle"
+        is DailySessionsUiState.Loading -> "loading"
+        is DailySessionsUiState.Success -> "success"
+        is DailySessionsUiState.Empty -> "empty"
+        is DailySessionsUiState.Error -> "error"
+    }
+
+    fun sessionsStateHours(): List<String> =
+        when (val state = _sessions.value) {
+            is DailySessionsUiState.Success -> state.sessions.map { it.hour }.distinct().sorted()
+            else -> emptyList()
+        }
+
+    fun sessionsStateMessage(): String? =
+        when (val state = _sessions.value) {
+            is DailySessionsUiState.Error -> state.message
+            else -> null
+        }
 
     suspend fun makeBooking(
         customerId: Int,

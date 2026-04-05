@@ -24,8 +24,8 @@ struct CalendarView: View {
         serviceProductViewModel.userProductsStateProducts()
     }
 
-    private var sessionsStateName: String {
-        String(describing: type(of: daySessionViewModel.sessions))
+    private var sessionsStateKind: String {
+        daySessionViewModel.sessionsStateKind()
     }
 
     private var isReservationPresented: Binding<Bool> {
@@ -242,7 +242,13 @@ struct CalendarView: View {
             }
             .pickerStyle(.menu)
 
-            let filtered = bookings.filter { bookingsFilter == "Todos" || $0.service == bookingsFilter }
+            let todayYmd = ymd(Date())
+            let filtered = bookings.filter { booking in
+                let matchesService = bookingsFilter == "Todos" || booking.service == bookingsFilter
+                let bookingYmd = String(booking.date.prefix(10))
+                let isTodayOrFuture = bookingYmd >= todayYmd
+                return matchesService && isTodayOrFuture
+            }
             if filtered.isEmpty {
                 Text("No tienes sesiones reservadas.")
                     .foregroundColor(.secondary)
@@ -289,9 +295,9 @@ struct CalendarView: View {
         if selectedProduct == nil {
             Text("Selecciona un servicio para ver horarios.")
                 .foregroundColor(.secondary)
-        } else if sessionsStateName.contains("Loading") {
+        } else if sessionsStateKind == "loading" {
             ProgressView().frame(maxWidth: .infinity)
-        } else if sessionsStateName.contains("Success") {
+        } else if sessionsStateKind == "success" {
             let hours = availableSessionHours()
             ForEach(hours, id: \.self) { hour in
                 Button(String(hour.prefix(5))) {
@@ -304,7 +310,7 @@ struct CalendarView: View {
                 }
                 .buttonStyle(.borderedProminent)
             }
-        } else if sessionsStateName.contains("Empty") {
+        } else if sessionsStateKind == "empty" {
             Text("No hay horarios disponibles.")
                 .foregroundColor(.secondary)
         } else if let message = sessionsErrorMessage() {
@@ -421,13 +427,16 @@ struct CalendarView: View {
     }
 
     private func backgroundColor(date: Date, isReserved: Bool, isHoliday: Bool, selectable: Bool) -> Color {
+        let isSunday = calendar.component(.weekday, from: date) == 1
+
         if isReserved { return Color.green.opacity(0.75) }
-        if isHoliday || calendar.isDateInWeekend(date) { return Color.clear }
+        if isHoliday || isSunday { return Color.clear }
         return selectable ? Color(.systemBackground) : Color(.systemGray5)
     }
 
     private func isSelectable(date: Date, today: Date, isHoliday: Bool) -> Bool {
-        if isHoliday || calendar.isDateInWeekend(date) || date < calendar.startOfDay(for: today) { return false }
+        let isSunday = calendar.component(.weekday, from: date) == 1
+        if isHoliday || isSunday || date < calendar.startOfDay(for: today) { return false }
 
         let day = calendar.component(.day, from: today)
         let hour = calendar.component(.hour, from: Date())
@@ -516,6 +525,7 @@ struct CalendarView: View {
 
     private func productIdInt32(_ product: Product) -> Int32 {
         let rawId = product.id
+        if let id = rawId as? NSNumber { return id.int32Value }
         if let id = rawId as? Int32 { return id }
         if let id = rawId as? Int { return Int32(id) }
         if let id = mirrorValue(from: rawId, label: "int32Value") as? Int32 { return id }
@@ -523,14 +533,11 @@ struct CalendarView: View {
     }
 
     private func availableSessionHours() -> [String] {
-        guard let sessions = mirrorValue(from: daySessionViewModel.sessions, label: "sessions") as? [DaySession] else {
-            return []
-        }
-        return Array(Set(sessions.map { $0.hour })).sorted()
+        daySessionViewModel.sessionsStateHours()
     }
 
     private func sessionsErrorMessage() -> String? {
-        mirrorValue(from: daySessionViewModel.sessions, label: "message") as? String
+        daySessionViewModel.sessionsStateMessage()
     }
 
     private var confirmBookingMessage: String {
