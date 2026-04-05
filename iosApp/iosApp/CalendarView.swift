@@ -17,6 +17,7 @@ struct CalendarView: View {
     @State private var dialog: CalendarDialog = .hidden
     @State private var bookingMenuTarget: UserBooking?
     @State private var bookingsFilter: String = "Todos"
+    @State private var isBookingErrorPresented: Bool = false
 
     private let calendar = Calendar.current
 
@@ -26,6 +27,10 @@ struct CalendarView: View {
 
     private var sessionsStateKind: String {
         daySessionViewModel.sessionsStateKind()
+    }
+
+    private var selectedProductId: Int32? {
+        selectedProduct.map(productIdInt32)
     }
 
     private var isReservationPresented: Binding<Bool> {
@@ -99,7 +104,12 @@ struct CalendarView: View {
         }
         .onChange(of: selectedDate) { _ in
             selectedProduct = nil
+            selectedHour = nil
+            selectedCoach = nil
             daySessionViewModel.clearSessions()
+        }
+        .onChange(of: daySessionViewModel.bookingErrorMessage) { message in
+            isBookingErrorPresented = message != nil
         }
         .sheet(isPresented: isReservationPresented) {
             reservationSheet
@@ -117,6 +127,13 @@ struct CalendarView: View {
             Button("Cambiar") { dialog = .changeExisting }
         } message: {
             Text(confirmBookingMessage)
+        }
+        .alert("Ups, algo ha fallado", isPresented: $isBookingErrorPresented) {
+            Button("Aceptar", role: .cancel) {
+                daySessionViewModel.clearBookingErrorMessage()
+            }
+        } message: {
+            Text(daySessionViewModel.bookingErrorMessage ?? "No se pudo completar la reserva.")
         }
         .accessibilityIdentifier("calendarView")
         .confirmationDialog(
@@ -295,6 +312,9 @@ struct CalendarView: View {
         if selectedProduct == nil {
             Text("Selecciona un servicio para ver horarios.")
                 .foregroundColor(.secondary)
+        } else if !isSessionsStateForCurrentSelection() {
+            Text("Selecciona un servicio para ver horarios.")
+                .foregroundColor(.secondary)
         } else if sessionsStateKind == "loading" {
             ProgressView().frame(maxWidth: .infinity)
         } else if sessionsStateKind == "success" {
@@ -323,6 +343,8 @@ struct CalendarView: View {
             get: { selectedProduct.map(productIdInt32) ?? -1 },
             set: { newId in
                 selectedProduct = userProducts.first(where: { productIdInt32($0) == newId })
+                selectedHour = nil
+                selectedCoach = nil
                 guard let product = selectedProduct else { return }
                 daySessionViewModel.fetchAvailableSessions(
                     productId: productIdInt32(product),
@@ -361,9 +383,11 @@ struct CalendarView: View {
                 centerId: 1,
                 selectedDate: ymd(selectedDate),
                 hour: hour
-            ) { _ in
-                refreshBookings()
-                dismissDialog()
+            ) { success in
+                if success {
+                    refreshBookings()
+                    dismissDialog()
+                }
             }
         }
     }
@@ -383,9 +407,11 @@ struct CalendarView: View {
                 newDayOfWeek: englishDay(from: selectedDate),
                 newStartDate: ymd(selectedDate),
                 hour: hour
-            ) { _ in
-                refreshBookings()
-                dismissDialog()
+            ) { success in
+                if success {
+                    refreshBookings()
+                    dismissDialog()
+                }
             }
         }
     }
@@ -538,6 +564,14 @@ struct CalendarView: View {
 
     private func sessionsErrorMessage() -> String? {
         daySessionViewModel.sessionsStateMessage()
+    }
+
+    private func isSessionsStateForCurrentSelection() -> Bool {
+        guard let selectedProductId else { return false }
+        return daySessionViewModel.sessionsStateMatches(
+            productId: selectedProductId,
+            date: kmmDate(from: selectedDate)
+        )
     }
 
     private var confirmBookingMessage: String {
