@@ -11,10 +11,7 @@ struct CalendarView: View {
     @State private var currentMonth: Date = Date()
     @State private var selectedDate: Date = Date()
 
-    @State private var selectedProduct: Product?
-    @State private var selectedHour: String?
-    @State private var selectedCoach: DaySession?
-    @State private var dialog: CalendarDialog = .hidden
+    @StateObject private var reservationFlow = CalendarReservationFlowViewModel()
     @State private var bookingMenuTarget: UserBooking?
     @State private var bookingsFilter: String = "Todos"
     @State private var isBookingErrorPresented: Bool = false
@@ -30,34 +27,34 @@ struct CalendarView: View {
     }
 
     private var selectedProductId: Int32? {
-        selectedProduct.map(productIdInt32)
+        reservationFlow.selectedProduct.map(productIdInt32)
     }
 
     private var isReservationPresented: Binding<Bool> {
         Binding<Bool>(
-            get: { dialog == .reservation },
-            set: { if !$0 { dismissDialog() } }
+            get: { reservationFlow.dialog == .reservation },
+            set: { if !$0 && reservationFlow.dialog == .reservation { reservationFlow.dismissDialog() } }
         )
     }
 
     private var isConfirmContinuePresented: Binding<Bool> {
         Binding<Bool>(
-            get: { dialog == .confirmContinue },
-            set: { if !$0 { dismissDialog() } }
+            get: { reservationFlow.dialog == .confirmContinue },
+            set: { if !$0 && reservationFlow.dialog == .confirmContinue { reservationFlow.dismissDialog() } }
         )
     }
 
     private var isConfirmBookingPresented: Binding<Bool> {
         Binding<Bool>(
-            get: { dialog == .confirmBooking },
-            set: { if !$0 { dismissDialog() } }
+            get: { reservationFlow.dialog == .confirmBooking },
+            set: { if !$0 && reservationFlow.dialog == .confirmBooking { reservationFlow.dismissDialog() } }
         )
     }
 
     private var isChangeExistingPresented: Binding<Bool> {
         Binding<Bool>(
-            get: { dialog == .changeExisting },
-            set: { if !$0 { dismissDialog() } }
+            get: { reservationFlow.dialog == .changeExisting },
+            set: { if !$0 && reservationFlow.dialog == .changeExisting { reservationFlow.dismissDialog() } }
         )
     }
 
@@ -103,9 +100,7 @@ struct CalendarView: View {
             bootstrapUserData()
         }
         .onChange(of: selectedDate) { _ in
-            selectedProduct = nil
-            selectedHour = nil
-            selectedCoach = nil
+            reservationFlow.selectDate()
             daySessionViewModel.clearSessions()
         }
         .onChange(of: daySessionViewModel.bookingErrorMessage) { message in
@@ -116,15 +111,15 @@ struct CalendarView: View {
                 .presentationDetents([.medium, .large])
         }
         .alert("Aviso", isPresented: isConfirmContinuePresented) {
-            Button("No", role: .cancel) { dismissDialog() }
-            Button("Sí") { dialog = .reservation }
+            Button("No", role: .cancel) { reservationFlow.dismissDialog() }
+            Button("Sí") { reservationFlow.dialog = .reservation }
         } message: {
             Text("Ya tienes una reserva hoy. ¿Continuar?")
         }
         .alert("Confirmar reserva", isPresented: isConfirmBookingPresented) {
-            Button("Cancelar", role: .cancel) { dismissDialog() }
+            Button("Cancelar", role: .cancel) { reservationFlow.dismissDialog() }
             Button("Reservar") { submitBooking() }
-            Button("Cambiar") { dialog = .changeExisting }
+            Button("Cambiar") { reservationFlow.dialog = .changeExisting }
         } message: {
             Text(confirmBookingMessage)
         }
@@ -151,7 +146,7 @@ struct CalendarView: View {
                     }
                 }
             }
-            Button("Cancelar", role: .cancel) { dismissDialog() }
+            Button("Cancelar", role: .cancel) { reservationFlow.dismissDialog() }
         }
         .confirmationDialog(
             "Reserva",
@@ -309,7 +304,7 @@ struct CalendarView: View {
 
     @ViewBuilder
     private var sessionsSelector: some View {
-        if selectedProduct == nil {
+        if reservationFlow.selectedProduct == nil {
             Text("Selecciona un servicio para ver horarios.")
                 .foregroundColor(.secondary)
         } else if !isSessionsStateForCurrentSelection() {
@@ -319,16 +314,17 @@ struct CalendarView: View {
             ProgressView().frame(maxWidth: .infinity)
         } else if sessionsStateKind == "success" {
             let hours = availableSessionHours()
-            ForEach(hours, id: \.self) { hour in
-                Button(String(hour.prefix(5))) {
-                    let coaches = daySessionViewModel.getAvailableCoachesForHour(hour: hour)
-                    if let coach = coaches.first {
-                        selectedHour = hour
-                        selectedCoach = coach
-                        dialog = .confirmBooking
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(hours, id: \.self) { hour in
+                    Button(String(hour.prefix(5))) {
+                        let coaches = daySessionViewModel.getAvailableCoachesForHour(hour: hour)
+                        if let coach = coaches.first {
+                            reservationFlow.selectHour(hour, coach: coach)
+                        }
                     }
+                    .buttonStyle(.borderedProminent)
                 }
-                .buttonStyle(.borderedProminent)
             }
         } else if sessionsStateKind == "empty" {
             Text("No hay horarios disponibles.")
@@ -340,12 +336,11 @@ struct CalendarView: View {
 
     private var selectedProductBinding: Binding<Int32> {
         Binding<Int32>(
-            get: { selectedProduct.map(productIdInt32) ?? -1 },
+            get: { reservationFlow.selectedProduct.map(productIdInt32) ?? -1 },
             set: { newId in
-                selectedProduct = userProducts.first(where: { productIdInt32($0) == newId })
-                selectedHour = nil
-                selectedCoach = nil
-                guard let product = selectedProduct else { return }
+                let selected = userProducts.first(where: { productIdInt32($0) == newId })
+                reservationFlow.selectProduct(selected)
+                guard let product = reservationFlow.selectedProduct else { return }
                 daySessionViewModel.fetchAvailableSessions(
                     productId: productIdInt32(product),
                     date: kmmDate(from: selectedDate)
@@ -356,18 +351,18 @@ struct CalendarView: View {
 
     private func onDayClicked(_ date: Date) {
         if isReservedDate(date) {
-            dialog = .confirmContinue
+            reservationFlow.dialog = .confirmContinue
         } else {
-            dialog = .reservation
+            reservationFlow.dialog = .reservation
         }
     }
 
     private func submitBooking() {
         guard
             let userId = sessionViewModel.userData?.id,
-            let product = selectedProduct,
-            let hour = selectedHour,
-            let coach = selectedCoach
+            let product = reservationFlow.selectedProduct,
+            let hour = reservationFlow.selectedHour,
+            let coach = reservationFlow.selectedCoach
         else { return }
 
         let productId = productIdInt32(product)
@@ -385,15 +380,19 @@ struct CalendarView: View {
                 hour: hour
             ) { success in
                 if success {
-                    refreshBookings()
-                    dismissDialog()
+                    DispatchQueue.main.async {
+                        refreshBookings()
+                        reservationFlow.dismissDialog()
+                    }
                 }
             }
         }
     }
 
     private func submitBookingChange(booking: UserBooking) {
-        guard let product = selectedProduct, let hour = selectedHour, let coach = selectedCoach else { return }
+        guard let product = reservationFlow.selectedProduct,
+              let hour = reservationFlow.selectedHour,
+              let coach = reservationFlow.selectedCoach else { return }
 
         let productId = productIdInt32(product)
 
@@ -409,8 +408,10 @@ struct CalendarView: View {
                 hour: hour
             ) { success in
                 if success {
-                    refreshBookings()
-                    dismissDialog()
+                    DispatchQueue.main.async {
+                        refreshBookings()
+                        reservationFlow.dismissDialog()
+                    }
                 }
             }
         }
@@ -420,10 +421,6 @@ struct CalendarView: View {
         if let userId = sessionViewModel.userData?.id {
             bookingsViewModel.fetchUserBookings(userId: userId)
         }
-    }
-
-    private func dismissDialog() {
-        dialog = .hidden
     }
 
     private func isHolidayDate(_ date: Date) -> Bool {
@@ -575,18 +572,10 @@ struct CalendarView: View {
     }
 
     private var confirmBookingMessage: String {
-        let coachName = selectedCoach?.coachName ?? "-"
-        let hour = selectedHour.map { String($0.prefix(5)) } ?? ""
+        let coachName = reservationFlow.selectedCoach?.coachName ?? "-"
+        let hour = reservationFlow.selectedHour.map { String($0.prefix(5)) } ?? ""
         return "¿Deseas confirmar tu sesión con \(coachName) a las \(hour)?"
     }
-}
-
-private enum CalendarDialog {
-    case hidden
-    case confirmContinue
-    case reservation
-    case confirmBooking
-    case changeExisting
 }
 
 private func mirrorValue(from state: Any, label: String) -> Any? {
