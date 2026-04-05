@@ -103,6 +103,18 @@ class DaySessionViewModel(
             else -> null
         }
 
+    fun sessionsStateMatches(productId: Int, date: LocalDate): Boolean {
+        val state = _sessions.value
+        val context = when (state) {
+            is DailySessionsUiState.Loading -> state.context
+            is DailySessionsUiState.Success -> state.context
+            is DailySessionsUiState.Empty -> state.context
+            is DailySessionsUiState.Error -> state.context
+            is DailySessionsUiState.Idle -> return false
+        }
+        return context.productId == productId && context.date == date
+    }
+
     suspend fun makeBooking(
         customerId: Int,
         coachId: Int,
