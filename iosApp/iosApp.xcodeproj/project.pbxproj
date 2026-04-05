@@ -17,7 +17,6 @@
 		DB39E4412E5CD1C6002CB3B0 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB39E4402E5CD1C0002CB3B0 /* CalendarView.swift */; };
 		DB39E4432E5CD244002CB3B0 /* UserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB39E4422E5CD23E002CB3B0 /* UserView.swift */; };
 		DB39E4452E5CD26B002CB3B0 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB39E4442E5CD268002CB3B0 /* StatsView.swift */; };
-		DB4A00102F10010000A10001 /* CalendarReservationFlowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4A00112F10010000A10001 /* CalendarReservationFlowViewModel.swift */; };
 		DB5BD6A72E58A6F30066990E /* shared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB5BD6A62E58A6F30066990E /* shared.framework */; };
 		DB5BD6A82E58A6F30066990E /* shared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DB5BD6A62E58A6F30066990E /* shared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		DB5BD6AA2E58C2560066990E /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5BD6A92E58C2510066990E /* WelcomeView.swift */; };
@@ -43,7 +42,6 @@
 		DCB100112E90011100AAA111 /* ViewModelConformanceFix.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB100102E90011000AAA111 /* ViewModelConformanceFix.swift */; };
 		DDA100012E90000100BB0001 /* KMPObservableViewModelSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = DDA100032E90000100BB0001 /* KMPObservableViewModelSwiftUI */; };
 		DDFE00012F00000100ABC001 /* Data+KotlinByteArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDFE00022F00000100ABC001 /* Data+KotlinByteArray.swift */; };
-		E1A100152E80000100AA0001 /* BaseUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100162E80000100AA0001 /* BaseUITestCase.swift */; };
 		E1A100012E80000100AA0001 /* iosAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100112E80000100AA0001 /* iosAppUITests.swift */; };
 		E1A100022E80000100AA0001 /* iosAppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100122E80000100AA0001 /* iosAppUITestsLaunchTests.swift */; };
 /* End PBXBuildFile section */
@@ -85,7 +83,6 @@
 		DB39E4402E5CD1C0002CB3B0 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		DB39E4422E5CD23E002CB3B0 /* UserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserView.swift; sourceTree = "<group>"; };
 		DB39E4442E5CD268002CB3B0 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
-		DB4A00112F10010000A10001 /* CalendarReservationFlowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarReservationFlowViewModel.swift; sourceTree = "<group>"; };
 		DB5BD6A62E58A6F30066990E /* shared.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = shared.framework; path = "../shared/build/xcode-frameworks/Debug/iphonesimulator18.2/shared.framework"; sourceTree = "<group>"; };
 		DB5BD6A92E58C2510066990E /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		DB5BD6AD2E58C3C90066990E /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
@@ -108,7 +105,6 @@
 		DCB100102E90011000AAA111 /* ViewModelConformanceFix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelConformanceFix.swift; sourceTree = "<group>"; };
 		DDFE00022F00000100ABC001 /* Data+KotlinByteArray.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+KotlinByteArray.swift"; sourceTree = "<group>"; };
 		E1A100102E80000100AA0001 /* iosAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iosAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E1A100162E80000100AA0001 /* BaseUITestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseUITestCase.swift; sourceTree = "<group>"; };
 		E1A100112E80000100AA0001 /* iosAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosAppUITests.swift; sourceTree = "<group>"; };
 		E1A100122E80000100AA0001 /* iosAppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosAppUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		E1A100132E80000100AA0001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -194,7 +190,6 @@
 				DCA100002E70000100AAA001 /* HireProductsView.swift */,
 				DCA100022E70000200AAA001 /* ProductDetailView.swift */,
 				DB39E4402E5CD1C0002CB3B0 /* CalendarView.swift */,
-				DB4A00112F10010000A10001 /* CalendarReservationFlowViewModel.swift */,
 				DB39E42C2E5CC86D002CB3B0 /* HireServicesView.swift */,
 				DB39E42A2E5CC834002CB3B0 /* MyProductsView.swift */,
 				DB39E4252E5CA2A8002CB3B0 /* ServicesView.swift */,
@@ -224,7 +219,6 @@
 		E1A100142E80000100AA0001 /* iosAppUITests */ = {
 			isa = PBXGroup;
 			children = (
-				E1A100162E80000100AA0001 /* BaseUITestCase.swift */,
 				E1A100112E80000100AA0001 /* iosAppUITests.swift */,
 				E1A100122E80000100AA0001 /* iosAppUITestsLaunchTests.swift */,
 				E1A100132E80000100AA0001 /* Info.plist */,
@@ -385,7 +379,6 @@
 				DCA100012E70000100AAA001 /* HireProductsView.swift in Sources */,
 				DCA100032E70000200AAA001 /* ProductDetailView.swift in Sources */,
 				DB39E4412E5CD1C6002CB3B0 /* CalendarView.swift in Sources */,
-				DB4A00102F10010000A10001 /* CalendarReservationFlowViewModel.swift in Sources */,
 				DB9F31982E5DAE4700BE1BAA /* AppState.swift in Sources */,
 				DDFE00012F00000100ABC001 /* Data+KotlinByteArray.swift in Sources */,
 				DBC55FFE2E5F163500E13D63 /* EditProfileView.swift in Sources */,
@@ -401,7 +394,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E1A100152E80000100AA0001 /* BaseUITestCase.swift in Sources */,
 				E1A100012E80000100AA0001 /* iosAppUITests.swift in Sources */,
 				E1A100022E80000100AA0001 /* iosAppUITestsLaunchTests.swift in Sources */,
 			);
