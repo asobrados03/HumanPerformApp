@@ -151,31 +151,28 @@ object UserValidator {
             errors[RegisterField.PASSWORD] = "La nueva contraseña debe contener al menos una minúscula"
         }
 
-        // 5) Fecha de nacimiento
+        // 5) Fecha de nacimiento (formato esperado en UI: dd/MM/yyyy)
         if (dateOfBirthText.isBlank()) {
             errors[RegisterField.DATE_OF_BIRTH] = "La fecha de nacimiento es obligatoria"
         } else {
             val date: LocalDate? = try {
-                // Verificar que sea formato ddMMyyyy (exactamente 8 dígitos)
-                if (dateOfBirthText.length != 8 || !dateOfBirthText.all { it.isDigit() }) {
+                val parts = dateOfBirthText.split("/")
+                if (parts.size != 3 || parts.any { it.isBlank() || !it.all(Char::isDigit) }) {
                     throw IllegalArgumentException()
                 }
 
-                val day = dateOfBirthText.substring(0, 2).toInt()
-                val month = dateOfBirthText.substring(2, 4).toInt()
-                val year = dateOfBirthText.substring(4, 8).toInt()
+                val day = parts[0].toInt()
+                val month = parts[1].toInt()
+                val year = parts[2].toInt()
 
                 // Validaciones básicas de rangos
                 if (day !in 1..31 || month !in 1..12 || year < 1900) {
                     throw IllegalArgumentException()
                 }
 
-                // Usar parse con formato ISO estándar (yyyy-MM-dd)
-                val isoDateString = "${year.toString().padStart(4, '0')}-${month.toString()
-                    .padStart(2, '0')}-${day.toString().padStart(2, '0')}"
-
+                // Parse con formato ISO estándar (yyyy-MM-dd)
+                val isoDateString = "${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
                 LocalDate.parse(isoDateString)
-
             } catch (_: Exception) {
                 null
             }

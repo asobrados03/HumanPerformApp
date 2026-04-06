@@ -53,6 +53,10 @@ class AuthViewModel(
     }
 
     fun register(data: RegisterRequest) {
+        // Fuerza transición de estado para que la UI iOS vuelva a observar
+        // errores de validación iguales en intentos consecutivos.
+        _registerState.value = RegisterState.Idle
+
         val validation = UserValidator.validateRegister(
             firstName = data.name,
             lastName = data.surnames,
@@ -73,12 +77,30 @@ class AuthViewModel(
 
         _registerState.value = RegisterState.Loading
 
+        val requestForApi = data.copy(dateOfBirth = normalizeDobForApi(data.dateOfBirth))
+
         viewModelScope.launch {
-            val result = authUseCase.register(data)
+            val result = authUseCase.register(requestForApi)
             _registerState.value = result
                 .map { RegisterState.Success(it) }
                 .getOrElse { RegisterState.Error(it.message ?: "Registro fallido") }
         }
+    }
+
+
+    private fun normalizeDobForApi(rawDob: String): String {
+        val parts = rawDob.split("/")
+        if (parts.size != 3) return rawDob
+
+        val day = parts[0].padStart(2, '0')
+        val month = parts[1].padStart(2, '0')
+        val year = parts[2]
+
+        if (day.any { !it.isDigit() } || month.any { !it.isDigit() } || year.any { !it.isDigit() } || year.length != 4) {
+            return rawDob
+        }
+
+        return "$year-$month-$day"
     }
 
     fun resetPassword(email: String) {
