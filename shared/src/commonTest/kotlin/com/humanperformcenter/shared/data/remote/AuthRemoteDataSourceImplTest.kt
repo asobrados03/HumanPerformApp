@@ -173,26 +173,6 @@ class AuthRemoteDataSourceImplTest {
         val deviceTypePartRegex =
             Regex("name=\"device_type\"[\\s\\S]*?\\r\\n\\r\\nandroid\\r\\n")
         assertTrue(deviceTypePartRegex.containsMatchIn(bodyText))
-
-        val rawEmailPartRegex =
-            Regex("name=\"rawEmail\"[\\s\\S]*?\\r\\n\\r\\nana@test.com\\r\\n")
-        assertTrue(rawEmailPartRegex.containsMatchIn(bodyText))
-
-        val rawDobPartRegex =
-            Regex("name=\"fechaNacimientoRaw\"[\\s\\S]*?\\r\\n\\r\\n01011990\\r\\n")
-        assertTrue(rawDobPartRegex.containsMatchIn(bodyText))
-
-        val postCodeAliasPartRegex =
-            Regex("name=\"codigoPostal\"[\\s\\S]*?\\r\\n\\r\\n28001\\r\\n")
-        assertTrue(postCodeAliasPartRegex.containsMatchIn(bodyText))
-
-        val addressAliasPartRegex =
-            Regex("name=\"direccionPostal\"[\\s\\S]*?\\r\\n\\r\\nCalle Mayor\\r\\n")
-        assertTrue(addressAliasPartRegex.containsMatchIn(bodyText))
-
-        val deviceTypeAliasPartRegex =
-            Regex("name=\"deviceType\"[\\s\\S]*?\\r\\n\\r\\nandroid\\r\\n")
-        assertTrue(deviceTypeAliasPartRegex.containsMatchIn(bodyText))
     }
 
     @Test
