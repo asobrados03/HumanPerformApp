@@ -169,6 +169,10 @@ class AuthRemoteDataSourceImplTest {
 
         assertTrue(bodyText.contains("profile_pic"))
         assertTrue(bodyText.contains("avatar.jpg"))
+
+        val deviceTypePartRegex =
+            Regex("name=\"device_type\"[\\s\\S]*?\\r\\n\\r\\nandroid\\r\\n")
+        assertTrue(deviceTypePartRegex.containsMatchIn(bodyText))
     }
 
     @Test

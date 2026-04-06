@@ -417,7 +417,8 @@ struct RegisterView: View {
             postCode: postalCode,
             postAddress: postalAddress,
             dni: dni,
-            deviceType: "IOS",
+            // API contract uses lowercase identifiers for `device_type` (e.g., "android", "ios").
+            deviceType: "ios",
             profilePicBytes: profilePicBytes?.asKotlinByteArray(),
             profilePicName: profilePicName
         )
