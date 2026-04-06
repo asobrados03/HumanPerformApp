@@ -34,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.data.model.payment.EwalletTransaction
 import com.humanperformcenter.shared.presentation.ui.EwalletUiState
+import com.humanperformcenter.shared.presentation.ui.WalletBalanceUiState
 import com.humanperformcenter.ui.components.app.AppCard
 import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.shared.presentation.viewmodel.UserWalletViewModel
@@ -44,9 +45,8 @@ fun ElectronicWalletScreen(
     userWalletViewModel: UserWalletViewModel,
     userId: Int
 ) {
-    val balance by userWalletViewModel.balance.collectAsStateWithLifecycle()
+    val walletBalanceUiState by userWalletViewModel.walletBalanceUiState.collectAsStateWithLifecycle()
     val uiState by userWalletViewModel.eWalletTransactions.collectAsStateWithLifecycle()
-
     var mostrarDetalles by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
@@ -75,10 +75,23 @@ fun ElectronicWalletScreen(
                 Column(Modifier.padding(16.dp)) {
                     // Sección de Saldo
                     Text(
-                        text = "💳 Saldo actual: $balance €",
+                        text = when (val state = walletBalanceUiState) {
+                            WalletBalanceUiState.Idle, WalletBalanceUiState.Loading -> "💳 Saldo actual: Cargando..."
+                            is WalletBalanceUiState.Success -> "💳 Saldo actual: ${state.amount} €"
+                            is WalletBalanceUiState.Error -> "💳 Saldo actual: Error"
+                        },
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
+
+                    if (walletBalanceUiState is WalletBalanceUiState.Error) {
+                        Text(
+                            text = "❌ ${(walletBalanceUiState as WalletBalanceUiState.Error).message}",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
 
                     // Botón para expandir detalles
                     Text(
