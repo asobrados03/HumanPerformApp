@@ -173,6 +173,10 @@ class AuthRemoteDataSourceImplTest {
         val deviceTypePartRegex =
             Regex("name=\"device_type\"[\\s\\S]*?\\r\\n\\r\\nandroid\\r\\n")
         assertTrue(deviceTypePartRegex.containsMatchIn(bodyText))
+
+        val birthDatePartRegex =
+            Regex("name=\"fecha_nacimiento\"[\\s\\S]*?\\r\\n\\r\\n01011990\\r\\n")
+        assertTrue(birthDatePartRegex.containsMatchIn(bodyText))
     }
 
     @Test
