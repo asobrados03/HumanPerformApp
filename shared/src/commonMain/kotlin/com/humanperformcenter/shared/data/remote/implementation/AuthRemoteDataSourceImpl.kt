@@ -73,9 +73,9 @@ class AuthRemoteDataSourceImpl(
         val trimmed = dateOfBirth.trim()
         if (trimmed.isEmpty()) return trimmed
 
-        return when {
+        return when (trimmed.length) {
             // yyyy-MM-dd -> ddMMyyyy
-            trimmed.length == 10 && trimmed[4] == '-' && trimmed[7] == '-' -> {
+            10 if trimmed[4] == '-' && trimmed[7] == '-' -> {
                 val y = trimmed.substring(0, 4)
                 val m = trimmed.substring(5, 7)
                 val d = trimmed.substring(8, 10)
@@ -83,7 +83,7 @@ class AuthRemoteDataSourceImpl(
             }
 
             // dd/MM/yyyy -> ddMMyyyy
-            trimmed.length == 10 && trimmed[2] == '/' && trimmed[5] == '/' -> {
+            10 if trimmed[2] == '/' && trimmed[5] == '/' -> {
                 val d = trimmed.substring(0, 2)
                 val m = trimmed.substring(3, 5)
                 val y = trimmed.substring(6, 10)
