@@ -109,7 +109,7 @@ struct EditProfileView: View {
                     ImagePicker(sourceType: pickerSource) { img, name in
                         image = img
                         imageData = img.jpegData(compressionQuality: 0.8)
-                        imageFileName = name ?? "IMG_\(Int(Date().timeIntervalSince1970)).jpg"
+                        imageFileName = normalizedJpegFileName(from: name)
                     }
                 }
                 .onChange(of: profileStateKey) { _ in
@@ -159,7 +159,7 @@ struct EditProfileView: View {
         let newSex = selectedSexIndex >= 0 ? sexOptions[selectedSexIndex].1 : user.sex
         var picName = user.profilePictureName
         if image != nil {
-            picName = imageFileName ?? "IMG_\(Int(Date().timeIntervalSince1970)).jpg"
+            picName = normalizedJpegFileName(from: imageFileName)
         }
         let updated = User(
             id: user.id,
@@ -174,6 +174,24 @@ struct EditProfileView: View {
             profilePictureName: picName
         )
         profileVM.updateUser(candidate: updated, profilePicBytes: imageData?.asKotlinByteArray(), currentUser: sessionVM.currentUserState())
+    }
+
+    private func normalizedJpegFileName(from original: String?) -> String {
+        let timestamp = Int(Date().timeIntervalSince1970)
+        let fallback = "IMG_\(timestamp).jpg"
+        guard let original, !original.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return fallback
+        }
+
+        let baseName = URL(fileURLWithPath: original).deletingPathExtension().lastPathComponent
+        let sanitizedBase = baseName
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: " ", with: "_")
+
+        if sanitizedBase.isEmpty {
+            return fallback
+        }
+        return "\(sanitizedBase).jpg"
     }
 
     private func deletePhoto(user: User) {
