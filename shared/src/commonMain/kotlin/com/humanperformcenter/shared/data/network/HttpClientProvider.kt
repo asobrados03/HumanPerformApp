@@ -10,6 +10,9 @@ import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
 import io.ktor.http.HttpStatusCode
@@ -31,6 +34,7 @@ class DefaultHttpClientProvider(
     private val authLocalDataSource: AuthLocalDataSource,
     authClientEngine: HttpClientEngine? = null,
     apiClientEngine: HttpClientEngine? = null,
+    private val enableNetworkLogging: Boolean = false,
 ) : HttpClientProvider {
     private val logoutEventsMutable = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
@@ -92,9 +96,46 @@ class DefaultHttpClientProvider(
         engine: HttpClientEngine?,
         block: HttpClientConfig<*>.() -> Unit,
     ): HttpClient = if (engine == null) {
-        HttpClient(block = block)
+        HttpClient {
+            installNetworkLogging()
+            block()
+        }
     } else {
-        HttpClient(engine, block)
+        HttpClient(engine) {
+            installNetworkLogging()
+            block()
+        }
+    }
+
+    private fun HttpClientConfig<*>.installNetworkLogging() {
+        if (!enableNetworkLogging) return
+
+        install(Logging) {
+            level = LogLevel.ALL
+            logger = Logger.SIMPLE.withSensitiveBodyRedaction()
+            sanitizeHeader { header -> header.equals("Authorization", ignoreCase = true) }
+        }
+    }
+
+    private fun Logger.withSensitiveBodyRedaction(): Logger = object : Logger {
+        override fun log(message: String) {
+            this@withSensitiveBodyRedaction.log(message.redactSensitiveBodyFields())
+        }
+    }
+
+    private fun String.redactSensitiveBodyFields(): String {
+        return SENSITIVE_BODY_PATTERNS.fold(this) { acc, pattern ->
+            acc.replace(pattern, "$1***REDACTED***$2")
+        }
+    }
+
+    private companion object {
+        val SENSITIVE_BODY_PATTERNS = listOf(
+            Regex("(\"password\"\\s*:\\s*\")[^\"]*(\")", RegexOption.IGNORE_CASE),
+            Regex("(\"newPassword\"\\s*:\\s*\")[^\"]*(\")", RegexOption.IGNORE_CASE),
+            Regex("(\"confirmPassword\"\\s*:\\s*\")[^\"]*(\")", RegexOption.IGNORE_CASE),
+            Regex("(password=)[^&\\s]*(?=(&|\\s|$))", RegexOption.IGNORE_CASE),
+        )
     }
 
     private suspend fun handleLogout() {
