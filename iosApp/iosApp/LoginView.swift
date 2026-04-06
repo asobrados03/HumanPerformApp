@@ -165,7 +165,16 @@ struct LoginView: View {
             return
         }
 
-        vm.login(email: email, password: password)
+        let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalizedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !normalizedEmail.isEmpty, !normalizedPassword.isEmpty else {
+            uiTestError = "El correo y la contraseña son obligatorios."
+            return
+        }
+
+        uiTestError = nil
+        vm.login(email: normalizedEmail, password: normalizedPassword)
     }
 }
 
