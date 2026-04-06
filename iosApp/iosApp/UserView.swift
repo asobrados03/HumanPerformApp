@@ -26,8 +26,8 @@ struct UserView: View {
     @StateViewModel private var walletVM = SharedDependencies.shared.makeUserWalletViewModel()
     @StateViewModel private var profileVM = SharedDependencies.shared.makeUserProfileViewModel()
 
-    private var balanceValue: Double {
-        walletVM.balance?.doubleValue ?? 0
+    private var balanceState: WalletBalanceUiState {
+        walletVM.walletBalanceUiState
     }
 
     var body: some View {
@@ -117,15 +117,7 @@ struct UserView: View {
                 .font(.subheadline)
                 .foregroundColor(.white)
 
-            Text("Saldo: \(balanceValue, specifier: "%.2f") €")
-                .font(.headline)
-                .foregroundColor(.black)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Color.yellow)
-                .cornerRadius(8)
-                .padding(.horizontal, 16)
+            balanceBanner
 
             HStack(spacing: 12) {
                 actionButton(title: "Mi perfil", isPrimary: true) {
@@ -141,6 +133,47 @@ struct UserView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
         .background(Color.red)
+    }
+
+    @ViewBuilder
+    private var balanceBanner: some View {
+        VStack(spacing: 8) {
+            switch balanceState {
+            case is WalletBalanceUiStateLoading:
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("Cargando saldo…")
+                        .font(.headline)
+                }
+
+            case let success as WalletBalanceUiStateSuccess:
+                Text("Saldo: \(success.amount, format: .currency(code: "EUR"))")
+                    .font(.headline)
+
+            case let error as WalletBalanceUiStateError:
+                Text("Saldo: —")
+                    .font(.headline)
+                Text(error.message)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+                Button("Reintentar") {
+                    reloadBalance()
+                }
+                .font(.caption.weight(.semibold))
+
+            default:
+                Text("Saldo: —")
+                    .font(.headline)
+            }
+        }
+        .foregroundColor(.black)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color.yellow)
+        .cornerRadius(8)
+        .padding(.horizontal, 16)
     }
 
     private func menuCardRow(title: String) -> some View {
@@ -187,6 +220,12 @@ struct UserView: View {
         if let user = sessionVM.userData {
             profileVM.fetchUserProfile(currentUser: sessionVM.currentUserState())
             walletVM.loadBalance(userId: user.id)
+        }
+    }
+
+    private func reloadBalance() {
+        if let id = sessionVM.userData?.id {
+            walletVM.loadBalance(userId: id)
         }
     }
 
