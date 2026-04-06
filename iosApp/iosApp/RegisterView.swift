@@ -358,8 +358,14 @@ struct RegisterView: View {
                 ? rawMessage
                 : "No se pudo completar el registro. Inténtalo de nuevo."
             print("🟡 State: error - \(resolvedMessage ?? "")")
-            fieldErrors = [:]
-            errorMessage = resolvedMessage
+            let backendFieldErrors = mapBackendErrorMessageToFieldErrors(resolvedMessage ?? "")
+            if backendFieldErrors.isEmpty {
+                fieldErrors = [:]
+                errorMessage = resolvedMessage
+            } else {
+                fieldErrors = backendFieldErrors
+                errorMessage = "Revisa los campos marcados en rojo"
+            }
             return
         }
 
@@ -372,6 +378,16 @@ struct RegisterView: View {
 
     private func onRegister() {
         print("🔵 onRegister() called")
+
+        let sanitizedFirstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sanitizedLastName = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sanitizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let sanitizedPhone = phone.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sanitizedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sanitizedDob = filterDateInput(dobText).trimmingCharacters(in: .whitespacesAndNewlines)
+        let sanitizedPostalCode = postalCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sanitizedPostalAddress = postalAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sanitizedDni = dni.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         
         // Validaciones locales simples
         guard acceptTerms else {
@@ -384,8 +400,20 @@ struct RegisterView: View {
             errorMessage = "Debes aceptar la política de privacidad"
             return
         }
-        guard hasExactDateMaskFormat(dobText) else {
-            print("❌ Invalid dateOfBirth format: \(dobText)")
+        guard !sanitizedEmail.isEmpty else {
+            print("❌ Email empty after sanitization")
+            fieldErrors[.email] = "El correo electrónico es obligatorio"
+            errorMessage = "Revisa el correo electrónico"
+            return
+        }
+        guard !sanitizedPostalCode.isEmpty else {
+            print("❌ Postal code empty after sanitization")
+            fieldErrors[.postcode] = "El código postal es obligatorio"
+            errorMessage = "Revisa el código postal"
+            return
+        }
+        guard hasExactDateMaskFormat(sanitizedDob) else {
+            print("❌ Invalid dateOfBirth format: \(sanitizedDob)")
             fieldErrors[.dateOfBirth] = "La fecha debe tener formato dd/MM/yyyy"
             errorMessage = "Revisa la fecha de nacimiento"
             return
@@ -396,16 +424,16 @@ struct RegisterView: View {
         fieldErrors = [:]
 
         let req = RegisterRequest(
-            name: firstName,
-            surnames: lastName,
-            email: email,
-            phone: phone,
-            password: password,
+            name: sanitizedFirstName,
+            surnames: sanitizedLastName,
+            email: sanitizedEmail,
+            phone: sanitizedPhone,
+            password: sanitizedPassword,
             sex: selectedSexBackend,
-            dateOfBirth: dobText,
-            postCode: postalCode,
-            postAddress: postalAddress,
-            dni: dni,
+            dateOfBirth: sanitizedDob,
+            postCode: sanitizedPostalCode,
+            postAddress: sanitizedPostalAddress,
+            dni: sanitizedDni,
             // API contract uses lowercase identifiers for `device_type` (e.g., "android", "ios").
             deviceType: "ios",
             profilePicBytes: profilePicBytes?.asKotlinByteArray(),
@@ -422,6 +450,9 @@ struct RegisterView: View {
         print("  - postCode: \(req.postCode)")
         print("  - postAddress: \(req.postAddress)")
         print("  - dni: \(req.dni)")
+        print("  - emailLength: \(req.email.count)")
+        print("  - dateOfBirthLength: \(req.dateOfBirth.count)")
+        print("  - postCodeLength: \(req.postCode.count)")
         print("  - deviceType: \(req.deviceType)")
         print("  - profilePicName: \(req.profilePicName ?? "nil")")
         print("  - profilePicBytesLength: \(profilePicBytes?.count ?? 0)")
@@ -460,6 +491,40 @@ struct RegisterView: View {
     private func propertyValue(named key: String, from state: Any) -> Any? {
         Mirror(reflecting: state).children.first { $0.label == key }?.value
     }
+
+    private func appendFieldError(_ target: inout [RegisterField: String], field: RegisterField, message: String) {
+        let cleanMessage = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanMessage.isEmpty else { return }
+        if let existing = target[field], !existing.isEmpty {
+            if !existing.contains(cleanMessage) {
+                target[field] = "\(existing)\n• \(cleanMessage)"
+            }
+        } else {
+            target[field] = cleanMessage
+        }
+    }
+
+    private func registerFieldFromBackendKey(_ backendKey: String) -> RegisterField? {
+        let normalized = backendKey
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "_", with: "")
+            .lowercased()
+
+        if normalized == "nombre" { return .firstName }
+        if normalized == "apellidos" { return .lastName }
+        if normalized == "rawemail" || normalized == "email" { return .email }
+        if normalized == "telefono" || normalized == "phone" { return .phone }
+        if normalized == "password" { return .password }
+        if normalized == "fechanacimientoraw" || normalized == "dateofbirth" || normalized == "fechanacimiento" {
+            return .dateOfBirth
+        }
+        if normalized == "codigopostal" || normalized == "postcode" { return .postcode }
+        if normalized == "direccionpostal" || normalized == "postaladdress" { return .postalAddress }
+        if normalized == "dni" { return .dni }
+        if normalized == "sexo" || normalized == "sex" { return .sex }
+        return nil
+    }
+
     private func mapValidationErrors(_ rawErrors: Any?) -> [RegisterField: String] {
         var mapped: [RegisterField: String] = [:]
 
@@ -471,17 +536,47 @@ struct RegisterView: View {
         for (key, value) in errors {
             guard let message = value as? String else { continue }
             let raw = String(describing: key).uppercased()
-            if raw.contains("FIRST_NAME") { mapped[.firstName] = message }
-            else if raw.contains("LAST_NAME") { mapped[.lastName] = message }
-            else if raw.contains("EMAIL") { mapped[.email] = message }
-            else if raw.contains("PHONE") { mapped[.phone] = message }
-            else if raw.contains("PASSWORD") { mapped[.password] = message }
-            else if raw.contains("DATE_OF_BIRTH") { mapped[.dateOfBirth] = message }
-            else if raw.contains("SEX") { mapped[.sex] = message }
-            else if raw.contains("POSTCODE") { mapped[.postcode] = message }
-            else if raw.contains("POSTAL_ADDRESS") { mapped[.postalAddress] = message }
-            else if raw.contains("DNI") { mapped[.dni] = message }
+            if raw.contains("FIRST_NAME") { appendFieldError(&mapped, field: .firstName, message: message) }
+            else if raw.contains("LAST_NAME") { appendFieldError(&mapped, field: .lastName, message: message) }
+            else if raw.contains("EMAIL") { appendFieldError(&mapped, field: .email, message: message) }
+            else if raw.contains("PHONE") { appendFieldError(&mapped, field: .phone, message: message) }
+            else if raw.contains("PASSWORD") { appendFieldError(&mapped, field: .password, message: message) }
+            else if raw.contains("DATE_OF_BIRTH") { appendFieldError(&mapped, field: .dateOfBirth, message: message) }
+            else if raw.contains("SEX") { appendFieldError(&mapped, field: .sex, message: message) }
+            else if raw.contains("POSTCODE") { appendFieldError(&mapped, field: .postcode, message: message) }
+            else if raw.contains("POSTAL_ADDRESS") { appendFieldError(&mapped, field: .postalAddress, message: message) }
+            else if raw.contains("DNI") { appendFieldError(&mapped, field: .dni, message: message) }
+            else if let mappedField = registerFieldFromBackendKey(String(describing: key)) {
+                appendFieldError(&mapped, field: mappedField, message: message)
+            }
         }
+        return mapped
+    }
+
+    private func mapBackendErrorMessageToFieldErrors(_ message: String) -> [RegisterField: String] {
+        var mapped: [RegisterField: String] = [:]
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return mapped }
+
+        if trimmed.lowercased().contains("faltan campos:"),
+           let fieldsPart = trimmed.split(separator: ":", maxSplits: 1).last {
+            let fields = fieldsPart
+                .split(separator: ",")
+                .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+
+            for backendField in fields {
+                if let mappedField = registerFieldFromBackendKey(backendField) {
+                    appendFieldError(&mapped, field: mappedField, message: "Este campo es obligatorio")
+                }
+            }
+            return mapped
+        }
+
+        if trimmed.lowercased().contains("formato de fecha inválido") {
+            appendFieldError(&mapped, field: .dateOfBirth, message: trimmed)
+        }
+
         return mapped
     }
 
