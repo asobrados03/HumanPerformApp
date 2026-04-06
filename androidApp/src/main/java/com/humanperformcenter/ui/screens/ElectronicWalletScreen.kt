@@ -47,7 +47,7 @@ fun ElectronicWalletScreen(
 ) {
     val walletBalanceUiState by userWalletViewModel.walletBalanceUiState.collectAsStateWithLifecycle()
     val uiState by userWalletViewModel.eWalletTransactions.collectAsStateWithLifecycle()
-    var mostrarDetalles by remember { mutableStateOf(false) }
+    var showDetails by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         userWalletViewModel.loadBalance(userId)
@@ -95,16 +95,16 @@ fun ElectronicWalletScreen(
 
                     // Botón para expandir detalles
                     Text(
-                        text = if (mostrarDetalles) "🔼 Ocultar detalles" else "▶️ Ver detalles",
+                        text = if (showDetails) "🔼 Ocultar detalles" else "▶️ Ver detalles",
                         modifier = Modifier
                             .padding(top = 12.dp)
-                            .clickable { mostrarDetalles = !mostrarDetalles },
+                            .clickable { showDetails = !showDetails },
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
                     )
 
                     // Sección de Transacciones (Solo si mostrarDetalles es true)
-                    if (mostrarDetalles) {
+                    if (showDetails) {
                         Spacer(modifier = Modifier.height(16.dp))
 
                         when (val state = uiState) {
