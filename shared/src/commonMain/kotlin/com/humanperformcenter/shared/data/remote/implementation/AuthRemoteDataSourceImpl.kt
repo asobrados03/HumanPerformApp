@@ -59,12 +59,6 @@ class AuthRemoteDataSourceImpl(
             append("sexo", data.sex)
             append("fecha_nacimiento", data.dateOfBirth)
             append("codigo_postal", data.postCode)
-            // Backend registerUserService valida contrato legacy camelCase para todos los dispositivos.
-            append("rawEmail", data.email)
-            append("fechaNacimientoRaw", toLegacyFechaNacimientoRaw(data.dateOfBirth))
-            append("codigoPostal", data.postCode)
-            append("direccionPostal", data.postAddress)
-            append("deviceType", data.deviceType)
             append("direccion_postal", data.postAddress)
             append("dni", data.dni)
             append("device_type", data.deviceType)
