@@ -49,6 +49,7 @@ import com.humanperformcenter.ui.components.app.FullScreenLoading
 import com.humanperformcenter.ui.components.app.LogoAppBar
 import com.humanperformcenter.ui.components.app.NavigationBar
 import com.humanperformcenter.ui.components.user.UserProfileImage
+import com.humanperformcenter.shared.presentation.ui.WalletBalanceUiState
 import com.humanperformcenter.shared.presentation.viewmodel.UserProfileViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserSessionViewModel
 import com.humanperformcenter.shared.presentation.viewmodel.UserWalletViewModel
@@ -90,7 +91,7 @@ fun UserScreen(
         }
     }
 
-    val balance by walletViewModel.balance.collectAsStateWithLifecycle()
+    val walletBalanceUiState by walletViewModel.walletBalanceUiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -149,9 +150,19 @@ fun UserScreen(
                                     elevation = cardElevation(defaultElevation = 4.dp)
                                 ) {
                                     Text(
-                                        text = "Saldo: $balance €",
+                                        text = when (val state = walletBalanceUiState) {
+                                            WalletBalanceUiState.Idle, WalletBalanceUiState.Loading -> "Saldo: Cargando..."
+                                            is WalletBalanceUiState.Success -> "Saldo: ${state.amount} €"
+                                            is WalletBalanceUiState.Error -> "Saldo: Error"
+                                        },
                                         Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                                         fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                                if (walletBalanceUiState is WalletBalanceUiState.Error) {
+                                    Text(
+                                        text = (walletBalanceUiState as WalletBalanceUiState.Error).message,
+                                        color = Color.White.copy(alpha = 0.9f)
                                     )
                                 }
                                 Spacer(Modifier.height(12.dp))
