@@ -345,16 +345,21 @@ struct RegisterView: View {
         }
 
         if isValidationErrorsState(newState) {
-            let rawErrors = propertyValue(named: "fieldErrors", from: newState)
+            let rawErrors = extractValidationErrors(from: newState)
             print("🟡 State: validationErrors - \(String(describing: rawErrors))")
-            fieldErrors = mapValidationErrors(rawErrors as Any)
+            fieldErrors = mapValidationErrors(rawErrors)
+            errorMessage = fieldErrors.isEmpty ? "Revisa los campos del formulario" : nil
             return
         }
 
         if isErrorState(newState) {
             let rawMessage = propertyValue(named: "message", from: newState) as? String
-            print("🟡 State: error - \(rawMessage ?? "")")
-            errorMessage = rawMessage
+            let resolvedMessage = (rawMessage?.isEmpty == false)
+                ? rawMessage
+                : "No se pudo completar el registro. Inténtalo de nuevo."
+            print("🟡 State: error - \(resolvedMessage ?? "")")
+            fieldErrors = [:]
+            errorMessage = resolvedMessage
             return
         }
 
@@ -455,10 +460,11 @@ struct RegisterView: View {
     private func propertyValue(named key: String, from state: Any) -> Any? {
         Mirror(reflecting: state).children.first { $0.label == key }?.value
     }
-    private func mapValidationErrors(_ rawErrors: Any) -> [RegisterField: String] {
+    private func mapValidationErrors(_ rawErrors: Any?) -> [RegisterField: String] {
         var mapped: [RegisterField: String] = [:]
 
-        guard let errors = rawErrors as? [AnyHashable: Any] else {
+        guard let rawErrors,
+              let errors = rawErrors as? [AnyHashable: Any] else {
             return mapped
         }
 
@@ -477,6 +483,27 @@ struct RegisterView: View {
             else if raw.contains("DNI") { mapped[.dni] = message }
         }
         return mapped
+    }
+
+
+    private func extractValidationErrors(from state: shared.RegisterState) -> Any? {
+        if let direct = propertyValue(named: "fieldErrors", from: state) {
+            return direct
+        }
+
+        let mirror = Mirror(reflecting: state)
+        if let firstChildValue = mirror.children.first?.value {
+            if let nested = propertyValue(named: "fieldErrors", from: firstChildValue) {
+                return nested
+            }
+
+            let nestedMirror = Mirror(reflecting: firstChildValue)
+            if let mapCandidate = nestedMirror.children.first?.value {
+                return mapCandidate
+            }
+        }
+
+        return nil
     }
 
     private func clearForm() {
