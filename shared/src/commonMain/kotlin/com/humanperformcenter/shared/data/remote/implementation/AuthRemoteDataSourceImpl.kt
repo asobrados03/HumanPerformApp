@@ -57,7 +57,7 @@ class AuthRemoteDataSourceImpl(
             append("telefono", data.phone)
             append("password", data.password)
             append("sexo", data.sex)
-            append("fecha_nacimiento", data.dateOfBirth)
+            append("fecha_nacimiento", toLegacyFechaNacimientoRaw(data.dateOfBirth))
             append("codigo_postal", data.postCode)
             append("direccion_postal", data.postAddress)
             append("dni", data.dni)
