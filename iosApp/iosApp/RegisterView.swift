@@ -30,42 +30,20 @@ func filterDateInput(_ s: String) -> String {
     return out
 }
 
-/// Convierte dd/MM/yyyy a ddMMyyyy para el backend (sin separadores)
-func convertDateForBackend(_ dateText: String) -> String {
-    // Si el formato es dd/MM/yyyy, convertir a ddMMyyyy (solo números)
-    let digitsOnly = dateText.filter { $0.isNumber }
-    
-    // Asegurar que tenga exactamente 8 dígitos
-    if digitsOnly.count == 8 {
-        return digitsOnly
-    }
-    
-    // Si no tiene 8 dígitos, intentar parsear y reformatear
-    let components = dateText.split(separator: "/")
-    if components.count == 3 {
-        let day = String(components[0]).padLeft(toLength: 2, withPad: "0")
-        let month = String(components[1]).padLeft(toLength: 2, withPad: "0")
-        let year = String(components[2])
-        
-        // Verificar que el año tenga 4 dígitos
-        if year.count == 4 {
-            return "\(day)\(month)\(year)"
-        }
-    }
-    
-    return digitsOnly
-}
-
-// Extension para padding
-extension String {
-    func padLeft(toLength: Int, withPad character: Character) -> String {
-        let stringLength = self.count
-        if stringLength < toLength {
-            return String(repeatElement(character, count: toLength - stringLength)) + self
-        } else {
-            return String(self.suffix(toLength))
-        }
-    }
+/// Valida formato exacto de máscara dd/MM/yyyy.
+func hasExactDateMaskFormat(_ s: String) -> Bool {
+    guard s.count == 10 else { return false }
+    let chars = Array(s)
+    return chars[0].isNumber &&
+        chars[1].isNumber &&
+        chars[2] == "/" &&
+        chars[3].isNumber &&
+        chars[4].isNumber &&
+        chars[5] == "/" &&
+        chars[6].isNumber &&
+        chars[7].isNumber &&
+        chars[8].isNumber &&
+        chars[9].isNumber
 }
 
 // MARK: - Vista principal
@@ -401,6 +379,12 @@ struct RegisterView: View {
             errorMessage = "Debes aceptar la política de privacidad"
             return
         }
+        guard hasExactDateMaskFormat(dobText) else {
+            print("❌ Invalid dateOfBirth format: \(dobText)")
+            fieldErrors[.dateOfBirth] = "La fecha debe tener formato dd/MM/yyyy"
+            errorMessage = "Revisa la fecha de nacimiento"
+            return
+        }
         
         print("✅ Validations passed")
         errorMessage = nil
@@ -413,7 +397,7 @@ struct RegisterView: View {
             phone: phone,
             password: password,
             sex: selectedSexBackend,
-            dateOfBirth: convertDateForBackend(dobText),
+            dateOfBirth: dobText,
             postCode: postalCode,
             postAddress: postalAddress,
             dni: dni,
@@ -423,13 +407,19 @@ struct RegisterView: View {
             profilePicName: profilePicName
         )
         
-        print("🔵 Calling vm.register with data:")
-        print("  - firstName: \(req.name)")
-        print("  - lastName: \(req.surnames)")
+        print("🔵 Register payload (password omitted):")
+        print("  - name: \(req.name)")
+        print("  - surnames: \(req.surnames)")
         print("  - email: \(req.email)")
         print("  - phone: \(req.phone)")
         print("  - sex: \(req.sex)")
-        print("  - dobText: \(req.dateOfBirth) (original: \(dobText))")
+        print("  - dateOfBirth: \(req.dateOfBirth)")
+        print("  - postCode: \(req.postCode)")
+        print("  - postAddress: \(req.postAddress)")
+        print("  - dni: \(req.dni)")
+        print("  - deviceType: \(req.deviceType)")
+        print("  - profilePicName: \(req.profilePicName ?? "nil")")
+        print("  - profilePicBytesLength: \(profilePicBytes?.count ?? 0)")
         
         vm.register(data: req)
         print("🔵 vm.register called")
