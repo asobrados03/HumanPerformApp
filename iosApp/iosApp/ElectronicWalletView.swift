@@ -15,8 +15,8 @@ struct ElectronicWalletView: View {
     @StateViewModel private var walletVM = SharedDependencies.shared.makeUserWalletViewModel()
     @State private var showDetails = false
 
-    private var balanceValue: Double {
-        walletVM.balance?.doubleValue ?? 0
+    private var balanceState: WalletBalanceUiState {
+        walletVM.walletBalanceUiState
     }
 
     private var walletState: EwalletUiState {
@@ -27,8 +27,8 @@ struct ElectronicWalletView: View {
         VStack(spacing: 16) {
             VStack(alignment: .leading) {
                 Text("Monedero Virtual").font(.title2).fontWeight(.semibold)
-                Text("💳 Saldo actual: \(balanceValue, format: .currency(code: "EUR"))")
-                    .fontWeight(.semibold)
+
+                balanceContent
 
                 Button(showDetails ? "Ocultar detalles" : "Ver detalles") { showDetails.toggle() }
                     .buttonStyle(.plain)
@@ -61,6 +61,45 @@ struct ElectronicWalletView: View {
         if let id = sessionVM.userData?.id {
             walletVM.loadBalance(userId: id)
             walletVM.loadEwalletTransactions(userId: id)
+        }
+    }
+
+    private func retryBalanceLoad() {
+        if let id = sessionVM.userData?.id {
+            walletVM.loadBalance(userId: id)
+        }
+    }
+
+    @ViewBuilder
+    private var balanceContent: some View {
+        switch balanceState {
+        case is WalletBalanceUiStateLoading:
+            HStack(spacing: 8) {
+                ProgressView()
+                Text("Cargando saldo…")
+            }
+            .fontWeight(.semibold)
+
+        case let success as WalletBalanceUiStateSuccess:
+            Text("💳 Saldo actual: \(success.amount, format: .currency(code: "EUR"))")
+                .fontWeight(.semibold)
+
+        case let error as WalletBalanceUiStateError:
+            VStack(alignment: .leading, spacing: 6) {
+                Text("💳 Saldo actual: —")
+                    .fontWeight(.semibold)
+                Text(error.message)
+                    .foregroundStyle(.red)
+                    .font(.caption)
+                Button("Reintentar") {
+                    retryBalanceLoad()
+                }
+                .font(.caption.weight(.semibold))
+            }
+
+        default:
+            Text("💳 Saldo actual: —")
+                .fontWeight(.semibold)
         }
     }
 

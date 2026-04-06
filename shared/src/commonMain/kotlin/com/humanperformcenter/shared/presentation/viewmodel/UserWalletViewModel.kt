@@ -2,6 +2,7 @@ package com.humanperformcenter.shared.presentation.viewmodel
 
 import com.humanperformcenter.shared.domain.usecase.WalletUseCase
 import com.humanperformcenter.shared.presentation.ui.EwalletUiState
+import com.humanperformcenter.shared.presentation.ui.WalletBalanceUiState
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
@@ -12,9 +13,9 @@ import kotlinx.coroutines.flow.asStateFlow
 class UserWalletViewModel(
     private val walletUseCase: WalletUseCase
 ) : ViewModel() {
-    private val _balance = MutableStateFlow<Double?>(viewModelScope, 0.0)
+    private val _walletBalanceUiState = MutableStateFlow<WalletBalanceUiState>(viewModelScope, WalletBalanceUiState.Idle)
     @NativeCoroutinesState
-    val balance: StateFlow<Double?> = _balance
+    val walletBalanceUiState: StateFlow<WalletBalanceUiState> = _walletBalanceUiState.asStateFlow()
 
     private val _eWalletTransactions = MutableStateFlow<EwalletUiState>(viewModelScope, EwalletUiState.Loading)
     @NativeCoroutinesState
@@ -22,17 +23,21 @@ class UserWalletViewModel(
 
     fun loadBalance(userId: Int) {
         if (userId == -1) {
-            _balance.value = 0.0
+            _walletBalanceUiState.value = WalletBalanceUiState.Error("Usuario inválido")
             return
         }
 
         viewModelScope.launch {
+            _walletBalanceUiState.value = WalletBalanceUiState.Loading
+
             walletUseCase.getEwalletBalance(userId).fold(
-                onSuccess = { nuevoBalance ->
-                    _balance.value = nuevoBalance ?: 0.0
+                onSuccess = { newBalance ->
+                    _walletBalanceUiState.value = WalletBalanceUiState.Success(newBalance ?: 0.0)
                 },
                 onFailure = { error ->
-                    println("❌ Error al cargar el balance: ${error.message}")
+                    _walletBalanceUiState.value = WalletBalanceUiState.Error(
+                        error.message ?: "No se pudo cargar el saldo"
+                    )
                 }
             )
         }
