@@ -59,6 +59,12 @@ class AuthRemoteDataSourceImpl(
             append("sexo", data.sex)
             append("fecha_nacimiento", data.dateOfBirth)
             append("codigo_postal", data.postCode)
+            // Backend registerUserService valida contrato legacy camelCase para todos los dispositivos.
+            append("rawEmail", data.email)
+            append("fechaNacimientoRaw", toLegacyFechaNacimientoRaw(data.dateOfBirth))
+            append("codigoPostal", data.postCode)
+            append("direccionPostal", data.postAddress)
+            append("deviceType", data.deviceType)
             append("direccion_postal", data.postAddress)
             append("dni", data.dni)
             append("device_type", data.deviceType)
@@ -67,6 +73,31 @@ class AuthRemoteDataSourceImpl(
         clientProvider.authClient.post("${clientProvider.baseUrl}/mobile/users") {
             setBody(MultiPartFormDataContent(parts))
         }.body()
+    }
+
+    internal fun toLegacyFechaNacimientoRaw(dateOfBirth: String): String {
+        val trimmed = dateOfBirth.trim()
+        if (trimmed.isEmpty()) return trimmed
+
+        return when {
+            // yyyy-MM-dd -> ddMMyyyy
+            trimmed.length == 10 && trimmed[4] == '-' && trimmed[7] == '-' -> {
+                val y = trimmed.substring(0, 4)
+                val m = trimmed.substring(5, 7)
+                val d = trimmed.substring(8, 10)
+                "$d$m$y"
+            }
+
+            // dd/MM/yyyy -> ddMMyyyy
+            trimmed.length == 10 && trimmed[2] == '/' && trimmed[5] == '/' -> {
+                val d = trimmed.substring(0, 2)
+                val m = trimmed.substring(3, 5)
+                val y = trimmed.substring(6, 10)
+                "$d$m$y"
+            }
+
+            else -> trimmed.filter { it.isDigit() }.ifEmpty { trimmed }
+        }
     }
 
     override suspend fun resetPassword(email: String): Result<Unit> = runCatching {
