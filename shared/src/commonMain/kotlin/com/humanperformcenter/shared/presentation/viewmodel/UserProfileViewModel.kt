@@ -66,6 +66,7 @@ class UserProfileViewModel(
             result.onSuccess { newUser ->
                 _updateState.value = UpdateState.Success(newUser)
                 currentUser.value = newUser
+                localDataSource.saveUser(newUser)
             }.onFailure { throwable ->
                 _updateState.value = UpdateState.Error(throwable.message ?: "Error desconocido")
             }
