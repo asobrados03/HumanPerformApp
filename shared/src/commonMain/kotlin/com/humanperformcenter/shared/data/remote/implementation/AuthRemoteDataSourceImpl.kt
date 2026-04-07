@@ -43,12 +43,19 @@ class AuthRemoteDataSourceImpl(
     override suspend fun register(data: RegisterRequest): Result<RegisterResponse> = runCatching {
         val parts = formData {
             data.profilePicBytes?.let { bytes ->
+                val profilePicName = data.profilePicName?.takeIf { it.isNotBlank() } ?: "profile.jpg"
+                val contentType = when (profilePicName.substringAfterLast('.', "").lowercase()) {
+                    "png" -> "image/png"
+                    "jpg", "jpeg" -> "image/jpeg"
+                    "gif" -> "image/gif"
+                    "webp" -> "image/webp"
+                    "heic" -> "image/heic"
+                    "heif" -> "image/heif"
+                    else -> "application/octet-stream"
+                }
                 append("profile_pic", bytes, Headers.build {
-                    append(HttpHeaders.ContentType, "image/jpeg")
-                    append(
-                        HttpHeaders.ContentDisposition,
-                        "form-data; name=\"profile_pic\"; filename=\"${data.profilePicName}\"",
-                    )
+                    append(HttpHeaders.ContentType, contentType)
+                    append(HttpHeaders.ContentDisposition, "filename=\"$profilePicName\"")
                 })
             }
             append("nombre", data.name)
