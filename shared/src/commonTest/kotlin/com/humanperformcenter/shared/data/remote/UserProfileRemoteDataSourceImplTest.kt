@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -134,6 +135,50 @@ class UserProfileRemoteDataSourceImplTest {
             assertTrue(contains("profile_pic"))
             assertTrue(contains("profile.jpg"))
         }
+    }
+
+    @Test
+    fun updateUser_omits_profile_pic_part_when_bytes_are_null() = runTest {
+        lateinit var capturedRequest: HttpRequestData
+
+        val provider = testProvider(
+            apiEngine = MockEngine { request ->
+                capturedRequest = request
+                respond(
+                    content = fixtureJson("profile", "user_update_success.json"),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(
+                        HttpHeaders.ContentType,
+                        ContentType.Application.Json.toString()
+                    ),
+                )
+            },
+        )
+
+        val dataSource = UserProfileRemoteDataSourceImpl(provider)
+        val user = User(
+            id = 9,
+            fullName = "Carlos Ruiz",
+            email = "carlos@test.com",
+            phone = "622222222",
+            sex = "M",
+            dateOfBirth = "1992-02-02",
+            postcode = 28010,
+            postAddress = "Alcala 20",
+            dni = "11111111H",
+            profilePictureName = null,
+        )
+
+        val result = dataSource.updateUser(user, profilePicBytes = null)
+        assertTrue(result.isSuccess)
+
+        val content = capturedRequest.body as OutgoingContent.WriteChannelContent
+        val channel = ByteChannel(autoFlush = true)
+        content.writeTo(channel)
+        val bodyText = channel.readRemaining().readText()
+
+        assertTrue(bodyText.contains("name=\"user\""))
+        assertFalse(bodyText.contains("name=\"profile_pic\""))
     }
 
     @Test
