@@ -48,23 +48,22 @@ struct EditProfileView: View {
                     }
 
                     Section(header: Text("Datos personales")) {
-                        TextField("Correo", text: $email)
-                            .disabled(true)
-                        TextField("Nombre completo", text: $fullName)
-                        TextField("Fecha de nacimiento (dd/MM/yyyy)", text: $dateOfBirth)
+                        labeledTextField(label: "Correo electrónico", placeholder: "nombre@correo.com", text: $email, isDisabled: true)
+                        labeledTextField(label: "Nombre y apellidos", placeholder: "Introduce tu nombre completo", text: $fullName)
+                        labeledTextField(label: "Fecha de nacimiento", placeholder: "dd/MM/yyyy", text: $dateOfBirth)
                             .keyboardType(.numbersAndPunctuation)
                         Picker("Sexo", selection: $selectedSexIndex) {
-                            Text("").tag(-1)
+                            Text("Selecciona tu sexo").tag(-1)
                             ForEach(sexOptions.indices, id: \.self) { i in
                                 Text(sexOptions[i].0).tag(i)
                             }
                         }
-                        TextField("Teléfono", text: $phone)
+                        labeledTextField(label: "Teléfono", placeholder: "Introduce tu teléfono", text: $phone)
                             .keyboardType(.phonePad)
-                        TextField("Dirección postal", text: $postAddress)
-                        TextField("Código postal", text: $postcode)
+                        labeledTextField(label: "Dirección postal", placeholder: "Introduce tu dirección", text: $postAddress)
+                        labeledTextField(label: "Código postal", placeholder: "Introduce tu código postal", text: $postcode)
                             .keyboardType(.numberPad)
-                        TextField("DNI", text: $dni)
+                        labeledTextField(label: "DNI", placeholder: "Introduce tu DNI", text: $dni)
                     }
 
                     Section {
@@ -84,8 +83,7 @@ struct EditProfileView: View {
                     postAddress = user.postAddress
                     if let pc = user.postcode { postcode = String(pc.int32Value) } else { postcode = "" }
                     dni = user.dni ?? ""
-                    let parts = user.dateOfBirth.split(separator: "-")
-                    if parts.count == 3 { dateOfBirth = "\(parts[2])/\(parts[1])/\(parts[0])" }
+                    dateOfBirth = normalizedDisplayDate(from: user.dateOfBirth)
                     let idx = sexOptions.firstIndex { $0.1.lowercased() == user.sex.lowercased() }
                     selectedSexIndex = idx ?? -1
                 }
@@ -125,6 +123,40 @@ struct EditProfileView: View {
         .navigationTitle("Editar perfil")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
+    }
+
+
+    @ViewBuilder
+    private func labeledTextField(
+        label: String,
+        placeholder: String,
+        text: Binding<String>,
+        isDisabled: Bool = false
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            TextField(placeholder, text: text)
+                .disabled(isDisabled)
+        }
+    }
+
+    private func normalizedDisplayDate(from rawDate: String) -> String {
+        let trimmed = rawDate.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+
+        if trimmed.contains("/") {
+            return String(trimmed.prefix(10))
+        }
+
+        let isoDate = String(trimmed.prefix(10))
+        let parts = isoDate.split(separator: "-")
+        if parts.count == 3 {
+            return "\(parts[2])/\(parts[1])/\(parts[0])"
+        }
+
+        return trimmed
     }
 
     private var profileStateKey: String {
