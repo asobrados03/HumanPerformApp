@@ -28,12 +28,19 @@ class UserProfileRemoteDataSourceImpl(
                 append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             })
             profilePicBytes?.let { bytes ->
+                val profilePicName = user.profilePictureName?.takeIf { it.isNotBlank() } ?: "profile.jpg"
+                val contentType = when (profilePicName.substringAfterLast('.', "").lowercase()) {
+                    "png" -> "image/png"
+                    "jpg", "jpeg" -> "image/jpeg"
+                    "gif" -> "image/gif"
+                    "webp" -> "image/webp"
+                    "heic" -> "image/heic"
+                    "heif" -> "image/heif"
+                    else -> "application/octet-stream"
+                }
                 append("profile_pic", bytes, Headers.build {
-                    append(HttpHeaders.ContentType, "image/jpeg")
-                    append(
-                        HttpHeaders.ContentDisposition,
-                        "form-data; name=\"profile_pic\"; filename=\"${user.profilePictureName}\"",
-                    )
+                    append(HttpHeaders.ContentType, contentType)
+                    append(HttpHeaders.ContentDisposition, "filename=\"$profilePicName\"")
                 })
             }
         }
