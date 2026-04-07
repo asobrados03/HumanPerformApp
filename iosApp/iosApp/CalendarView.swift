@@ -270,7 +270,7 @@ struct CalendarView: View {
                         Text("📅 \(booking.date.prefix(10)) - 🕒 \(booking.hour.prefix(5))")
                         Text("🏢 Servicio: \(booking.service)")
                         Text("✨ Producto: \(booking.product)")
-                        Text("👟 Profesional: \(booking.coachName)")
+                        Text("👟 Profesional: \(booking.coachName ?? "Sin asignar")")
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
