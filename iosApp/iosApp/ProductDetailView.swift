@@ -1,6 +1,8 @@
 import SwiftUI
+import UIKit
 import shared
 import KMPObservableViewModelSwiftUI
+import StripePaymentSheet
 
 struct ProductDetailView: View {
     let productId: Int
@@ -176,10 +178,12 @@ struct StripeCheckoutView: View {
     let couponCode: String?
     var onSuccess: () -> Void
 
-    @StateViewModel private var serviceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
+    @Environment(\.dismiss) private var dismiss
+    @StateViewModel private var stripeViewModel = SharedDependencies.shared.makeStripeViewModel()
     @StateViewModel private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
-    @State private var isProcessing = false
     @State private var errorMessage: String?
+    @State private var didStartCheckout = false
+    @State private var didPresentPaymentSheet = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -187,11 +191,12 @@ struct StripeCheckoutView: View {
                 .font(.title3)
                 .fontWeight(.bold)
 
-            if isProcessing {
+            if isLoadingState {
                 ProgressView("Procesando pago con Stripe...")
             } else if let errorMessage {
                 Text(errorMessage).foregroundColor(.red).multilineTextAlignment(.center)
                 Button("Reintentar") {
+                    didPresentPaymentSheet = false
                     startCheckout()
                 }
             } else {
@@ -205,25 +210,117 @@ struct StripeCheckoutView: View {
             }
         }
         .padding(24)
+        .onAppear {
+            startCheckout()
+        }
+        .onChange(of: checkoutStateDescription) { _ in
+            consumeCheckoutState()
+        }
+    }
+
+    private var checkoutState: Any {
+        stripeViewModel.startStripeCheckout
+    }
+
+    private var checkoutStateDescription: String {
+        String(describing: type(of: checkoutState))
+    }
+
+    private var isLoadingState: Bool {
+        checkoutStateDescription.contains("Loading") || checkoutStateDescription.contains("Processing")
     }
 
     private func startCheckout() {
+        if didStartCheckout && errorMessage == nil {
+            return
+        }
+
         guard let userId = sessionViewModel.userData?.id else {
             errorMessage = "Debes iniciar sesión para pagar"
             return
         }
 
-        isProcessing = true
-        serviceProductViewModel.assignProductToUser(
-            userId: userId,
-            productId: product.id,
-            paymentMethod: "stripe",
-            couponCode: couponCode
-        )
+        didStartCheckout = true
+        errorMessage = nil
+        stripeViewModel.resetStartCheckoutState()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            isProcessing = false
+        stripeViewModel.startSingleProductCheckout(
+            amount: product.price?.doubleValue ?? 0,
+            currency: "eur",
+            productId: Int(product.id),
+            userId: userId,
+            couponCode: couponCode,
+            billing: nil
+        )
+    }
+
+    private func consumeCheckoutState() {
+        if checkoutStateDescription.contains("Completed") {
+            stripeViewModel.resetStartCheckoutState()
             onSuccess()
+            dismiss()
+            return
+        }
+
+        if checkoutStateDescription.contains("Canceled") {
+            errorMessage = "Pago cancelado."
+            stripeViewModel.resetStartCheckoutState()
+            didPresentPaymentSheet = false
+            return
+        }
+
+        if checkoutStateDescription.contains("Failed"),
+           let message = mirrorValue(from: checkoutState, label: "message") as? String {
+            errorMessage = message
+            didPresentPaymentSheet = false
+            return
+        }
+
+        if checkoutStateDescription.contains("Ready"),
+           !didPresentPaymentSheet,
+           let clientSecret = mirrorValue(from: checkoutState, label: "clientSecret") as? String,
+           let config = mirrorValue(from: checkoutState, label: "config") as? StripeCheckoutConfig {
+            didPresentPaymentSheet = true
+            presentPaymentSheet(clientSecret: clientSecret, config: config)
+        }
+    }
+
+    private func presentPaymentSheet(clientSecret: String, config: StripeCheckoutConfig) {
+        STPAPIClient.shared.publishableKey = config.publishableKey
+
+        var paymentConfig = PaymentSheet.Configuration()
+        paymentConfig.merchantDisplayName = config.merchantDisplayName
+        paymentConfig.allowsDelayedPaymentMethods = config.allowsDelayedPaymentMethods
+        if let customerId = config.customerId,
+           let ephemeral = config.customerEphemeralKeySecret {
+            paymentConfig.customer = .init(id: customerId, ephemeralKeySecret: ephemeral)
+        }
+
+        paymentConfig.defaultBillingDetails.name = config.billingName
+        paymentConfig.defaultBillingDetails.email = config.billingEmail
+
+        let paymentSheet = PaymentSheet(paymentIntentClientSecret: clientSecret, configuration: paymentConfig)
+
+        guard let rootVC = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .flatMap({ $0.windows })
+            .first(where: { $0.isKeyWindow })?
+            .rootViewController
+        else {
+            stripeViewModel.onCheckoutFailed(message: "Error al abrir la pasarela de pago")
+            return
+        }
+
+        stripeViewModel.onSheetPresented()
+        paymentSheet.present(from: rootVC) { result in
+            switch result {
+            case .completed:
+                stripeViewModel.onCheckoutCompleted()
+            case .canceled:
+                stripeViewModel.onCheckoutCanceled()
+            case .failed(let error):
+                stripeViewModel.onCheckoutFailed(message: error.localizedDescription)
+            }
         }
     }
 }
