@@ -244,6 +244,24 @@ struct StripeCheckoutView: View {
         errorMessage = nil
         stripeViewModel.resetStartCheckoutState()
 
+        let normalizedType = (product.typeOfProduct ?? "").lowercased()
+
+        if normalizedType == "recurrent" {
+            guard let priceId = product.priceId, !priceId.isEmpty else {
+                errorMessage = "No se ha podido iniciar la suscripción."
+                didStartCheckout = false
+                return
+            }
+
+            stripeViewModel.startSubscriptionCheckout(
+                priceId: priceId,
+                userId: userId,
+                productId: Int(product.id),
+                couponCode: couponCode
+            )
+            return
+        }
+
         stripeViewModel.startSingleProductCheckout(
             amount: product.price?.doubleValue ?? 0,
             currency: "eur",
