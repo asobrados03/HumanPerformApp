@@ -219,7 +219,7 @@ struct StripeCheckoutView: View {
         }
         .paymentSheet(
             isPresented: $isPresentingPaymentSheet,
-            paymentSheet: paymentSheet
+            paymentSheet: paymentSheet!
         ) { result in
             switch result {
             case .completed:
