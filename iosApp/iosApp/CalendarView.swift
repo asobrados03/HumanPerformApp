@@ -211,12 +211,13 @@ struct CalendarView: View {
     private func dayCell(for maybeDate: Date?, today: Date) -> some View {
         if let date = maybeDate {
             let isHoliday = isHolidayDate(date)
-            let isReserved = isReservedDate(date)
+            let reservedBooking = bookingForDate(date)
+            let isReserved = reservedBooking != nil
             let selectable = isSelectable(date: date, today: today, isHoliday: isHoliday)
             let dayText = "\(calendar.component(.day, from: date))"
             let cellBackground = backgroundColor(
                 date: date,
-                isReserved: isReserved,
+                reservedBooking: reservedBooking,
                 isHoliday: isHoliday,
                 selectable: selectable
             )
@@ -443,18 +444,45 @@ struct CalendarView: View {
     }
 
     private func isReservedDate(_ date: Date) -> Bool {
-        guard let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess else { return false }
-        return success.bookings.contains { booking in
+        bookingForDate(date) != nil
+    }
+
+    private func bookingForDate(_ date: Date) -> UserBooking? {
+        guard let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess else { return nil }
+        return success.bookings.first { booking in
             String(booking.date.prefix(10)) == ymd(date)
         }
     }
 
-    private func backgroundColor(date: Date, isReserved: Bool, isHoliday: Bool, selectable: Bool) -> Color {
+    private func backgroundColor(date: Date, reservedBooking: UserBooking?, isHoliday: Bool, selectable: Bool) -> Color {
         let isSunday = calendar.component(.weekday, from: date) == 1
 
-        if isReserved { return Color.green.opacity(0.75) }
+        if let booking = reservedBooking { return colorForReservedService(booking: booking) }
         if isHoliday || isSunday { return Color.clear }
         return selectable ? Color(.systemBackground) : Color(.systemGray5)
+    }
+
+    private func colorForReservedService(booking: UserBooking) -> Color {
+        switch normalizedServiceId(for: booking) {
+        case 1:
+            return Color(red: 151 / 255, green: 222 / 255, blue: 152 / 255)
+        case 2:
+            return Color(red: 132 / 255, green: 184 / 255, blue: 227 / 255)
+        case 3:
+            return Color(red: 236 / 255, green: 219 / 255, blue: 108 / 255)
+        case 4:
+            return Color(red: 222 / 255, green: 139 / 255, blue: 117 / 255)
+        default:
+            return Color(.tertiarySystemFill)
+        }
+    }
+
+    private func normalizedServiceId(for booking: UserBooking) -> Int32? {
+        if let serviceId = booking.serviceId as? Int32 { return serviceId }
+        if let serviceId = booking.serviceId as? Int { return Int32(serviceId) }
+        if let serviceId = booking.serviceId as? NSNumber { return serviceId.int32Value }
+        if let serviceId = mirrorValue(from: booking.serviceId as Any, label: "int32Value") as? Int32 { return serviceId }
+        return nil
     }
 
     private func isSelectable(date: Date, today: Date, isHoliday: Bool) -> Bool {
