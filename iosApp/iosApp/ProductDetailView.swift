@@ -256,7 +256,7 @@ struct StripeCheckoutView: View {
             stripeViewModel.startSubscriptionCheckout(
                 priceId: priceId,
                 userId: userId,
-                productId: Int(product.id),
+                productId: Int32(Int(product.id)),
                 couponCode: couponCode
             )
             return
@@ -265,7 +265,7 @@ struct StripeCheckoutView: View {
         stripeViewModel.startSingleProductCheckout(
             amount: product.price?.doubleValue ?? 0,
             currency: "eur",
-            productId: Int(product.id),
+            productId: Int32(Int(product.id)),
             userId: userId,
             couponCode: couponCode,
             billing: nil

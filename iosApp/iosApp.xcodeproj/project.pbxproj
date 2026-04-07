@@ -11,6 +11,7 @@
 		058557D9273AAEEB004C7B11 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557D8273AAEEB004C7B11 /* Preview Assets.xcassets */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
 		7555FF83242A565900829871 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555FF82242A565900829871 /* ContentView.swift */; };
+		C24FCF7D2F82A3A000BF5E8B /* CalendarReservationFlowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C24FCF7C2F82A3A000BF5E8B /* CalendarReservationFlowViewModel.swift */; };
 		DB39E4262E5CA2B1002CB3B0 /* ServicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB39E4252E5CA2A8002CB3B0 /* ServicesView.swift */; };
 		DB39E42B2E5CC83B002CB3B0 /* MyProductsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB39E42A2E5CC834002CB3B0 /* MyProductsView.swift */; };
 		DB39E42D2E5CC87B002CB3B0 /* HireServicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB39E42C2E5CC86D002CB3B0 /* HireServicesView.swift */; };
@@ -78,6 +79,7 @@
 		7555FF7B242A565900829871 /* iosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C24FCF7C2F82A3A000BF5E8B /* CalendarReservationFlowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarReservationFlowViewModel.swift; sourceTree = "<group>"; };
 		DB39E4252E5CA2A8002CB3B0 /* ServicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicesView.swift; sourceTree = "<group>"; };
 		DB39E42A2E5CC834002CB3B0 /* MyProductsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyProductsView.swift; sourceTree = "<group>"; };
 		DB39E42C2E5CC86D002CB3B0 /* HireServicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HireServicesView.swift; sourceTree = "<group>"; };
@@ -171,6 +173,7 @@
 		7555FF7D242A565900829871 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				C24FCF7C2F82A3A000BF5E8B /* CalendarReservationFlowViewModel.swift */,
 				DB3CEF452E60E837005950CF /* util */,
 				DB9F31992E5DAEA400BE1BAA /* navigation */,
 				DB9F31972E5DAE3F00BE1BAA /* AppState.swift */,
@@ -395,6 +398,7 @@
 				DB5BD6B02E58C3DF0066990E /* RegisterView.swift in Sources */,
 				DB39E4432E5CD244002CB3B0 /* UserView.swift in Sources */,
 				DB5BD6AE2E58C3CF0066990E /* LoginView.swift in Sources */,
+				C24FCF7D2F82A3A000BF5E8B /* CalendarReservationFlowViewModel.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
