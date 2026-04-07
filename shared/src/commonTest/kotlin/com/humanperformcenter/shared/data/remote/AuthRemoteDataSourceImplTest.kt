@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -177,6 +178,56 @@ class AuthRemoteDataSourceImplTest {
         val birthDatePartRegex =
             Regex("name=\"fecha_nacimiento\"[\\s\\S]*?\\r\\n\\r\\n01011990\\r\\n")
         assertTrue(birthDatePartRegex.containsMatchIn(bodyText))
+    }
+
+    @Test
+    fun register_sends_ios_device_type_and_omits_profile_pic_when_image_not_provided() = runTest {
+        lateinit var capturedRequest: HttpRequestData
+
+        val provider = testProvider(
+            authEngine = MockEngine { request ->
+                capturedRequest = request
+                respond(
+                    content = fixtureJson("auth", "users_register_success.json"),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(
+                        HttpHeaders.ContentType,
+                        ContentType.Application.Json.toString()
+                    ),
+                )
+            },
+        )
+
+        val dataSource = AuthRemoteDataSourceImpl(provider, FakeAuthLocalDataSource())
+
+        val request = RegisterRequest(
+            name = "Iris",
+            surnames = "Lopez",
+            email = "iris@test.com",
+            phone = "611111111",
+            password = "secret",
+            sex = "Female",
+            dateOfBirth = "11/01/2001",
+            postCode = "28001",
+            postAddress = "Calle Luna 1",
+            dni = "12345678A",
+            deviceType = "ios",
+            profilePicBytes = null,
+            profilePicName = null,
+        )
+
+        val result = dataSource.register(request)
+        assertTrue(result.isSuccess)
+
+        val content = capturedRequest.body as OutgoingContent.WriteChannelContent
+        val channel = ByteChannel(autoFlush = true)
+        content.writeTo(channel)
+        val bodyText = channel.readRemaining().readText()
+
+        val deviceTypePartRegex =
+            Regex("name=\"device_type\"[\\s\\S]*?\\r\\n\\r\\nios\\r\\n")
+        assertTrue(deviceTypePartRegex.containsMatchIn(bodyText))
+        assertFalse(bodyText.contains("name=\"profile_pic\""))
     }
 
     @Test
