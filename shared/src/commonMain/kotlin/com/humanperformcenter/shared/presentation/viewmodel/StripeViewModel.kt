@@ -154,6 +154,35 @@ class StripeViewModel(
         }
     }
 
+    fun startSingleProductCheckout(
+        amount: Double,
+        currency: String = "eur",
+        productId: Int,
+        userId: Int,
+        couponCode: String? = null,
+        billing: BillingPrefill? = null
+    ) {
+        viewModelScope.launch {
+            val customerId = createOrGetCustomer()
+            if (customerId.isNullOrBlank()) {
+                _startStripeCheckout.value = StartStripeCheckoutState.Failed(
+                    "Error al identificar el usuario en la pasarela."
+                )
+                return@launch
+            }
+
+            startStripeCheckout(
+                amount = amount,
+                currency = currency,
+                customerId = customerId,
+                productId = productId,
+                userId = userId,
+                couponCode = couponCode,
+                billing = billing
+            )
+        }
+    }
+
     fun onCheckoutCanceled() {
         _startStripeCheckout.value = StartStripeCheckoutState.Canceled
     }
