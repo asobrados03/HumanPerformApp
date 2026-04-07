@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 import shared
 import KMPObservableViewModelSwiftUI
 import StripePaymentSheet
@@ -184,6 +183,8 @@ struct StripeCheckoutView: View {
     @State private var errorMessage: String?
     @State private var didStartCheckout = false
     @State private var didPresentPaymentSheet = false
+    @State private var paymentSheet: PaymentSheet?
+    @State private var isPresentingPaymentSheet = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -215,6 +216,22 @@ struct StripeCheckoutView: View {
         }
         .onChange(of: checkoutStateDescription) { _ in
             consumeCheckoutState()
+        }
+        .paymentSheet(
+            isPresented: $isPresentingPaymentSheet,
+            paymentSheet: paymentSheet
+        ) { result in
+            switch result {
+            case .completed:
+                stripeViewModel.onCheckoutCompleted()
+            case .canceled:
+                stripeViewModel.onCheckoutCanceled()
+            case .failed(let error):
+                stripeViewModel.onCheckoutFailed(message: error.localizedDescription)
+            }
+
+            paymentSheet = nil
+            didPresentPaymentSheet = false
         }
     }
 
@@ -317,29 +334,12 @@ struct StripeCheckoutView: View {
         paymentConfig.defaultBillingDetails.name = config.billingName
         paymentConfig.defaultBillingDetails.email = config.billingEmail
 
-        let paymentSheet = PaymentSheet(paymentIntentClientSecret: clientSecret, configuration: paymentConfig)
-
-        guard let rootVC = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .flatMap({ $0.windows })
-            .first(where: { $0.isKeyWindow })?
-            .rootViewController
-        else {
-            stripeViewModel.onCheckoutFailed(message: "Error al abrir la pasarela de pago")
-            return
-        }
-
+        paymentSheet = PaymentSheet(
+            paymentIntentClientSecret: clientSecret,
+            configuration: paymentConfig
+        )
         stripeViewModel.onSheetPresented()
-        paymentSheet.present(from: rootVC) { result in
-            switch result {
-            case .completed:
-                stripeViewModel.onCheckoutCompleted()
-            case .canceled:
-                stripeViewModel.onCheckoutCanceled()
-            case .failed(let error):
-                stripeViewModel.onCheckoutFailed(message: error.localizedDescription)
-            }
-        }
+        isPresentingPaymentSheet = true
     }
 }
 
