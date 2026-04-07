@@ -139,6 +139,11 @@ struct EditProfileView: View {
                 .foregroundColor(.secondary)
             TextField(placeholder, text: text)
                 .disabled(isDisabled)
+                .foregroundColor(isDisabled ? .secondary : .primary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(isDisabled ? Color(.systemGray6) : Color(.secondarySystemBackground))
+                .cornerRadius(8)
         }
     }
 
