@@ -361,3 +361,7 @@ struct PaymentSuccessView: View {
         .padding(24)
     }
 }
+
+private func mirrorValue(from state: Any, label: String) -> Any? {
+    Mirror(reflecting: state).children.first { $0.label == label }?.value
+}
