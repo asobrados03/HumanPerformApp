@@ -61,9 +61,14 @@ class StripeViewModelTest {
         private val cancelSubResult: Result<Unit> = Result.success(Unit),
         private val userCardsResult: Result<StripePaymentMethodsContainer> = Result.success(sampleCards())
     ) : StripeRepository {
+        var lastEphemeralKeyCustomerId: String? = null
+
         override suspend fun getPublishableKey(): Result<String> = Result.success("pk_test_123")
         override suspend fun createOrGetCustomer(): Result<CreateStripeCustomerResponse> = customerResult
-        override suspend fun createEphemeralKey(customerId: String): Result<StripeEphemeralKeyResponse> = Result.success(sampleEphemeralKeyResponse())
+        override suspend fun createEphemeralKey(customerId: String): Result<StripeEphemeralKeyResponse> {
+            lastEphemeralKeyCustomerId = customerId
+            return Result.success(sampleEphemeralKeyResponse())
+        }
         override suspend fun detachPaymentMethod(paymentMethodId: String): Result<Unit> = detachResult
         override suspend fun setDefaultPaymentMethod(paymentMethodId: String, customerId: String): Result<Unit> = setDefaultResult
         override suspend fun createPaymentIntent(intentRequest: CreatePaymentIntentRequest): Result<StripePaymentIntentResponse> = paymentIntentResult
@@ -212,6 +217,28 @@ class StripeViewModelTest {
 
         viewModel.resetActionState()
         assertEquals(ActionUiState.Idle, viewModel.actionUiState.value)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun subscription_uses_customer_id_returned_by_backend_for_ephemeral_key_and_checkout() = runTest(mainDispatcher.scheduler) {
+        val repository = FakeStripeRepository(
+            createSubResult = Result.success(
+                SubscriptionDto(
+                    subscriptionId = "sub_backend",
+                    clientSecret = "sub_secret",
+                    customerId = "cus_from_subscription"
+                )
+            )
+        )
+        val viewModel = buildViewModel(repository)
+
+        viewModel.startStripeSubscription("price_1", "cus_from_login", 10, 20)
+        advanceUntilIdle()
+
+        assertEquals("cus_from_subscription", repository.lastEphemeralKeyCustomerId)
+        val readyState = viewModel.startStripeCheckout.value as StartStripeCheckoutState.Ready
+        assertEquals("cus_from_subscription", readyState.config.customerId)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

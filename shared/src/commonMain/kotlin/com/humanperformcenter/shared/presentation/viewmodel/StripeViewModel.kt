@@ -373,7 +373,10 @@ class StripeViewModel(
 
             stripeUseCase.createSubscription(priceId, userId, productId, couponCode).fold(
                 onSuccess = { subDto ->
-                    val ephemeralKeyDeferred = async { stripeUseCase.createEphemeralKey(customerId) }
+                    val checkoutCustomerId = subDto.customerId.ifBlank { customerId }
+                    val ephemeralKeyDeferred = async {
+                        stripeUseCase.createEphemeralKey(checkoutCustomerId)
+                    }
                     val publishableKeyDeferred = async { stripeUseCase.getPublishableKey() }
 
                     if (publishableKeyDeferred.isCancelled) {
@@ -400,7 +403,7 @@ class StripeViewModel(
                         val checkoutConfig = StripeCheckoutConfig(
                             merchantDisplayName = "HumanPerformCenter",
                             allowsDelayedPaymentMethods = true,
-                            customerId = customerId,
+                            customerId = checkoutCustomerId,
                             customerEphemeralKeySecret = ephemeralKey?.secret,
                             googlePayEnabled = true,
                             googlePayCountryCode = "ES",
