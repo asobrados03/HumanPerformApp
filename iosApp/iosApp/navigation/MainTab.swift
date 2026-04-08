@@ -6,6 +6,7 @@ enum ServicesRoute: Hashable {
     case hireService
     case hireProducts(serviceId: Int)
     case productDetail(productId: Int)
+    case activeProductDetail(productId: Int)
     case paymentSuccess
 }
 
@@ -20,6 +21,9 @@ struct MainTabs: View {
                     initial: .myProducts,
                     onOpenHireProducts: { serviceId in
                         servicesPath.append(.hireProducts(serviceId: serviceId))
+                    },
+                    onOpenActiveProductDetail: { productId in
+                        servicesPath.append(.activeProductDetail(productId: productId))
                     },
                     onOpenProductDetail: { productId in
                         servicesPath.append(.productDetail(productId: productId))
@@ -38,6 +42,8 @@ struct MainTabs: View {
                                 servicesPath.append(.productDetail(productId: productId))
                             }
                         )
+                    case .activeProductDetail(let productId):
+                        ActiveProductDetailView(productId: productId)
                     case .productDetail(let productId):
                         ProductDetailView(
                             productId: productId,

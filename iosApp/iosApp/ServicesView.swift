@@ -9,6 +9,7 @@ enum ServicesSection: Int, CaseIterable, Identifiable {
 struct ServicesView: View {
     @SceneStorage("services.selected") private var selectedRaw = ServicesSection.myProducts.rawValue
     private let onOpenHireProducts: (Int) -> Void
+    private let onOpenActiveProductDetail: (Int) -> Void
     private let onOpenProductDetail: (Int) -> Void
 
     private var selected: Binding<ServicesSection> {
@@ -21,10 +22,12 @@ struct ServicesView: View {
     init(
         initial: ServicesSection = .myProducts,
         onOpenHireProducts: @escaping (Int) -> Void = { _ in },
+        onOpenActiveProductDetail: @escaping (Int) -> Void = { _ in },
         onOpenProductDetail: @escaping (Int) -> Void = { _ in }
     ) {
         _selectedRaw = SceneStorage(wrappedValue: initial.rawValue, "services.selected")
         self.onOpenHireProducts = onOpenHireProducts
+        self.onOpenActiveProductDetail = onOpenActiveProductDetail
         self.onOpenProductDetail = onOpenProductDetail
     }
 
@@ -47,7 +50,7 @@ struct ServicesView: View {
 
             switch selected.wrappedValue {
             case .myProducts:
-                MyProductsView(onOpenProductDetail: onOpenProductDetail)
+                MyProductsView(onOpenProductDetail: onOpenActiveProductDetail)
             case .hire:
                 HireServicesView(onOpenHireProducts: onOpenHireProducts)
             }

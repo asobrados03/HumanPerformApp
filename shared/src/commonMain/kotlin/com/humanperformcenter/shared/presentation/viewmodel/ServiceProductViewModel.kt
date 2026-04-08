@@ -284,6 +284,18 @@ class ServiceProductViewModel(
         }
     }
 
+    fun activeProductDetailStateKind(): String = when (_activeProductDetails.value) {
+        is ActiveProductDetailState.Loading -> "loading"
+        is ActiveProductDetailState.Success -> "success"
+        is ActiveProductDetailState.Error -> "error"
+    }
+
+    fun activeProductDetailStateProduct() =
+        (_activeProductDetails.value as? ActiveProductDetailState.Success)?.product
+
+    fun activeProductDetailStateMessage(): String? =
+        (_activeProductDetails.value as? ActiveProductDetailState.Error)?.message
+
     fun productDetailStateKind(): String = when (_productDetailState.value) {
         is ProductDetailUiState.Loading -> "loading"
         is ProductDetailUiState.Success -> "success"

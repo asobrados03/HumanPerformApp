@@ -40,6 +40,7 @@
 		DBF0C0022E6A0001000B0001 /* ChangePasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */; };
 		DCA100012E70000100AAA001 /* HireProductsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA100002E70000100AAA001 /* HireProductsView.swift */; };
 		DCA100032E70000200AAA001 /* ProductDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA100022E70000200AAA001 /* ProductDetailView.swift */; };
+		DCA100052E70000400AAA001 /* ActiveProductDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA100042E70000400AAA001 /* ActiveProductDetailView.swift */; };
 		DCB100112E90011100AAA111 /* ViewModelConformanceFix.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB100102E90011000AAA111 /* ViewModelConformanceFix.swift */; };
 		DDA100012E90000100BB0001 /* KMPObservableViewModelSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = DDA100032E90000100BB0001 /* KMPObservableViewModelSwiftUI */; };
 		DDFE00012F00000100ABC001 /* Data+KotlinByteArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDFE00022F00000100ABC001 /* Data+KotlinByteArray.swift */; };
@@ -105,6 +106,7 @@
 		DBF0C0012E6A0001000B0001 /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
 		DCA100002E70000100AAA001 /* HireProductsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HireProductsView.swift; sourceTree = "<group>"; };
 		DCA100022E70000200AAA001 /* ProductDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductDetailView.swift; sourceTree = "<group>"; };
+		DCA100042E70000400AAA001 /* ActiveProductDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveProductDetailView.swift; sourceTree = "<group>"; };
 		DCB100102E90011000AAA111 /* ViewModelConformanceFix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelConformanceFix.swift; sourceTree = "<group>"; };
 		DDFE00022F00000100ABC001 /* Data+KotlinByteArray.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+KotlinByteArray.swift"; sourceTree = "<group>"; };
 		E1A100102E80000100AA0001 /* iosAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iosAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -194,6 +196,7 @@
 				DBC55FFB2E5F0F8A00E13D63 /* PaymentMethodsView.swift */,
 				DCA100002E70000100AAA001 /* HireProductsView.swift */,
 				DCA100022E70000200AAA001 /* ProductDetailView.swift */,
+				DCA100042E70000400AAA001 /* ActiveProductDetailView.swift */,
 				DB39E4402E5CD1C0002CB3B0 /* CalendarView.swift */,
 				DB39E42C2E5CC86D002CB3B0 /* HireServicesView.swift */,
 				DB39E42A2E5CC834002CB3B0 /* MyProductsView.swift */,
@@ -390,6 +393,7 @@
 				DBC55FFC2E5F0F8A00E13D63 /* PaymentMethodsView.swift in Sources */,
 				DCA100012E70000100AAA001 /* HireProductsView.swift in Sources */,
 				DCA100032E70000200AAA001 /* ProductDetailView.swift in Sources */,
+				DCA100052E70000400AAA001 /* ActiveProductDetailView.swift in Sources */,
 				DB39E4412E5CD1C6002CB3B0 /* CalendarView.swift in Sources */,
 				DB9F31982E5DAE4700BE1BAA /* AppState.swift in Sources */,
 				DDFE00012F00000100ABC001 /* Data+KotlinByteArray.swift in Sources */,
