@@ -552,6 +552,28 @@ class StripeViewModel(
         }
     }
 
+    fun checkoutStateKind(): String = when (_startStripeCheckout.value) {
+        is StartStripeCheckoutState.Idle -> "idle"
+        is StartStripeCheckoutState.Loading -> "loading"
+        is StartStripeCheckoutState.Ready -> "ready"
+        is StartStripeCheckoutState.Processing -> "processing"
+        is StartStripeCheckoutState.Completed -> "completed"
+        is StartStripeCheckoutState.Canceled -> "canceled"
+        is StartStripeCheckoutState.Failed -> "failed"
+    }
+
+    fun checkoutStateMessage(): String? =
+        (_startStripeCheckout.value as? StartStripeCheckoutState.Failed)?.message
+
+    fun checkoutReadyClientSecret(): String? =
+        (_startStripeCheckout.value as? StartStripeCheckoutState.Ready)?.clientSecret
+
+    fun checkoutPresentationId(): Long? = _checkoutPresentation.value?.id
+
+    fun checkoutPresentationClientSecret(): String? = _checkoutPresentation.value?.clientSecret
+
+    fun checkoutPresentationConfig(): StripeCheckoutConfig? = _checkoutPresentation.value?.config
+
     private fun publishCheckoutReady(clientSecret: String?, config: StripeCheckoutConfig) {
         val normalizedClientSecret = clientSecret?.trim().orEmpty()
         if (normalizedClientSecret.isBlank()) {
