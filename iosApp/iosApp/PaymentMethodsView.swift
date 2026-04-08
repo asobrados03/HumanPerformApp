@@ -20,44 +20,23 @@ struct PaymentMethodsView: View {
     private var actionStateKind: String { stripeVM.actionStateKind() }
 
     var body: some View {
-        ZStack {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Tus métodos de pago")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-
-                content
+        Group {
+            if let paymentSheet {
+                mainContent
+                    .paymentSheet(isPresented: $isPresentingSetupSheet, paymentSheet: paymentSheet) { result in
+                        switch result {
+                        case .completed:
+                            stripeVM.onAddPaymentMethodCompleted()
+                        case .canceled:
+                            stripeVM.onAddPaymentMethodCanceled()
+                        case .failed(let error):
+                            stripeVM.onAddPaymentMethodFailed(message: error.localizedDescription)
+                        }
+                        self.paymentSheet = nil
+                    }
+            } else {
+                mainContent
             }
-
-            if addStateKind == "loading" || actionStateKind == "loading" {
-                Color.black.opacity(0.15).ignoresSafeArea()
-                ProgressView()
-                    .padding(20)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-            }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
-        .onAppear { stripeVM.loadPaymentMethods() }
-        .onChange(of: addStateKind) { _ in handleAddPaymentStateChange() }
-        .onChange(of: actionStateKind) { _ in handleActionStateChange() }
-        .onChange(of: methodsStateKind) { _ in
-            if methodsStateKind == "error" {
-                errorMessage = stripeVM.paymentMethodsStateMessage() ?? "No se pudieron cargar los métodos de pago"
-            }
-        }
-        .paymentSheet(isPresented: $isPresentingSetupSheet, paymentSheet: paymentSheet) { result in
-            switch result {
-            case .completed:
-                stripeVM.onAddPaymentMethodCompleted()
-            case .canceled:
-                stripeVM.onAddPaymentMethodCanceled()
-            case .failed(let error):
-                stripeVM.onAddPaymentMethodFailed(message: error.localizedDescription)
-            }
-            paymentSheet = nil
         }
         .alert("Eliminar método", isPresented: Binding(
             get: { pendingDeleteId != nil },
@@ -91,6 +70,37 @@ struct PaymentMethodsView: View {
         }
     }
 
+
+    private var mainContent: some View {
+        ZStack {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Tus métodos de pago")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+
+                content
+            }
+
+            if addStateKind == "loading" || actionStateKind == "loading" {
+                Color.black.opacity(0.15).ignoresSafeArea()
+                ProgressView()
+                    .padding(20)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+            }
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
+        .onAppear { stripeVM.loadPaymentMethods() }
+        .onChange(of: addStateKind) { _ in handleAddPaymentStateChange() }
+        .onChange(of: actionStateKind) { _ in handleActionStateChange() }
+        .onChange(of: methodsStateKind) { _ in
+            if methodsStateKind == "error" {
+                errorMessage = stripeVM.paymentMethodsStateMessage() ?? "No se pudieron cargar los métodos de pago"
+            }
+        }
+    }
     @ViewBuilder
     private var content: some View {
         if methodsStateKind == "loading" {
