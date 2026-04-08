@@ -166,6 +166,7 @@ struct PaymentMethodsView: View {
             STPAPIClient.shared.publishableKey = sheetData.publishableKey
 
             var config = PaymentSheet.Configuration()
+            config.returnURL = "humanperform://stripe-redirect"
             config.merchantDisplayName = sheetData.merchantDisplayName
             config.customer = .init(id: sheetData.customerId, ephemeralKeySecret: sheetData.ephemeralKeySecret)
             config.allowsDelayedPaymentMethods = false
@@ -174,7 +175,9 @@ struct PaymentMethodsView: View {
                 setupIntentClientSecret: sheetData.setupIntentClientSecret,
                 configuration: config
             )
-            isPresentingSetupSheet = true
+            DispatchQueue.main.async {
+                isPresentingSetupSheet = true
+            }
 
         case "completed":
             stripeVM.resetAddPaymentMethodState()
