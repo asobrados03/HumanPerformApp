@@ -353,11 +353,14 @@ struct StripeCheckoutView: View {
             return
         }
 
-        if lastPresentedCommandId == presentationId {
+        let presentationIdInt = presentationId.int64Value
+
+        if lastPresentedCommandId == presentationIdInt {
             return
         }
 
-        lastPresentedCommandId = presentationId
+        lastPresentedCommandId = presentationIdInt
+
         presentPaymentSheet(
             clientSecret: clientSecret,
             config: config
