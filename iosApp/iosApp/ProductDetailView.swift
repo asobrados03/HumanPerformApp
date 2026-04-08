@@ -132,6 +132,7 @@ struct ProductDetailView: View {
         .navigationDestination(isPresented: $openStripeCheckout) {
             StripeCheckoutView(
                 product: product,
+                userId: sessionViewModel.userData?.id,
                 couponCode: bestCouponCode(for: product),
                 onSuccess: onPaymentSuccess
             )
@@ -174,12 +175,12 @@ struct ProductDetailView: View {
 
 struct StripeCheckoutView: View {
     let product: Product
+    let userId: Int32?
     let couponCode: String?
     var onSuccess: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @StateViewModel private var stripeViewModel = SharedDependencies.shared.makeStripeViewModel()
-    @StateViewModel private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
     @State private var errorMessage: String?
     @State private var didStartCheckout = false
     @State private var lastPresentedCommandId: Int64?
@@ -283,7 +284,7 @@ struct StripeCheckoutView: View {
             return
         }
 
-        guard let userId = sessionViewModel.userData?.id else {
+        guard let userId else {
             errorMessage = "Debes iniciar sesión para pagar"
             return
         }
@@ -382,8 +383,10 @@ struct StripeCheckoutView: View {
             paymentIntentClientSecret: clientSecret,
             configuration: paymentConfig
         )
-        stripeViewModel.onSheetPresented()
-        isPresentingPaymentSheet = true
+        DispatchQueue.main.async {
+            stripeViewModel.onSheetPresented()
+            isPresentingPaymentSheet = true
+        }
     }
 }
 
