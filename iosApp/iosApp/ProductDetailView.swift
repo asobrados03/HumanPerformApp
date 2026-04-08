@@ -75,6 +75,7 @@ struct ProductDetailView: View {
     @ViewBuilder
     private func detailContent(product: Product) -> some View {
         let alreadyHired = isAlreadyHired(productId: product.id)
+        let finalPrice = discountedPrice(for: product)
 
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -92,7 +93,7 @@ struct ProductDetailView: View {
                 Text(product.description_ ?? "No hay descripción disponible.")
                     .foregroundColor(.secondary)
 
-                Text("Precio: \(String(format: "%.2f", discountedPrice(for: product)))€")
+                Text("Precio: \(String(format: "%.2f", finalPrice))€")
                     .fontWeight(.bold)
                     .foregroundColor(.red)
 
@@ -132,6 +133,7 @@ struct ProductDetailView: View {
         .navigationDestination(isPresented: $openStripeCheckout) {
             StripeCheckoutView(
                 product: product,
+                discountedPrice: finalPrice,
                 userId: sessionViewModel.userData?.id,
                 couponCode: bestCouponCode(for: product),
                 onSuccess: onPaymentSuccess
@@ -175,6 +177,7 @@ struct ProductDetailView: View {
 
 struct StripeCheckoutView: View {
     let product: Product
+    let discountedPrice: Double
     let userId: Int32?
     let couponCode: String?
     var onSuccess: () -> Void
@@ -310,7 +313,7 @@ struct StripeCheckoutView: View {
         }
 
         stripeViewModel.startSingleProductCheckout(
-            amount: product.price?.doubleValue ?? 0,
+            amount: discountedPrice,
             currency: "eur",
             productId: Int32(Int(product.id)),
             userId: userId,
@@ -361,11 +364,18 @@ struct StripeCheckoutView: View {
 
         presentPaymentSheet(
             clientSecret: clientSecret,
-            config: config
+            config: config,
+            isSubscription: product.typeOfProduct == "recurrent",
+            price: discountedPrice
         )
     }
 
-    private func presentPaymentSheet(clientSecret: String, config: StripeCheckoutConfig) {
+    private func presentPaymentSheet(
+        clientSecret: String,
+        config: StripeCheckoutConfig,
+        isSubscription: Bool,
+        price: Double?
+    ) {
         STPAPIClient.shared.publishableKey = config.publishableKey
 
         var paymentConfig = PaymentSheet.Configuration()
@@ -379,6 +389,11 @@ struct StripeCheckoutView: View {
 
         paymentConfig.defaultBillingDetails.name = config.billingName
         paymentConfig.defaultBillingDetails.email = config.billingEmail
+
+        if isSubscription {
+            let amount = price ?? 0
+            paymentConfig.primaryButtonLabel = String(format: "Suscríbete por %.2f€/mes", amount)
+        }
 
         if clientSecret.hasPrefix("seti_") {
             paymentSheet = PaymentSheet(
