@@ -1,81 +1,207 @@
-//
-//  PaymentMethodsView.swift
-//  iosApp
-//
-//  Created by ChatGPT on 2025-08-27.
-//
-
 import SwiftUI
 import KMPObservableViewModelSwiftUI
 import shared
+import StripePaymentSheet
 
 extension StripePaymentMethod: Identifiable {}
 
-/// Pantalla para visualizar los métodos de pago del usuario.
 struct PaymentMethodsView: View {
-    @StateViewModel private var vm = SharedDependencies.shared.makeStripeViewModel()
+    @StateViewModel private var stripeVM = SharedDependencies.shared.makeStripeViewModel()
+    @StateViewModel private var sessionVM = SharedDependencies.shared.makeUserSessionViewModel()
+
+    @State private var paymentSheet: PaymentSheet?
+    @State private var isPresentingSetupSheet = false
+    @State private var infoMessage: String?
+    @State private var errorMessage: String?
+    @State private var pendingDeleteId: String?
+
+    private var methodsStateKind: String { stripeVM.paymentMethodsStateKind() }
+    private var addStateKind: String { stripeVM.addPaymentMethodStateKind() }
+    private var actionStateKind: String { stripeVM.actionStateKind() }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Tus métodos de pago")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
+        ZStack {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Tus métodos de pago")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
 
-            content
+                content
+            }
+
+            if addStateKind == "loading" || actionStateKind == "loading" {
+                Color.black.opacity(0.15).ignoresSafeArea()
+                ProgressView()
+                    .padding(20)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
-        .onAppear {
-            vm.loadPaymentMethods()
+        .onAppear { stripeVM.loadPaymentMethods() }
+        .onChange(of: addStateKind) { _ in handleAddPaymentStateChange() }
+        .onChange(of: actionStateKind) { _ in handleActionStateChange() }
+        .onChange(of: methodsStateKind) { _ in
+            if methodsStateKind == "error" {
+                errorMessage = stripeVM.paymentMethodsStateMessage() ?? "No se pudieron cargar los métodos de pago"
+            }
+        }
+        .paymentSheet(isPresented: $isPresentingSetupSheet, paymentSheet: paymentSheet) { result in
+            switch result {
+            case .completed:
+                stripeVM.onAddPaymentMethodCompleted()
+            case .canceled:
+                stripeVM.onAddPaymentMethodCanceled()
+            case .failed(let error):
+                stripeVM.onAddPaymentMethodFailed(message: error.localizedDescription)
+            }
+            paymentSheet = nil
+        }
+        .alert("Eliminar método", isPresented: Binding(
+            get: { pendingDeleteId != nil },
+            set: { if !$0 { pendingDeleteId = nil } }
+        )) {
+            Button("Cancelar", role: .cancel) { pendingDeleteId = nil }
+            Button("Eliminar", role: .destructive) {
+                if let pendingDeleteId {
+                    stripeVM.detachPaymentMethod(paymentMethodId: pendingDeleteId)
+                }
+                self.pendingDeleteId = nil
+            }
+        } message: {
+            Text("¿Seguro que deseas eliminar este método de pago?")
+        }
+        .alert("Éxito", isPresented: Binding(
+            get: { infoMessage != nil },
+            set: { if !$0 { infoMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(infoMessage ?? "")
+        }
+        .alert("Error", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(errorMessage ?? "")
         }
     }
 
     @ViewBuilder
     private var content: some View {
-        let state = vm.viewPaymentMethodsUiState
-        let stateName = String(describing: type(of: state))
-
-        if stateName.contains("Loading") {
+        if methodsStateKind == "loading" {
             PaymentMethodsShimmerView()
-        } else if let message = mirrorValue(from: state, label: "message") as? String {
-            ErrorStateView(message: message) { vm.loadPaymentMethods() }
-        } else if stateName.contains("Empty") {
-            EmptyStateView(
-                title: "No hay métodos todavía",
-                subtitle: "Añade tu primera tarjeta para pagar más rápido."
-            )
-        } else if
-            let paymentMethods = mirrorValue(from: state, label: "paymentMethods") as? [StripePaymentMethod],
-            let defaultPaymentMethodId = mirrorValue(from: state, label: "defaultPaymentMethodId") as? String?
-        {
+        } else if methodsStateKind == "error" {
+            ErrorStateView(message: stripeVM.paymentMethodsStateMessage() ?? "Error desconocido") {
+                stripeVM.loadPaymentMethods()
+            }
+        } else if methodsStateKind == "empty" {
+            VStack(spacing: 16) {
+                EmptyStateView(
+                    title: "No hay métodos todavía",
+                    subtitle: "Añade tu primera tarjeta para pagar más rápido."
+                )
+                addButton(fullWidth: false)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 24)
+        } else {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(paymentMethods) { pm in
+                    ForEach(stripeVM.paymentMethodsList(), id: \.id) { pm in
                         PaymentMethodCard(
                             paymentMethod: pm,
-                            isDefault: pm.id == defaultPaymentMethodId
+                            isDefault: pm.id == stripeVM.paymentMethodsDefaultId(),
+                            onDelete: { pendingDeleteId = pm.id },
+                            onSetDefault: { stripeVM.setDefaultPaymentMethod(paymentMethodId: pm.id) }
                         )
                     }
-                    Spacer().frame(height: 32)
+
+                    addButton(fullWidth: true)
+                        .padding(.top, 6)
+
+                    Spacer().frame(height: 20)
                 }
                 .padding(.horizontal, 16)
+                .padding(.bottom, 12)
             }
-        } else {
-            EmptyStateView(
-                title: "No hay métodos todavía",
-                subtitle: "Añade tu primera tarjeta para pagar más rápido."
+        }
+    }
+
+    private func addButton(fullWidth: Bool) -> some View {
+        Button {
+            guard let userId = sessionVM.userData?.id else {
+                errorMessage = "Debes iniciar sesión para añadir una tarjeta"
+                return
+            }
+            stripeVM.prepareAddPaymentMethod(userId: userId)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "plus.circle")
+                Text("Añadir método de pago")
+            }
+            .frame(maxWidth: fullWidth ? .infinity : nil)
+        }
+        .buttonStyle(.borderedProminent)
+    }
+
+    private func handleAddPaymentStateChange() {
+        switch addStateKind {
+        case "ready":
+            guard let sheetData = stripeVM.addPaymentMethodSheetData() else { return }
+            STPAPIClient.shared.publishableKey = sheetData.publishableKey
+
+            var config = PaymentSheet.Configuration()
+            config.merchantDisplayName = sheetData.merchantDisplayName
+            config.customer = .init(id: sheetData.customerId, ephemeralKeySecret: sheetData.ephemeralKeySecret)
+            config.allowsDelayedPaymentMethods = false
+
+            paymentSheet = PaymentSheet(
+                setupIntentClientSecret: sheetData.setupIntentClientSecret,
+                configuration: config
             )
+            isPresentingSetupSheet = true
+
+        case "completed":
+            stripeVM.resetAddPaymentMethodState()
+            infoMessage = "Tarjeta guardada correctamente"
+
+        case "canceled":
+            stripeVM.resetAddPaymentMethodState()
+            infoMessage = "Operación cancelada"
+
+        case "failed":
+            errorMessage = stripeVM.addPaymentMethodStateMessage() ?? "Error al guardar la tarjeta"
+            stripeVM.resetAddPaymentMethodState()
+
+        default:
+            break
+        }
+    }
+
+    private func handleActionStateChange() {
+        switch actionStateKind {
+        case "success":
+            infoMessage = "Operación realizada con éxito"
+            stripeVM.resetActionState()
+        case "error":
+            errorMessage = stripeVM.actionStateMessage() ?? "Error en la operación"
+            stripeVM.resetActionState()
+        default:
+            break
         }
     }
 }
 
-/* --------- Componentes --------- */
-
 struct PaymentMethodCard: View {
     let paymentMethod: StripePaymentMethod
     let isDefault: Bool
+    let onDelete: () -> Void
+    let onSetDefault: () -> Void
 
     private var brand: String {
         paymentMethod.card.brand.uppercased()
@@ -86,12 +212,13 @@ struct PaymentMethodCard: View {
     }
 
     private var exp: String {
-        String(format: "%02d/%02d", paymentMethod.card.expMonth, paymentMethod.card.expYear % 100)
+        String(format: "%02d/%02d", Int(paymentMethod.card.expMonth), Int(paymentMethod.card.expYear) % 100)
     }
 
     var body: some View {
-        HStack(alignment: .center) {
+        HStack(alignment: .center, spacing: 12) {
             BrandAvatar(brand: brand)
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(brand)
                     .font(.headline)
@@ -99,9 +226,21 @@ struct PaymentMethodCard: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
+
             Spacer()
+
             if isDefault {
                 DefaultChip()
+            }
+
+            Menu {
+                if !isDefault {
+                    Button("Establecer como predeterminada") { onSetDefault() }
+                }
+                Button("Eliminar", role: .destructive) { onDelete() }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.title3)
             }
         }
         .padding(16)
@@ -138,7 +277,7 @@ struct DefaultChip: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 16))
                 .foregroundColor(Color.accentColor)
-            Text("Predeterminado")
+            Text("Predeterminada")
                 .font(.caption)
                 .foregroundColor(Color.accentColor)
         }
@@ -166,7 +305,6 @@ struct EmptyStateView: View {
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)
     }
 }
@@ -244,8 +382,4 @@ extension View {
     func shimmer() -> some View {
         modifier(Shimmer())
     }
-}
-
-private func mirrorValue(from state: Any, label: String) -> Any? {
-    Mirror(reflecting: state).children.first(where: { $0.label == label })?.value
 }

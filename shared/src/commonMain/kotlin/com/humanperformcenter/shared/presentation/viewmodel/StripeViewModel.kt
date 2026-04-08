@@ -308,6 +308,21 @@ class StripeViewModel(
         _addPaymentMethodUiState.value = AddPaymentMethodUiState.Idle
     }
 
+    fun addPaymentMethodStateKind(): String = when (_addPaymentMethodUiState.value) {
+        is AddPaymentMethodUiState.Idle -> "idle"
+        is AddPaymentMethodUiState.Loading -> "loading"
+        is AddPaymentMethodUiState.Ready -> "ready"
+        is AddPaymentMethodUiState.Completed -> "completed"
+        is AddPaymentMethodUiState.Canceled -> "canceled"
+        is AddPaymentMethodUiState.Failed -> "failed"
+    }
+
+    fun addPaymentMethodStateMessage(): String? =
+        (_addPaymentMethodUiState.value as? AddPaymentMethodUiState.Failed)?.message
+
+    fun addPaymentMethodSheetData(): AddPaymentMethodSheetData? =
+        (_addPaymentMethodUiState.value as? AddPaymentMethodUiState.Ready)?.sheetData
+
     // --- GESTIÓN DE TARJETAS (CARD MANAGEMENT) ---
 
     fun loadPaymentMethods() {
@@ -520,6 +535,33 @@ class StripeViewModel(
     fun resetActionState() {
         _actionUiState.value = ActionUiState.Idle
     }
+
+    fun actionStateKind(): String = when (_actionUiState.value) {
+        is ActionUiState.Idle -> "idle"
+        is ActionUiState.Loading -> "loading"
+        is ActionUiState.Success -> "success"
+        is ActionUiState.Error -> "error"
+    }
+
+    fun actionStateMessage(): String? =
+        (_actionUiState.value as? ActionUiState.Error)?.message
+
+    fun paymentMethodsStateKind(): String = when (_viewPaymentMethodsUiState.value) {
+        is PaymentMethodsUiState.Loading -> "loading"
+        is PaymentMethodsUiState.Empty -> "empty"
+        is PaymentMethodsUiState.Success -> "success"
+        is PaymentMethodsUiState.Error -> "error"
+    }
+
+    fun paymentMethodsList() =
+        (_viewPaymentMethodsUiState.value as? PaymentMethodsUiState.Success)?.paymentMethods
+            ?: emptyList()
+
+    fun paymentMethodsDefaultId(): String? =
+        (_viewPaymentMethodsUiState.value as? PaymentMethodsUiState.Success)?.defaultPaymentMethodId
+
+    fun paymentMethodsStateMessage(): String? =
+        (_viewPaymentMethodsUiState.value as? PaymentMethodsUiState.Error)?.message
 
     /**
      * Función helper para ejecutar acciones que no devuelven datos (Unit),
