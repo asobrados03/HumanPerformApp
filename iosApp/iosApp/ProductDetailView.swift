@@ -293,9 +293,7 @@ struct StripeCheckoutView: View {
         errorMessage = nil
         stripeViewModel.resetStartCheckoutState()
 
-        let normalizedType = (product.typeOfProduct ?? "").lowercased()
-
-        if normalizedType == "recurrent" {
+        if product.typeOfProduct == "recurrent" {
             guard let priceId = product.priceId, !priceId.isEmpty else {
                 errorMessage = "No se ha podido iniciar la suscripción."
                 didStartCheckout = false
