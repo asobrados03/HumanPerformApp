@@ -187,6 +187,22 @@ struct StripeCheckoutView: View {
     @State private var isPresentingPaymentSheet = false
 
     var body: some View {
+        Group {
+            if let paymentSheet {
+                checkoutContent
+                    .paymentSheet(
+                        isPresented: $isPresentingPaymentSheet,
+                        paymentSheet: paymentSheet
+                    ) { result in
+                        handlePaymentResult(result)
+                    }
+            } else {
+                checkoutContent
+            }
+        }
+    }
+
+    private var checkoutContent: some View {
         VStack(spacing: 16) {
             Text("Pasarela Stripe")
                 .font(.title3)
@@ -217,23 +233,21 @@ struct StripeCheckoutView: View {
         .onChange(of: checkoutStateDescription) { _ in
             consumeCheckoutState()
         }
-        .paymentSheet(
-            isPresented: $isPresentingPaymentSheet,
-            paymentSheet: paymentSheet
-        ) { result in
-            switch result {
-            case .completed:
-                stripeViewModel.onCheckoutCompleted()
-            case .canceled:
-                stripeViewModel.onCheckoutCanceled()
-            case .failed(let error):
-                stripeViewModel.onCheckoutFailed(message: error.localizedDescription)
-            }
+    }
 
-            paymentSheet = nil
-            didPresentPaymentSheet = false
-            isPresentingPaymentSheet = false
+    private func handlePaymentResult(_ result: PaymentSheetResult) {
+        switch result {
+        case .completed:
+            stripeViewModel.onCheckoutCompleted()
+        case .canceled:
+            stripeViewModel.onCheckoutCanceled()
+        case .failed(let error):
+            stripeViewModel.onCheckoutFailed(message: error.localizedDescription)
         }
+
+        paymentSheet = nil
+        didPresentPaymentSheet = false
+        isPresentingPaymentSheet = false
     }
 
     private var checkoutState: Any {
