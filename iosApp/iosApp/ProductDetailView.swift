@@ -382,10 +382,17 @@ struct StripeCheckoutView: View {
         paymentConfig.defaultBillingDetails.name = config.billingName
         paymentConfig.defaultBillingDetails.email = config.billingEmail
 
-        paymentSheet = PaymentSheet(
-            paymentIntentClientSecret: clientSecret,
-            configuration: paymentConfig
-        )
+        if clientSecret.hasPrefix("seti_") {
+            paymentSheet = PaymentSheet(
+                setupIntentClientSecret: clientSecret,
+                configuration: paymentConfig
+            )
+        } else {
+            paymentSheet = PaymentSheet(
+                paymentIntentClientSecret: clientSecret,
+                configuration: paymentConfig
+            )
+        }
         DispatchQueue.main.async {
             stripeViewModel.onSheetPresented()
             isPresentingPaymentSheet = true
