@@ -252,43 +252,30 @@ struct StripeCheckoutView: View {
         isPresentingPaymentSheet = false
     }
 
-    private var checkoutState: StartStripeCheckoutState {
-        stripeViewModel.startStripeCheckout
-    }
-
-    private var checkoutPresentation: StripeCheckoutPresentation? {
-        stripeViewModel.checkoutPresentation
-    }
-
     private var checkoutStateKey: String {
-        switch checkoutState {
-        case is StartStripeCheckoutStateIdle:
-            return "idle"
-        case is StartStripeCheckoutStateLoading:
-            return "loading"
-        case is StartStripeCheckoutStateProcessing:
-            return "processing"
-        case is StartStripeCheckoutStateCompleted:
-            return "completed"
-        case is StartStripeCheckoutStateCanceled:
-            return "canceled"
-        case let failed as StartStripeCheckoutStateFailed:
-            return "failed:\(failed.message)"
-        case let ready as StartStripeCheckoutStateReady:
-            return "ready:\(ready.clientSecret)"
+        let kind = stripeViewModel.checkoutStateKind()
+        switch kind {
+        case "failed":
+            return "failed:\(stripeViewModel.checkoutStateMessage() ?? "")"
+        case "ready":
+            return "ready:\(stripeViewModel.checkoutReadyClientSecret() ?? "")"
         default:
-            return "unknown"
+            return kind
         }
     }
 
     private var checkoutPresentationKey: String {
-        guard let checkoutPresentation else { return "none" }
-        return "\(checkoutPresentation.id)|\(checkoutPresentation.clientSecret)"
+        guard let presentationId = stripeViewModel.checkoutPresentationId(),
+              let clientSecret = stripeViewModel.checkoutPresentationClientSecret()
+        else {
+            return "none"
+        }
+        return "\(presentationId)|\(clientSecret)"
     }
 
     private var isLoadingState: Bool {
-        checkoutState is StartStripeCheckoutStateLoading ||
-        checkoutState is StartStripeCheckoutStateProcessing
+        let kind = stripeViewModel.checkoutStateKind()
+        return kind == "loading" || kind == "processing"
     }
 
     private func startCheckout() {
@@ -334,37 +321,45 @@ struct StripeCheckoutView: View {
     }
 
     private func consumeCheckoutState() {
-        if checkoutState is StartStripeCheckoutStateCompleted {
+        let stateKind = stripeViewModel.checkoutStateKind()
+
+        if stateKind == "completed" {
             stripeViewModel.resetStartCheckoutState()
             onSuccess()
             dismiss()
             return
         }
 
-        if checkoutState is StartStripeCheckoutStateCanceled {
+        if stateKind == "canceled" {
             errorMessage = "Pago cancelado."
             stripeViewModel.resetStartCheckoutState()
             paymentSheet = nil
             return
         }
 
-        if let failed = checkoutState as? StartStripeCheckoutStateFailed {
-            errorMessage = failed.message
+        if stateKind == "failed" {
+            errorMessage = stripeViewModel.checkoutStateMessage()
             paymentSheet = nil
             return
         }
     }
 
     private func consumeCheckoutPresentation() {
-        guard let checkoutPresentation else { return }
-        if lastPresentedCommandId == checkoutPresentation.id {
+        guard let presentationId = stripeViewModel.checkoutPresentationId(),
+              let clientSecret = stripeViewModel.checkoutPresentationClientSecret(),
+              let config = stripeViewModel.checkoutPresentationConfig()
+        else {
             return
         }
 
-        lastPresentedCommandId = checkoutPresentation.id
+        if lastPresentedCommandId == presentationId {
+            return
+        }
+
+        lastPresentedCommandId = presentationId
         presentPaymentSheet(
-            clientSecret: checkoutPresentation.clientSecret,
-            config: checkoutPresentation.config
+            clientSecret: clientSecret,
+            config: config
         )
     }
 
