@@ -182,7 +182,7 @@ struct StripeCheckoutView: View {
     @StateViewModel private var sessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
     @State private var errorMessage: String?
     @State private var didStartCheckout = false
-    @State private var didPresentPaymentSheet = false
+    @State private var lastPresentedCommandId: Int64?
     @State private var paymentSheet: PaymentSheet?
     @State private var isPresentingPaymentSheet = false
 
@@ -200,6 +200,12 @@ struct StripeCheckoutView: View {
                 checkoutContent
             }
         }
+        .onChange(of: checkoutStateKey) { _ in
+            consumeCheckoutState()
+        }
+        .onChange(of: checkoutPresentationKey) { _ in
+            consumeCheckoutPresentation()
+        }
     }
 
     private var checkoutContent: some View {
@@ -213,7 +219,7 @@ struct StripeCheckoutView: View {
             } else if let errorMessage {
                 Text(errorMessage).foregroundColor(.red).multilineTextAlignment(.center)
                 Button("Reintentar") {
-                    didPresentPaymentSheet = false
+                    lastPresentedCommandId = nil
                     startCheckout()
                 }
             } else {
@@ -230,9 +236,6 @@ struct StripeCheckoutView: View {
         .onAppear {
             startCheckout()
         }
-        .onChange(of: checkoutStateDescription) { _ in
-            consumeCheckoutState()
-        }
     }
 
     private func handlePaymentResult(_ result: PaymentSheetResult) {
@@ -246,20 +249,46 @@ struct StripeCheckoutView: View {
         }
 
         paymentSheet = nil
-        didPresentPaymentSheet = false
         isPresentingPaymentSheet = false
     }
 
-    private var checkoutState: Any {
+    private var checkoutState: StartStripeCheckoutState {
         stripeViewModel.startStripeCheckout
     }
 
-    private var checkoutStateDescription: String {
-        String(describing: type(of: checkoutState))
+    private var checkoutPresentation: StripeCheckoutPresentation? {
+        stripeViewModel.checkoutPresentation
+    }
+
+    private var checkoutStateKey: String {
+        switch checkoutState {
+        case is StartStripeCheckoutStateIdle:
+            return "idle"
+        case is StartStripeCheckoutStateLoading:
+            return "loading"
+        case is StartStripeCheckoutStateProcessing:
+            return "processing"
+        case is StartStripeCheckoutStateCompleted:
+            return "completed"
+        case is StartStripeCheckoutStateCanceled:
+            return "canceled"
+        case let failed as StartStripeCheckoutStateFailed:
+            return "failed:\(failed.message)"
+        case let ready as StartStripeCheckoutStateReady:
+            return "ready:\(ready.clientSecret)"
+        default:
+            return "unknown"
+        }
+    }
+
+    private var checkoutPresentationKey: String {
+        guard let checkoutPresentation else { return "none" }
+        return "\(checkoutPresentation.id)|\(checkoutPresentation.clientSecret)"
     }
 
     private var isLoadingState: Bool {
-        checkoutStateDescription.contains("Loading") || checkoutStateDescription.contains("Processing")
+        checkoutState is StartStripeCheckoutStateLoading ||
+        checkoutState is StartStripeCheckoutStateProcessing
     }
 
     private func startCheckout() {
@@ -305,40 +334,45 @@ struct StripeCheckoutView: View {
     }
 
     private func consumeCheckoutState() {
-        if checkoutStateDescription.contains("Completed") {
+        if checkoutState is StartStripeCheckoutStateCompleted {
             stripeViewModel.resetStartCheckoutState()
             onSuccess()
             dismiss()
             return
         }
 
-        if checkoutStateDescription.contains("Canceled") {
+        if checkoutState is StartStripeCheckoutStateCanceled {
             errorMessage = "Pago cancelado."
             stripeViewModel.resetStartCheckoutState()
-            didPresentPaymentSheet = false
+            paymentSheet = nil
             return
         }
 
-        if checkoutStateDescription.contains("Failed"),
-           let message = mirrorValue(from: checkoutState, label: "message") as? String {
-            errorMessage = message
-            didPresentPaymentSheet = false
+        if let failed = checkoutState as? StartStripeCheckoutStateFailed {
+            errorMessage = failed.message
+            paymentSheet = nil
+            return
+        }
+    }
+
+    private func consumeCheckoutPresentation() {
+        guard let checkoutPresentation else { return }
+        if lastPresentedCommandId == checkoutPresentation.id {
             return
         }
 
-        if checkoutStateDescription.contains("Ready"),
-           !didPresentPaymentSheet,
-           let clientSecret = mirrorValue(from: checkoutState, label: "clientSecret") as? String,
-           let config = mirrorValue(from: checkoutState, label: "config") as? StripeCheckoutConfig {
-            didPresentPaymentSheet = true
-            presentPaymentSheet(clientSecret: clientSecret, config: config)
-        }
+        lastPresentedCommandId = checkoutPresentation.id
+        presentPaymentSheet(
+            clientSecret: checkoutPresentation.clientSecret,
+            config: checkoutPresentation.config
+        )
     }
 
     private func presentPaymentSheet(clientSecret: String, config: StripeCheckoutConfig) {
         STPAPIClient.shared.publishableKey = config.publishableKey
 
         var paymentConfig = PaymentSheet.Configuration()
+        paymentConfig.returnURL = "humanperform://stripe-redirect"
         paymentConfig.merchantDisplayName = config.merchantDisplayName
         paymentConfig.allowsDelayedPaymentMethods = config.allowsDelayedPaymentMethods
         if let customerId = config.customerId,
@@ -375,8 +409,4 @@ struct PaymentSuccessView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)
     }
-}
-
-private func mirrorValue(from state: Any, label: String) -> Any? {
-    Mirror(reflecting: state).children.first { $0.label == label }?.value
 }

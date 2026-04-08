@@ -8,6 +8,7 @@ import com.humanperformcenter.shared.presentation.ui.AddPaymentMethodSheetData
 import com.humanperformcenter.shared.presentation.ui.AddPaymentMethodUiState
 import com.humanperformcenter.shared.presentation.ui.PaymentMethodsUiState
 import com.humanperformcenter.shared.presentation.ui.RefundUiState
+import com.humanperformcenter.shared.presentation.ui.StripeCheckoutPresentation
 import com.humanperformcenter.shared.presentation.ui.StartStripeCheckoutState
 import com.humanperformcenter.shared.presentation.ui.StripeCheckoutConfig
 import com.humanperformcenter.shared.presentation.ui.models.BillingPrefill
@@ -38,6 +39,11 @@ class StripeViewModel(
     )
     @NativeCoroutinesState
     val startStripeCheckout: StateFlow<StartStripeCheckoutState> = _startStripeCheckout.asStateFlow()
+    private var checkoutPresentationCounter: Long = 0
+
+    private val _checkoutPresentation = MutableStateFlow<StripeCheckoutPresentation?>(viewModelScope, null)
+    @NativeCoroutinesState
+    val checkoutPresentation: StateFlow<StripeCheckoutPresentation?> = _checkoutPresentation.asStateFlow()
 
     // Estado para acciones puntuales (Borrar tarjeta, guardar tarjeta, cancelar sub, refund)
     private val _actionUiState = MutableStateFlow<ActionUiState>(viewModelScope, ActionUiState.Idle)
@@ -132,8 +138,8 @@ class StripeViewModel(
                         publishableKey = publishableKey
                     )
 
-                    _startStripeCheckout.value = StartStripeCheckoutState.Ready(
-                        clientSecret = paymentIntent?.clientSecret ?: "",
+                    publishCheckoutReady(
+                        clientSecret = paymentIntent?.clientSecret,
                         config = checkoutConfig
                     )
                 } else {
@@ -211,18 +217,22 @@ class StripeViewModel(
 
     fun onCheckoutCanceled() {
         _startStripeCheckout.value = StartStripeCheckoutState.Canceled
+        _checkoutPresentation.value = null
     }
 
     fun onCheckoutCompleted() {
         _startStripeCheckout.value = StartStripeCheckoutState.Completed
+        _checkoutPresentation.value = null
     }
 
     fun onCheckoutFailed(message: String) {
         _startStripeCheckout.value = StartStripeCheckoutState.Failed(message)
+        _checkoutPresentation.value = null
     }
 
     fun resetStartCheckoutState() {
         _startStripeCheckout.value = StartStripeCheckoutState.Idle
+        _checkoutPresentation.value = null
     }
 
     fun prepareAddPaymentMethod(userId: Int) {
@@ -398,8 +408,8 @@ class StripeViewModel(
                             publishableKey = publishableKey
                         )
 
-                        _startStripeCheckout.value = StartStripeCheckoutState.Ready(
-                            clientSecret = subDto.clientSecret ?: "",
+                        publishCheckoutReady(
+                            clientSecret = subDto.clientSecret,
                             config = checkoutConfig
                         )
                     } else {
@@ -532,11 +542,35 @@ class StripeViewModel(
 
     fun onStripeFailed(message: String) {
         _startStripeCheckout.value = StartStripeCheckoutState.Failed(message)
+        _checkoutPresentation.value = null
     }
 
     fun onSheetPresented() {
         if (_startStripeCheckout.value is StartStripeCheckoutState.Ready) {
+            _checkoutPresentation.value = null
             _startStripeCheckout.value = StartStripeCheckoutState.Processing
         }
+    }
+
+    private fun publishCheckoutReady(clientSecret: String?, config: StripeCheckoutConfig) {
+        val normalizedClientSecret = clientSecret?.trim().orEmpty()
+        if (normalizedClientSecret.isBlank()) {
+            _startStripeCheckout.value = StartStripeCheckoutState.Failed(
+                "No se recibió un client_secret válido"
+            )
+            _checkoutPresentation.value = null
+            return
+        }
+
+        _startStripeCheckout.value = StartStripeCheckoutState.Ready(
+            clientSecret = normalizedClientSecret,
+            config = config
+        )
+        checkoutPresentationCounter += 1
+        _checkoutPresentation.value = StripeCheckoutPresentation(
+            id = checkoutPresentationCounter,
+            clientSecret = normalizedClientSecret,
+            config = config
+        )
     }
 }

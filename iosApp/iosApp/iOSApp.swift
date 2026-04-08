@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import StripePaymentSheet
 import shared
 
 @main
@@ -20,6 +21,9 @@ struct iOSApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(appState)
+                .onOpenURL { url in
+                    _ = StripeAPI.handleURLCallback(with: url)
+                }
                 .transaction { transaction in
                     if UITestConfig.isUITesting && UITestConfig.shouldDisableAnimations {
                         transaction.disablesAnimations = true
