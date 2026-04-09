@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -123,17 +124,17 @@ fun UserBookingsSection(
                     items = reservasFiltradas,
                     key = { booking -> booking.id }
                 ) { booking ->
-                    val dateFormateada = booking.date.take(10)
-                    val horaFormateada = booking.hour.take(5)
+                    val formattedDate = booking.date.take(10)
+                    val formattedHour = booking.hour.take(5)
                     val isExpanded = menuExpandedMap[booking.id] ?: false
-                    val colorFondo = coloresPorServicio[booking.serviceId] ?: Color(0xFF8E24AA)
-                    val textColor = if (colorFondo.luminance() > 0.6f) Color.Black else Color.White
+                    val backgroundColor = coloresPorServicio[booking.serviceId] ?: Color(0xFF8E24AA)
+                    val textColor = if (backgroundColor.luminance() > 0.6f) Color.Black else Color.White
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
-                            .background(colorFondo, RoundedCornerShape(12.dp))
+                            .background(backgroundColor, RoundedCornerShape(12.dp))
                             .border(2.dp, Color.White.copy(alpha = 0.65f), RoundedCornerShape(12.dp))
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -150,7 +151,7 @@ fun UserBookingsSection(
                         }
 
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("📅 $dateFormateada - 🕒 $horaFormateada", color = textColor)
+                            Text("📅 $formattedDate - 🕒 $formattedHour", color = textColor)
                             Text("🏢 Servicio: ${booking.service}", color = textColor)
                             Text("✨ Producto: ${booking.product}", color = textColor)
                             Text("👟 Profesional: ${booking.coachName}", color = textColor)
@@ -175,7 +176,7 @@ fun UserBookingsSection(
                                         menuExpandedMap[booking.id] = false
                                         try {
                                             // CAMBIO 3: Creación del Instant con java.time
-                                            val startDateTime = LocalDateTime.parse("${dateFormateada}T${horaFormateada}:00")
+                                            val startDateTime = LocalDateTime.parse("${formattedDate}T${formattedHour}:00")
 
                                             // Combinamos fecha/hora con la zona horaria del sistema para obtener el instante
                                             val instant = startDateTime
