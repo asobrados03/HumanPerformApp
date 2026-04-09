@@ -87,10 +87,10 @@ fun UserBookingsSection(
     }
 
     val coloresPorServicio = mapOf(
-        1 to Color(0xFF97DE98),
-        2 to Color(0xFF84B8E3),
-        3 to Color(0xFFECDB6C),
-        4 to Color(0xFFDE8B75)
+        1 to Color(0xFF7E57C2),
+        2 to Color(0xFF42A5F5),
+        3 to Color(0xFFFFCA28),
+        4 to Color(0xFFFF7043)
     )
 
     val context = LocalContext.current
@@ -126,14 +126,15 @@ fun UserBookingsSection(
                     val dateFormateada = booking.date.take(10)
                     val horaFormateada = booking.hour.take(5)
                     val isExpanded = menuExpandedMap[booking.id] ?: false
-                    val colorFondo = coloresPorServicio[booking.serviceId] ?: Color(0xFF6B426C)
+                    val colorFondo = coloresPorServicio[booking.serviceId] ?: Color(0xFF8E24AA)
+                    val textColor = if (colorFondo.luminance() > 0.6f) Color.Black else Color.White
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
                             .background(colorFondo, RoundedCornerShape(12.dp))
-                            .border(3.dp, Color.LightGray, RoundedCornerShape(12.dp))
+                            .border(2.dp, Color.White.copy(alpha = 0.65f), RoundedCornerShape(12.dp))
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -149,15 +150,19 @@ fun UserBookingsSection(
                         }
 
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("📅 $dateFormateada - 🕒 $horaFormateada")
-                            Text("🏢 Servicio: ${booking.service}")
-                            Text("✨ Producto: ${booking.product}")
-                            Text("👟 Profesional: ${booking.coachName}")
+                            Text("📅 $dateFormateada - 🕒 $horaFormateada", color = textColor)
+                            Text("🏢 Servicio: ${booking.service}", color = textColor)
+                            Text("✨ Producto: ${booking.product}", color = textColor)
+                            Text("👟 Profesional: ${booking.coachName}", color = textColor)
                         }
 
                         Box {
                             IconButton(onClick = { menuExpandedMap[booking.id] = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "Más opciones")
+                                Icon(
+                                    Icons.Default.MoreVert,
+                                    contentDescription = "Más opciones",
+                                    tint = textColor
+                                )
                             }
 
                             DropdownMenu(

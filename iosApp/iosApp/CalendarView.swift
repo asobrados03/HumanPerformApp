@@ -267,15 +267,23 @@ struct CalendarView: View {
                     .foregroundColor(.secondary)
             } else {
                 ForEach(filtered, id: \.id) { booking in
+                    let background = colorForReservedService(booking: booking)
+                    let textColor = bookingTextColor(for: background)
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text("📅 \(booking.date.prefix(10)) - 🕒 \(booking.hour.prefix(5))")
                         Text("🏢 Servicio: \(booking.service)")
                         Text("✨ Producto: \(booking.product)")
                         Text("👟 Profesional: \(booking.coachName ?? "Sin asignar")")
                     }
+                    .foregroundColor(textColor)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
-                    .background(Color(.secondarySystemBackground))
+                    .background(background)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.white.opacity(0.65), lineWidth: 2)
+                    )
                     .cornerRadius(10)
                     .onTapGesture { bookingMenuTarget = booking }
                 }
@@ -465,16 +473,26 @@ struct CalendarView: View {
     private func colorForReservedService(booking: UserBooking) -> Color {
         switch normalizedServiceId(for: booking) {
         case 1:
-            return Color(red: 151 / 255, green: 222 / 255, blue: 152 / 255)
+            return Color(red: 126 / 255, green: 87 / 255, blue: 194 / 255)
         case 2:
-            return Color(red: 132 / 255, green: 184 / 255, blue: 227 / 255)
+            return Color(red: 66 / 255, green: 165 / 255, blue: 245 / 255)
         case 3:
-            return Color(red: 236 / 255, green: 219 / 255, blue: 108 / 255)
+            return Color(red: 255 / 255, green: 202 / 255, blue: 40 / 255)
         case 4:
-            return Color(red: 222 / 255, green: 139 / 255, blue: 117 / 255)
+            return Color(red: 255 / 255, green: 112 / 255, blue: 67 / 255)
         default:
-            return Color(.tertiarySystemFill)
+            return Color(red: 142 / 255, green: 36 / 255, blue: 170 / 255)
         }
+    }
+
+    private func bookingTextColor(for background: Color) -> Color {
+        UIColor(background).cgColor.components.map { components in
+            let red = components.count > 0 ? components[0] : 0
+            let green = components.count > 1 ? components[1] : 0
+            let blue = components.count > 2 ? components[2] : 0
+            let luminance = (0.299 * red) + (0.587 * green) + (0.114 * blue)
+            return luminance > 0.6 ? .black : .white
+        } ?? .white
     }
 
     private func normalizedServiceId(for booking: UserBooking) -> Int32? {
