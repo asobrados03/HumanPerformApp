@@ -136,7 +136,10 @@ struct ProductDetailView: View {
                 discountedPrice: finalPrice,
                 userId: sessionViewModel.userData?.id,
                 couponCode: bestCouponCode(for: product),
-                onSuccess: onPaymentSuccess
+                onSuccess: {
+                    openStripeCheckout = false
+                    onPaymentSuccess()
+                }
             )
         }
     }
@@ -182,7 +185,6 @@ struct StripeCheckoutView: View {
     let couponCode: String?
     var onSuccess: () -> Void
 
-    @Environment(\.dismiss) private var dismiss
     @StateViewModel private var stripeViewModel = SharedDependencies.shared.makeStripeViewModel()
     @State private var errorMessage: String?
     @State private var didStartCheckout = false
@@ -328,7 +330,6 @@ struct StripeCheckoutView: View {
         if stateKind == "completed" {
             stripeViewModel.resetStartCheckoutState()
             onSuccess()
-            dismiss()
             return
         }
 
