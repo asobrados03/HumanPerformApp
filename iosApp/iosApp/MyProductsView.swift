@@ -87,8 +87,9 @@ struct MyProductsView: View {
             switch newKind {
             case "success":
                 if let refundedProductId = stripeViewModel.refundStateProductId(),
-                   refundedProductId == pendingRefundProductId {
-                    serviceProductViewModel.unassignProductFromUser(productId: refundedProductId, userId: userId)
+                   let pendingRefundProductId,
+                   refundedProductId.int32Value == pendingRefundProductId {
+                    serviceProductViewModel.unassignProductFromUser(productId: pendingRefundProductId, userId: userId)
                 }
                 pendingRefundProductId = nil
                 successMessage = "Reembolso completado. Producto dado de baja."
