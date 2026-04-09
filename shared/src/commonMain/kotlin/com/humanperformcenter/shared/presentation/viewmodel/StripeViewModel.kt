@@ -496,6 +496,19 @@ class StripeViewModel(
         _refundUiState.value = RefundUiState.Idle
     }
 
+    fun refundStateKind(): String = when (_refundUiState.value) {
+        is RefundUiState.Idle -> "idle"
+        is RefundUiState.Loading -> "loading"
+        is RefundUiState.Success -> "success"
+        is RefundUiState.Error -> "error"
+    }
+
+    fun refundStateMessage(): String? =
+        (_refundUiState.value as? RefundUiState.Error)?.message
+
+    fun refundStateProductId(): Int? =
+        (_refundUiState.value as? RefundUiState.Success)?.productId
+
     fun detachPaymentMethod(paymentMethodId: String) {
         performAction(
             action = { stripeUseCase.detachPaymentMethod(paymentMethodId) },

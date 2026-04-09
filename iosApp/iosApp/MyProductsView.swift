@@ -5,9 +5,13 @@ import KMPObservableViewModelSwiftUI
 struct MyProductsView: View {
     @StateViewModel var serviceProductViewModel: shared.ServiceProductViewModel = SharedDependencies.shared.makeServiceProductViewModel()
     @StateViewModel var sessionViewModel: shared.UserSessionViewModel = SharedDependencies.shared.makeUserSessionViewModel()
+    @StateViewModel var stripeViewModel: shared.StripeViewModel = SharedDependencies.shared.makeStripeViewModel()
     @State private var selectedProduct: Product? = nil
     @State private var showProductOptions = false
     @State private var showUnsubscribeConfirm = false
+    @State private var pendingRefundProductId: Int32? = nil
+    @State private var successMessage: String? = nil
+    @State private var errorMessage: String? = nil
 
     var onOpenProductDetail: (Int) -> Void = { _ in }
 
@@ -62,6 +66,41 @@ struct MyProductsView: View {
                 serviceProductViewModel.loadUserProducts(userId: id)
             }
         }
+        .onChange(of: stripeViewModel.actionStateKind()) { newKind in
+            guard let userId = sessionViewModel.userData?.id else { return }
+
+            switch newKind {
+            case "success":
+                serviceProductViewModel.loadUserProducts(userId: userId)
+                successMessage = "Suscripción cancelada correctamente."
+                stripeViewModel.resetActionState()
+            case "error":
+                errorMessage = stripeViewModel.actionStateMessage() ?? "No se pudo cancelar la suscripción."
+                stripeViewModel.resetActionState()
+            default:
+                break
+            }
+        }
+        .onChange(of: stripeViewModel.refundStateKind()) { newKind in
+            guard let userId = sessionViewModel.userData?.id else { return }
+
+            switch newKind {
+            case "success":
+                if let refundedProductId = stripeViewModel.refundStateProductId(),
+                   refundedProductId == pendingRefundProductId {
+                    serviceProductViewModel.unassignProductFromUser(productId: refundedProductId, userId: userId)
+                }
+                pendingRefundProductId = nil
+                successMessage = "Reembolso completado. Producto dado de baja."
+                stripeViewModel.resetRefundState()
+            case "error":
+                errorMessage = stripeViewModel.refundStateMessage() ?? "No se pudo completar el reembolso."
+                pendingRefundProductId = nil
+                stripeViewModel.resetRefundState()
+            default:
+                break
+            }
+        }
         .onChange(of: sessionViewModel.userData?.id) { newId in
             if let id = newId {
                 serviceProductViewModel.loadUserProducts(userId: id)
@@ -88,12 +127,44 @@ struct MyProductsView: View {
             Button("Cancelar", role: .cancel) { }
             Button("Sí, darse de baja", role: .destructive) {
                 if let prod = selectedProduct, let userId = sessionViewModel.userData?.id {
-                    serviceProductViewModel.unassignProductFromUser(productId: prod.id, userId: userId)
+                    if let subscriptionId = prod.stripeSubscriptionId, !subscriptionId.isEmpty {
+                        stripeViewModel.cancelSubscription(
+                            subscriptionId: subscriptionId,
+                            productId: prod.id,
+                            userId: userId
+                        )
+                    } else if let paymentIntentId = prod.stripePaymentIntentId, !paymentIntentId.isEmpty {
+                        pendingRefundProductId = prod.id
+                        stripeViewModel.createRefund(
+                            paymentIntentId: paymentIntentId,
+                            productId: prod.id,
+                            amount: prod.price
+                        )
+                    } else {
+                        serviceProductViewModel.unassignProductFromUser(productId: prod.id, userId: userId)
+                        successMessage = "Producto dado de baja correctamente."
+                    }
                 }
                 selectedProduct = nil
             }
         } message: {
             Text("¿Estás seguro de que quieres darte de baja de este producto?")
+        }
+        .alert("Operación completada", isPresented: Binding(
+            get: { successMessage != nil },
+            set: { if !$0 { successMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(successMessage ?? "")
+        }
+        .alert("Error", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(errorMessage ?? "")
         }
     }
 }
