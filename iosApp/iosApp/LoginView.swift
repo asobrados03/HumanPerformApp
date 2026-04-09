@@ -30,6 +30,9 @@ struct LoginView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
                 }
+                .onChange(of: email) { _ in
+                    uiTestError = nil
+                }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 14)
                 .overlay(
@@ -61,6 +64,9 @@ struct LoginView: View {
                         Image(systemName: passwordVisible ? "eye.slash" : "eye")
                     }
                     .buttonStyle(.plain)
+                }
+                .onChange(of: password) { _ in
+                    uiTestError = nil
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 14)
@@ -165,16 +171,15 @@ struct LoginView: View {
             return
         }
 
-        let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let normalizedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard !normalizedEmail.isEmpty, !normalizedPassword.isEmpty else {
-            uiTestError = "El correo y la contraseña son obligatorios."
+        guard !normalizedEmail.isEmpty, !password.isEmpty else {
+            uiTestError = "Por favor, ingresa ambos campos para continuar."
             return
         }
 
         uiTestError = nil
-        vm.login(email: normalizedEmail, password: normalizedPassword)
+        vm.login(email: normalizedEmail, password: password)
     }
 }
 
