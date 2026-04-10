@@ -47,6 +47,7 @@
 		DDFE00112F10000100ABC001 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = DDFE00102F10000100ABC001 /* StripePaymentSheet */; };
 		E1A100012E80000100AA0001 /* iosAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100112E80000100AA0001 /* iosAppUITests.swift */; };
 		E1A100022E80000100AA0001 /* iosAppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100122E80000100AA0001 /* iosAppUITestsLaunchTests.swift */; };
+		E1A100202E80000100AA0001 /* BaseUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A100212E80000100AA0001 /* BaseUITestCase.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -112,6 +113,7 @@
 		E1A100102E80000100AA0001 /* iosAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iosAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A100112E80000100AA0001 /* iosAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosAppUITests.swift; sourceTree = "<group>"; };
 		E1A100122E80000100AA0001 /* iosAppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosAppUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		E1A100212E80000100AA0001 /* BaseUITestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseUITestCase.swift; sourceTree = "<group>"; };
 		E1A100132E80000100AA0001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -227,6 +229,7 @@
 		E1A100142E80000100AA0001 /* iosAppUITests */ = {
 			isa = PBXGroup;
 			children = (
+				E1A100212E80000100AA0001 /* BaseUITestCase.swift */,
 				E1A100112E80000100AA0001 /* iosAppUITests.swift */,
 				E1A100122E80000100AA0001 /* iosAppUITestsLaunchTests.swift */,
 				E1A100132E80000100AA0001 /* Info.plist */,
@@ -411,6 +414,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1A100202E80000100AA0001 /* BaseUITestCase.swift in Sources */,
 				E1A100012E80000100AA0001 /* iosAppUITests.swift in Sources */,
 				E1A100022E80000100AA0001 /* iosAppUITestsLaunchTests.swift in Sources */,
 			);
