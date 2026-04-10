@@ -52,7 +52,8 @@ struct MyProductsView: View {
                     ProductRow(
                         producto: producto,
                         finalPrice: producto.price?.doubleValue ?? 0,
-                        isHired: true
+                        isHired: true,
+                        matchAndroidStyle: true
                     )
                         .onTapGesture {
                             selectedProduct = producto
