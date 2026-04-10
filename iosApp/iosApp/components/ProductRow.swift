@@ -13,6 +13,19 @@ struct ProductRow: View {
     let producto: Product
     let finalPrice: Double
     let isHired: Bool
+    let matchAndroidStyle: Bool
+
+    init(
+        producto: Product,
+        finalPrice: Double,
+        isHired: Bool,
+        matchAndroidStyle: Bool = false
+    ) {
+        self.producto = producto
+        self.finalPrice = finalPrice
+        self.isHired = isHired
+        self.matchAndroidStyle = matchAndroidStyle
+    }
 
     private var productImageURL: URL? {
         guard let imageName = producto.image,
@@ -40,7 +53,7 @@ struct ProductRow: View {
                 Text(producto.name)
                     .fontWeight(.bold)
 
-                if isHired {
+                if isHired && !matchAndroidStyle {
                     Text("Ya contratado")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -48,7 +61,7 @@ struct ProductRow: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 4) {
-                if finalPrice < (producto.price?.doubleValue ?? 0) {
+                if finalPrice < (producto.price?.doubleValue ?? 0) && !matchAndroidStyle {
                     Text(String(format: "%.2f€", producto.price?.doubleValue ?? 0))
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -56,10 +69,10 @@ struct ProductRow: View {
                 }
 
                 Text(String(format: "%.2f€", finalPrice))
-                    .fontWeight(isHired ? .regular : .bold)
-                    .foregroundColor(isHired ? .secondary : .red)
+                    .fontWeight(matchAndroidStyle ? .bold : (isHired ? .regular : .bold))
+                    .foregroundColor(matchAndroidStyle ? .red : (isHired ? .secondary : .red))
 
-                if isHired {
+                if isHired && !matchAndroidStyle {
                     Text("Adquirido")
                         .font(.caption2)
                         .padding(.horizontal, 8)
@@ -73,11 +86,16 @@ struct ProductRow: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(isHired ? Color.green.opacity(0.7) : Color.secondary, lineWidth: 1)
+                .stroke(
+                    matchAndroidStyle ? Color(UIColor.separator) : (isHired ? Color.green.opacity(0.7) : Color.secondary),
+                    lineWidth: 1
+                )
         )
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(isHired ? Color.green.opacity(0.06) : Color(UIColor.systemBackground))
+                .fill(
+                    matchAndroidStyle ? Color(UIColor.systemBackground) : (isHired ? Color.green.opacity(0.06) : Color(UIColor.systemBackground))
+                )
         )
         .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
         .padding(.vertical, 4)
