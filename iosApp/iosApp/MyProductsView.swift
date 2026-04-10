@@ -22,42 +22,61 @@ struct MyProductsView: View {
         return ""
     }
 
+    private var successAlertBinding: Binding<Bool> {
+        Binding(
+            get: { successMessage != nil },
+            set: { if !$0 { successMessage = nil } }
+        )
+    }
+
+    private var errorAlertBinding: Binding<Bool> {
+        Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )
+    }
+
+    @ViewBuilder
+    private var productsContent: some View {
+        switch serviceProductViewModel.userProductsStateKind() {
+        case "loading":
+            ProgressView()
+                .frame(maxWidth: .infinity, alignment: .center)
+        case "success":
+            let products = serviceProductViewModel.userProductsStateProducts()
+            if products.isEmpty {
+                Text("No tienes productos contratados.")
+                    .foregroundColor(.secondary)
+            } else {
+                ForEach(products, id: \.id) { producto in
+                    ProductRow(producto: producto)
+                        .onTapGesture {
+                            selectedProduct = producto
+                            showProductOptions = true
+                        }
+                }
+            }
+        case "error":
+            VStack(spacing: 8) {
+                Text(serviceProductViewModel.userProductsStateMessage() ?? "Error desconocido")
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+
+                if let id = sessionViewModel.userData?.id {
+                    Button("Reintentar") {
+                        serviceProductViewModel.loadUserProducts(userId: id)
+                    }
+                }
+            }
+        default:
+            EmptyView()
+        }
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                switch serviceProductViewModel.userProductsStateKind() {
-                case "loading":
-                    ProgressView()
-                        .frame(maxWidth: .infinity, alignment: .center)
-                case "success":
-                    let products = serviceProductViewModel.userProductsStateProducts()
-                    if products.isEmpty {
-                        Text("No tienes productos contratados.")
-                            .foregroundColor(.secondary)
-                    } else {
-                        ForEach(products, id: \.id) { producto in
-                            ProductRow(producto: producto)
-                                .onTapGesture {
-                                    selectedProduct = producto
-                                    showProductOptions = true
-                                }
-                        }
-                    }
-                case "error":
-                    VStack(spacing: 8) {
-                        Text(serviceProductViewModel.userProductsStateMessage() ?? "Error desconocido")
-                            .foregroundColor(.red)
-                            .multilineTextAlignment(.center)
-
-                        if let id = sessionViewModel.userData?.id {
-                            Button("Reintentar") {
-                                serviceProductViewModel.loadUserProducts(userId: id)
-                            }
-                        }
-                    }
-                default:
-                    EmptyView()
-                }
+                productsContent
             }
             .padding(12)
         }
@@ -151,18 +170,12 @@ struct MyProductsView: View {
         } message: {
             Text("¿Estás seguro de que quieres darte de baja de este producto?")
         }
-        .alert("Operación completada", isPresented: Binding(
-            get: { successMessage != nil },
-            set: { if !$0 { successMessage = nil } }
-        )) {
+        .alert("Operación completada", isPresented: successAlertBinding) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(successMessage ?? "")
         }
-        .alert("Error", isPresented: Binding(
-            get: { errorMessage != nil },
-            set: { if !$0 { errorMessage = nil } }
-        )) {
+        .alert("Error", isPresented: errorAlertBinding) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(errorMessage ?? "")
