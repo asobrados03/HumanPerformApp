@@ -24,6 +24,10 @@ struct HireProductsView: View {
         Set(serviceProductViewModel.userProductsStateProducts().map { $0.id })
     }
 
+    private var userCoupons: [Coupon] {
+        serviceProductViewModel.userCouponsList()
+    }
+
     private var availableProducts: [Product] {
         let base = serviceProductViewModel.serviceProductsStateServices(serviceId: Int32(serviceId))
 
@@ -70,15 +74,12 @@ struct HireProductsView: View {
                 ScrollView {
                     LazyVStack(spacing: 8) {
                         ForEach(availableProducts, id: \.id) { product in
-                            ProductRow(producto: product)
-                                .overlay(alignment: .trailing) {
-                                    if hiredIds.contains(product.id) {
-                                        Text("Adquirido")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                            .padding(.trailing, 8)
-                                    }
-                                }
+                            let isHired = hiredIds.contains(product.id)
+                            ProductRow(
+                                producto: product,
+                                finalPrice: discountedPrice(for: product),
+                                isHired: isHired
+                            )
                                 .onTapGesture {
                                     onOpenProductDetail(Int(product.id))
                                 }
@@ -125,5 +126,13 @@ struct HireProductsView: View {
             .pickerStyle(.menu)
         }
         .padding(.horizontal, 12)
+    }
+
+    private func discountedPrice(for product: Product) -> Double {
+        serviceProductViewModel.calculateDiscountedPrice(
+            productId: product.id,
+            originalPrice: product.price?.doubleValue ?? 0,
+            coupons: userCoupons
+        )
     }
 }
