@@ -73,6 +73,95 @@ struct CalendarView: View {
     }
 
     var body: some View {
+        calendarBaseView
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
+            .onAppear {
+                if UITestConfig.isMockNetworkEnabled { return }
+                bootstrap()
+            }
+            .onChange(of: sessionViewModel.userData?.id) { _ in
+                if UITestConfig.isMockNetworkEnabled { return }
+                bootstrapUserData()
+            }
+            .onChange(of: selectedDate) { _ in
+                reservationFlow.selectDate()
+                daySessionViewModel.clearSessions()
+            }
+            .onChange(of: daySessionViewModel.bookingErrorMessage) { message in
+                isBookingErrorPresented = message != nil
+            }
+            .sheet(isPresented: isReservationPresented) {
+                reservationSheet
+                    .presentationDetents([.medium, .large])
+            }
+            .alert("Aviso", isPresented: isConfirmContinuePresented) {
+                Button("No", role: .cancel) { reservationFlow.dismissDialog() }
+                Button("Sí") { reservationFlow.dialog = .reservation }
+            } message: {
+                Text("Ya tienes una reserva hoy. ¿Continuar?")
+            }
+            .alert("Confirmar reserva", isPresented: isConfirmBookingPresented) {
+                Button("Cancelar", role: .cancel) { reservationFlow.dismissDialog() }
+                Button("Reservar") { submitBooking() }
+                Button("Cambiar") { reservationFlow.dialog = .changeExisting }
+            } message: {
+                Text(confirmBookingMessage)
+            }
+            .confirmationDialog(
+                "Selecciona un profesional",
+                isPresented: isSelectCoachPresented,
+                titleVisibility: .visible
+            ) {
+                ForEach(reservationFlow.availableCoaches, id: \.coachId) { coach in
+                    Button(coach.coachName) {
+                        reservationFlow.selectCoach(coach)
+                    }
+                }
+                Button("Cancelar", role: .cancel) { reservationFlow.dismissDialog() }
+            }
+            .alert("Ups, algo ha fallado", isPresented: $isBookingErrorPresented) {
+                Button("Aceptar", role: .cancel) {
+                    daySessionViewModel.clearBookingErrorMessage()
+                }
+            } message: {
+                Text(daySessionViewModel.bookingErrorMessage ?? "No se pudo completar la reserva.")
+            }
+            .accessibilityIdentifier("calendarView")
+            .confirmationDialog(
+                "Gestión de reserva",
+                isPresented: isChangeExistingPresented,
+                titleVisibility: .visible
+            ) {
+                if let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess {
+                    ForEach(success.bookings, id: \.id) { booking in
+                        let bookingDay = String(booking.date.prefix(10))
+                        let bookingHour = String(booking.hour.prefix(5))
+                        let title = "Cambiar #\(booking.id) (\(bookingDay) \(bookingHour))"
+                        Button(title) {
+                            submitBookingChange(booking: booking)
+                        }
+                    }
+                }
+                Button("Cancelar", role: .cancel) { reservationFlow.dismissDialog() }
+            }
+            .confirmationDialog(
+                "Reserva",
+                isPresented: isBookingMenuPresented,
+                titleVisibility: .visible
+            ) {
+                if let booking = bookingMenuTarget {
+                    Button("Descargar evento") { downloadICS(for: booking) }
+                    Button("Cancelar reserva", role: .destructive) {
+                        bookingsViewModel.cancelUserBooking(bookingId: booking.id, currentUser: sessionViewModel.userData)
+                        refreshBookings()
+                    }
+                }
+                Button("Cerrar", role: .cancel) { bookingMenuTarget = nil }
+            }
+    }
+
+    private var calendarBaseView: some View {
         ScrollView(.vertical) {
             VStack(spacing: 14) {
                 if UITestConfig.isMockNetworkEnabled {
@@ -82,104 +171,23 @@ struct CalendarView: View {
                 monthHeader
                 weekDays
                 calendarGrid
-
-                // CORRECCIÓN APLICADA AQUÍ:
-                if bookingsViewModel.userBookings is FetchUserBookingsStateLoading {
-                    ProgressView().padding(.top, 12)
-                } else if let error = bookingsViewModel.userBookings as? FetchUserBookingsStateError {
-                    Text("Error al cargar: \(error.message)")
-                        .foregroundColor(.red)
-                } else if let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess {
-                    userBookingsSection(bookings: success.bookings)
-                }
+                bookingsSection
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
-        .onAppear {
-            if UITestConfig.isMockNetworkEnabled { return }
-            bootstrap()
-        }
-        .onChange(of: sessionViewModel.userData?.id) { _ in
-            if UITestConfig.isMockNetworkEnabled { return }
-            bootstrapUserData()
-        }
-        .onChange(of: selectedDate) { _ in
-            reservationFlow.selectDate()
-            daySessionViewModel.clearSessions()
-        }
-        .onChange(of: daySessionViewModel.bookingErrorMessage) { message in
-            isBookingErrorPresented = message != nil
-        }
-        .sheet(isPresented: isReservationPresented) {
-            reservationSheet
-                .presentationDetents([.medium, .large])
-        }
-        .alert("Aviso", isPresented: isConfirmContinuePresented) {
-            Button("No", role: .cancel) { reservationFlow.dismissDialog() }
-            Button("Sí") { reservationFlow.dialog = .reservation }
-        } message: {
-            Text("Ya tienes una reserva hoy. ¿Continuar?")
-        }
-        .alert("Confirmar reserva", isPresented: isConfirmBookingPresented) {
-            Button("Cancelar", role: .cancel) { reservationFlow.dismissDialog() }
-            Button("Reservar") { submitBooking() }
-            Button("Cambiar") { reservationFlow.dialog = .changeExisting }
-        } message: {
-            Text(confirmBookingMessage)
-        }
-        .confirmationDialog(
-            "Selecciona un profesional",
-            isPresented: isSelectCoachPresented,
-            titleVisibility: .visible
-        ) {
-            ForEach(reservationFlow.availableCoaches, id: \.coachId) { coach in
-                Button(coach.coachName) {
-                    reservationFlow.selectCoach(coach)
-                }
-            }
-            Button("Cancelar", role: .cancel) { reservationFlow.dismissDialog() }
-        }
-        .alert("Ups, algo ha fallado", isPresented: $isBookingErrorPresented) {
-            Button("Aceptar", role: .cancel) {
-                daySessionViewModel.clearBookingErrorMessage()
-            }
-        } message: {
-            Text(daySessionViewModel.bookingErrorMessage ?? "No se pudo completar la reserva.")
-        }
-        .accessibilityIdentifier("calendarView")
-        .confirmationDialog(
-            "Gestión de reserva",
-            isPresented: isChangeExistingPresented,
-            titleVisibility: .visible
-        ) {
-            if let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess {
-                ForEach(success.bookings, id: \.id) { booking in
-                    let bookingDay = String(booking.date.prefix(10))
-                    let bookingHour = String(booking.hour.prefix(5))
-                    let title = "Cambiar #\(booking.id) (\(bookingDay) \(bookingHour))"
-                    Button(title) {
-                        submitBookingChange(booking: booking)
-                    }
-                }
-            }
-            Button("Cancelar", role: .cancel) { reservationFlow.dismissDialog() }
-        }
-        .confirmationDialog(
-            "Reserva",
-            isPresented: isBookingMenuPresented,
-            titleVisibility: .visible
-        ) {
-            if let booking = bookingMenuTarget {
-                Button("Descargar evento") { downloadICS(for: booking) }
-                Button("Cancelar reserva", role: .destructive) {
-                    bookingsViewModel.cancelUserBooking(bookingId: booking.id, currentUser: sessionViewModel.userData)
-                    refreshBookings()
-                }
-            }
-            Button("Cerrar", role: .cancel) { bookingMenuTarget = nil }
+    }
+
+    @ViewBuilder
+    private var bookingsSection: some View {
+        if bookingsViewModel.userBookings is FetchUserBookingsStateLoading {
+            ProgressView()
+                .padding(.top, 12)
+        } else if let error = bookingsViewModel.userBookings as? FetchUserBookingsStateError {
+            Text("Error al cargar: \(error.message)")
+                .foregroundColor(.red)
+        } else if let success = bookingsViewModel.userBookings as? FetchUserBookingsStateSuccess {
+            userBookingsSection(bookings: success.bookings)
         }
     }
 
