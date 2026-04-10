@@ -122,7 +122,7 @@ struct CalendarView: View {
                 titleVisibility: .visible
             ) {
                 ForEach(reservationFlow.availableCoaches, id: \.coachId) { coach in
-                    Button(coach.coachName) {
+                    Button(coach.coachName ?? "Sin coach determinado") {
                         reservationFlow.selectCoach(coach)
                     }
                 }
