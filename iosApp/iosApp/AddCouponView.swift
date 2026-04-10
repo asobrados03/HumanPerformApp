@@ -75,7 +75,7 @@ struct AddCouponView: View {
                         ForEach(couponsVM.couponUiState.currentCoupons, id: \.id) { coupon in
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Código: \(coupon.code)")
-                                Text("Descuento: \(coupon.discount)\(coupon.isPercentage ? "%" : "€")")
+                                Text("Descuento: \(String(format: "%.2f", coupon.discount))\(coupon.isPercentage ? "%" : "€")")
                             }
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)

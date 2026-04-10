@@ -118,7 +118,7 @@ struct HireProductsView: View {
             .pickerStyle(.segmented)
 
             Picker("Sesiones", selection: $selectedSessions) {
-                Text("Todas").tag(Int32(0))
+                Text("Todas las sesiones").tag(Int32(0))
                 ForEach(availableSessions, id: \.self) { s in
                     Text("\(s)").tag(s)
                 }
