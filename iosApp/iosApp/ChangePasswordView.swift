@@ -74,7 +74,8 @@ struct ChangePasswordView: View {
                 showSuccess = true
             }
             if isErrorState(state) {
-                applyErrorFeedback(message: errorMessage)
+                let resolvedMessage = extractErrorMessage(from: state) ?? errorMessage
+                applyErrorFeedback(message: resolvedMessage)
             }
         }
         .onChange(of: currentPassword) { _ in
@@ -162,6 +163,44 @@ struct ChangePasswordView: View {
     private func clearError(for field: PasswordField) {
         fieldErrors[field] = nil
         globalErrorMessage = nil
+    }
+
+    private func extractErrorMessage(from state: Any) -> String? {
+        if let direct = propertyValue(named: "message", from: state) as? String {
+            let sanitized = sanitizeErrorMessage(direct)
+            if sanitized.isEmpty == false { return sanitized }
+        }
+
+        if let nested = nestedValue(from: state) {
+            if let nestedMessage = propertyValue(named: "message", from: nested) as? String {
+                let sanitized = sanitizeErrorMessage(nestedMessage)
+                if sanitized.isEmpty == false { return sanitized }
+            }
+
+            let nestedDescription = sanitizeErrorMessage(String(describing: nested))
+            if nestedDescription.isEmpty == false {
+                return nestedDescription
+            }
+        }
+
+        let stateDescription = sanitizeErrorMessage(String(describing: state))
+        return stateDescription.isEmpty ? nil : stateDescription
+    }
+
+    private func sanitizeErrorMessage(_ rawMessage: String) -> String {
+        var sanitized = rawMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if sanitized.hasPrefix("Optional(\""), sanitized.hasSuffix("\")") {
+            sanitized = String(sanitized.dropFirst(10).dropLast(2))
+        } else if sanitized.hasPrefix("Optional("), sanitized.hasSuffix(")") {
+            sanitized = String(sanitized.dropFirst(9).dropLast(1))
+        }
+
+        if sanitized.hasPrefix("Error(message="), sanitized.hasSuffix(")") {
+            sanitized = String(sanitized.dropFirst(14).dropLast(1))
+        }
+
+        return sanitized.trimmingCharacters(in: CharacterSet(charactersIn: "\"").union(.whitespacesAndNewlines))
     }
 
     private func applyErrorFeedback(message: String?) {
