@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.humanperformcenter.shared.data.model.payment.Coupon
@@ -91,11 +92,27 @@ fun ProductList(
                             }
                         }
 
-                        Text(
-                            text = String.format(Locale("es", "ES"), "%.2f€", finalPrice),
-                            fontWeight = if (isHired) FontWeight.Normal else FontWeight.Bold,
-                            color = if (isHired) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            val originalPrice = availableProduct.price ?: 0.0
+                            val hasDiscount = finalPrice < originalPrice
+
+                            if (hasDiscount) {
+                                Text(
+                                    text = String.format(Locale("es", "ES"), "%.2f€", originalPrice),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textDecoration = TextDecoration.LineThrough
+                                )
+                            }
+
+                            Text(
+                                text = String.format(Locale("es", "ES"), "%.2f€", finalPrice),
+                                fontWeight = if (isHired) FontWeight.Normal else FontWeight.Bold,
+                                color = if (isHired) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
             }
