@@ -49,7 +49,11 @@ struct MyProductsView: View {
                     .foregroundColor(.secondary)
             } else {
                 ForEach(products, id: \.id) { producto in
-                    ProductRow(producto: producto)
+                    ProductRow(
+                        producto: producto,
+                        finalPrice: producto.price?.doubleValue ?? 0,
+                        isHired: true
+                    )
                         .onTapGesture {
                             selectedProduct = producto
                             showProductOptions = true
