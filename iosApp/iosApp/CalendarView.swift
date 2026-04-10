@@ -73,6 +73,10 @@ struct CalendarView: View {
     }
 
     var body: some View {
+        bookingActionsView
+    }
+
+    private var lifecycleConfiguredView: some View {
         calendarBaseView
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .principal) { NavBarLogo() } }
@@ -91,6 +95,10 @@ struct CalendarView: View {
             .onChange(of: daySessionViewModel.bookingErrorMessage) { message in
                 isBookingErrorPresented = message != nil
             }
+    }
+
+    private var reservationDialogsView: some View {
+        lifecycleConfiguredView
             .sheet(isPresented: isReservationPresented) {
                 reservationSheet
                     .presentationDetents([.medium, .large])
@@ -120,6 +128,10 @@ struct CalendarView: View {
                 }
                 Button("Cancelar", role: .cancel) { reservationFlow.dismissDialog() }
             }
+    }
+
+    private var bookingActionsView: some View {
+        reservationDialogsView
             .alert("Ups, algo ha fallado", isPresented: $isBookingErrorPresented) {
                 Button("Aceptar", role: .cancel) {
                     daySessionViewModel.clearBookingErrorMessage()
