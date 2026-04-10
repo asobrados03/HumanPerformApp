@@ -51,6 +51,13 @@ struct CalendarView: View {
         )
     }
 
+    private var isSelectCoachPresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { reservationFlow.dialog == .selectCoach },
+            set: { if !$0 && reservationFlow.dialog == .selectCoach { reservationFlow.dismissDialog() } }
+        )
+    }
+
     private var isChangeExistingPresented: Binding<Bool> {
         Binding<Bool>(
             get: { reservationFlow.dialog == .changeExisting },
@@ -122,6 +129,18 @@ struct CalendarView: View {
             Button("Cambiar") { reservationFlow.dialog = .changeExisting }
         } message: {
             Text(confirmBookingMessage)
+        }
+        .confirmationDialog(
+            "Selecciona un profesional",
+            isPresented: isSelectCoachPresented,
+            titleVisibility: .visible
+        ) {
+            ForEach(reservationFlow.availableCoaches, id: \.coachId) { coach in
+                Button(coach.coachName) {
+                    reservationFlow.selectCoach(coach)
+                }
+            }
+            Button("Cancelar", role: .cancel) { reservationFlow.dismissDialog() }
         }
         .alert("Ups, algo ha fallado", isPresented: $isBookingErrorPresented) {
             Button("Aceptar", role: .cancel) {
@@ -328,9 +347,7 @@ struct CalendarView: View {
                 ForEach(hours, id: \.self) { hour in
                     Button(String(hour.prefix(5))) {
                         let coaches = daySessionViewModel.getAvailableCoachesForHour(hour: hour)
-                        if let coach = coaches.first {
-                            reservationFlow.selectHour(hour, coach: coach)
-                        }
+                        reservationFlow.selectHour(hour, coaches: coaches)
                     }
                     .buttonStyle(.borderedProminent)
                 }
