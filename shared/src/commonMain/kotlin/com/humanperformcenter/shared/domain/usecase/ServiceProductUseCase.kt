@@ -48,10 +48,16 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
                 ProductTypeFilter.NON_RECURRENT -> product.typeOfProduct != "recurrent"
                 ProductTypeFilter.ALL -> true
             }
-            val sessionMatches = if (sessionCount == 0) true else product.session == sessionCount
+            val productSessions = effectiveSessionCount(product)
+            val sessionMatches = if (sessionCount == 0) true else productSessions == sessionCount
             typeMatches && sessionMatches
         }
     }
+
+    fun availableSessionCounts(list: List<Product>): List<Int> =
+        list.mapNotNull { effectiveSessionCount(it) }
+            .distinct()
+            .sorted()
 
     fun calculateDiscountedPrice(productId: Int, originalPrice: Double, coupons: List<Coupon>)
     : Double {
@@ -60,5 +66,10 @@ class ServiceProductUseCase(private val serviceProductRepository: ServiceProduct
             .map { if (it.isPercentage) originalPrice * it.discount / 100 else it.discount }
         val highestDiscount = availableDiscounts.maxOrNull() ?: 0.0
         return (originalPrice - highestDiscount).coerceAtLeast(0.0)
+    }
+
+    private fun effectiveSessionCount(product: Product): Int? {
+        if (product.typeOfProduct == "single_session") return 1
+        return product.session
     }
 }

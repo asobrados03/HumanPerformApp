@@ -332,6 +332,10 @@ class ServiceProductViewModel(
         return serviceProductUseCase.filterProducts(list, filter, sessionCount)
     }
 
+    fun availableSessionCounts(list: List<Product>): List<Int> {
+        return serviceProductUseCase.availableSessionCounts(list)
+    }
+
     fun calculateDiscountedPrice(productId: Int, originalPrice: Double, coupons: List<Coupon>)
             : Double {
         return serviceProductUseCase.calculateDiscountedPrice(productId, originalPrice, coupons)

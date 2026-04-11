@@ -42,14 +42,14 @@ struct HireProductsView: View {
                 typeOk = true
             }
 
-            let sessionOk = selectedSessions == 0 || product.session?.int32Value == selectedSessions
+            let sessionOk = selectedSessions == 0 || effectiveSessionCount(for: product) == selectedSessions
             return typeOk && sessionOk
         }
     }
 
     private var availableSessions: [Int32] {
         let services = serviceProductViewModel.serviceProductsStateServices(serviceId: Int32(serviceId))
-        return Array(Set(services.compactMap { $0.session?.int32Value })).sorted()
+        return Array(Set(services.compactMap { effectiveSessionCount(for: $0) })).sorted()
     }
 
     var body: some View {
@@ -134,5 +134,12 @@ struct HireProductsView: View {
             originalPrice: product.price?.doubleValue ?? 0,
             coupons: userCoupons
         )
+    }
+
+    private func effectiveSessionCount(for product: Product) -> Int32? {
+        if product.typeOfProduct == "single_session" {
+            return 1
+        }
+        return product.session?.int32Value
     }
 }
