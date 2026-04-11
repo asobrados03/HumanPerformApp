@@ -21,6 +21,8 @@ internal fun <T> Result<T>.mapDomainError(category: ErrorCategory = ErrorCategor
 }
 
 private fun Throwable.toDomainException(category: ErrorCategory): DomainException {
+    if (this is DomainException) return this
+
     val statusCode = extractHttpStatusCode()
     if (statusCode != null) {
         return statusToDomainError(statusCode, category, this)
