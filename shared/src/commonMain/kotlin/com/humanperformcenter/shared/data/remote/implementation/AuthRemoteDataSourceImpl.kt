@@ -8,6 +8,7 @@ import com.humanperformcenter.shared.data.model.auth.RegisterResponse
 import com.humanperformcenter.shared.data.model.auth.ResetPasswordRequest
 import com.humanperformcenter.shared.data.network.HttpClientProvider
 import com.humanperformcenter.shared.data.remote.AuthRemoteDataSource
+import com.humanperformcenter.shared.domain.DomainException
 import io.ktor.client.call.body
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.bearerAuth
@@ -17,6 +18,8 @@ import io.ktor.client.request.forms.formData
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
@@ -36,7 +39,9 @@ class AuthRemoteDataSourceImpl(
             expectSuccess = false
         }
 
-        check(response.status == HttpStatusCode.OK) { "HTTP ${response.status.value}" }
+        if (response.status != HttpStatusCode.OK) {
+            throw DomainException.BadRequest(response.errorMessageOrFallback())
+        }
         response.body<LoginResponse>()
     }
 
@@ -109,7 +114,9 @@ class AuthRemoteDataSourceImpl(
             setBody(ResetPasswordRequest(email))
             expectSuccess = false
         }
-        check(response.status == HttpStatusCode.OK) { "HTTP ${response.status.value}" }
+        if (response.status != HttpStatusCode.OK) {
+            throw DomainException.BadRequest(response.errorMessageOrFallback())
+        }
     }
 
     override suspend fun changePassword(
@@ -124,7 +131,9 @@ class AuthRemoteDataSourceImpl(
             setBody(ChangePasswordRequest(currentPassword, newPassword, userId))
             expectSuccess = false
         }
-        check(response.status == HttpStatusCode.OK) { "HTTP ${response.status.value}" }
+        if (response.status != HttpStatusCode.OK) {
+            throw DomainException.BadRequest(response.errorMessageOrFallback())
+        }
     }
 
     override suspend fun logout(): Result<Unit> = runCatching {
@@ -138,5 +147,26 @@ class AuthRemoteDataSourceImpl(
         check(response.status.value in 200..299 || response.status == HttpStatusCode.Unauthorized) {
             "HTTP ${response.status.value}"
         }
+    }
+
+    private suspend fun HttpResponse.errorMessageOrFallback(): String {
+        val body = bodyAsText().trim()
+        if (body.isBlank()) return "HTTP ${status.value}"
+
+        val jsonMessage = Regex("\"message\"\\s*:\\s*\"([^\"]+)\"").find(body)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.trim()
+            .orEmpty()
+        if (jsonMessage.isNotBlank()) return jsonMessage
+
+        val jsonError = Regex("\"error\"\\s*:\\s*\"([^\"]+)\"").find(body)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.trim()
+            .orEmpty()
+        if (jsonError.isNotBlank()) return jsonError
+
+        return body.removeSurrounding("\"").trim().ifBlank { "HTTP ${status.value}" }
     }
 }

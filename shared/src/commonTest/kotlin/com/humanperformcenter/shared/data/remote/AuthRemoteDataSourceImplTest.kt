@@ -7,6 +7,7 @@ import com.humanperformcenter.shared.data.model.auth.RegisterResponse
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.network.HttpClientProvider
 import com.humanperformcenter.shared.data.remote.implementation.AuthRemoteDataSourceImpl
+import com.humanperformcenter.shared.domain.DomainException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -98,8 +99,8 @@ class AuthRemoteDataSourceImplTest {
         val result = dataSource.login(email = "ana@test.com", password = "bad-secret")
 
         assertTrue(result.isFailure)
-        assertIs<IllegalStateException>(result.exceptionOrNull())
-        assertEquals(result.exceptionOrNull()?.message?.contains("HTTP 401"), true)
+        assertIs<DomainException.BadRequest>(result.exceptionOrNull())
+        assertEquals("Unauthorized", result.exceptionOrNull()?.message)
     }
 
     @Test
