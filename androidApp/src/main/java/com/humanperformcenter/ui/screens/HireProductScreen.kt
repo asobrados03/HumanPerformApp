@@ -63,7 +63,7 @@ fun HireProductScreen(
         }
     }
     val availableSessions = remember(serviceList) {
-        serviceList.mapNotNull { it.session }.distinct().sorted()
+        serviceProductViewModel.availableSessionCounts(serviceList)
     }
 
     // --- UI State Local ---

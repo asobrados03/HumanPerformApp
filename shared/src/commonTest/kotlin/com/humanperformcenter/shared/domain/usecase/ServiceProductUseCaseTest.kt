@@ -81,6 +81,36 @@ class ServiceProductUseCaseTest : KoinTest {
     }
 
     @Test
+    fun filterProducts_whenProductIsSingleSession_allowsFilteringByOneSession() {
+        val useCase = buildUseCase(FakeRepo())
+        val singleSession = Product(1, "Sesión individual", typeOfProduct = "single_session", session = null)
+        val multiSession = Product(2, "Bono 8", typeOfProduct = "multi_sessions", session = 8)
+
+        val result = useCase.filterProducts(
+            listOf(singleSession, multiSession),
+            filter = ProductTypeFilter.ALL,
+            sessionCount = 1
+        )
+
+        assertEquals(listOf(singleSession), result)
+    }
+
+    @Test
+    fun availableSessionCounts_whenListHasMixedProducts_returnsEffectiveSortedDistinctCounts() {
+        val useCase = buildUseCase(FakeRepo())
+        val products = listOf(
+            Product(1, "Sesión individual", typeOfProduct = "single_session", session = null),
+            Product(2, "Bono 4", typeOfProduct = "multi_sessions", session = 4),
+            Product(3, "Plan mensual", typeOfProduct = "recurrent", session = 12),
+            Product(4, "Sin sesiones", typeOfProduct = "other", session = null),
+        )
+
+        val result = useCase.availableSessionCounts(products)
+
+        assertEquals(listOf(1, 4, 12), result)
+    }
+
+    @Test
     fun calculateDiscountedPrice_whenDiscountExceedsPrice_returnsZero() {
         val useCase = buildUseCase(FakeRepo())
         val coupons = listOf(Coupon(1, "BIG", 500.0, false, LocalDate.parse("2026-12-31"), listOf(3)))
