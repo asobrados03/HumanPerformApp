@@ -5,6 +5,7 @@ import com.humanperformcenter.shared.data.persistence.UserDocumentsRepositoryImp
 import com.humanperformcenter.shared.data.persistence.UserProfileRepositoryImpl
 import com.humanperformcenter.shared.data.remote.implementation.UserDocumentsRemoteDataSourceImpl
 import com.humanperformcenter.shared.data.remote.implementation.UserProfileRemoteDataSourceImpl
+import com.humanperformcenter.shared.domain.DomainException
 import com.humanperformcenter.shared.domain.usecase.UserDocumentUseCase
 import com.humanperformcenter.shared.domain.usecase.UserProfileUseCase
 import integration.InMemoryUserProfileLocalDataSource
@@ -18,6 +19,7 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class ProfileAndDocumentsFlowIntegrationTest {
@@ -109,5 +111,73 @@ class ProfileAndDocumentsFlowIntegrationTest {
         assertEquals("Ana Integracion Updated", profileLocal.savedUser?.fullName)
         assertTrue(upload.isSuccess)
         assertEquals("uploaded", upload.getOrThrow())
+    }
+
+    @Test
+    fun update_profile_with_server_error_maps_to_domain_server_and_does_not_persist_local_user() = runTest {
+        val profileLocal = InMemoryUserProfileLocalDataSource()
+        val apiEngine = MockEngine { request ->
+            when (request.method) {
+                HttpMethod.Put if request.url.encodedPath == "/mobile/user" -> respond(
+                    """{"error":"upstream failure"}""",
+                    HttpStatusCode.InternalServerError,
+                    headersOf("Content-Type", ContentType.Application.Json.toString()),
+                )
+                else -> error("Unhandled api endpoint: ${request.method} ${request.url}")
+            }
+        }
+
+        val provider = integrationProvider(apiEngine = apiEngine)
+        val profileUseCase = UserProfileUseCase(
+            UserProfileRepositoryImpl(UserProfileRemoteDataSourceImpl(provider), profileLocal),
+        )
+
+        val updateResult = profileUseCase.updateUser(
+            user = User(
+                id = 22,
+                fullName = "Ana Integracion Updated",
+                email = "ana@integration.test",
+                phone = "600000001",
+                sex = "F",
+                dateOfBirth = "1991-01-01",
+                postcode = 28001,
+                postAddress = "Calle Test 99",
+                dni = "12345678A",
+                profilePictureName = "ana_updated.jpg",
+            ),
+            profilePicBytes = null,
+        )
+
+        assertTrue(updateResult.isFailure)
+        assertIs<DomainException.Server>(updateResult.exceptionOrNull())
+        assertEquals(null, profileLocal.savedUser)
+    }
+
+    @Test
+    fun upload_document_with_malformed_payload_maps_to_parsing_error() = runTest {
+        val apiEngine = MockEngine { request ->
+            when (request.method) {
+                HttpMethod.Post if request.url.encodedPath == "/mobile/users/22/documents" -> respond(
+                    """{"status":"ok-no-message-field"}""",
+                    HttpStatusCode.OK,
+                    headersOf("Content-Type", ContentType.Application.Json.toString()),
+                )
+                else -> error("Unhandled api endpoint: ${request.method} ${request.url}")
+            }
+        }
+
+        val provider = integrationProvider(apiEngine = apiEngine)
+        val documentUseCase = UserDocumentUseCase(
+            UserDocumentsRepositoryImpl(UserDocumentsRemoteDataSourceImpl(provider)),
+        )
+
+        val uploadResult = documentUseCase.uploadDocument(
+            userId = 22,
+            name = "medical-report.pdf",
+            data = byteArrayOf(9, 9, 9),
+        )
+
+        assertTrue(uploadResult.isFailure)
+        assertIs<DomainException.Parsing>(uploadResult.exceptionOrNull())
     }
 }

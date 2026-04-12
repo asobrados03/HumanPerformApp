@@ -3,6 +3,7 @@ package com.humanperformcenter.shared.integration
 import com.humanperformcenter.shared.data.model.payment.CreatePaymentIntentRequest
 import com.humanperformcenter.shared.data.persistence.StripeRepositoryImpl
 import com.humanperformcenter.shared.data.remote.implementation.StripeRemoteDataSourceImpl
+import com.humanperformcenter.shared.domain.DomainException
 import com.humanperformcenter.shared.domain.usecase.StripeUseCase
 import integration.integrationProvider
 import io.ktor.client.engine.mock.MockEngine
@@ -14,6 +15,7 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class StripeFlowIntegrationTest {
@@ -89,5 +91,58 @@ class StripeFlowIntegrationTest {
         assertTrue(refund.isSuccess)
         assertTrue(subscription.isSuccess)
         assertEquals("sub_777", subscription.getOrThrow().subscriptionId)
+    }
+
+    @Test
+    fun create_payment_intent_with_server_error_maps_to_domain_server_error() = runTest {
+        val apiEngine = MockEngine { request ->
+            when (request.method) {
+                HttpMethod.Post if request.url.encodedPath == "/stripe/payment-intents" -> respond(
+                    """{"error":"stripe unavailable"}""",
+                    HttpStatusCode.InternalServerError,
+                    headersOf("Content-Type", ContentType.Application.Json.toString()),
+                )
+                else -> error("Unhandled api endpoint: ${request.method} ${request.url}")
+            }
+        }
+
+        val useCase = StripeUseCase(
+            StripeRepositoryImpl(StripeRemoteDataSourceImpl(integrationProvider(apiEngine = apiEngine))),
+        )
+
+        val result = useCase.createPaymentIntent(
+            CreatePaymentIntentRequest(
+                amount = 19.99,
+                currency = "eur",
+                customerId = "cus_123",
+                paymentMethodId = "pm_123",
+            ),
+        )
+
+        assertTrue(result.isFailure)
+        assertIs<DomainException.Server>(result.exceptionOrNull())
+    }
+
+    @Test
+    fun create_setup_config_with_malformed_payload_maps_to_parsing_error() = runTest {
+        val apiEngine = MockEngine { request ->
+            when (request.method) {
+                HttpMethod.Post if request.url.encodedPath == "/stripe/payments/setup-config" -> respond(
+                    """{"success":true,"data":{"customer_id":12345,"setup_intent_client_secret":false}}""",
+                    HttpStatusCode.OK,
+                    headersOf("Content-Type", ContentType.Application.Json.toString()),
+                )
+                else -> error("Unhandled api endpoint: ${request.method} ${request.url}")
+            }
+        }
+
+        val useCase = StripeUseCase(
+            StripeRepositoryImpl(StripeRemoteDataSourceImpl(integrationProvider(apiEngine = apiEngine))),
+        )
+
+        val result = useCase.createSetupConfig(userId = 22)
+
+        assertTrue(result.isFailure)
+        assertIs<DomainException.Parsing>(result.exceptionOrNull())
     }
 }

@@ -4,6 +4,7 @@ import com.humanperformcenter.shared.data.model.booking.BookingRequest
 import com.humanperformcenter.shared.data.model.booking.ReserveUpdateRequest
 import com.humanperformcenter.shared.data.persistence.DaySessionRepositoryImpl
 import com.humanperformcenter.shared.data.remote.implementation.DaySessionRemoteDataSourceImpl
+import com.humanperformcenter.shared.domain.DomainException
 import com.humanperformcenter.shared.domain.usecase.DaySessionUseCase
 import integration.integrationProvider
 import io.ktor.client.engine.mock.MockEngine
@@ -16,6 +17,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class BookingFlowIntegrationTest {
@@ -84,5 +86,51 @@ class BookingFlowIntegrationTest {
         assertEquals("updated", modify.getOrThrow().message)
         assertTrue(holidays.isSuccess)
         assertEquals(listOf("2026-04-03", "2026-05-01"), holidays.getOrThrow())
+    }
+
+    @Test
+    fun get_sessions_by_day_with_server_error_maps_to_domain_server_error() = runTest {
+        val apiEngine = MockEngine { request ->
+            when (request.method) {
+                HttpMethod.Get if request.url.encodedPath == "/mobile/daily" -> respond(
+                    """{"error":"down"}""",
+                    HttpStatusCode.InternalServerError,
+                    headersOf("Content-Type", ContentType.Application.Json.toString()),
+                )
+                else -> error("Unhandled api endpoint: ${request.method} ${request.url}")
+            }
+        }
+
+        val useCase = DaySessionUseCase(
+            DaySessionRepositoryImpl(DaySessionRemoteDataSourceImpl(integrationProvider(apiEngine = apiEngine))),
+        )
+
+        val result = useCase.getSessionsByDay(productId = 31, date = LocalDate.parse("2026-03-31"))
+
+        assertTrue(result.isFailure)
+        assertIs<DomainException.Server>(result.exceptionOrNull())
+    }
+
+    @Test
+    fun get_holidays_with_malformed_payload_maps_to_parsing_error() = runTest {
+        val apiEngine = MockEngine { request ->
+            when (request.method) {
+                HttpMethod.Get if request.url.encodedPath == "/mobile/holidays" -> respond(
+                    """{"holidays":"not-an-array"}""",
+                    HttpStatusCode.OK,
+                    headersOf("Content-Type", ContentType.Application.Json.toString()),
+                )
+                else -> error("Unhandled api endpoint: ${request.method} ${request.url}")
+            }
+        }
+
+        val useCase = DaySessionUseCase(
+            DaySessionRepositoryImpl(DaySessionRemoteDataSourceImpl(integrationProvider(apiEngine = apiEngine))),
+        )
+
+        val result = useCase.getHolidays()
+
+        assertTrue(result.isFailure)
+        assertIs<DomainException.Parsing>(result.exceptionOrNull())
     }
 }
