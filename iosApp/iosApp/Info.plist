@@ -33,6 +33,10 @@
 			</array>
 		</dict>
 	</array>
+	<key>StripeApplePayMerchantCountryCode</key>
+	<string>ES</string>
+	<key>StripeApplePayMerchantIdentifier</key>
+	<string>merchant.com.humanperformcenter.app</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -170,6 +170,9 @@ struct PaymentMethodsView: View {
             config.merchantDisplayName = sheetData.merchantDisplayName
             config.customer = .init(id: sheetData.customerId, ephemeralKeySecret: sheetData.ephemeralKeySecret)
             config.allowsDelayedPaymentMethods = false
+            if let applePayConfig = stripeApplePayConfig() {
+                config.applePay = applePayConfig
+            }
 
             paymentSheet = PaymentSheet(
                 setupIntentClientSecret: sheetData.setupIntentClientSecret,
@@ -207,6 +210,26 @@ struct PaymentMethodsView: View {
         default:
             break
         }
+    }
+
+    private func stripeApplePayConfig() -> PaymentSheet.ApplePayConfiguration? {
+        guard
+            let merchantId = Bundle.main.object(
+                forInfoDictionaryKey: "StripeApplePayMerchantIdentifier"
+            ) as? String,
+            let countryCode = Bundle.main.object(
+                forInfoDictionaryKey: "StripeApplePayMerchantCountryCode"
+            ) as? String,
+            !merchantId.isEmpty,
+            !countryCode.isEmpty
+        else {
+            return nil
+        }
+
+        return PaymentSheet.ApplePayConfiguration(
+            merchantId: merchantId,
+            merchantCountryCode: countryCode
+        )
     }
 }
 

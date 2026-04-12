@@ -383,6 +383,9 @@ struct StripeCheckoutView: View {
         paymentConfig.returnURL = "humanperform://stripe-redirect"
         paymentConfig.merchantDisplayName = config.merchantDisplayName
         paymentConfig.allowsDelayedPaymentMethods = config.allowsDelayedPaymentMethods
+        if let applePayConfig = stripeApplePayConfig() {
+            paymentConfig.applePay = applePayConfig
+        }
         if let customerId = config.customerId,
            let ephemeral = config.customerEphemeralKeySecret {
             paymentConfig.customer = .init(id: customerId, ephemeralKeySecret: ephemeral)
@@ -411,6 +414,26 @@ struct StripeCheckoutView: View {
             stripeViewModel.onSheetPresented()
             isPresentingPaymentSheet = true
         }
+    }
+
+    private func stripeApplePayConfig() -> PaymentSheet.ApplePayConfiguration? {
+        guard
+            let merchantId = Bundle.main.object(
+                forInfoDictionaryKey: "StripeApplePayMerchantIdentifier"
+            ) as? String,
+            let countryCode = Bundle.main.object(
+                forInfoDictionaryKey: "StripeApplePayMerchantCountryCode"
+            ) as? String,
+            !merchantId.isEmpty,
+            !countryCode.isEmpty
+        else {
+            return nil
+        }
+
+        return PaymentSheet.ApplePayConfiguration(
+            merchantId: merchantId,
+            merchantCountryCode: countryCode
+        )
     }
 }
 
