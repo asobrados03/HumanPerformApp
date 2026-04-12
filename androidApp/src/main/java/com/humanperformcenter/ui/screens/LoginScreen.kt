@@ -131,13 +131,19 @@ fun LoginScreen(
             // Estado de login: Loading, Error o Success
             when (loginState) {
                 is LoginState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .testTag("login_loading_indicator")
+                    )
                 }
                 is LoginState.Error -> {
                     Text(
                         text = (loginState as LoginState.Error).message,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        modifier = Modifier
+                            .padding(vertical = 8.dp)
+                            .testTag("login_error_message")
                     )
                 }
                 is LoginState.Success -> {
@@ -168,6 +174,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .padding(top = 12.dp)
                     .fillMaxWidth(0.6f)
+                    .testTag("login_submit_cta")
             ) {
                 Text("Iniciar sesión")
             }

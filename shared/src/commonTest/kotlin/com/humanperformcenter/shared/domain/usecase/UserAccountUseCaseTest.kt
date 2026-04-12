@@ -2,19 +2,10 @@ package com.humanperformcenter.shared.domain.usecase
 
 import com.humanperformcenter.shared.domain.repository.UserAccountRepository
 import kotlinx.coroutines.test.runTest
-import org.koin.core.context.startKoin
-import org.koin.dsl.module
-import org.koin.mp.KoinPlatform
-import org.koin.mp.KoinPlatform.stopKoin
-import org.koin.test.KoinTest
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-class UserAccountUseCaseTest : KoinTest {
-
-    @AfterTest
-    fun tearDown() = stopKoin()
+class UserAccountUseCaseTest {
 
     @Test
     fun deleteUser_whenEmailIsValid_returnsSuccess() = runTest {
@@ -41,8 +32,7 @@ class UserAccountUseCaseTest : KoinTest {
     }
 
     private fun buildUseCase(repo: UserAccountRepository): UserAccountUseCase {
-        startKoin { modules(module { single<UserAccountRepository> { repo }; single { UserAccountUseCase(get()) } }) }
-        return KoinPlatform.getKoin().get()
+        return UserAccountUseCase(repo)
     }
 
     private class FakeRepo(private val result: Result<Unit>) : UserAccountRepository {
