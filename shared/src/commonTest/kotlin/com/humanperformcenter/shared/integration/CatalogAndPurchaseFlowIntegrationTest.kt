@@ -2,6 +2,7 @@ package com.humanperformcenter.shared.integration
 
 import com.humanperformcenter.shared.data.persistence.ServiceProductRepositoryImpl
 import com.humanperformcenter.shared.data.remote.implementation.ServiceProductRemoteDataSourceImpl
+import com.humanperformcenter.shared.domain.DomainException
 import com.humanperformcenter.shared.domain.usecase.ServiceProductUseCase
 import integration.integrationProvider
 import io.ktor.client.engine.mock.MockEngine
@@ -13,6 +14,7 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class CatalogAndPurchaseFlowIntegrationTest {
@@ -62,5 +64,51 @@ class CatalogAndPurchaseFlowIntegrationTest {
         assertTrue(assign.isSuccess)
         assertEquals(9001, assign.getOrThrow())
         assertTrue(unassign.isSuccess)
+    }
+
+    @Test
+    fun get_services_with_server_error_maps_to_domain_server_error() = runTest {
+        val apiEngine = MockEngine { request ->
+            when (request.method) {
+                HttpMethod.Get if request.url.encodedPath == "/mobile/services" -> respond(
+                    """{"error":"services unavailable"}""",
+                    HttpStatusCode.InternalServerError,
+                    headersOf("Content-Type", ContentType.Application.Json.toString()),
+                )
+                else -> error("Unhandled api endpoint: ${request.method} ${request.url}")
+            }
+        }
+
+        val useCase = ServiceProductUseCase(
+            ServiceProductRepositoryImpl(ServiceProductRemoteDataSourceImpl(integrationProvider(apiEngine = apiEngine))),
+        )
+
+        val result = useCase.getAllServices()
+
+        assertTrue(result.isFailure)
+        assertIs<DomainException.Server>(result.exceptionOrNull())
+    }
+
+    @Test
+    fun get_service_products_with_malformed_payload_maps_to_parsing_error() = runTest {
+        val apiEngine = MockEngine { request ->
+            when (request.method) {
+                HttpMethod.Get if request.url.encodedPath == "/mobile/service-products" -> respond(
+                    """[{"id":"wrong","name":"Pack 8","service_ids":[1],"is_available":true}]""",
+                    HttpStatusCode.OK,
+                    headersOf("Content-Type", ContentType.Application.Json.toString()),
+                )
+                else -> error("Unhandled api endpoint: ${request.method} ${request.url}")
+            }
+        }
+
+        val useCase = ServiceProductUseCase(
+            ServiceProductRepositoryImpl(ServiceProductRemoteDataSourceImpl(integrationProvider(apiEngine = apiEngine))),
+        )
+
+        val result = useCase.getServiceProducts(serviceId = 1, userId = 22)
+
+        assertTrue(result.isFailure)
+        assertIs<DomainException.Parsing>(result.exceptionOrNull())
     }
 }

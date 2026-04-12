@@ -37,6 +37,7 @@ class AuthViewModel(
     val isResettingPassword: StateFlow<ResetPasswordState> = _isResettingPassword.asStateFlow()
 
     fun login(email: String, password: String) {
+        if (_loginState.value is LoginState.Loading) return
         _loginState.value = LoginState.Loading
 
         viewModelScope.launch {

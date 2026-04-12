@@ -184,6 +184,19 @@ class AuthViewModelTest : KoinTest {
     }
 
     @Test
+    fun login_when_called_twice_while_loading_calls_repository_only_once() = runTest {
+        val repository = FakeAuthRepository()
+        val viewModel = buildViewModel(repository)
+
+        viewModel.login("mail@test.com", "secret")
+        viewModel.login("mail@test.com", "secret")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, repository.loginCallCount)
+        assertTrue(viewModel.loginState.value is LoginState.Success)
+    }
+
+    @Test
     fun resetStates_after_login_success_restores_loginstate_to_idle() = runTest {
         // Arrange
         val viewModel = buildViewModel()

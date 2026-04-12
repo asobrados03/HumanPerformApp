@@ -10,21 +10,12 @@ import com.humanperformcenter.shared.domain.usecase.validation.ChangePasswordExc
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import org.koin.core.context.startKoin
-import org.koin.dsl.module
-import org.koin.mp.KoinPlatform
-import org.koin.mp.KoinPlatform.stopKoin
-import org.koin.test.KoinTest
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-class AuthUseCaseTest : KoinTest {
-
-    @AfterTest
-    fun tearDown() = stopKoin()
+class AuthUseCaseTest {
 
     @Test
     fun login_whenCredentialsAreValid_returnsLoginResponse() = runTest {
@@ -86,14 +77,7 @@ class AuthUseCaseTest : KoinTest {
     }
 
     private fun buildUseCase(repo: AuthRepository, local: AuthLocalDataSource): AuthUseCase {
-        startKoin {
-            modules(module {
-                single<AuthRepository> { repo }
-                single<AuthLocalDataSource> { local }
-                single { AuthUseCase(get(), get()) }
-            })
-        }
-        return KoinPlatform.getKoin().get()
+        return AuthUseCase(repo, local)
     }
 
     private fun sampleRequest() = RegisterRequest(
