@@ -120,7 +120,11 @@ struct HireProductsView: View {
             Picker("Sesiones", selection: $selectedSessions) {
                 Text("Todas las sesiones").tag(Int32(0))
                 ForEach(availableSessions, id: \.self) { s in
-                    Text("\(s)").tag(s)
+                    if s == 1 {
+                        Text("\(s) sesión").tag(s)
+                    } else {
+                        Text("\(s) sesiones").tag(s)
+                    }
                 }
             }
             .pickerStyle(.menu)
