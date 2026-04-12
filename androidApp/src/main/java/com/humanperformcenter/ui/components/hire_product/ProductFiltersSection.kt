@@ -17,7 +17,7 @@ fun ProductFiltersSection(
     onFilterChange: (ProductTypeFilter) -> Unit,
     selectedSessionCount: Int,
     onSessionChange: (Int) -> Unit,
-    sesionesDisponibles: List<Int>
+    availableSessions: List<Int>
 ) {
     Row(
         modifier = Modifier
@@ -39,18 +39,24 @@ fun ProductFiltersSection(
         }
 
         // Dropdown Sesiones
+        val sessionLabel = when (selectedSessionCount) {
+            0 -> "Todas las sesiones"
+            1 -> "1 sesión"
+            else -> "$selectedSessionCount sesiones"
+        }
+
         CustomDropdown(
-            label = if (selectedSessionCount == 0) "Todas las sesiones" else "$selectedSessionCount sesiones",
+            label = sessionLabel,
             modifier = Modifier.weight(1f)
         ) { closeMenu ->
             DropdownMenuItem(
-                text = { Text("Todas") },
+                text = { Text("Todas las sesiones") },
                 onClick = { onSessionChange(0); closeMenu() }
             )
-            sesionesDisponibles.forEach { sesion ->
+            availableSessions.forEach { session ->
                 DropdownMenuItem(
-                    text = { Text("$sesion sesiones") },
-                    onClick = { onSessionChange(sesion); closeMenu() }
+                    text = { Text(if (session == 1) "1 sesión" else "$session sesiones") },
+                    onClick = { onSessionChange(session); closeMenu() }
                 )
             }
         }

@@ -30,7 +30,7 @@ import java.util.Locale
 fun ProductList(
     modifier: Modifier = Modifier,
     availableProducts: List<Product>,
-    idsContratados: Set<Int>,
+    hiredIds: Set<Int>,
     userCoupons: List<Coupon>,
     onProductClick: (Product) -> Unit,
     serviceProductViewModel: ServiceProductViewModel,
@@ -50,7 +50,7 @@ fun ProductList(
                 items = availableProducts,
                 key = { it.id }
             ) { availableProduct ->
-                val isHired = idsContratados.contains(availableProduct.id)
+                val isHired = hiredIds.contains(availableProduct.id)
 
                 // Calculamos el precio aquí para usarlo en la tarjeta
                 val finalPrice = remember(availableProduct, userCoupons) {
@@ -100,7 +100,8 @@ fun ProductList(
 
                             if (hasDiscount) {
                                 Text(
-                                    text = String.format(Locale("es", "ES"), "%.2f€", originalPrice),
+                                    text = String.format(Locale.forLanguageTag("es-ES"),
+                                        "%.2f€", originalPrice),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textDecoration = TextDecoration.LineThrough
@@ -108,9 +109,11 @@ fun ProductList(
                             }
 
                             Text(
-                                text = String.format(Locale("es", "ES"), "%.2f€", finalPrice),
+                                text = String.format(Locale.forLanguageTag("es-ES"),
+                                    "%.2f€", finalPrice),
                                 fontWeight = if (isHired) FontWeight.Normal else FontWeight.Bold,
-                                color = if (isHired) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
+                                color = if (isHired) MaterialTheme.colorScheme.onSurfaceVariant
+                                else MaterialTheme.colorScheme.error
                             )
                         }
                     }

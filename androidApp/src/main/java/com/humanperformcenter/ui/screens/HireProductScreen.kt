@@ -111,7 +111,7 @@ fun HireProductScreen(
                     onFilterChange = { selectedFilter = it },
                     selectedSessionCount = selectedSessionCount,
                     onSessionChange = { selectedSessionCount = it },
-                    sesionesDisponibles = availableSessions
+                    availableSessions = availableSessions
                 )
             }
         }
@@ -132,7 +132,7 @@ fun HireProductScreen(
                 ProductList(
                     modifier = Modifier.padding(padding),
                     availableProducts = filteredProducts,
-                    idsContratados = hiredIds,
+                    hiredIds = hiredIds,
                     userCoupons = userCoupons,
                     onProductClick = { product ->
                         navController.navigate(ProductDetail(productId = product.id))
