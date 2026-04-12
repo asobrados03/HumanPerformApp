@@ -19,7 +19,15 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-class MockHttpClientProvider : HttpClientProvider {
+class MockHttpClientProvider(
+    private val scenario: Scenario = Scenario.HappyPath,
+) : HttpClientProvider {
+
+    enum class Scenario {
+        HappyPath,
+        LoginServerError,
+        SessionExpiredOnProducts,
+    }
 
     override val baseUrl: String = "https://mock.api"
 
@@ -39,29 +47,33 @@ class MockHttpClientProvider : HttpClientProvider {
         }
     }
 
-    private fun respondFor(
-        scope: MockRequestHandleScope,
-        request: HttpRequestData
-    ) = when {
+    private data class Route(
+        val matches: (HttpRequestData) -> Boolean,
+        val response: MockRequestHandleScope.(HttpRequestData) -> Any,
+    )
 
-        // 🔐 LOGIN
-        request.url.encodedPath.endsWith("/mobile/sessions") -> {
+    private val routes = listOf(
+        Route(
+            matches = { it.url.encodedPath.endsWith("/mobile/sessions") },
+            response = { request ->
+                if (scenario == Scenario.LoginServerError) {
+                    json(this, """{"message":"server-down"}""", HttpStatusCode.InternalServerError)
+                } else {
+                    val bodyText = (request.body as? TextContent)?.text ?: ""
 
-            val bodyText = (request.body as? TextContent)?.text ?: ""
+                    val (email, password) = try {
+                        val json = jsonParser.parseToJsonElement(bodyText).jsonObject
+                        val email = json["email"]?.jsonPrimitive?.content
+                        val password = json["password"]?.jsonPrimitive?.content
+                        email to password
+                    } catch (_: Exception) {
+                        null to null
+                    }
 
-            val (email, password) = try {
-                val json = jsonParser.parseToJsonElement(bodyText).jsonObject
-                val email = json["email"]?.jsonPrimitive?.content
-                val password = json["password"]?.jsonPrimitive?.content
-                email to password
-            } catch (_: Exception) {
-                null to null
-            }
-
-            if (email == "valid@humanperform.com" && password == "12345678Aa") {
-                json(
-                    scope,
-                    """{
+                    if (email == "valid@humanperform.com" && password == "12345678Aa") {
+                        json(
+                            this,
+                            """{
                         "id":1,
                         "fullName":"Test User",
                         "email":"valid@humanperform.com",
@@ -75,22 +87,23 @@ class MockHttpClientProvider : HttpClientProvider {
                         "accessToken":"token",
                         "refreshToken":"refresh"
                     }"""
-                )
-            } else {
-                json(scope, "{}", HttpStatusCode.BadRequest)
+                        )
+                    } else {
+                        json(this, "{}", HttpStatusCode.BadRequest)
+                    }
+                }
             }
-        }
-
-        // 📦 SERVICES
-        request.url.encodedPath.endsWith("/mobile/services") -> {
-            json(scope, """[{"id":1,"name":"Services","image":null}]""")
-        }
-
-        // 🛒 SERVICE PRODUCTS
-        request.url.encodedPath.endsWith("/mobile/service-products") -> {
-            json(
-                scope,
-                """[{
+        ),
+        Route(
+            matches = { it.url.encodedPath.endsWith("/mobile/services") },
+            response = { _ -> json(this, """[{"id":1,"name":"Services","image":null}]""") },
+        ),
+        Route(
+            matches = { it.url.encodedPath.endsWith("/mobile/service-products") },
+            response = { _ ->
+                json(
+                    this,
+                    """[{
                     "id":100,
                     "name":"Pack 8 sesiones",
                     "description":"Desc",
@@ -102,22 +115,30 @@ class MockHttpClientProvider : HttpClientProvider {
                     "service_ids":[1],
                     "isAvailable":true
                 }]"""
-            )
-        }
-
-        // 👤 USER PRODUCTS
-        request.url.encodedPath.endsWith("/mobile/users/1/products") ->
-            json(scope, "[]")
-
-        // 🎟️ USER COUPONS
-        request.url.encodedPath.endsWith("/mobile/users/1/coupons") ->
-            json(scope, "[]")
-
-        // 📄 PRODUCT DETAIL
-        request.url.encodedPath.endsWith("/mobile/products/100") -> {
-            json(
-                scope,
-                """{
+                )
+            },
+        ),
+        Route(
+            matches = { it.url.encodedPath.endsWith("/mobile/users/1/products") },
+            response = { _ ->
+                if (scenario == Scenario.SessionExpiredOnProducts) {
+                    logout.tryEmit(Unit)
+                    json(this, """{"message":"expired"}""", HttpStatusCode.Unauthorized)
+                } else {
+                    json(this, "[]")
+                }
+            },
+        ),
+        Route(
+            matches = { it.url.encodedPath.endsWith("/mobile/users/1/coupons") },
+            response = { _ -> json(this, "[]") },
+        ),
+        Route(
+            matches = { it.url.encodedPath.endsWith("/mobile/products/100") },
+            response = { _ ->
+                json(
+                    this,
+                    """{
                     "id":100,
                     "name":"Pack 8 sesiones",
                     "description":"Desc",
@@ -129,14 +150,15 @@ class MockHttpClientProvider : HttpClientProvider {
                     "service_ids":[1],
                     "isAvailable":true
                 }"""
-            )
-        }
-
-        // 📅 BOOKINGS
-        request.url.encodedPath.endsWith("/mobile/user-bookings") -> {
-            json(
-                scope,
-                """[{
+                )
+            },
+        ),
+        Route(
+            matches = { it.url.encodedPath.endsWith("/mobile/user-bookings") },
+            response = { _ ->
+                json(
+                    this,
+                    """[{
                     "id":77,
                     "date":"2099-01-01",
                     "hour":"10:00:00",
@@ -147,22 +169,20 @@ class MockHttpClientProvider : HttpClientProvider {
                     "coach_name":"Coach Demo",
                     "coach_profile_pic":null
                 }]"""
-            )
-        }
+                )
+            },
+        ),
+        Route(matches = { it.url.encodedPath.endsWith("/mobile/daily") }, response = { _ -> json(this, "[]") }),
+        Route(matches = { it.url.encodedPath.endsWith("/mobile/holidays") }, response = { _ -> json(this, "[]") }),
+        Route(matches = { it.url.encodedPath.contains("/stripe/") }, response = { _ -> json(this, "{}") }),
+    )
 
-        // 📆 CALENDAR AUX
-        request.url.encodedPath.endsWith("/mobile/daily") ->
-            json(scope, "[]")
-
-        request.url.encodedPath.endsWith("/mobile/holidays") ->
-            json(scope, "[]")
-
-        // 💳 STRIPE
-        request.url.encodedPath.contains("/stripe/") ->
-            json(scope, "{}")
-
-        // ❓ DEFAULT
-        else -> json(scope, "{}")
+    private fun respondFor(
+        scope: MockRequestHandleScope,
+        request: HttpRequestData
+    ): Any {
+        val route = routes.firstOrNull { it.matches(request) }
+        return route?.response?.invoke(scope, request) ?: json(scope, "{}")
     }
 
     private fun json(

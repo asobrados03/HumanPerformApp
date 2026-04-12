@@ -13,6 +13,16 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 
 object AuthPreferences {
+    internal interface CryptoAdapter {
+        fun encrypt(plain: ByteArray): ByteArray
+        fun decrypt(cipherMessage: ByteArray): ByteArray
+    }
+
+    internal var cryptoAdapter: CryptoAdapter = object : CryptoAdapter {
+        override fun encrypt(plain: ByteArray): ByteArray = Crypto.encrypt(plain)
+        override fun decrypt(cipherMessage: ByteArray): ByteArray = Crypto.decrypt(cipherMessage)
+    }
+
     private val KEY_ACCESS  = stringPreferencesKey("access_token_enc")
     private val KEY_REFRESH = stringPreferencesKey("refresh_token_enc")
     private val KEY_USER_JSON = stringPreferencesKey("key_user_json")
@@ -26,8 +36,8 @@ object AuthPreferences {
             val ab = access.encodeToByteArray()
             val rb = refresh.encodeToByteArray()
 
-            val ea = Crypto.encrypt(ab)
-            val er = Crypto.encrypt(rb)
+            val ea = cryptoAdapter.encrypt(ab)
+            val er = cryptoAdapter.encrypt(rb)
 
             m[KEY_ACCESS] = Base64.encode(ea)
             m[KEY_REFRESH] = Base64.encode(er)
@@ -57,7 +67,7 @@ object AuthPreferences {
                 try {
                     m[KEY_ACCESS]?.let { b64 ->
                         val cipherBytes = Base64.decode(b64)
-                        val decryptedBytes = Crypto.decrypt(cipherBytes)
+                        val decryptedBytes = cryptoAdapter.decrypt(cipherBytes)
                         decryptedBytes.decodeToString()
                     } ?: ""
                 } catch (_: Exception) {
@@ -70,7 +80,7 @@ object AuthPreferences {
             .map { m ->
                 m[KEY_REFRESH]?.let { b64 ->
                     Base64.decode(b64).let { cipherBytes ->
-                        Crypto.decrypt(cipherBytes)
+                        cryptoAdapter.decrypt(cipherBytes)
                     }.decodeToString()
                 }.orEmpty()
             }
@@ -90,7 +100,7 @@ object AuthPreferences {
 
             val bytes = json.encodeToByteArray()
 
-            val encrypted = Crypto.encrypt(bytes)
+            val encrypted = cryptoAdapter.encrypt(bytes)
 
             m[KEY_USER_JSON] = Base64.encode(encrypted)
         }
@@ -102,7 +112,7 @@ object AuthPreferences {
                 try {
                     m[KEY_USER_JSON]?.let { b64 ->
                         val cipherBytes = Base64.decode(b64)
-                        val jsonBytes = Crypto.decrypt(cipherBytes)
+                        val jsonBytes = cryptoAdapter.decrypt(cipherBytes)
                         val json = jsonBytes.decodeToString()
                         Json.decodeFromString<User>(json)
                     }
