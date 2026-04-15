@@ -7,7 +7,6 @@ import com.humanperformcenter.shared.data.model.auth.RegisterResponse
 import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.data.network.HttpClientProvider
 import com.humanperformcenter.shared.data.remote.implementation.AuthRemoteDataSourceImpl
-import com.humanperformcenter.shared.domain.DomainException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -30,9 +29,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
-import kotlin.test.assertFalse
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
