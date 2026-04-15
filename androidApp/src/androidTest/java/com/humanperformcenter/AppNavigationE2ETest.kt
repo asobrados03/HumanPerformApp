@@ -114,11 +114,7 @@ class AppNavigationE2ETest {
     fun tabs_navigation_services_calendar_user() {
         ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.waitAndClick(StableTags.WELCOME_ACCESS_CTA)
-        composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")
-        composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
-        composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
-        composeRule.waitUntilVisible(StableTags.SERVICES_TAB_PRODUCTS)
+        composeRule.loginIfNeeded()
 
         composeRule.waitAndClick(StableTags.TAB_CALENDAR)
         composeRule.waitUntilVisible(StableTags.CALENDAR_BOOKINGS_SECTION)
@@ -134,11 +130,7 @@ class AppNavigationE2ETest {
     fun hire_product_and_calendar_booking_section_visible() {
         ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.waitAndClick(StableTags.WELCOME_ACCESS_CTA)
-        composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")
-        composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
-        composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
-        composeRule.waitUntilVisible(StableTags.SERVICES_TAB_PRODUCTS)
+        composeRule.loginIfNeeded()
 
         composeRule.waitAndClick(StableTags.SERVICES_TAB_HIRE)
         composeRule.waitAndClick(StableTags.SERVICES_AVAILABLE_ITEM)
