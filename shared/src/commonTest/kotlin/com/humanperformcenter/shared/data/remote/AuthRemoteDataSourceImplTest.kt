@@ -172,13 +172,8 @@ class AuthRemoteDataSourceImplTest {
         assertTrue(bodyText.contains("profile_pic"))
         assertTrue(bodyText.contains("avatar.jpg"))
 
-        val deviceTypePartRegex =
-            Regex("name=\"device_type\"[\\s\\S]*?\\r\\n\\r\\nandroid\\r\\n")
-        assertTrue(deviceTypePartRegex.containsMatchIn(bodyText))
-
-        val birthDatePartRegex =
-            Regex("name=\"fecha_nacimiento\"[\\s\\S]*?\\r\\n\\r\\n01011990\\r\\n")
-        assertTrue(birthDatePartRegex.containsMatchIn(bodyText))
+        assertMultipartFieldValue(bodyText, "device_type", "android")
+        assertMultipartFieldValue(bodyText, "fecha_nacimiento", "01011990")
     }
 
     @Test
@@ -225,10 +220,8 @@ class AuthRemoteDataSourceImplTest {
         content.writeTo(channel)
         val bodyText = channel.readRemaining().readText()
 
-        val deviceTypePartRegex =
-            Regex("name=\"device_type\"[\\s\\S]*?\\r\\n\\r\\nios\\r\\n")
-        assertTrue(deviceTypePartRegex.containsMatchIn(bodyText))
-        assertFalse(bodyText.contains("name=\"profile_pic\""))
+        assertMultipartFieldValue(bodyText, "device_type", "ios")
+        assertFalse(bodyText.contains("profile_pic"))
     }
 
     @Test
@@ -306,6 +299,17 @@ class AuthRemoteDataSourceImplTest {
 
         val outgoing = body
         return outgoing.contentType?.toString()
+    }
+
+    private fun assertMultipartFieldValue(bodyText: String, fieldName: String, value: String) {
+        val pattern = Regex(
+            "name=\"?$fieldName\"?[\\s\\S]*?(?:\\r\\n|\\n){2}${Regex.escape(value)}(?:\\r\\n|\\n)",
+            setOf(RegexOption.IGNORE_CASE),
+        )
+        assertTrue(
+            pattern.containsMatchIn(bodyText),
+            "Expected multipart field '$fieldName' with value '$value'. Body:\n$bodyText",
+        )
     }
 
     private class FakeAuthLocalDataSource(
