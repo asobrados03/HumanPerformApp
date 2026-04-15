@@ -118,6 +118,7 @@ class AppNavigationE2ETest {
         composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")
         composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
         composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
+        composeRule.waitUntilVisible(StableTags.SERVICES_TAB_PRODUCTS)
 
         composeRule.waitAndClick(StableTags.TAB_CALENDAR)
         composeRule.waitUntilVisible(StableTags.CALENDAR_BOOKINGS_SECTION)
@@ -137,6 +138,7 @@ class AppNavigationE2ETest {
         composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")
         composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
         composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
+        composeRule.waitUntilVisible(StableTags.SERVICES_TAB_PRODUCTS)
 
         composeRule.waitAndClick(StableTags.SERVICES_TAB_HIRE)
         composeRule.waitAndClick(StableTags.SERVICES_AVAILABLE_ITEM)
