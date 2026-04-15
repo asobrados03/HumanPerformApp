@@ -8,6 +8,7 @@ import com.humanperformcenter.shared.data.model.auth.RegisterResponse
 import com.humanperformcenter.shared.data.model.auth.ResetPasswordRequest
 import com.humanperformcenter.shared.data.network.HttpClientProvider
 import com.humanperformcenter.shared.data.remote.AuthRemoteDataSource
+import com.humanperformcenter.shared.domain.DomainException
 import io.ktor.client.call.body
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.bearerAuth
@@ -39,7 +40,7 @@ class AuthRemoteDataSourceImpl(
         }
 
         if (response.status != HttpStatusCode.OK) {
-            error("HTTP ${response.status.value}: ${response.errorMessageOrFallback()}")
+            throw DomainException.BadRequest(details = response.errorMessageOrFallback())
         }
         response.body<LoginResponse>()
     }
