@@ -1,209 +1,211 @@
-# Informe de calidad del conjunto de tests
+# Informe de calidad del conjunto de tests (actualizado)
 
-Fecha de revisión: 2026-04-10.
+Fecha de revisión: **2026-04-14**.
 
 ## Alcance revisado
 
-- Total detectado: **59 archivos de test** con **273 casos `@Test`**.
-- Capas cubiertas: `data/remote`, `data/persistence`, `domain/usecase`, `presentation/viewmodel`, `integration`, `androidTest` (E2E/UI), y ejemplos instrumentados/unitarios.
+- Total detectado: **61 archivos de test** con **288 casos `@Test`** (Kotlin/Multiplatform) + suites UI iOS (`XCTest`).
+- Capas cubiertas: `data/remote`, `data/persistence`, `domain/usecase`, `presentation/viewmodel`, `integration`, `androidTest` E2E y `iosAppUITests`.
 
 ---
 
-## 1) Tests de ejemplo / plantilla (baja relevancia funcional)
+## 1) Tests E2E/UI Android
 
-Archivos:
-- `androidApp/src/test/java/com/humanperformcenter/ExampleUnitTest.kt`
-- `androidApp/src/androidTest/java/com/humanperformcenter/ExampleInstrumentedTest.kt`
-- `shared/src/androidDeviceTest/kotlin/com/humanperformcenter/shared/ExampleInstrumentedTest.kt`
-
-✅ **Qué está bien**
-- Son estables y rápidos.
-- Verifican que el entorno de pruebas instrumentadas arranca correctamente.
-
-⚠️ **Qué se puede mejorar**
-- No aportan cobertura de negocio.
-- El valor para regresión funcional real es casi nulo.
-
-🔴 **Qué es problemático**
-- Mantener tests de plantilla puede dar falsa sensación de cobertura.
-
-💡 **Sugerencia concreta**
-- Eliminarlos o moverlos a una carpeta explícita de “smoke de infraestructura”.
-- Sustituir por 1–2 smoke tests reales (por ejemplo, inicialización de DI + pantalla inicial).
-
----
-
-## 2) Tests E2E/UI Android (Compose + navegación)
-
-Archivos:
+Archivos principales:
 - `androidApp/src/androidTest/java/com/humanperformcenter/AppNavigationE2ETest.kt`
 - `androidApp/src/androidTest/java/com/humanperformcenter/MockHttpClientProvider.kt`
 
-✅ **Qué está bien**
-- Verifican comportamientos observables end-to-end: login inválido/válido, navegación por tabs y flujo de compra/reserva.
-- Uso sistemático de `testTag` y helpers (`waitAndClick`, `waitUntilVisible`) que mejora robustez frente a asincronía.
-- Uso de doble de red para evitar dependencia de backend real y mejorar determinismo.
+✅ **Qué está bien hecho**
+- Validan comportamiento observable de usuario (login, navegación y flujos clave), no solo lógica interna.
+- Aíslan backend con un provider mock en el borde del sistema (buena práctica para E2E determinista).
 
-⚠️ **Qué se puede mejorar**
-- Cobertura parcial de errores: se prueba credencial inválida, pero no timeout, 500, payloads incompletos o sesión expirada.
-- Falta verificar estados de carga/disabled de CTAs durante requests.
-- No se valida accesibilidad básica (semántica/labels) ni persistencia de estado al rotar/recrear actividad.
+⚠️ **Qué se puede mejorar y por qué**
+- Predominan happy paths + algunos errores básicos; faltan fallos de red realistas (timeout, 500, sesión expirada).
+- Dependencia fuerte de `testTag`/estructura visual; útil, pero sensible a cambios cosméticos.
 
 🔴 **Qué es problemático**
-- `MockHttpClientProvider` concentra lógica de routing por path en un gran `when`; si el contrato crece, será difícil detectar inconsistencias finas.
-- El flujo E2E depende de tags exactos; un refactor visual menor puede romper tests sin cambio funcional (acoplamiento moderado a estructura de UI).
+- El enrutado de respuestas en `MockHttpClientProvider` centraliza demasiada lógica condicional y puede ocultar inconsistencias de contrato.
 
 💡 **Sugerencia concreta**
-- Separar fixtures por endpoint (JSON de éxito/error) y construir un mini DSL de respuestas.
-- Añadir tests E2E de “sesión expirada redirige a login” y “error de red muestra retry”.
-- Preferir assertions centradas en resultado de usuario (mensaje/estado final) en lugar de secuencias largas de clicks cuando sea posible.
+- Migrar el mock E2E a fixtures por endpoint + matriz de estados (200/400/401/500/timeout).
+- Añadir al menos 2 escenarios críticos: “token expirado redirige a login” y “error temporal muestra retry y no bloquea navegación”.
 
 ---
 
-## 3) Tests de integración (flujo entre capas)
+## 2) Tests UI iOS (XCTest)
 
-Archivos:
-- `shared/src/commonTest/kotlin/com/humanperformcenter/shared/integration/*.kt`
+Archivos principales:
+- `iosApp/iosAppUITests/iosAppUITests.swift`
+- `iosApp/iosAppUITests/iosAppUITestsLaunchTests.swift`
 
-✅ **Qué está bien**
-- Verifican colaboración real entre `remote -> repository -> use case`.
-- Cubren flujos críticos de negocio: autenticación, booking, catálogo/compra, perfil/documentos, stripe.
-- Contratos de entrada/salida razonablemente explícitos (payloads de endpoints y asserts de resultados).
+✅ **Qué está bien hecho**
+- Existe smoke coverage de arranque y ciclo básico de UI.
 
-⚠️ **Qué se puede mejorar**
-- Cada archivo tiene solo un test principal; profundidad limitada para errores y edge cases.
-- Se mockea red completa (correcto en frontera), pero faltan escenarios de fallo encadenado (ej. éxito parcial + rollback esperado).
+⚠️ **Qué se puede mejorar y por qué**
+- Cobertura funcional reducida frente a Android E2E; no hay paridad de escenarios de negocio críticos.
 
 🔴 **Qué es problemático**
-- Al existir un único escenario “feliz” por flujo, regresiones en rutas negativas pueden pasar inadvertidas.
+- Riesgo de regresiones no detectadas en iOS para flujos de autenticación/compra/reservas.
 
 💡 **Sugerencia concreta**
-- Duplicar cada flujo con al menos 2 variantes negativas: error HTTP tipado y payload malformado.
-- Añadir validación explícita de side effects persistentes (no solo `isSuccess`).
+- Replicar una “línea base” de 3 flujos críticos de Android en iOS: login válido/inválido, navegación principal, y una operación transaccional (reserva o compra).
 
 ---
 
-## 4) Tests `data/remote` (clientes HTTP / parsing)
+## 3) Tests de integración (cross-layer)
 
-Archivos:
+Archivos principales:
+- `shared/src/commonTest/kotlin/com/humanperformcenter/shared/integration/*IntegrationTest.kt`
+
+✅ **Qué está bien hecho**
+- Verifican colaboración real `remote -> repository -> use case` con aserciones de resultado funcional y side effects.
+- Cubren dominios relevantes: auth, booking, catálogo/compra, perfil/documentos y Stripe.
+
+⚠️ **Qué se puede mejorar y por qué**
+- Profundidad limitada de caminos negativos por flujo.
+- Falta una matriz sistemática de contratos fallidos (payload malformado + errores de autorización + fallos intermitentes).
+
+🔴 **Qué es problemático**
+- Si cambian las rutas de error entre capas, hoy varias regresiones podrían pasar porque predomina el escenario feliz por flujo.
+
+💡 **Sugerencia concreta**
+- Por cada flujo de integración, añadir mínimo 2 tests negativos: error HTTP tipado y payload inválido, verificando también el mapeo de error final de dominio.
+
+---
+
+## 4) Tests de `data/remote` y proveedor HTTP
+
+Archivos principales:
 - `shared/src/commonTest/kotlin/com/humanperformcenter/shared/data/remote/*Test.kt`
 - `shared/src/commonTest/kotlin/com/humanperformcenter/shared/data/network/DefaultHttpClientProviderTest.kt`
 - Fixtures en `shared/src/commonTest/resources/fixtures/**`
 
-✅ **Qué está bien**
-- Muy buena cobertura de contratos HTTP: método, URL, cabeceras, content-type y deserialización.
-- Uso intenso de fixtures para variantes de éxito, optional missing, wrong type, malformed y errores estándar.
-- Buena cobertura del refresh token flow en `DefaultHttpClientProviderTest`.
+✅ **Qué está bien hecho**
+- Excelente cobertura de contratos HTTP: método, URL, headers, content-type y parsing.
+- Muy buen uso de fixtures para éxito, campos opcionales, tipos inválidos y payloads malformados.
+- Buena cobertura del refresh token flow.
 
-⚠️ **Qué se puede mejorar**
-- En algunos casos hay asserts sobre detalles de construcción del body multipart (regex/string) que pueden volver frágiles los tests ante refactors internos del serializado.
-- Faltan verificaciones de idempotencia/reintentos cuando aplique.
+⚠️ **Qué se puede mejorar y por qué**
+- Algunos tests validan formato textual detallado del request/body (fragilidad ante refactors sin cambio funcional).
+- Existen pruebas sobre helpers de transformación interna que podrían acoplarse de más a implementación.
 
 🔴 **Qué es problemático**
-- Algunos tests prueban helpers/transformaciones internas de implementación (ej. conversión de fecha “legacy”), elevando acoplamiento a detalle interno.
+- Sobrespecificación en ciertas aserciones de serialización puede generar falsos negativos tras refactor técnico.
 
 💡 **Sugerencia concreta**
-- Mantener tests de contrato en términos de campos semánticos esperados y reducir dependencia al formato textual exacto del multipart.
-- Mover validaciones de helper interno a tests unitarios dedicados de utilidades públicas, o cubrirlo indirectamente por contrato externo.
+- Priorizar aserciones semánticas (campos y contrato observable) sobre snapshots textuales de payload cuando no sean parte del contrato externo.
 
 ---
 
-## 5) Tests `data/persistence` (repositorios)
+## 5) Tests de repositorios (`data/persistence`)
 
-Archivos:
+Archivos principales:
 - `shared/src/commonTest/kotlin/com/humanperformcenter/shared/data/persistence/*Test.kt`
 
-✅ **Qué está bien**
-- Verifican mapeo de errores de infraestructura a errores de dominio (ej. `AuthDomainError`).
-- Verifican side effects relevantes (guardar/limpiar tokens, persistir usuario).
-- Nombres de tests mayoritariamente claros en estilo `when_X_then_Y`.
+✅ **Qué está bien hecho**
+- Buena verificación de mapeo de errores de infraestructura a dominio.
+- Se comprueban side effects importantes (guardar/limpiar sesión, persistencia de usuario).
 
-⚠️ **Qué se puede mejorar**
-- En algunos repositorios, el set de casos negativos es más corto que el de éxito.
-- Dependencia de Fakes “todo en uno” por archivo puede ocultar duplicación.
+⚠️ **Qué se puede mejorar y por qué**
+- Hay archivos con mayor peso en happy path que en combinatoria de errores.
+- Algunos fakes son amplios y podrían ocultar duplicación de comportamiento entre tests.
 
 🔴 **Qué es problemático**
-- Riesgo de “espejar implementación” cuando el fake reproduce demasiado la lógica esperada.
+- Riesgo de tests “espejo” de implementación cuando el fake replica demasiada lógica interna.
 
 💡 **Sugerencia concreta**
-- Introducir builders de fakes reutilizables por módulo y matriz de casos negativos comunes (401/403/500/parsing).
+- Estandarizar builders de fakes mínimos y una matriz reutilizable de errores transversales (401/403/500/parsing/empty body).
 
 ---
 
-## 6) Tests de `domain/usecase`
+## 6) Tests de casos de uso (`domain/usecase`)
 
-Archivos:
+Archivos principales:
 - `shared/src/commonTest/kotlin/com/humanperformcenter/shared/domain/usecase/*Test.kt`
 
-✅ **Qué está bien**
-- Cobertura sólida del happy path y errores esperables por validación de negocio.
-- Buen foco en comportamiento observable de cada caso de uso (Result success/failure + tipo de error).
+✅ **Qué está bien hecho**
+- Nombres generalmente claros y orientados a comportamiento.
+- Cobertura correcta de éxito/error de negocio en la mayoría de casos.
 
-⚠️ **Qué se puede mejorar**
-- Varios tests dependen de Koin para construir use cases simples; aumenta complejidad del setup sin necesidad en unit tests puros.
-- Faltan algunos límites de entrada (strings vacíos/extremos/nullables transformados).
+⚠️ **Qué se puede mejorar y por qué**
+- Faltan límites extremos en algunos inputs (valores vacíos, longitudes límite, combinaciones raras).
 
 🔴 **Qué es problemático**
-- Acoplamiento moderado al wiring DI en pruebas que podrían ser constructor-based y más rápidas.
+- En ciertos casos podría existir dependencia innecesaria de wiring/contexto cuando bastaría instanciación directa del caso de uso.
 
 💡 **Sugerencia concreta**
-- En unit tests de use case: instanciación directa + fakes pequeños.
-- Dejar pruebas de DI para tests de integración del módulo de inyección.
+- Reforzar suite con tablas de casos límite y mantener unit tests puros constructor-based cuando no se está probando DI.
 
 ---
 
-## 7) Tests de `presentation/viewmodel`
+## 7) Tests de ViewModels (`presentation`)
 
-Archivos:
-- `shared/src/commonTest/kotlin/com/humanperformcenter/shared/presentation/*Test.kt`
+Archivos principales:
+- `shared/src/commonTest/kotlin/com/humanperformcenter/shared/presentation/*ViewModelTest.kt`
 
-✅ **Qué está bien**
-- Buena cobertura de estados UI (`Idle/Loading/Success/Error`) y transiciones con coroutines.
-- Uso correcto de `StandardTestDispatcher` y `turbine` en varios casos para observar flujos.
-- Casos de fallback de mensajes y reset de estado están bien cubiertos.
+✅ **Qué está bien hecho**
+- Buen foco en estados de UI (`Loading/Success/Error`) y manejo de corrutinas/flows.
+- Cobertura razonable de transiciones y mensajes de error.
 
-⚠️ **Qué se puede mejorar**
-- En ciertos tests se verifican secuencias exactas de emisión; eso puede ser frágil si cambia internamente la estrategia de emisión sin cambiar UX final.
-- Falta cobertura de concurrencia (acciones dobles rápidas, cancelación, reintentos simultáneos).
+⚠️ **Qué se puede mejorar y por qué**
+- En varios tests se verifica secuencia exacta de emisiones; esto puede ser frágil frente a refactors internos sin impacto de UX.
+- Cobertura de concurrencia aún mejorable (doble click, cancelación, carreras).
 
 🔴 **Qué es problemático**
-- Algunos asserts de “call count exacto” o pasos intermedios pueden sobrespecificar implementación.
+- La sobrespecificación temporal (orden milimétrico) aumenta mantenimiento y rompe tests por cambios internos legítimos.
 
 💡 **Sugerencia concreta**
-- Complementar con asserts de estado final observable + invariantes, reduciendo dependencia en el orden fino cuando no es requisito funcional.
-- Añadir tests de debouncing/click repetido para acciones críticas.
+- Combinar aserción de “estado final + invariantes” con pocos tests de secuencia estricta solo donde el orden sea requisito funcional real.
 
 ---
 
-## Cobertura faltante relevante (visión transversal)
+## 8) Seguridad y almacenamiento de sesión
+
+Archivo principal:
+- `shared/src/commonTest/kotlin/com/humanperformcenter/shared/domain/security/AuthPreferencesTest.kt`
+
+✅ **Qué está bien hecho**
+- Sí existe cobertura para preferencias/autenticación (mejor que una ausencia total de seguridad).
+
+⚠️ **Qué se puede mejorar y por qué**
+- Cobertura parcial: falta evidencia de tests directos para componentes criptográficos de plataforma (`Crypto`, `EncryptionHandler`) y escenarios de fallo criptográfico.
+
+🔴 **Qué es problemático**
+- Riesgo de regresión en componentes sensibles de seguridad por baja cobertura específica.
+
+💡 **Sugerencia concreta**
+- Incorporar suites por plataforma para cifrado/descifrado, errores controlados y compatibilidad de formatos entre Android/iOS.
+
+---
+
+## Cobertura faltante relevante (transversal)
 
 🔴 **Huecos críticos detectados**
-1. **Módulos sin evidencia clara de tests directos** en áreas sensibles como seguridad/cifrado (`Crypto`, `EncryptionHandler`, `AuthPreferences`) y parte de validadores de dominio.
-2. **Escenarios no funcionales** casi ausentes: rendimiento básico, resiliencia a latencia alta, cancelación y timeouts de usuario.
-3. **Matriz de errores E2E** limitada: solo un subconjunto de fallos reales de backend/UI.
+1. Matriz incompleta de errores en integración/E2E (timeout, 5xx, token expirado, payload inconsistente).
+2. Falta de paridad de pruebas UI críticas entre Android e iOS.
+3. Cobertura específica insuficiente en criptografía/plataforma.
 
-💡 **Plan de cierre recomendado (prioridad alta)**
-- Añadir suite dedicada de seguridad/crypto con casos deterministas y de fallo controlado.
-- Añadir suite de resiliencia en ViewModels (retry/cancel/race conditions).
-- Expandir integración/E2E con casos de expiración de sesión, 5xx y payload inválido.
+💡 **Plan recomendado (prioridad alta)**
+- Sprint 1: ampliar integración con casos negativos estandarizados por flujo.
+- Sprint 2: baseline iOS UI de 3 flujos críticos.
+- Sprint 3: suite de seguridad crypto/storage con pruebas multiplataforma.
 
 ---
 
 ## Resumen ejecutivo
 
-### Puntuación general: **7.8 / 10**
+### Puntuación general de calidad: **8.1 / 10**
 
-Justificación:
-- **Fortalezas**: volumen de pruebas alto, buena segmentación por capas, buen uso de fixtures y cobertura de contratos HTTP/estados UI.
-- **Debilidades**: algunos tests con acoplamiento a implementación (secuencias exactas, formato interno), huecos en seguridad y pruebas negativas E2E/integración.
+**Justificación breve:**
+- El proyecto tiene una base de testing amplia y bien estratificada por capas, con especial fortaleza en contratos remotos y estados de ViewModel.
+- La principal deuda está en cobertura negativa profunda de extremo a extremo, paridad iOS y pruebas de seguridad criptográfica.
 
-### Top 3 problemas más graves
-1. **Cobertura insuficiente de rutas negativas en integración/E2E** (alto riesgo de regresión en producción).
-2. **Acoplamiento a detalles internos en parte de tests remotos/UI** (fragilidad ante refactors).
-3. **Falta de foco explícito en componentes de seguridad/crypto**.
+### Top 3 problemas más graves a corregir
+1. Cobertura insuficiente de errores críticos en integración/E2E.
+2. Baja paridad de tests funcionales iOS frente a Android.
+3. Cobertura limitada de componentes de cifrado/plataforma.
 
 ### Top 3 buenas prácticas detectadas
-1. **Uso consistente de fixtures** para casos de parsing y errores de API.
-2. **Cobertura de estados de ViewModel** con herramientas correctas de testing de coroutines/flows.
-3. **Presencia de pruebas de integración cross-layer** (no solo unit tests aislados).
-
+1. Excelente uso de fixtures y contratos HTTP en capa remota.
+2. Buen nivel de tests por estados de UI en ViewModels con corrutinas/flows.
+3. Presencia real de tests de integración cross-layer en dominios de negocio clave.
