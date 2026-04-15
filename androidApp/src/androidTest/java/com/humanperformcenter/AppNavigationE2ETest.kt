@@ -140,6 +140,7 @@ class AppNavigationE2ETest {
         // ProductDetailScreen does not render the bottom navigation bar,
         // so we return to Services before switching to Calendar.
         pressBack()
+        pressBack()
         composeRule.waitUntilVisible(StableTags.SERVICES_TAB_PRODUCTS)
 
         composeRule.waitAndClick(StableTags.TAB_CALENDAR)
