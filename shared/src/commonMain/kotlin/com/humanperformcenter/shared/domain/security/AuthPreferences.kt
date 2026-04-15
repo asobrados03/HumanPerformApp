@@ -116,7 +116,7 @@ object AuthPreferences {
                         val json = jsonBytes.decodeToString()
                         Json.decodeFromString<User>(json)
                     }
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     println("DEBUG: Error descifrando usuario: ${e.message}")
                     null
                 }

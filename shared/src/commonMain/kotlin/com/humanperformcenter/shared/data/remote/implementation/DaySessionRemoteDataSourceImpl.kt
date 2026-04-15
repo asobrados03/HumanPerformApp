@@ -14,6 +14,7 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.datetime.LocalDate
@@ -23,10 +24,12 @@ class DaySessionRemoteDataSourceImpl(
 ) : DaySessionRemoteDataSource {
     override suspend fun getSessionsByDay(productId: Int, weekStart: LocalDate)
     : Result<List<DaySession>> = runCatching {
-        clientProvider.apiClient.get("${clientProvider.baseUrl}/mobile/daily") {
+        val response = clientProvider.apiClient.get("${clientProvider.baseUrl}/mobile/daily") {
             parameter("product_id", productId)
             parameter("date", weekStart.toString())
-        }.body()
+        }
+        response.ensureSuccess()
+        response.body()
     }
 
     override suspend fun makeBooking(bookingRequest: BookingRequest)
@@ -73,6 +76,14 @@ class DaySessionRemoteDataSourceImpl(
     }
 
     override suspend fun getHolidays(): Result<List<String>> = runCatching {
-        clientProvider.apiClient.get("${clientProvider.baseUrl}/mobile/holidays").body()
+        val response = clientProvider.apiClient.get("${clientProvider.baseUrl}/mobile/holidays")
+        response.ensureSuccess()
+        response.body()
+    }
+
+    private fun HttpResponse.ensureSuccess() {
+        if (status.value !in 200..299) {
+            error("HTTP ${status.value}")
+        }
     }
 }

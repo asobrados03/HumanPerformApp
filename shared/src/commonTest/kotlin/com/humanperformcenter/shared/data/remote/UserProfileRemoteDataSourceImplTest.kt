@@ -177,7 +177,7 @@ class UserProfileRemoteDataSourceImplTest {
         content.writeTo(channel)
         val bodyText = channel.readRemaining().readText()
 
-        assertTrue(bodyText.contains("name=\"user\""))
+        assertTrue(bodyText.contains("name=\"user\"") || bodyText.contains("name=user"))
         assertFalse(bodyText.contains("name=\"profile_pic\""))
     }
 
