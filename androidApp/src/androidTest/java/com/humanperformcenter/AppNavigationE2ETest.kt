@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.humanperformcenter.app.MainActivity
 import com.humanperformcenter.app.TestOverrides
@@ -24,6 +25,7 @@ import org.junit.runner.RunWith
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
+import org.koin.android.ext.koin.androidContext
 
 @RunWith(AndroidJUnit4::class)
 class AppNavigationE2ETest {
@@ -69,6 +71,7 @@ class AppNavigationE2ETest {
         val mockProvider = MockHttpClientProvider(scenario)
         TestOverrides.httpClientProviderOverride = mockProvider
         startKoin {
+            androidContext(ApplicationProvider.getApplicationContext())
             modules(
                 appModule,
                 platformModule,
