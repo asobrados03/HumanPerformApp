@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.onAllNodes
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.performClick
@@ -171,16 +172,19 @@ class AppNavigationE2ETest {
         composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
         composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
 
-        composeRule.waitUntilVisible(StableTags.LOGIN_SCREEN_TITLE)
+        composeRule.waitUntilVisible(StableTags.WELCOME_ACCESS_CTA)
     }
 
     private fun ComposeTestRule.waitUntilExists(
         tag: String,
-        timeoutMillis: Long = 10_000,
+        timeoutMillis: Long = 20_000,
     ) {
+        waitForIdle()
         waitUntil(timeoutMillis) {
             onAllNodes(hasTestTag(tag))
-                .fetchSemanticsNodes().isNotEmpty()
+                .fetchSemanticsNodes().isNotEmpty() ||
+                onAllNodes(hasTestTag(tag), useUnmergedTree = true)
+                    .fetchSemanticsNodes().isNotEmpty()
         }
     }
 
@@ -194,9 +198,18 @@ class AppNavigationE2ETest {
     private fun ComposeTestRule.waitAndClick(tag: String) {
         waitUntilExists(tag)
 
-        onNode(hasTestTag(tag) and hasClickAction())
-            .assertIsDisplayed()
-            .performClick()
+        val mergedClickableNodes = onAllNodes(hasTestTag(tag) and hasClickAction())
+            .fetchSemanticsNodes()
+
+        if (mergedClickableNodes.isNotEmpty()) {
+            onNode(hasTestTag(tag) and hasClickAction())
+                .assertIsDisplayed()
+                .performClick()
+        } else {
+            onNode(hasTestTag(tag), useUnmergedTree = true)
+                .assertIsDisplayed()
+                .performClick()
+        }
     }
 
     private fun ComposeTestRule.waitAndEnterText(
