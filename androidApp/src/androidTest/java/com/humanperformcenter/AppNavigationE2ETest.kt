@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.espresso.Espresso.pressBack
 import com.humanperformcenter.app.MainActivity
 import com.humanperformcenter.app.TestOverrides
 import com.humanperformcenter.shared.data.network.HttpClientProvider
@@ -135,6 +136,11 @@ class AppNavigationE2ETest {
         composeRule.waitAndClick(StableTags.SERVICES_AVAILABLE_ITEM)
         composeRule.waitAndClick(StableTags.SERVICE_PRODUCT_ITEM)
         composeRule.waitUntilVisible(StableTags.SERVICE_PRODUCT_BUY_CTA)
+
+        // ProductDetailScreen does not render the bottom navigation bar,
+        // so we return to Services before switching to Calendar.
+        pressBack()
+        composeRule.waitUntilVisible(StableTags.SERVICES_TAB_PRODUCTS)
 
         composeRule.waitAndClick(StableTags.TAB_CALENDAR)
         composeRule.waitUntilVisible(StableTags.CALENDAR_BOOKINGS_SECTION)
