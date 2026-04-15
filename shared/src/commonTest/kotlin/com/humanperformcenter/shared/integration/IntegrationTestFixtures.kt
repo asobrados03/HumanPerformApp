@@ -20,9 +20,11 @@ internal fun integrationProvider(
 ): HttpClientProvider {
     val json = Json { ignoreUnknownKeys = true }
     val apiClient = HttpClient(apiEngine) {
+        expectSuccess = true
         install(ContentNegotiation) { json(json) }
     }
     val authClient = HttpClient(authEngine) {
+        expectSuccess = true
         install(ContentNegotiation) { json(json) }
     }
 
