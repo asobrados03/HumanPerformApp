@@ -5,6 +5,7 @@ import com.humanperformcenter.shared.data.model.payment.EwalletTransaction
 import com.humanperformcenter.shared.domain.repository.UserWalletRepository
 import com.humanperformcenter.shared.domain.usecase.WalletUseCase
 import com.humanperformcenter.shared.presentation.ui.EwalletUiState
+import com.humanperformcenter.shared.presentation.ui.WalletBalanceUiState
 import com.humanperformcenter.shared.presentation.viewmodel.UserWalletViewModel
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -46,11 +47,12 @@ class UserWalletViewModelTest {
             FakeWalletRepository(initialBalances = mapOf(1 to 42.5))
         )
 
-        viewModel.balance.test {
+        viewModel.walletBalanceUiState.test {
         // Assert
-            assertEquals(0.0, awaitItem())
+            assertEquals(WalletBalanceUiState.Idle, awaitItem())
             viewModel.loadBalance(1)
-            assertEquals(42.5, awaitItem())
+            assertEquals(WalletBalanceUiState.Loading, awaitItem())
+            assertEquals(WalletBalanceUiState.Success(42.5), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -63,12 +65,12 @@ class UserWalletViewModelTest {
             FakeWalletRepository(initialBalances = mapOf(1 to null))
         )
 
-        viewModel.balance.test {
+        viewModel.walletBalanceUiState.test {
         // Assert
-            assertEquals(0.0, awaitItem())
+            assertEquals(WalletBalanceUiState.Idle, awaitItem())
             viewModel.loadBalance(1)
-            expectNoEvents()
-            assertEquals(0.0, viewModel.balance.value)
+            assertEquals(WalletBalanceUiState.Loading, awaitItem())
+            assertEquals(WalletBalanceUiState.Success(0.0), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -79,12 +81,11 @@ class UserWalletViewModelTest {
         val viewModel = buildViewModel(FakeWalletRepository(initialBalances = mapOf(1 to 99.9)))
 
         // Act
-        viewModel.balance.test {
+        viewModel.walletBalanceUiState.test {
         // Assert
-            assertEquals(0.0, awaitItem())
+            assertEquals(WalletBalanceUiState.Idle, awaitItem())
             viewModel.loadBalance(-1)
-            expectNoEvents()
-            assertEquals(0.0, viewModel.balance.value)
+            assertEquals(WalletBalanceUiState.Error("Usuario inválido"), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -97,11 +98,12 @@ class UserWalletViewModelTest {
             FakeWalletRepository(failBalanceWithMessage = "Sin conexión")
         )
 
-        viewModel.balance.test {
+        viewModel.walletBalanceUiState.test {
         // Assert
-            assertEquals(0.0, awaitItem())
+            assertEquals(WalletBalanceUiState.Idle, awaitItem())
             viewModel.loadBalance(1)
-            expectNoEvents()
+            assertEquals(WalletBalanceUiState.Loading, awaitItem())
+            assertEquals(WalletBalanceUiState.Error("Sin conexión"), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }
