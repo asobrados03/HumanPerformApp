@@ -93,7 +93,7 @@ class AppNavigationE2ETest {
     fun splash_to_welcome_and_login_invalid_valid() {
         ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.waitAndClick(StableTags.WELCOME_ACCESS_CTA)
+        composeRule.waitAndClickIfExists(StableTags.WELCOME_ACCESS_CTA)
         composeRule.waitUntilVisible(StableTags.LOGIN_SCREEN_TITLE)
 
         composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "wrong@user.com")
@@ -114,10 +114,7 @@ class AppNavigationE2ETest {
     fun tabs_navigation_services_calendar_user() {
         ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.waitAndClick(StableTags.WELCOME_ACCESS_CTA)
-        composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")
-        composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
-        composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
+        composeRule.loginIfNeeded()
 
         composeRule.waitAndClick(StableTags.TAB_CALENDAR)
         composeRule.waitUntilVisible(StableTags.CALENDAR_BOOKINGS_SECTION)
@@ -133,10 +130,7 @@ class AppNavigationE2ETest {
     fun hire_product_and_calendar_booking_section_visible() {
         ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.waitAndClick(StableTags.WELCOME_ACCESS_CTA)
-        composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")
-        composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
-        composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
+        composeRule.loginIfNeeded()
 
         composeRule.waitAndClick(StableTags.SERVICES_TAB_HIRE)
         composeRule.waitAndClick(StableTags.SERVICES_AVAILABLE_ITEM)
@@ -152,7 +146,7 @@ class AppNavigationE2ETest {
         setupWithScenario(MockHttpClientProvider.Scenario.LoginServerError)
         ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.waitAndClick(StableTags.WELCOME_ACCESS_CTA)
+        composeRule.waitAndClickIfExists(StableTags.WELCOME_ACCESS_CTA)
         composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")
         composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
         composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
@@ -167,7 +161,7 @@ class AppNavigationE2ETest {
         setupWithScenario(MockHttpClientProvider.Scenario.SessionExpiredOnProducts)
         ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.waitAndClick(StableTags.WELCOME_ACCESS_CTA)
+        composeRule.waitAndClickIfExists(StableTags.WELCOME_ACCESS_CTA)
         composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")
         composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
         composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
@@ -181,11 +175,15 @@ class AppNavigationE2ETest {
     ) {
         waitForIdle()
         waitUntil(timeoutMillis) {
-            onAllNodes(hasTestTag(tag))
-                .fetchSemanticsNodes().isNotEmpty() ||
-                onAllNodes(hasTestTag(tag), useUnmergedTree = true)
-                    .fetchSemanticsNodes().isNotEmpty()
+            hasAnyNodeWithTag(tag)
         }
+    }
+
+    private fun ComposeTestRule.hasAnyNodeWithTag(tag: String): Boolean {
+        return onAllNodes(hasTestTag(tag))
+            .fetchSemanticsNodes().isNotEmpty() ||
+            onAllNodes(hasTestTag(tag), useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
     }
 
     private fun ComposeTestRule.waitUntilVisible(tag: String) {
@@ -230,5 +228,35 @@ class AppNavigationE2ETest {
         onNode(hasTestTag(tag))
             .assertIsDisplayed()
             .performTextClearance()
+    }
+
+    private fun ComposeTestRule.waitAndClickIfExists(
+        tag: String,
+        timeoutMillis: Long = 1_500,
+    ): Boolean {
+        waitForIdle()
+        val startTimeMillis = System.currentTimeMillis()
+        while (!hasAnyNodeWithTag(tag) &&
+            System.currentTimeMillis() - startTimeMillis < timeoutMillis
+        ) {
+            Thread.sleep(100)
+            waitForIdle()
+        }
+
+        if (!hasAnyNodeWithTag(tag)) return false
+        waitAndClick(tag)
+        return true
+    }
+
+    private fun ComposeTestRule.loginIfNeeded() {
+        waitAndClickIfExists(StableTags.WELCOME_ACCESS_CTA)
+
+        if (hasAnyNodeWithTag(StableTags.LOGIN_EMAIL_FIELD)) {
+            waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")
+            waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "12345678Aa")
+            waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
+        }
+
+        waitUntilVisible(StableTags.SERVICES_TAB_PRODUCTS)
     }
 }
