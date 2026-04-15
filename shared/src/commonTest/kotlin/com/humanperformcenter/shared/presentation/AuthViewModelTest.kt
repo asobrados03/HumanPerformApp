@@ -516,7 +516,7 @@ class AuthViewModelTest : KoinTest {
             phone = "600000000",
             password = "Password1",
             sex = "Male",
-            dateOfBirth = "01011990",
+            dateOfBirth = "01/01/1990",
             postCode = "28001",
             postAddress = "Street 1",
             dni = "12345678Z",
