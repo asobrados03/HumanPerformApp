@@ -15,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.humanperformcenter.shared.presentation.ui.ServiceUiState
@@ -70,6 +71,9 @@ fun ServicesScreen(
                             // 3. Al hacer clic, el pager se desplaza suavemente
                             coroutineScope.launch { pagerState.animateScrollToPage(index) }
                         },
+                        modifier = Modifier.testTag(
+                            if (index == 0) "services_tab_products" else "services_tab_hire"
+                        ),
                         text = { Text(title) }
                     )
                 }

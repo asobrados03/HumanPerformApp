@@ -37,7 +37,6 @@ class AppNavigationE2ETest {
         const val LOGIN_EMAIL_FIELD = "login_email_field"
         const val LOGIN_PASSWORD_FIELD = "login_password_field"
         const val LOGIN_SUBMIT_CTA = "login_submit_cta"
-        const val LOGIN_ERROR_INVALID_CREDENTIALS = "login_error_invalid_credentials"
         const val LOGIN_ERROR_MESSAGE = "login_error_message"
         const val LOGIN_LOADING_INDICATOR = "login_loading_indicator"
 
@@ -99,7 +98,7 @@ class AppNavigationE2ETest {
         composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "wrong@user.com")
         composeRule.waitAndEnterText(StableTags.LOGIN_PASSWORD_FIELD, "bad")
         composeRule.waitAndClick(StableTags.LOGIN_SUBMIT_CTA)
-        composeRule.waitUntilVisible(StableTags.LOGIN_ERROR_INVALID_CREDENTIALS)
+        composeRule.waitUntilVisible(StableTags.LOGIN_ERROR_MESSAGE)
 
         composeRule.waitAndClearText(StableTags.LOGIN_EMAIL_FIELD)
         composeRule.waitAndEnterText(StableTags.LOGIN_EMAIL_FIELD, "valid@humanperform.com")

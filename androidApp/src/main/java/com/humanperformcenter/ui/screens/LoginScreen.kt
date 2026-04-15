@@ -72,7 +72,11 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "Accede a tu cuenta", style = MaterialTheme.typography.headlineMedium)
+            Text(
+                text = "Accede a tu cuenta",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.testTag("login_screen_title")
+            )
 
             Spacer(modifier = Modifier.padding(8.dp))
 
