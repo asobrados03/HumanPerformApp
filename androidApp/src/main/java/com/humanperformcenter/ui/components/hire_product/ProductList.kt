@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -62,6 +63,7 @@ fun ProductList(
                 }
 
                 AppCard(
+                    modifier = Modifier.testTag("service_product_item"),
                     onClick = { onProductClick(availableProduct) }
                 ) {
                     Row(

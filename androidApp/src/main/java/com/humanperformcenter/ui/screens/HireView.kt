@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -51,6 +52,7 @@ fun HireView(
             val servicio = uiModel.service
 
             AppCard(
+                modifier = Modifier.testTag("services_available_item"),
                 onClick = {
                     navController.navigate(HireProduct(servicio.id))
                 }

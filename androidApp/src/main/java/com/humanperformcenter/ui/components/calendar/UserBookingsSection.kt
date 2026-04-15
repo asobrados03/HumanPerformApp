@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -97,7 +98,9 @@ fun UserBookingsSection(
     val context = LocalContext.current
     val menuExpandedMap = remember { mutableStateMapOf<Int, Boolean>() }
 
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier
+        .padding(horizontal = 16.dp)
+        .testTag("calendar_bookings_section")) {
         Text(
             text = "Tus sesiones reservadas",
             style = MaterialTheme.typography.titleMedium,

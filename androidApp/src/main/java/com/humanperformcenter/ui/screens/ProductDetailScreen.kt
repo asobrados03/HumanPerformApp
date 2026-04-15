@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -202,7 +203,8 @@ fun ProductDetailScreen(
                     ) {
                         Button(
                             onClick = { showPaymentSheet = true },
-                            enabled = !isAlreadyHired // Reactivo al combine del ViewModel
+                            enabled = !isAlreadyHired, // Reactivo al combine del ViewModel
+                            modifier = Modifier.testTag("service_product_buy_cta")
                         ) {
                             Text(if (isAlreadyHired) "Producto adquirido" else "Comprar")
                         }
