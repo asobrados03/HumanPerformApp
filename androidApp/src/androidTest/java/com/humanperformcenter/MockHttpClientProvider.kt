@@ -7,6 +7,7 @@ import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.HttpRequestData
+import io.ktor.client.request.HttpResponseData
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -36,7 +37,7 @@ class MockHttpClientProvider(
 
     private val jsonParser = Json { ignoreUnknownKeys = true }
 
-    private val engine = MockEngine { request -> respondFor(this, request) }
+    private val engine = MockEngine { request -> respondFor(this, request) as HttpResponseData }
 
     override val authClient: HttpClient = buildClient()
     override val apiClient: HttpClient = buildClient()
