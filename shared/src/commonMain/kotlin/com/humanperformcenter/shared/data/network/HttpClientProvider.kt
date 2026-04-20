@@ -22,7 +22,20 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.json.Json
 
-const val API_BASE_URL: String = "https://human-app.duckdns.org/api"
+const val DEFAULT_API_BASE_URL: String = "https://human-app.duckdns.org/api"
+
+@Volatile
+private var apiBaseUrlOverride: String? = null
+
+val API_BASE_URL: String
+    get() = apiBaseUrlOverride ?: DEFAULT_API_BASE_URL
+
+fun setApiBaseUrlOverride(baseUrl: String?) {
+    apiBaseUrlOverride = baseUrl
+        ?.trim()
+        ?.trimEnd('/')
+        ?.takeIf { it.isNotEmpty() }
+}
 
 interface HttpClientProvider {
     val apiClient: HttpClient
