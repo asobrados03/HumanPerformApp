@@ -9,7 +9,7 @@ struct iOSApp: App {
     init() {
         configureApiBaseUrlForCurrentBuild()
         _ = SharedDependencies.shared
-        let prefs = DataStoreProvider().get()
+        let prefs = DataStoreProvider.shared.get()  // ← único cambio
         CryptoCallbacks.register()
         SecureStorage.shared.initialize(prefs: prefs)
         if UITestConfig.isUITesting && UITestConfig.shouldDisableAnimations {

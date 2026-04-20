@@ -24,6 +24,7 @@ import io.ktor.utils.io.errors.IOException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.json.Json
+import kotlin.concurrent.Volatile
 
 const val DEFAULT_API_BASE_URL: String = "https://human-app.duckdns.org/api"
 
