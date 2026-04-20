@@ -6,17 +6,22 @@ import com.humanperformcenter.shared.data.model.user.User
 import com.humanperformcenter.shared.domain.security.AuthPreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.withTimeoutOrNull
 
 internal object AuthStorageCore {
     suspend fun getAccessToken(prefs: DataStore<Preferences>): String? =
-        AuthPreferences.accessTokenFlow(prefs)
-            .firstOrNull()
-            .takeIf { !it.isNullOrBlank() }
+        withTimeoutOrNull(TOKEN_READ_TIMEOUT_MS) {
+            AuthPreferences.accessTokenFlow(prefs)
+                .firstOrNull()
+                .takeIf { !it.isNullOrBlank() }
+        }
 
     suspend fun getRefreshToken(prefs: DataStore<Preferences>): String? =
-        AuthPreferences.refreshTokenFlow(prefs)
-            .firstOrNull()
-            .takeIf { !it.isNullOrBlank() }
+        withTimeoutOrNull(TOKEN_READ_TIMEOUT_MS) {
+            AuthPreferences.refreshTokenFlow(prefs)
+                .firstOrNull()
+                .takeIf { !it.isNullOrBlank() }
+        }
 
     fun accessTokenFlow(prefs: DataStore<Preferences>): Flow<String> =
         AuthPreferences.accessTokenFlow(prefs)
@@ -35,4 +40,6 @@ internal object AuthStorageCore {
     suspend fun clear(prefs: DataStore<Preferences>) {
         AuthPreferences.clear(prefs)
     }
+
+    private const val TOKEN_READ_TIMEOUT_MS = 1_500L
 }
