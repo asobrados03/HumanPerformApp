@@ -9,7 +9,8 @@ enum CryptoError: Error {
 }
 
 class CryptoCallbacks {
-    private static let keyTag = "com.humanperformcenter.cryptoKey" // identificador en Keychain
+    private static let keyService = "com.humanperformcenter.crypto"
+    private static let keyAccount = "aes256-storage-key"
     private static let keySize = kCCKeySizeAES256
 
     static func register() {
@@ -59,10 +60,11 @@ class CryptoCallbacks {
 
     private static func getOrCreateKey() throws -> Data {
         let query: [String: Any] = [
-            kSecClass as String: kSecClassKey,
-            kSecAttrApplicationTag as String: keyTag,
-            kSecAttrKeySizeInBits as String: keySize * 8,
-            kSecReturnData as String: true
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keyService,
+            kSecAttrAccount as String: keyAccount,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
 
         var keyRef: CFTypeRef?
@@ -70,6 +72,9 @@ class CryptoCallbacks {
 
         if status == errSecSuccess, let data = keyRef as? Data {
             return data
+        }
+        guard status == errSecItemNotFound else {
+            throw CryptoError.keyError
         }
 
         // No existe, generamos una clave nueva
@@ -80,14 +85,21 @@ class CryptoCallbacks {
         guard result == errSecSuccess else { throw CryptoError.keyError }
 
         let addQuery: [String: Any] = [
-            kSecClass as String: kSecClassKey,
-            kSecAttrApplicationTag as String: keyTag,
-            kSecAttrKeySizeInBits as String: keySize * 8,
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keyService,
+            kSecAttrAccount as String: keyAccount,
             kSecValueData as String: keyData
         ]
-        SecItemAdd(addQuery as CFDictionary, nil)
-
-        return keyData
+        let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
+        if addStatus == errSecSuccess { return keyData }
+        if addStatus == errSecDuplicateItem {
+            var duplicatedRef: CFTypeRef?
+            let duplicateStatus = SecItemCopyMatching(query as CFDictionary, &duplicatedRef)
+            if duplicateStatus == errSecSuccess, let duplicatedData = duplicatedRef as? Data {
+                return duplicatedData
+            }
+        }
+        throw CryptoError.keyError
     }
 
     private static func randomIV() -> Data {
