@@ -116,7 +116,9 @@ val userProfileModule = module {
 val userSessionModule = module {
     single<UserAccountRepository> { UserAccountRepositoryImpl(get()) }
     singleOf(::UserAccountUseCase)
-    viewModelOf(::UserSessionViewModel)
+    // Session state (token + user cache) must be shared app-wide.
+    // Using a singleton prevents iOS tabs from observing diverging instances.
+    singleOf(::UserSessionViewModel)
 }
 
 val userFavoritesModule = module {
