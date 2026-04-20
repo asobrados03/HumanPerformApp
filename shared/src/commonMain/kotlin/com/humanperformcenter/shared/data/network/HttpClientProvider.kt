@@ -114,13 +114,9 @@ class DefaultHttpClientProvider(
     private fun createHttpClient(
         engine: HttpClientEngine?,
         block: HttpClientConfig<*>.() -> Unit,
-    ): HttpClient = if (engine == null) {
-        HttpClient {
-            installNetworkLogging()
-            block()
-        }
-    } else {
-        HttpClient(engine) {
+    ): HttpClient {
+        val resolvedEngine = engine ?: createPlatformEngine()
+        return HttpClient(resolvedEngine) {
             installNetworkLogging()
             block()
         }
