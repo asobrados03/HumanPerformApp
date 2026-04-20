@@ -6,13 +6,11 @@ import Foundation
 
 @main
 struct iOSApp: App {
-    // ✅ Orden correcto
+    // ✅ iOSApp.swift corregido
     init() {
         configureApiBaseUrlForCurrentBuild()
-        CryptoCallbacks.register()                        // 1. Crypto primero
-        let prefs = DataStoreProvider.shared.get()
-        SecureStorage.shared.initialize(prefs: prefs)     // 2. Storage listo
-        _ = SharedDependencies.shared                     // 3. Koin arranca con todo listo
+        CryptoCallbacks.register()        // 1. Crypto primero, siempre
+        _ = SharedDependencies.shared     // 2. Koin inicializa todo, incluyendo DataStore y SecureStorage
         
         if UITestConfig.isUITesting && UITestConfig.shouldDisableAnimations {
             UIView.setAnimationsEnabled(false)
