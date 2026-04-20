@@ -10,6 +10,8 @@ import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
@@ -18,6 +20,7 @@ import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.errors.IOException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.json.Json
@@ -56,6 +59,7 @@ class DefaultHttpClientProvider(
 
     override val authClient: HttpClient = createHttpClient(authClientEngine) {
         expectSuccess = true
+        installNetworkResilience()
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
@@ -63,6 +67,7 @@ class DefaultHttpClientProvider(
 
     override val apiClient: HttpClient = createHttpClient(apiClientEngine) {
         expectSuccess = true
+        installNetworkResilience()
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
@@ -131,6 +136,20 @@ class DefaultHttpClientProvider(
         }
     }
 
+    private fun HttpClientConfig<*>.installNetworkResilience() {
+        // Evita "loading infinito" cuando el engine no falla rápido (caso reportado en iOS/Darwin).
+        install(HttpTimeout) {
+            requestTimeoutMillis = REQUEST_TIMEOUT_MS
+            connectTimeoutMillis = CONNECT_TIMEOUT_MS
+            socketTimeoutMillis = SOCKET_TIMEOUT_MS
+        }
+        install(HttpRequestRetry) {
+            maxRetries = MAX_NETWORK_RETRIES
+            retryOnExceptionIf { _, cause -> cause is IOException || cause is kotlinx.coroutines.TimeoutCancellationException }
+            exponentialDelay()
+        }
+    }
+
     private fun Logger.withSensitiveBodyRedaction(): Logger = object : Logger {
         override fun log(message: String) {
             this@withSensitiveBodyRedaction.log(message.redactSensitiveBodyFields())
@@ -144,6 +163,11 @@ class DefaultHttpClientProvider(
     }
 
     private companion object {
+        const val REQUEST_TIMEOUT_MS = 20_000L
+        const val CONNECT_TIMEOUT_MS = 15_000L
+        const val SOCKET_TIMEOUT_MS = 20_000L
+        const val MAX_NETWORK_RETRIES = 1
+
         val SENSITIVE_BODY_PATTERNS = listOf(
             Regex("(\"password\"\\s*:\\s*\")[^\"]*(\")", RegexOption.IGNORE_CASE),
             Regex("(\"newPassword\"\\s*:\\s*\")[^\"]*(\")", RegexOption.IGNORE_CASE),
