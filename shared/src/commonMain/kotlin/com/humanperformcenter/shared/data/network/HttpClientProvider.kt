@@ -81,8 +81,10 @@ class DefaultHttpClientProvider(
                     if (access == null || refresh == null) null else BearerTokens(access, refresh)
                 }
                 refreshTokens {
+                    println(">>> HttpClientProvider.refreshTokens: called")
                     val oldRefresh = authLocalDataSource.getRefreshToken()
                     if (oldRefresh.isNullOrBlank()) {
+                        println(">>> HttpClientProvider.refreshTokens: refresh token vacío, logout")
                         handleLogout()
                         return@refreshTokens null
                     }
@@ -92,16 +94,20 @@ class DefaultHttpClientProvider(
                             markAsRefreshTokenRequest()
                             bearerAuth(oldRefresh)
                         }
+                        println(">>> HttpClientProvider.refreshTokens: response status=${resp.status.value}")
 
                         if (resp.status == HttpStatusCode.Unauthorized) {
+                            println(">>> HttpClientProvider.refreshTokens: 401 Unauthorized, logout")
                             handleLogout()
                             null
                         } else {
                             val newTokens = resp.body<RefreshResponse>()
                             authLocalDataSource.saveTokens(newTokens.accessToken, newTokens.refreshToken)
+                            println(">>> HttpClientProvider.refreshTokens: tokens refreshed")
                             BearerTokens(newTokens.accessToken, newTokens.refreshToken)
                         }
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        println(">>> HttpClientProvider.refreshTokens: exception=${e.message}")
                         handleLogout()
                         null
                     }
@@ -174,6 +180,7 @@ class DefaultHttpClientProvider(
     }
 
     private suspend fun handleLogout() {
+        println(">>> HttpClientProvider.handleLogout: clearing local session and emitting event")
         authLocalDataSource.clear()
         logoutEventsMutable.emit(Unit)
     }
