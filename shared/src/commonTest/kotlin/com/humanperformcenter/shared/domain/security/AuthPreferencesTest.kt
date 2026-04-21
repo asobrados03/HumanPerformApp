@@ -34,6 +34,24 @@ class AuthPreferencesTest {
     }
 
     @Test
+    fun saveTokensAndUser_persists_tokens_and_user_in_same_snapshot() = runTest {
+        val dataStore = InMemoryPreferencesDataStore()
+        AuthPreferences.cryptoAdapter = ReversibleCryptoAdapter
+        val user = sampleUser()
+
+        AuthPreferences.saveTokensAndUser(
+            prefs = dataStore,
+            access = "access-token",
+            refresh = "refresh-token",
+            user = user,
+        )
+
+        assertEquals("access-token", AuthPreferences.accessTokenFlow(dataStore).first())
+        assertEquals("refresh-token", AuthPreferences.refreshTokenFlow(dataStore).first())
+        assertEquals(user, AuthPreferences.userFlow(dataStore).first())
+    }
+
+    @Test
     fun userFlow_when_decrypt_fails_returns_null_and_does_not_crash() = runTest {
         val dataStore = InMemoryPreferencesDataStore()
         AuthPreferences.cryptoAdapter = ReversibleCryptoAdapter

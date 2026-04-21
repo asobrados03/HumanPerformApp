@@ -93,6 +93,11 @@ class UserSessionViewModelTest {
             token.value = accessToken
         }
 
+        override suspend fun saveTokensAndUser(accessToken: String, refreshToken: String, user: User) {
+            token.value = accessToken
+            this.user.value = user
+        }
+
         override suspend fun clearTokens() {
             token.value = ""
         }

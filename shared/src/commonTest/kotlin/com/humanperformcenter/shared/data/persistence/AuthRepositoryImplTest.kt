@@ -46,6 +46,7 @@ class AuthRepositoryImplTest {
             ),
             local.savedUser,
         )
+        assertEquals(1, local.saveTokensAndUserCalls)
     }
 
     @Test
@@ -97,6 +98,7 @@ class AuthRepositoryImplTest {
         var savedAccessToken: String? = null
         var savedRefreshToken: String? = null
         var savedUser: User? = null
+        var saveTokensAndUserCalls: Int = 0
         private val tokenFlow = MutableStateFlow("")
         private val currentUserFlow = MutableStateFlow<User?>(null)
 
@@ -109,6 +111,15 @@ class AuthRepositoryImplTest {
             savedAccessToken = accessToken
             savedRefreshToken = refreshToken
             tokenFlow.value = accessToken
+        }
+
+        override suspend fun saveTokensAndUser(accessToken: String, refreshToken: String, user: User) {
+            saveTokensAndUserCalls += 1
+            savedAccessToken = accessToken
+            savedRefreshToken = refreshToken
+            savedUser = user
+            tokenFlow.value = accessToken
+            currentUserFlow.value = user
         }
 
         override suspend fun clearTokens() {

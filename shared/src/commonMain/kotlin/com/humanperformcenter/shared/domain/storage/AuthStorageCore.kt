@@ -38,6 +38,15 @@ internal object AuthStorageCore {
         AuthPreferences.saveTokens(prefs, access, refresh)
     }
 
+    suspend fun saveTokensAndUser(
+        prefs: DataStore<Preferences>,
+        access: String,
+        refresh: String,
+        user: User,
+    ) {
+        AuthPreferences.saveTokensAndUser(prefs, access, refresh, user)
+    }
+
     suspend fun saveUser(prefs: DataStore<Preferences>, user: User) {
         AuthPreferences.saveUser(prefs, user)
     }

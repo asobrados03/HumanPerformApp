@@ -9,6 +9,7 @@ interface AuthLocalDataSource {
     fun accessTokenFlow(): Flow<String>
     fun userFlow(): Flow<User?>
     suspend fun saveTokens(accessToken: String, refreshToken: String)
+    suspend fun saveTokensAndUser(accessToken: String, refreshToken: String, user: User)
     suspend fun clearTokens()
     suspend fun saveUser(user: User)
     suspend fun clear()

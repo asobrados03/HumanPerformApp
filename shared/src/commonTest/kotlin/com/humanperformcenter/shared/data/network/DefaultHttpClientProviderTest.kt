@@ -231,6 +231,11 @@ class DefaultHttpClientProviderTest {
             tokenFlow.value = accessToken
         }
 
+        override suspend fun saveTokensAndUser(accessToken: String, refreshToken: String, user: User) {
+            saveTokens(accessToken, refreshToken)
+            userFlowState.value = user
+        }
+
         override suspend fun clearTokens() {
             accessToken = null
             refreshToken = null

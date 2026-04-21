@@ -44,6 +44,20 @@ object AuthPreferences {
         }
     }
 
+    suspend fun saveTokensAndUser(
+        prefs: DataStore<Preferences>,
+        access: String,
+        refresh: String,
+        user: User,
+    ) {
+        prefs.edit { m ->
+            m[KEY_ACCESS] = Base64.encode(cryptoAdapter.encrypt(access.encodeToByteArray()))
+            m[KEY_REFRESH] = Base64.encode(cryptoAdapter.encrypt(refresh.encodeToByteArray()))
+            val json = Json.encodeToString(user)
+            m[KEY_USER_JSON] = Base64.encode(cryptoAdapter.encrypt(json.encodeToByteArray()))
+        }
+    }
+
     private fun safePrefsFlow(
         prefs: DataStore<Preferences>
     ): Flow<Preferences> =
