@@ -17,7 +17,7 @@ kotlin {
     // See: https://kotlinlang.org/docs/multiplatform-discover-project.html#targets
     androidLibrary {
         namespace = "com.humanperformcenter.shared"
-        compileSdk = 36
+        compileSdk = 37
         minSdk = 26
 
         withHostTestBuilder {
@@ -120,6 +120,7 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.play.services.wallet)
                 implementation(libs.androidx.work.runtime.ktx)
+                implementation(libs.insert.koin.koin.android)
             }
         }
 
