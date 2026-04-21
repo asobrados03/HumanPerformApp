@@ -32,8 +32,7 @@ class AuthRepositoryImpl(
                 dni = data.dni,
                 profilePictureName = data.profilePictureName,
             )
-            local.saveTokens(data.accessToken, data.refreshToken)
-            local.saveUser(userData)
+            local.saveTokensAndUser(data.accessToken, data.refreshToken, userData)
             println(">>> AuthRepositoryImpl.login: saveUser completado id=${userData.id}")
             }
 

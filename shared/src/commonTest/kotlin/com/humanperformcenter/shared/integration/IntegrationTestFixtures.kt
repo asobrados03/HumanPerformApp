@@ -55,6 +55,14 @@ internal class InMemoryAuthLocalDataSource : AuthLocalDataSource {
         tokenFlow.value = accessToken
     }
 
+    override suspend fun saveTokensAndUser(accessToken: String, refreshToken: String, user: User) {
+        this.accessToken = accessToken
+        this.refreshToken = refreshToken
+        this.user = user
+        tokenFlow.value = accessToken
+        userFlowState.value = user
+    }
+
     override suspend fun clearTokens() {
         accessToken = null
         refreshToken = null

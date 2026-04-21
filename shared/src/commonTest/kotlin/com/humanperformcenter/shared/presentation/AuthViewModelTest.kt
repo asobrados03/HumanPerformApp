@@ -82,6 +82,7 @@ class AuthViewModelTest : KoinTest {
         override fun accessTokenFlow(): Flow<String> = MutableStateFlow("")
         override fun userFlow(): Flow<User?> = MutableStateFlow(null)
         override suspend fun saveTokens(accessToken: String, refreshToken: String) = Unit
+        override suspend fun saveTokensAndUser(accessToken: String, refreshToken: String, user: User) = Unit
         override suspend fun clearTokens() = Unit
         override suspend fun saveUser(user: User) = Unit
         override suspend fun clear() = Unit

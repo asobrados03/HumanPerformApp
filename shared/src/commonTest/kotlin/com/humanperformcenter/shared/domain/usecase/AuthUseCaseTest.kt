@@ -117,6 +117,7 @@ class AuthUseCaseTest {
         override fun accessTokenFlow(): Flow<String> = flowOf("")
         override fun userFlow(): Flow<User?> = flowOf(null)
         override suspend fun saveTokens(accessToken: String, refreshToken: String) = Unit
+        override suspend fun saveTokensAndUser(accessToken: String, refreshToken: String, user: User) = Unit
         override suspend fun clearTokens() = Unit
         override suspend fun saveUser(user: User) = Unit
         override suspend fun clear() { clearCalled = true }

@@ -22,6 +22,10 @@ object SecureStorage : AuthLocalDataSource {
         AuthStorageCore.saveTokens(prefs, accessToken, refreshToken)
     }
 
+    override suspend fun saveTokensAndUser(accessToken: String, refreshToken: String, user: User) {
+        AuthStorageCore.saveTokensAndUser(prefs, accessToken, refreshToken, user)
+    }
+
     override fun accessTokenFlow(): Flow<String> = AuthStorageCore.accessTokenFlow(prefs)
 
     override suspend fun saveUser(user: User) {
