@@ -12,9 +12,9 @@ import com.rickclephas.kmp.observableviewmodel.launch
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
@@ -52,21 +52,43 @@ class UserSessionViewModel(
     val isLoggingOut: StateFlow<Boolean> = _isLoggingOut.asStateFlow()
 
     init {
+        println(">>> UserSessionViewModel.init: inicializando sesión")
+
         viewModelScope.launch {
             val initialLoginState = runCatching {
                 authLocalDataSource.getAccessToken()?.isNotBlank() == true
             }.getOrDefault(false)
+            println(">>> UserSessionViewModel.init: initialLoginState=$initialLoginState")
             _isLoggedIn.value = initialLoginState
 
             authLocalDataSource.accessTokenFlow()
                 .map { token -> token.isNotBlank() }
                 .distinctUntilChanged()
-                .collect { _isLoggedIn.value = it }
+                .collect {
+                    println(">>> UserSessionViewModel.accessTokenFlow emit: isLoggedIn=$it")
+                    _isLoggedIn.value = it
+                }
         }
 
         viewModelScope.launch {
-            authLocalDataSource.userFlow().collect { storedUser ->
-                _userData.value = storedUser
+            println(">>> UserSessionViewModel.userFlow collector: start")
+            authLocalDataSource.userFlow()
+                .catch { throwable ->
+                    println(">>> UserSessionViewModel.userFlow ERROR: ${throwable.message}")
+                    _isLoading.value = false
+                }
+                .collect { storedUser ->
+                    println(">>> UserSessionViewModel.userFlow before emit: currentLoading=${_isLoading.value}")
+                    _userData.value = storedUser
+                    _isLoading.value = false
+                    println(">>> UserSessionViewModel.userFlow after emit: userId=${storedUser?.id}, isLoading=${_isLoading.value}")
+                }
+        }
+
+        viewModelScope.launch {
+            delay(5_000)
+            if (_isLoading.value) {
+                println(">>> LOADING TIMEOUT: forzando isLoading = false")
                 _isLoading.value = false
             }
         }
