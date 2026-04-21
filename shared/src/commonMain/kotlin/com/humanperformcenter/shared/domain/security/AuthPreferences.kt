@@ -95,6 +95,7 @@ object AuthPreferences {
 
 
     suspend fun saveUser(prefs: DataStore<Preferences>, user: User) {
+        println(">>> SAVE_USER: guardando userId=${user.id}")
         prefs.edit { m ->
             val json = Json.encodeToString(user)
 
@@ -104,11 +105,13 @@ object AuthPreferences {
 
             m[KEY_USER_JSON] = Base64.encode(encrypted)
         }
+        println(">>> SAVE_USER: guardado OK")
     }
 
     fun userFlow(prefs: DataStore<Preferences>): Flow<User?> =
         safePrefsFlow(prefs)
             .map { m ->
+                println(">>> USER_FLOW_MAP: KEY_USER_JSON presente = ${m[KEY_USER_JSON] != null}")
                 try {
                     m[KEY_USER_JSON]?.let { b64 ->
                         val cipherBytes = Base64.decode(b64)
