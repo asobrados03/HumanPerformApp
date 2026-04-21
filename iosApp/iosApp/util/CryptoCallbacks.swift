@@ -32,6 +32,7 @@ class CryptoCallbacks {
         }
 
         EncryptionHandler.shared.registerDecryptor { input in
+            print(">>> DECRYPT CALLED, input size: \(input.size)")
             let all = input.toData()
             guard all.count >= kCCBlockSizeAES128 else {
                 NSLog("Cipher too short")
@@ -47,6 +48,7 @@ class CryptoCallbacks {
                                              data: Data(body),
                                              key: key,
                                              iv: Data(iv))
+                print(">>> DECRYPT RESULT size: \(decrypted.count)")
                 return decrypted.toKotlinByteArray()
             } catch {
                 // No abortamos: devolvemos array vacío

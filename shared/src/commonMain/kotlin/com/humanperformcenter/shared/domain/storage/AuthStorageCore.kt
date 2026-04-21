@@ -9,12 +9,17 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withTimeoutOrNull
 
 internal object AuthStorageCore {
-    suspend fun getAccessToken(prefs: DataStore<Preferences>): String? =
-        withTimeoutOrNull(TOKEN_READ_TIMEOUT_MS) {
-            AuthPreferences.accessTokenFlow(prefs)
-                .firstOrNull()
-                .takeIf { !it.isNullOrBlank() }
+    suspend fun getAccessToken(prefs: DataStore<Preferences>): String? {
+        println(">>> GET_ACCESS_TOKEN: llamado")
+        val result = withTimeoutOrNull(TOKEN_READ_TIMEOUT_MS) {
+            println(">>> GET_ACCESS_TOKEN: dentro del timeout, leyendo flow...")
+            val value = AuthPreferences.accessTokenFlow(prefs).firstOrNull()
+            println(">>> GET_ACCESS_TOKEN: flow emitió = '$value'")
+            value.takeIf { !it.isNullOrBlank() }
         }
+        println(">>> GET_ACCESS_TOKEN: resultado final = $result")
+        return result
+    }
 
     suspend fun getRefreshToken(prefs: DataStore<Preferences>): String? =
         withTimeoutOrNull(TOKEN_READ_TIMEOUT_MS) {

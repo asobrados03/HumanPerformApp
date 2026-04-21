@@ -8,9 +8,13 @@ import Foundation
 struct iOSApp: App {
     // ✅ iOSApp.swift corregido
     init() {
+        print(">>> 1. INIT START")
         configureApiBaseUrlForCurrentBuild()
-        CryptoCallbacks.register()        // 1. Crypto primero, siempre
-        _ = SharedDependencies.shared     // 2. Koin inicializa todo, incluyendo DataStore y SecureStorage
+        print(">>> 2. CRYPTO REGISTER START")
+        CryptoCallbacks.register()
+        print(">>> 3. CRYPTO REGISTER DONE")
+        _ = SharedDependencies.shared
+        print(">>> 4. KOIN READY")
         
         if UITestConfig.isUITesting && UITestConfig.shouldDisableAnimations {
             UIView.setAnimationsEnabled(false)
